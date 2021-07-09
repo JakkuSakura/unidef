@@ -1,0 +1,4 @@
+pyhocon
+pyyaml
+pydantic
+stringcase
