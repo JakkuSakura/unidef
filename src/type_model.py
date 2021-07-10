@@ -77,7 +77,7 @@ class TypeAlreadyExistsAndConflict(Exception):
 
 
 class TypeRegistry(BaseModel):
-    types: Dict[TypeMeta, Type] = {}
+    types: dict[TypeMeta, Type] = {}
 
     def insert(self, model: Type):
         if model.type_meta not in self.types:
