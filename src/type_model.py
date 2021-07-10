@@ -1,18 +1,21 @@
-from typing import List, Optional, Any, Dict
+from typing import Optional, Any, Dict
 
+from beartype import beartype
 from pydantic import BaseModel
 
 
 class TypeMeta(BaseModel):
     type_name: str
-    generics: List[Optional['TypeMeta']] = []
+    generics: list[Optional['TypeMeta']] = []
 
     @staticmethod
+    @beartype
     def from_str(name: str) -> 'TypeMeta':
         return TypeMeta(type_name=name)
 
     @staticmethod
-    def from_generics(name: str, generics: List['TypeMeta']) -> 'TypeMeta':
+    @beartype
+    def from_generics(name: str, generics: list[Optional['TypeMeta']]) -> 'TypeMeta':
         meta = TypeMeta(type_name=name, generics=generics)
         return meta
 
@@ -38,30 +41,33 @@ class Type(BaseModel):
     It allows single inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
     """
     type_meta: TypeMeta
-    traits: List[Instance] = []
+    traits: list[Instance] = []
 
     def with_trait(self, trait: Instance) -> 'Type':
         assert isinstance(trait, Instance)
         self.traits.append(trait)
         return self
 
+    @beartype
     def with_parent(self, parent: 'Type') -> 'Type':
         return self.with_trait(parent.as_parent())
 
-    def as_parent(self):
+    def as_parent(self) -> Instance:
         return Instance(type_meta=TypeMeta.from_str('parent'), value=self.type_meta)
 
-    def as_trait(self):
+    def as_trait(self) -> Instance:
         return Instance(type_meta=TypeMeta.from_str('trait'), value=self.type_meta)
 
     def as_instance(self, value: Any) -> Instance:
         return Instance(type_meta=self.type_meta, value=value)
 
     @staticmethod
+    @beartype
     def from_str(name: str) -> 'Type':
         return Type(type_meta=TypeMeta(type_name=name))
 
     @staticmethod
+    @beartype
     def from_meta(meta: TypeMeta) -> 'Type':
         return Type(type_meta=meta)
 
@@ -79,7 +85,7 @@ class TypeRegistry(BaseModel):
         elif self.types[model.type_meta] != model:
             raise TypeAlreadyExistsAndConflict(model.type_meta)
 
-    def get(self, meta: TypeMeta):
+    def get(self, meta: TypeMeta) -> Type:
         return self.types.get(meta)
 
     def is_subclass(self, child: Type, parent: Type) -> bool:
