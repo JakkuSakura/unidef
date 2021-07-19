@@ -1,0 +1,36 @@
+---
+type: example
+name: model
+note: This is a example
+fields:
+  - name: id_ts
+    type: i64
+    primary: true
+
+  - name: query
+    type: string
+
+  - name: page_number
+    type: i32
+    nullable: True
+---
+type: example
+name: delay_data
+fields:
+  - name: exchange
+    type: exchange_enum
+  - name: instrument
+    type: human_instrument/enum
+  - name: st
+    type: timestamp/ns
+  - name: lt
+    type: timestamp/ns
+---
+type: example
+name: currency_kind
+variants:
+  - name: "NULL"
+  - name: BTC XBT
+  - name: BCH BCHABC
+  - name: BSV BCHSV
+  - name: 1INCH
