@@ -1,7 +1,7 @@
 from enum import Enum
 from io import IOBase
 from typing import Optional, List, Any, Dict, Union
-from models.type_model import Type, parse_data_example, Traits
+from models.type_model import Type, parse_data_example, Traits, GLOBAL_TYPE_REGISTRY, Types
 import pyhocon
 import yaml
 from pydantic import BaseModel
@@ -29,6 +29,10 @@ class ModelExample(BaseModel):
         return parsed
 
 
+class InvalidArgumentException(Exception):
+    pass
+
+
 class ModelDefinition(BaseModel):
     type: str = 'untyped'
     name: str
@@ -47,21 +51,29 @@ class ModelDefinition(BaseModel):
         if self.fields:
             fields = []
             for field in self.fields:
-                name = field['name']
-                primary = bool(field.get('primary')) or False
-                nullable = bool(field.get('nullable')) or False
-                comment = field.get('comment') or ''
-                ty = parse_type_definition(field['type'])
+                type_ref = field['type']
+                ty = GLOBAL_TYPE_REGISTRY.get_type(type_ref)
+                if not ty:
+                    ty = Type.from_str(type_ref).with_trait(Traits.TypeRef.initialize_with(type_ref))
+                else:
+                    ty = ty.copy()
 
-                fields.append(StructField(name=name, primary=primary, value=OptionalType(ty) if nullable else ty,
-                                          comment=comment))
-            return StructType(name=self.name, fields=fields)
+                for key, val in field.items():
+                    if key not in ['type']:
+                        trait = GLOBAL_TYPE_REGISTRY.get_trait(key)
+                        if trait is not None:
+                            ty.with_trait(trait.initialize_with(val))
+                        else:
+                            raise InvalidArgumentException(key)
+
+                fields.append(ty)
+
+            return Types.struct(self.name, fields)
         if self.variants:
             variants = []
-            for enum in self.variants:
-                e = EnumVariant(name=enum['name'].split())
-                variants.append(e)
-            return EnumType(name=self.name, variants=variants)
+            for var in self.variants:
+                variants.append(Types.variant(var['name'].split()))
+            return Types.enum(self.name, variants)
 
 
 def read_model_definition(content: Union[str, IOBase]) -> List[ModelDefinition]:

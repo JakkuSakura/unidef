@@ -1,45 +1,19 @@
-from typing import Optional, Any, Dict, Union
+import random
+from typing import Any, Union, Optional
 
+import stringcase
 from beartype import beartype
 from pydantic import BaseModel
-import stringcase
-import random
-
-
-# somehow useless
-# class TypeMeta(BaseModel):
-#     type_name: str
-#     generics: list[Optional['TypeMeta']] = []
-#
-#     @staticmethod
-#     @beartype
-#     def from_str(name: str) -> 'TypeMeta':
-#         return TypeMeta(type_name=name)
-#
-#     @staticmethod
-#     @beartype
-#     def from_generics(name: str, generics: list[Optional['TypeMeta']]) -> 'TypeMeta':
-#         meta = TypeMeta(type_name=name, generics=generics)
-#         return meta
-#
-#     def __hash__(self):
-#         return hash(self.json())
-# TypeMeta.update_forward_refs()
 
 
 class Trait(BaseModel):
     name: str
     value: Any = None
-    frozen: bool = False
 
     def initialize_with(self, value: Any) -> 'Trait':
-        t = self.copy()
+        t = self.copy(deep=True)
         t.value = value
         return t
-
-    def freeze(self) -> 'Trait':
-        self.frozen = True
-        return self
 
     @staticmethod
     @beartype
@@ -53,21 +27,25 @@ Trait.update_forward_refs()
 class Traits:
     Name = Trait.from_str('name')
     Size = Trait.from_str('size')
-    Signed = Trait.from_str('signed')
-    Numeric = Trait.from_str('numeric')
-    Integer = Trait.from_str('integer')
-    StringWrapped = Trait.from_str('string_wrapped')
-    TsUnit = Trait.from_str('ts_unit')
+    Signed = Trait.from_str('signed').initialize_with(True)
+    Numeric = Trait.from_str('numeric').initialize_with(True)
+    Integer = Trait.from_str('integer').initialize_with(True)
     KeyType = Trait.from_str('key')
     ValueType = Trait.from_str('value')
     Parent = Trait.from_str('parent')
     Field = Trait.from_str('field')
     Struct = Trait.from_str('struct')
+    TypeRef = Trait.from_str('type_ref')
+    Variant = Trait.from_str('variant')
+    VariantName = Trait.from_str('variant_name')
 
+    # Format
+    StringWrapped = Trait.from_str('string_wrapped').initialize_with(True)
+    TsUnit = Trait.from_str('ts_unit')
 
-for v in Traits.__dict__.values():
-    if isinstance(v, Trait):
-        v.freeze()
+    # SQL related
+    Primary = Trait.from_str('primary').initialize_with(True)
+    Nullable = Trait.from_str('nullable').initialize_with(True)
 
 
 class Type(BaseModel):
@@ -78,8 +56,8 @@ class Type(BaseModel):
     traits: list[Trait] = []
     frozen: bool = False
 
+    @beartype
     def with_trait(self, trait: Trait) -> 'Type':
-        assert isinstance(trait, Trait)
         assert not self.frozen
         self.traits.append(trait)
         return self
@@ -106,42 +84,14 @@ class Type(BaseModel):
         return self
 
     def copy(self, *args, **kwargs):
+        kwargs['deep'] = True
         this = super().copy(*args, **kwargs)
         this.frozen = False
         return this
 
-
-class TypeAlreadyExistsAndConflict(Exception):
-    pass
-
-
-class TypeRegistry(BaseModel):
-    types: dict[str, Type] = {}
-
-    def insert(self, model: Type):
-        if model.type_meta not in self.types:
-            self.types[model.type_meta] = model
-        elif self.types[model.type_meta] != model:
-            raise TypeAlreadyExistsAndConflict(model.type_meta)
-
-    def get(self, meta: str) -> Type:
-        return self.types.get(meta)
-
-    def is_subclass(self, child: Type, parent: Type) -> bool:
-        assert isinstance(child, Type)
-        assert isinstance(parent, Type)
-        if parent.as_parent() in child.traits:
-            return True
-        for i in child.traits:
-            if is_parent_instance(i):
-                p = self.get(i.value)
-                if self.is_subclass(p, parent):
-                    return True
-        return False
-
-    def list_types(self):
-        for ty in self.types.values():
-            print('Type', ty.json())
+    def dict(self, **kwargs):
+        kwargs["exclude"] = {'frozen'}
+        return super().dict(**kwargs)
 
 
 class Types:
@@ -173,11 +123,84 @@ class Types:
 
     @staticmethod
     @beartype
+    def variant(name: list[str]) -> Type:
+        ty = Type.from_str(name[0])
+        for n in name:
+            ty.with_trait(Traits.VariantName.initialize_with(n))
+        return ty
+
+    @staticmethod
+    @beartype
     def struct(name: str, fields: list[Type]) -> Type:
         ty = Type.from_str(name)
         for f in fields:
             ty.with_trait(Traits.Field.initialize_with(f))
         return ty
+
+    @staticmethod
+    @beartype
+    def enum(name: str, variants: list[Type]) -> Type:
+        ty = Type.from_str(name)
+        for f in variants:
+            ty.with_trait(Traits.Variant.initialize_with(f))
+        return ty
+
+class TypeAlreadyExistsAndConflict(Exception):
+    pass
+
+
+class TraitAlreadyExistsAndConflict(Exception):
+    pass
+
+
+class TypeRegistry(BaseModel):
+    types: dict[str, Type] = {}
+    traits: dict[str, Trait] = {}
+
+    def insert_type(self, ty: Type):
+        name = ty.get_first_trait(Traits.Name).value
+        assert ty.frozen, 'type should be frozen ' + name
+        if name not in self.types:
+            self.types[name] = ty
+        elif self.types[name] != ty:
+            raise TypeAlreadyExistsAndConflict(name)
+
+    def insert_trait(self, trait: Trait):
+        if trait.name not in self.traits:
+            self.traits[trait.name] = trait
+        elif self.traits[trait.name] != trait:
+            raise TraitAlreadyExistsAndConflict(trait.name)
+
+    def get_type(self, name: str) -> Optional[Type]:
+        return self.types.get(name)
+
+    def get_trait(self, name: str) -> Optional[Trait]:
+        return self.traits.get(name)
+
+    def is_subclass(self, child: Type, parent: Type) -> bool:
+        assert isinstance(child, Type)
+        assert isinstance(parent, Type)
+        if parent.as_parent() in child.traits:
+            return True
+        p = child.get_first_trait(Traits.Parent).value
+        return self.is_subclass(p, parent)
+
+    def list_types(self) -> list[Type]:
+        return self.types.values()
+
+    def list_traits(self) -> list[Trait]:
+        return self.traits.values()
+
+
+GLOBAL_TYPE_REGISTRY = TypeRegistry()
+
+for t in Traits.__dict__.values():
+    if isinstance(t, Trait):
+        GLOBAL_TYPE_REGISTRY.insert_trait(t)
+
+for t in Types.__dict__.values():
+    if isinstance(t, Type):
+        GLOBAL_TYPE_REGISTRY.insert_type(t)
 
 
 def to_second_scale(s: str) -> float:
@@ -209,14 +232,7 @@ def detect_timestamp_unit(inputtext: Union[str, int, float]) -> str:
 
 
 def string_wrapped(t: Type) -> Type:
-    return t.copy().with_trait(Traits.StringWrapped.as_trait())
-
-
-GLOBAL_REGISTRY = TypeRegistry()
-
-for v in Traits.__dict__.values():
-    if isinstance(v, Type):
-        GLOBAL_REGISTRY.insert(v)
+    return t.copy().with_trait(Traits.StringWrapped)
 
 
 def prefix_join(prefix: str, name: str) -> str:
@@ -276,4 +292,4 @@ def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = ''
 
 
 if __name__ == '__main__':
-    GLOBAL_REGISTRY.list_types()
+    GLOBAL_TYPE_REGISTRY.list_types()

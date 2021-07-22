@@ -20,7 +20,7 @@ def main():
         print(yaml.dump(example.get_parsed().dict()))
     else:
         for loaded_model in read_model_definition(open(args.file)):
-            print(yaml.dump(loaded_model.example.get_parsed().dict()))
+            print(yaml.dump(loaded_model.get_parsed().dict()))
 
 
 if __name__ == '__main__':
