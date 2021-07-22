@@ -24,8 +24,8 @@ class ModelExample(BaseModel):
         if self.format == ExampleFormat.JSON:
             parsed = parse_data_example(dict(pyhocon.ConfigParser.parse(self.text)), name)
 
-        if parsed.get_first_trait(Traits.Struct) and name:
-            parsed.get_first_trait(Traits.Name).value = name
+        if parsed.get_trait(Traits.Struct) and name:
+            parsed.get_trait(Traits.Name).value = name
         return parsed
 
 
@@ -51,6 +51,7 @@ class ModelDefinition(BaseModel):
         if self.fields:
             fields = []
             for field in self.fields:
+                name = field['name']
                 type_ref = field['type']
                 ty = GLOBAL_TYPE_REGISTRY.get_type(type_ref)
                 if not ty:
@@ -59,7 +60,7 @@ class ModelDefinition(BaseModel):
                     ty = ty.copy()
 
                 for key, val in field.items():
-                    if key not in ['type']:
+                    if key not in ['name', 'type']:
                         trait = GLOBAL_TYPE_REGISTRY.get_trait(key)
                         if trait is not None:
                             ty.with_trait(trait.initialize_with(val))
