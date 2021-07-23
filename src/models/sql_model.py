@@ -3,7 +3,7 @@ from models.type_model import Type, Traits
 
 def get_real(ty: Type) -> str:
     assert ty.get_trait(Traits.Floating).value, True
-    bits = ty.get_trait(Traits.Size).value
+    bits = ty.get_trait(Traits.BitSize).value
     if bits == 32:
         return 'float'
     elif bits == 64:
@@ -14,7 +14,7 @@ def get_real(ty: Type) -> str:
 
 def get_integer(ty: Type) -> str:
     assert ty.get_trait(Traits.Integer), True
-    bits = ty.get_trait(Traits.Size)
+    bits = ty.get_trait(Traits.BitSize)
 
     if bits < 32:
         return 'smallint'
@@ -37,10 +37,10 @@ def type_mapping(ty: Type) -> str:
     if ty.get_trait(Traits.Integer):
         return get_integer(ty)
 
-    if ty.get_trait(Traits.Name) == 'string':
+    if ty.get_trait(Traits.String):
         return 'text'
 
-    if ty.get_trait(Traits.Name) == 'bool':
+    if ty.get_trait(Traits.Bool):
         return 'bool'
 
     if ty.get_trait(Traits.Struct):
@@ -66,12 +66,12 @@ def get_field(field: Type) -> str:
 
 
 def emit_schema_from_model(model: Type) -> str:
-    fields = ',\n'.join([get_field(field.value) for field in model.traits if field.name == Traits.Field.name])
+    fields = ',\n'.join([get_field(field) for field in model.get_traits(Traits.StructField)])
     return fields
 
 
 def emit_field_names_from_model(model: Type) -> str:
-    fields = ','.join([field.name for field in model.traits if field.name == Traits.Field.name])
+    fields = ','.join([field.get_trait(Traits.Name) for field in model.get_traits(Traits.StructField)])
     return fields
 
 

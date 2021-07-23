@@ -55,15 +55,16 @@ class ModelDefinition(BaseModel):
                 type_ref = field['type']
                 ty = GLOBAL_TYPE_REGISTRY.get_type(type_ref)
                 if not ty:
-                    ty = Type.from_str(type_ref).with_trait(Traits.TypeRef.initialize_with(type_ref))
+                    ty = Type.from_str(name).append_trait(Traits.TypeRef.init_with(type_ref))
                 else:
                     ty = ty.copy()
+                    ty.replace_trait(Traits.Name.init_with(name))
 
                 for key, val in field.items():
                     if key not in ['name', 'type']:
                         trait = GLOBAL_TYPE_REGISTRY.get_trait(key)
                         if trait is not None:
-                            ty.with_trait(trait.initialize_with(val))
+                            ty.append_trait(trait.init_with(val))
                         else:
                             raise InvalidArgumentException(key)
 

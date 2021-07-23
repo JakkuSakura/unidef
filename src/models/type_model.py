@@ -10,7 +10,7 @@ class Trait(BaseModel):
     name: str
     value: Any = None
 
-    def initialize_with(self, value: Any) -> 'Trait':
+    def init_with(self, value: Any) -> 'Trait':
         t = self.copy(deep=True)
         t.value = value
         return t
@@ -26,29 +26,43 @@ Trait.update_forward_refs()
 
 class Traits:
     Name = Trait.from_str('name')
-    Size = Trait.from_str('size')
-    Signed = Trait.from_str('signed').initialize_with(True)
-    Numeric = Trait.from_str('numeric').initialize_with(True)
-    Floating = Trait.from_str('floating').initialize_with(True)
-    Integer = Trait.from_str('integer').initialize_with(True)
+    BitSize = Trait.from_str('bit_size')
+    Signed = Trait.from_str('signed').init_with(True)
     KeyType = Trait.from_str('key')
     ValueType = Trait.from_str('value')
     Parent = Trait.from_str('parent')
-    Field = Trait.from_str('field').initialize_with(True)
-    Struct = Trait.from_str('struct').initialize_with(True)
-    Enum = Trait.from_str('struct').initialize_with(True)
+    StructField = Trait.from_str('field').init_with(True)
+    Struct = Trait.from_str('struct').init_with(True)
+    Enum = Trait.from_str('struct').init_with(True)
     TypeRef = Trait.from_str('type_ref')
     Variant = Trait.from_str('variant')
     VariantName = Trait.from_str('variant_name')
 
+    # Types
+    Bool = Trait.from_str('bool').init_with(True)
+    Numeric = Trait.from_str('numeric').init_with(True)
+    Floating = Trait.from_str('floating').init_with(True)
+    Integer = Trait.from_str('integer').init_with(True)
+    String = Trait.from_str('string').init_with(True)
+    TupleField = Trait.from_str('tuple_field')
+    Tuple = Trait.from_str('tuple').init_with(True)
+    Vector = Trait.from_str('vector').init_with(True)
+    Map = Trait.from_str('map').init_with(True)
+    Unit = Trait.from_str('unit').init_with(True)
+
     # Format
     SimpleEnum = Trait.from_str('simple_enum')
-    StringWrapped = Trait.from_str('string_wrapped').initialize_with(True)
+    StringWrapped = Trait.from_str('string_wrapped').init_with(True)
     TsUnit = Trait.from_str('ts_unit')
 
     # SQL related
-    Primary = Trait.from_str('primary').initialize_with(True)
-    Nullable = Trait.from_str('nullable').initialize_with(True)
+    Primary = Trait.from_str('primary').init_with(True)
+    Nullable = Trait.from_str('nullable').init_with(True)
+
+    # Rust related
+    Reference = Trait.from_str('reference').init_with(True)
+    Mutable = Trait.from_str('mutable').init_with(True)
+    Lifetime = Trait.from_str('lifetime')
 
 
 class Type(BaseModel):
@@ -60,9 +74,29 @@ class Type(BaseModel):
     frozen: bool = False
 
     @beartype
-    def with_trait(self, trait: Trait) -> 'Type':
+    def append_trait(self, trait: Trait) -> 'Type':
         assert not self.frozen
         self.traits.append(trait)
+        return self
+
+    @beartype
+    def replace_trait(self, trait: Trait) -> 'Type':
+        assert not self.frozen
+        for i, t in enumerate(self.traits):
+            if t.name == trait.name:
+                self.traits[i] = trait
+                return self
+        self.traits.append(trait)
+        return self
+
+    @beartype
+    def remove_trait(self, trait: Trait) -> 'Type':
+        assert not self.frozen
+        new = []
+        for i, t in enumerate(self.traits):
+            if t.name != trait.name:
+                new.append(t)
+        self.traits = new
         return self
 
     def get_trait(self, name: Trait) -> Any:
@@ -76,22 +110,22 @@ class Type(BaseModel):
                 yield t.value
 
     @beartype
-    def with_parent(self, parent: 'Type') -> 'Type':
-        return self.with_trait(parent.as_parent())
+    def set_parent(self, parent: 'Type') -> 'Type':
+        return self.replace_trait(parent.as_parent())
 
     def as_parent(self) -> Trait:
-        return Traits.Parent.initialize_with(self)
+        return Traits.Parent.init_with(self)
 
     @staticmethod
     @beartype
     def from_str(name: str) -> 'Type':
-        return Type().with_trait(Traits.Name.initialize_with(name))
+        return Type().replace_trait(Traits.Name.init_with(name))
 
     def freeze(self) -> 'Type':
         self.frozen = True
         return self
 
-    def copy(self, *args, **kwargs):
+    def copy(self, *args, **kwargs) -> 'Type':
         kwargs['deep'] = True
         this = super().copy(*args, **kwargs)
         this.frozen = False
@@ -103,32 +137,32 @@ class Type(BaseModel):
 
 
 class Types:
-    Bool = Type.from_str('bool').freeze()
+    Bool = Type.from_str('bool').append_trait(Traits.Bool).freeze()
     I32 = (Type.from_str('i32')
-           .with_trait(Traits.Numeric)
-           .with_trait(Traits.Integer)
-           .with_trait(Traits.Size.initialize_with(64))
-           .with_trait(Traits.Signed)
+           .append_trait(Traits.Numeric)
+           .append_trait(Traits.Integer)
+           .append_trait(Traits.BitSize.init_with(64))
+           .append_trait(Traits.Signed)
            .freeze())
     I64 = (Type.from_str('i64')
-           .with_trait(Traits.Numeric)
-           .with_trait(Traits.Integer)
-           .with_trait(Traits.Size.initialize_with(64))
-           .with_trait(Traits.Signed)
+           .append_trait(Traits.Numeric)
+           .append_trait(Traits.Integer)
+           .append_trait(Traits.BitSize.init_with(64))
+           .append_trait(Traits.Signed)
            .freeze())
-    String = Type.from_str('string').freeze()
+    String = Type.from_str('string').append_trait(Traits.String).freeze()
     Float = (Type.from_str('f32')
-             .with_trait(Traits.Numeric)
-             .with_trait(Traits.Field)
-             .with_trait(Traits.Size.initialize_with(32))
-             .with_trait(Traits.Signed)
+             .append_trait(Traits.Numeric)
+             .append_trait(Traits.StructField)
+             .append_trait(Traits.BitSize.init_with(32))
+             .append_trait(Traits.Signed)
              .freeze())
 
     Double = (Type.from_str('f64')
-              .with_trait(Traits.Numeric)
-              .with_trait(Traits.Floating)
-              .with_trait(Traits.Size.initialize_with(64))
-              .with_trait(Traits.Signed)
+              .append_trait(Traits.Numeric)
+              .append_trait(Traits.Floating)
+              .append_trait(Traits.BitSize.init_with(64))
+              .append_trait(Traits.Signed)
               .freeze())
 
     Vector = Type.from_str('vector').freeze()
@@ -136,30 +170,30 @@ class Types:
     @staticmethod
     @beartype
     def field(name: str, ty: Type) -> Type:
-        return Type.from_str(name).with_trait(Traits.ValueType.initialize_with(ty))
+        return Type.from_str(name).append_trait(Traits.ValueType.init_with(ty))
 
     @staticmethod
     @beartype
     def variant(name: list[str]) -> Type:
         ty = Type.from_str(name[0])
         for n in name:
-            ty.with_trait(Traits.VariantName.initialize_with(n))
+            ty.append_trait(Traits.VariantName.init_with(n))
         return ty
 
     @staticmethod
     @beartype
     def struct(name: str, fields: list[Type]) -> Type:
-        ty = Type.from_str(name).with_trait(Traits.Struct)
+        ty = Type.from_str(name).append_trait(Traits.Struct)
         for f in fields:
-            ty.with_trait(Traits.Field.initialize_with(f))
+            ty.append_trait(Traits.StructField.init_with(f))
         return ty
 
     @staticmethod
     @beartype
     def enum(name: str, variants: list[Type]) -> Type:
-        ty = Type.from_str(name).with_trait(Traits.Enum)
+        ty = Type.from_str(name).append_trait(Traits.Enum)
         for f in variants:
-            ty.with_trait(Traits.Variant.initialize_with(f))
+            ty.append_trait(Traits.Variant.init_with(f))
         return ty
 
 
@@ -246,7 +280,7 @@ def detect_timestamp_unit(inputtext: Union[str, int, float]) -> str:
 
 
 def string_wrapped(t: Type) -> Type:
-    return t.copy().with_trait(Traits.StringWrapped)
+    return t.copy().replace_trait(Traits.StringWrapped)
 
 
 def prefix_join(prefix: str, name: str) -> str:
@@ -278,7 +312,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = ''
         ty = Types.I64
 
         if 'ts' in prefix or 'time' in prefix or 'at' in prefix:
-            ty = ty.copy().with_trait(Traits.TsUnit.initialize_with(detect_timestamp_unit(obj)))
+            ty = ty.copy().replace_trait(Traits.TsUnit.init_with(detect_timestamp_unit(obj)))
 
         return ty
     elif isinstance(obj, float):
@@ -287,7 +321,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = ''
         content = None
         if len(obj):
             content = parse_data_example(obj[0], prefix)
-        return Types.Vector.copy().with_trait(Traits.ValueType.initialize_with(content))
+        return Types.Vector.copy().replace_trait(Traits.ValueType.init_with(content))
     elif isinstance(obj, dict):
         fields = []
         for key, value in obj.items():
@@ -308,18 +342,18 @@ def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = ''
 def parse_type_definition(ty: str) -> Type:
     if ty.startswith('timestamp'):
         unit = ty.split('/')[1]
-        ty = Types.I64.copy().with_trait(Traits.TsUnit.initialize_with(unit))
+        ty = Types.I64.copy().replace_trait(Traits.TsUnit.init_with(unit))
         return ty
 
     if 'enum' in stringcase.snakecase(ty):
         ty_name = ty.split('/')[0]
         ty = Types.enum(ty_name, [])
-        ty.with_trait(Traits.TypeRef.initialize_with(ty_name))
+        ty.append_trait(Traits.TypeRef.init_with(ty_name))
         return ty
     else:
         ty_name = ty
         ty = Types.struct(ty_name, [])
-        ty.with_trait(Traits.TypeRef.initialize_with(ty_name))
+        ty.append_trait(Traits.TypeRef.init_with(ty_name))
         return ty
 
 
