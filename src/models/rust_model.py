@@ -369,7 +369,8 @@ def find_all_structs(s: Type) -> List[Type]:
 
 def sql_model_get_sql_ddl(struct: RustStruct) -> RustFunc:
     return RustFunc(name='get_sql_ddl', args=[],
-                    ret=Types.String.copy().append_trait(Traits.Reference).append_trait(Traits.Lifetime),
+                    ret=Types.String.copy().append_trait(Traits.Reference).append_trait(
+                        Traits.Lifetime.init_with('static')),
                     content=f'r#"{emit_schema_from_model(struct.raw)}"#')
 
 
@@ -402,7 +403,8 @@ def sql_model_field_names_in_format(struct: RustStruct) -> str:
     for field in struct.fields:
         if field.value.get_trait(Traits.SimpleEnum):
             fields.append("'{%s:?}'" % field.name)
-        elif field.value.get_trait(Traits.String) or field.value.get_trait(Traits.Enum) or field.value.get_trait(Traits.Struct):
+        elif field.value.get_trait(Traits.String) or field.value.get_trait(Traits.Enum) or field.value.get_trait(
+                Traits.Struct):
             fields.append("'{%s}'" % field.name)
         elif field.value.get_trait(Traits.TsUnit):
             fields.append('to_timestamp({%s})' % field.name)
@@ -448,7 +450,7 @@ def sql_model_get_values_sql(struct: RustStruct) -> RustFunc:
                     ret=Types.String,
                     content=
                     f'''format!(r#"{field_names_in_format}"#, 
-                   {','.join(['%s = %s' % (r_field.name, v) for (r_field, v) in 
+                   {','.join(['%s = %s' % (r_field.name, v) for (r_field, v) in
                               zip(struct.fields, values)])})'''
                     )
 
@@ -483,7 +485,8 @@ def from_sql_raw_func(struct: RustStruct) -> RustFunc:
 
 def from_sql_raw_trait(struct: RustStruct, writer: IndentedWriter):
     for s in struct.fields:
-        if s.value.get_trait(Traits.Enum) or s.value.get_trait(Traits.Struct) or (s.value.get_trait(Traits.Integer) and not s.value.get_trait(Traits.Signed)) \
+        if s.value.get_trait(Traits.Enum) or s.value.get_trait(Traits.Struct) or (
+                s.value.get_trait(Traits.Integer) and not s.value.get_trait(Traits.Signed)) \
                 or s.value.get_trait(Traits.TsUnit):
             print('Do not support', s.value, 'yet, skipping From<Row>', file=sys.stderr)
             return
@@ -496,7 +499,7 @@ def from_sql_raw_trait(struct: RustStruct, writer: IndentedWriter):
 
 def raw_data_func(raw: str) -> RustFunc:
     return RustFunc(name='get_raw_data', args=[], ret=Types.String.copy().append_trait(Traits.Reference).append_trait(
-                        Traits.Lifetime.init_with('static')),
+        Traits.Lifetime.init_with('static')),
                     content=f'r#"{raw}"#')
 
 
@@ -524,7 +527,8 @@ note: {root.note}
                 sql_model_trait(rust_struct, writer)
                 from_sql_raw_trait(rust_struct, writer)
             except Exception as e:
-                print('Error happened while generating sql_model_trait, skipping.', str(e), traceback.format_exc(), file=sys.stderr)
+                print('Error happened while generating sql_model_trait, skipping.', str(e), traceback.format_exc(),
+                      file=sys.stderr)
                 writer = backup
     elif parsed.get_trait(Traits.Enum):
         rust_enum = RustEnum(parsed)
