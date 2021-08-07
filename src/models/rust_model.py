@@ -1,4 +1,5 @@
 import sys
+import traceback
 from enum import Enum
 from typing import List
 
@@ -523,7 +524,7 @@ note: {root.note}
                 sql_model_trait(rust_struct, writer)
                 from_sql_raw_trait(rust_struct, writer)
             except Exception as e:
-                print('Error happened while generating sql_model_trait, skipping.', repr(e), file=sys.stderr)
+                print('Error happened while generating sql_model_trait, skipping.', str(e), traceback.format_exc(), file=sys.stderr)
                 writer = backup
     elif parsed.get_trait(Traits.Enum):
         rust_enum = RustEnum(parsed)

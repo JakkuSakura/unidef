@@ -138,10 +138,16 @@ class Type(BaseModel):
 
 class Types:
     Bool = Type.from_str('bool').append_trait(Traits.Bool).freeze()
+    I16 = (Type.from_str('i16')
+           .append_trait(Traits.Numeric)
+           .append_trait(Traits.Integer)
+           .append_trait(Traits.BitSize.init_with(16))
+           .append_trait(Traits.Signed)
+           .freeze())
     I32 = (Type.from_str('i32')
            .append_trait(Traits.Numeric)
            .append_trait(Traits.Integer)
-           .append_trait(Traits.BitSize.init_with(64))
+           .append_trait(Traits.BitSize.init_with(32))
            .append_trait(Traits.Signed)
            .freeze())
     I64 = (Type.from_str('i64')

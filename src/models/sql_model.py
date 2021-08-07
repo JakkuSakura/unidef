@@ -2,8 +2,8 @@ from models.type_model import Type, Traits
 
 
 def get_real(ty: Type) -> str:
-    assert ty.get_trait(Traits.Floating).value, True
-    bits = ty.get_trait(Traits.BitSize).value
+    assert ty.get_trait(Traits.Floating), True
+    bits = ty.get_trait(Traits.BitSize)
     if bits == 32:
         return 'float'
     elif bits == 64:
