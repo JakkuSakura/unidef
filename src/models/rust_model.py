@@ -364,11 +364,10 @@ class RustImpl(Formatee, BaseModel):
 def find_all_structs_impl(reg: StructRegistry, s: Type):
     if s.get_trait(Traits.Struct):
         reg.add_struct(s)
-        return
-    raise NotImplementedError()
-    # if isinstance(s, type_model.GenericType):
-    #     for field in s.get_generics():
-    #         find_all_structs_impl(reg, field)
+        for field in s.get_traits(Traits.StructField):
+            find_all_structs_impl(reg, field)
+    elif s.get_trait(Traits.ValueType):
+        find_all_structs_impl(reg, s.get_trait(Traits.ValueType))
 
 
 def find_all_structs(s: Type) -> List[Type]:

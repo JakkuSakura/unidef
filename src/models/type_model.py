@@ -333,13 +333,15 @@ def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = ''
         for key, value in obj.items():
             value = parse_data_example(value, key)
             if value.get_trait(Traits.Struct):
-                for name in value.traits:
-                    if name.name == Traits.Name.name:
-                        name.value = prefix_join(prefix, key)
+                value.replace_trait(Traits.Name.init_with(prefix_join(prefix, key)))
+
             for val in value.traits:
                 if val.name == Traits.ValueType.name:
                     if val.value.get_trait(Traits.Struct):
-                        val.value.replace_trait(Traits.Name.init_with(prefix_join(prefix, key) + 's'))
+                        new_name = prefix_join(prefix, key)
+                        if new_name.endswith('s'):
+                            new_name = new_name[:-1]
+                        val.value.replace_trait(Traits.Name.init_with(new_name))
 
             fields.append(Types.field(key, value))
         return Types.struct('struct_' + str(random.randint(0, 1000)), fields)
