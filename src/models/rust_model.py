@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List
 
 import stringcase
+from beartype import beartype
 from pydantic import BaseModel
 
 from formatter import IndentedWriter, Formatee, Function, Braces, Text
@@ -89,7 +90,7 @@ def map_type_to_rust(ty: Type) -> str:
     if ty.get_trait(Traits.Struct):
         return RustStruct.parse_name(ty.get_trait(Traits.Name))
     elif ty.get_trait(Traits.Enum):
-        return RustEnum.parse_name(ty.get_trait(Traits.Name))
+        return RustEnum.parse_variant_name(ty.get_trait(Traits.TypeRef))
     elif ty.get_trait(Traits.Tuple):
         return '({})'.format(', '.join([map_type_to_rust(t) for t in ty.get_traits(Traits.TupleField)]))
     elif ty.get_trait(Traits.Vector):
@@ -230,7 +231,8 @@ class RustStruct(Formatee, BaseModel):
     raw: Type = None
 
     @staticmethod
-    def parse_name(name):
+    @beartype
+    def parse_name(name: str):
         return stringcase.pascalcase(name)
 
     def __init__(self, raw: Type = None, **kwargs):
@@ -269,8 +271,11 @@ class RustEnum(Formatee, BaseModel):
     raw: Type = None
 
     @staticmethod
-    def parse_name(name):
-        return stringcase.pascalcase(name)
+    def parse_variant_name(name: str):
+        if name.isupper():
+            return name
+        else:
+            return stringcase.pascalcase(name)
 
     def __init__(self, raw: Type = None, **kwargs):
         if raw:
@@ -278,7 +283,7 @@ class RustEnum(Formatee, BaseModel):
 
             kwargs.update({
                 'raw': raw,
-                'name': RustStruct.parse_name(raw.get_traits(Traits.Name)),
+                'name': RustStruct.parse_name(raw.get_trait(Traits.Name)),
                 'variants': list(raw.get_traits(Traits.Variant)),
                 'annotations': annotations
             })

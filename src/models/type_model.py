@@ -33,7 +33,7 @@ class Traits:
     Parent = Trait.from_str('parent')
     StructField = Trait.from_str('field').init_with(True)
     Struct = Trait.from_str('struct').init_with(True)
-    Enum = Trait.from_str('struct').init_with(True)
+    Enum = Trait.from_str('enum').init_with(True)
     TypeRef = Trait.from_str('type_ref')
     Variant = Trait.from_str('variant')
     VariantName = Trait.from_str('variant_name')
