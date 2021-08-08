@@ -25,7 +25,7 @@ class ModelExample(BaseModel):
             parsed = parse_data_example(dict(pyhocon.ConfigParser.parse(self.text)), name)
 
         if parsed.get_trait(Traits.Struct) and name:
-            parsed.get_trait(Traits.Name).value = name
+            parsed.replace_trait(Traits.Name.init_with(name))
         return parsed
 
 

@@ -26,7 +26,7 @@ def get_integer(ty: Type) -> str:
         raise NotImplementedError()
 
 
-def type_mapping(ty: Type) -> str:
+def map_type_to_ddl(ty: Type) -> str:
     assert ty is not None
     if ty.get_trait(Traits.Floating):
         return get_real(ty)
@@ -55,7 +55,7 @@ def type_mapping(ty: Type) -> str:
 
 
 def get_field(field: Type) -> str:
-    base = field.get_trait(Traits.Name) + ' ' + type_mapping(field)
+    base = field.get_trait(Traits.Name) + ' ' + map_type_to_ddl(field.get_trait(Traits.ValueType) or field)
     if field.get_trait(Traits.Primary):
         base += ' primary key'
 

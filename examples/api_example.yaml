@@ -1,5 +1,22 @@
 ---
 type: private-api
+name: HuobiSpotPlaceOrderRequest
+url: POST /v1/order/orders/place
+ref: https://huobiapi.github.io/docs/spot/v1/cn/#fd6ce2a756
+example:
+  format: JSON
+  text: |
+    {
+      "account-id": "100009",
+      "amount": "10.1",
+      "price": "100.1",
+      "source": "api",
+      "symbol": "ethusdt",
+      "type": "buy-limit",
+      "client-order-id": "a0001"
+    }
+---
+type: private-api
 name: BinanceUserDataV2
 url: GET /fapi/v2/account
 ref: https://binance-docs.github.io/apidocs/futures/cn/#v2-user_data
@@ -74,4 +91,5 @@ example:
             }
         ]
     }
+
 ---

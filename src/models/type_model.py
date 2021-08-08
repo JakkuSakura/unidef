@@ -159,7 +159,7 @@ class Types:
     String = Type.from_str('string').append_trait(Traits.String).freeze()
     Float = (Type.from_str('f32')
              .append_trait(Traits.Numeric)
-             .append_trait(Traits.StructField)
+             .append_trait(Traits.Floating)
              .append_trait(Traits.BitSize.init_with(32))
              .append_trait(Traits.Signed)
              .freeze())
@@ -171,7 +171,7 @@ class Types:
               .append_trait(Traits.Signed)
               .freeze())
 
-    Vector = Type.from_str('vector').freeze()
+    Vector = Type.from_str('vector').append_trait(Traits.Vector).freeze()
 
     @staticmethod
     @beartype
@@ -301,7 +301,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = ''
         if '.' in obj:
             try:
                 float(obj)
-                return string_wrapped(Types.Float)
+                return string_wrapped(Types.Double)
             except:
                 pass
         try:
@@ -339,7 +339,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = ''
             for val in value.traits:
                 if val.name == Traits.ValueType.name:
                     if val.value.get_trait(Traits.Struct):
-                        val.value.get_trait(Traits.Name).value = prefix_join(prefix, key) + 's'
+                        val.value.replace_trait(Traits.Name.init_with(prefix_join(prefix, key) + 's'))
 
             fields.append(Types.field(key, value))
         return Types.struct('struct_' + str(random.randint(0, 1000)), fields)

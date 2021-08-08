@@ -75,11 +75,13 @@ class AccessModifier(Enum):
     PUBLIC = 'pub '
 
 
-def map_type_to_str(ty: Type) -> str:
+def map_type_to_rust(ty: Type) -> str:
+    # if ty.get_trait(Traits.ValueType):
+    #     return map_type_to_str(ty.get_trait(Traits.ValueType))
     if ty.get_trait(Traits.Nullable):
         ty = ty.copy()
         ty.remove_trait(Traits.Nullable)
-        return 'Option<{}>'.format(map_type_to_str(ty))
+        return 'Option<{}>'.format(map_type_to_rust(ty))
 
     if ty.get_trait(Traits.TsUnit):
         return 'TimeStamp' + stringcase.pascalcase(ty.get_trait(Traits.TsUnit))
@@ -89,9 +91,9 @@ def map_type_to_str(ty: Type) -> str:
     elif ty.get_trait(Traits.Enum):
         return RustEnum.parse_name(ty.get_trait(Traits.Name))
     elif ty.get_trait(Traits.Tuple):
-        return '({})'.format(', '.join([map_type_to_str(t) for t in ty.get_traits(Traits.TupleField)]))
+        return '({})'.format(', '.join([map_type_to_rust(t) for t in ty.get_traits(Traits.TupleField)]))
     elif ty.get_trait(Traits.Vector):
-        return 'Vec<{}>'.format(map_type_to_str(ty.get_trait(Traits.ValueType)))
+        return 'Vec<{}>'.format(map_type_to_rust(ty.get_trait(Traits.ValueType)))
     elif ty.get_trait(Traits.Bool):
         return 'bool'
     elif ty.get_trait(Traits.Integer):
@@ -105,8 +107,8 @@ def map_type_to_str(ty: Type) -> str:
         bits = ty.get_trait(Traits.BitSize)
         return 'f' + str(bits)
     elif ty.get_trait(Traits.Map):
-        return 'HashMap<{}, {}>'.format(map_type_to_str(ty.get_trait(Traits.KeyType)),
-                                        map_type_to_str(ty.get_trait(Traits.ValueType)))
+        return 'HashMap<{}, {}>'.format(map_type_to_rust(ty.get_trait(Traits.KeyType)),
+                                        map_type_to_rust(ty.get_trait(Traits.ValueType)))
     elif ty.get_trait(Traits.String):
         if ty.get_trait(Traits.Reference):
             lifetime = ty.get_trait(Traits.Lifetime)
@@ -163,9 +165,10 @@ RUST_KEYWORDS = {
 
 
 def map_field_name(name: str) -> str:
-    if not name[0].isalpha() and name[0] != '_':
+    if name[0].isnumeric() and name[0] != '_':
         return '_' + name
-    return RUST_KEYWORDS.get(name) or name
+
+    return RUST_KEYWORDS.get(name) or stringcase.snakecase(name)
 
 
 class RustField(Formatee, BaseModel):
@@ -177,14 +180,16 @@ class RustField(Formatee, BaseModel):
 
     @staticmethod
     def from_name(name: str, ty: str = ''):
-        return RustField(name=name, value=Type.from_str(ty or name).append_trait(Traits.TypeRef.init_with(ty or name)))
+        name = map_field_name(name)
+        ty_or_name = ty or name
+        return RustField(name=name, value=Type.from_str(ty_or_name).append_trait(Traits.TypeRef.init_with(ty_or_name)))
 
     def __init__(self, ty: Type = None, **kwargs):
         if ty:
             kwargs.update({
                 'name': map_field_name(ty.get_trait(Traits.Name)),
                 'original_name': ty.get_trait(Traits.Name),
-                'value': ty,
+                'value': ty.get_trait(Traits.ValueType) or ty,
                 'val_in_str': ty.get_trait(Traits.StringWrapped) or False
             })
 
@@ -197,7 +202,7 @@ class RustField(Formatee, BaseModel):
             # or self.original_name == self.name and len(self.name) < 3: # For binance's convenience
 
             Serde(rename=[self.original_name]).format_with(writer)
-        writer.append_line(f'{self.access.value}{self.name}: {map_type_to_str(self.value)},')
+        writer.append_line(f'{self.access.value}{self.name}: {map_type_to_rust(self.value)},')
 
 
 class RustComment(Formatee, BaseModel):
@@ -324,10 +329,10 @@ class RustFunc(Formatee, BaseModel):
                 if arg.value.get_trait(Traits.TypeRef) and 'self' in arg.value.get_trait(Traits.Name):
                     writer1.append(arg.name + ', ')
                 else:
-                    writer1.append(arg.name + ': ' + map_type_to_str(arg.value) + ', ')
+                    writer1.append(arg.name + ': ' + map_type_to_rust(arg.value) + ', ')
 
         Braces(Function(for_arg), open='(', close=')', new_line=False).format_with(writer)
-        writer.append(' -> ' + map_type_to_str(self.ret) + ' ')
+        writer.append(' -> ' + map_type_to_rust(self.ret) + ' ')
         Braces(Text(self.content)).format_with(writer)
 
 

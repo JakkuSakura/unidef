@@ -34,3 +34,64 @@ variants:
   - name: BCH BCHABC
   - name: BSV BCHSV
   - name: 1INCH
+---
+type: export
+name: order_export
+fields:
+  - name: exchange
+    type: string
+
+  - name: account_id
+    type: i64
+
+  - name: instrument
+    type: string
+
+  - name: status
+    type: string
+
+  - name: side
+    type: string
+
+  - name: open_or_close
+    type: string
+
+  - name: order_type
+    type: string
+
+  - name: price
+    type: f64
+
+  - name: size_n
+    type: f64
+  - name: size_b
+    type: f64
+  - name: size_r
+    type: f64
+  - name: size_q
+    type: f64
+
+
+  - name: local_id
+    type: string
+  - name: server_id
+    type: string
+  - name: client_id
+    type: string
+
+  - name: filled_size_n
+    type: f64
+  - name: filled_size_b
+    type: f64
+  - name: filled_size_r
+    type: f64
+  - name: filled_size_q
+    type: f64
+
+  - name: average_filled_price
+    type: f64
+
+  - name: open_t
+    type: timestamp/ns
+  - name: close_t
+    type: timestamp/ns
