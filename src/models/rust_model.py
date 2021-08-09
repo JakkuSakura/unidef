@@ -187,11 +187,13 @@ class RustField(Formatee, BaseModel):
 
     def __init__(self, ty: Type = None, **kwargs):
         if ty:
+            value = ty.get_trait(Traits.ValueType)
+            assert value is not None
             kwargs.update({
                 'name': map_field_name(ty.get_trait(Traits.Name)),
                 'original_name': ty.get_trait(Traits.Name),
-                'value': ty.get_trait(Traits.ValueType) or ty,
-                'val_in_str': ty.get_trait(Traits.StringWrapped) or False
+                'value': value,
+                'val_in_str': value.get_trait(Traits.StringWrapped) or False
             })
 
         super().__init__(**kwargs)
