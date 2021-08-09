@@ -240,8 +240,6 @@ class RustStruct(Formatee, BaseModel):
     def __init__(self, raw: Type = None, **kwargs):
         if raw:
             annotations = [DEFAULT_DERIVE]
-            if next((True for f in raw.get_traits(Traits.StructField) if f.get_trait(Traits.StringWrapped)), False):
-                annotations.insert(0, SERDE_AS)
 
             kwargs.update({
                 'raw': raw,
@@ -251,6 +249,10 @@ class RustStruct(Formatee, BaseModel):
             })
 
         super().__init__(**kwargs)
+        for field in self.fields:
+            if field.val_in_str:
+                self.annotations.insert(0, SERDE_AS)
+                break
 
     def format_with(self, writer: IndentedWriter):
         for anno in self.annotations:
