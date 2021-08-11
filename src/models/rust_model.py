@@ -390,8 +390,8 @@ def sql_model_get_sql_ddl(struct: RustStruct) -> RustFunc:
 
 def sql_model_get_value_inner(f: RustField) -> str:
     if f.value.get_trait(Traits.Nullable):
-        # TODO: not complete
-        return 'self.{}.map(|x| x.to_string()).unwrap_or("NULL".to_owned())'.format(f.name)
+        # TODO: nullable value not complete
+        return 'self.{}.as_ref().map(|x| x.to_string()).unwrap_or("NULL".to_owned())'.format(f.name)
     elif f.value.get_trait(Traits.Enum):
         if f.value.get_trait(Traits.SimpleEnum):
             return 'self.{}'.format(f.name)
