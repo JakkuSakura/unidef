@@ -328,7 +328,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: st
         prefix = stringcase.snakecase(prefix)
         ty = Types.I64
 
-        if 'ts' in prefix or 'time' in prefix:  # or 'at' in prefix:
+        if 'ts' in prefix or 'time' in prefix or '_at' in prefix:
             ty = ty.copy().replace_trait(Traits.TsUnit.init_with(detect_timestamp_unit(obj)))
 
         return ty
