@@ -49,6 +49,7 @@ class Traits:
     Vector = Trait.from_str('vector').init_with(True)
     Map = Trait.from_str('map').init_with(True)
     Unit = Trait.from_str('unit').init_with(True)
+    Null = Trait.from_str('null').init_with(True)
 
     # Format
     SimpleEnum = Trait.from_str('simple_enum')
@@ -173,6 +174,8 @@ class Types:
 
     Vector = Type.from_str('vector').append_trait(Traits.Vector).freeze()
 
+    NoneType = Type.from_str('none').append_trait(Traits.Nullable).append_trait(Traits.Null).freeze()
+
     @staticmethod
     @beartype
     def field(name: str, ty: Type) -> Type:
@@ -296,7 +299,15 @@ def prefix_join(prefix: str, name: str) -> str:
         return name
 
 
-def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = '') -> Type:
+class CouldNotParseDataExample(Exception):
+    pass
+
+
+@beartype
+def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: str = '') -> Type:
+    if obj is None:
+        return Types.NoneType
+
     if isinstance(obj, str):
         if '.' in obj:
             try:
@@ -345,6 +356,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list], prefix: str = ''
 
             fields.append(Types.field(key, value))
         return Types.struct('struct_' + str(random.randint(0, 1000)), fields)
+    raise CouldNotParseDataExample(str(obj))
 
 
 def parse_type_definition(ty: str) -> Type:

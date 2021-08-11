@@ -13,7 +13,8 @@ example:
       "source": "api",
       "symbol": "ethusdt",
       "type": "buy-limit",
-      "client-order-id": "a0001"
+      "client-order-id": "a0001",
+      "test_null": null
     }
 ---
 type: private-api

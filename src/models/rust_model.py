@@ -83,11 +83,11 @@ def map_type_to_rust(ty: Type) -> str:
         ty = ty.copy()
         ty.remove_trait(Traits.Nullable)
         return 'Option<{}>'.format(map_type_to_rust(ty))
-
-    if ty.get_trait(Traits.TsUnit):
+    if ty.get_trait(Traits.Null):
+        return 'String'
+    elif ty.get_trait(Traits.TsUnit):
         return 'TimeStamp' + stringcase.pascalcase(ty.get_trait(Traits.TsUnit))
-
-    if ty.get_trait(Traits.Struct):
+    elif ty.get_trait(Traits.Struct):
         return RustStruct.parse_name(ty.get_trait(Traits.Name))
     elif ty.get_trait(Traits.Enum):
         return RustEnum.parse_variant_name(ty.get_trait(Traits.TypeRef))
@@ -120,6 +120,7 @@ def map_type_to_rust(ty: Type) -> str:
         return '()'
     elif ty.get_trait(Traits.TypeRef):
         return ty.get_trait(Traits.TypeRef)
+
     raise Exception("Cannot map type {} to str".format(ty))
 
 
