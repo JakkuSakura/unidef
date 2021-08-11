@@ -39,7 +39,7 @@ def map_type_to_ddl(ty: Type) -> str:
     if ty.get_trait(Traits.Integer):
         return get_integer(ty)
 
-    if ty.get_trait(Traits.String):
+    if ty.get_trait(Traits.String) or ty.get_trait(Traits.Null):
         return 'text'
 
     if ty.get_trait(Traits.Bool):
