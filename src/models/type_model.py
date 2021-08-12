@@ -261,7 +261,7 @@ class TypeRegistry(BaseModel):
 
 
 def to_second_scale(s: str) -> float:
-    if s == 's':
+    if s == 'sec' or s == 's':
         return 1.0
     elif s == 'ms':
         return 1e-3
@@ -274,7 +274,8 @@ def to_second_scale(s: str) -> float:
 
 def detect_timestamp_unit(inputtext: Union[str, int, float]) -> str:
     inputtext = float(inputtext)
-
+    if abs(inputtext) < 1:
+        return 'ms'
     if 10E7 <= inputtext < 18E7:
         raise Exception('Expected a more recent date? You are missing 1 digit.')
 
@@ -285,7 +286,7 @@ def detect_timestamp_unit(inputtext: Union[str, int, float]) -> str:
     elif inputtext >= 1E11 or inputtext <= -3E10:
         return 'ms'
     else:
-        return 's'
+        return 'sec'
 
 
 def string_wrapped(t: Type) -> Type:
@@ -326,9 +327,10 @@ def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: st
         return Types.Bool
     elif isinstance(obj, int):
         prefix = stringcase.snakecase(prefix)
-        ty = Types.I64
 
-        if 'ts' in prefix or 'time' in prefix or '_at' in prefix:
+        ty = Types.I64
+        # TODO:
+        if '_ts' in prefix or 'time' in prefix or '_at' in prefix:
             ty = ty.copy().replace_trait(Traits.TsUnit.init_with(detect_timestamp_unit(obj)))
 
         return ty
