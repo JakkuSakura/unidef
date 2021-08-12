@@ -137,40 +137,48 @@ class Type(BaseModel):
         return super().dict(**kwargs)
 
 
+def build_int(name: str) -> Type:
+    ty = Type.from_str(name)
+
+    ty.append_trait(Traits.Numeric)
+    ty.append_trait(Traits.Integer)
+    ty.append_trait(Traits.BitSize.init_with(int(name[1:])))
+
+    if name.startswith('i'):
+        ty.append_trait(Traits.Signed)
+    else:
+        ty.append_trait(Traits.Signed.init_with(False))
+
+    return ty
+
+
+def build_float(name: str) -> Type:
+    return (Type.from_str(name)
+            .append_trait(Traits.Numeric)
+            .append_trait(Traits.Floating)
+            .append_trait(Traits.BitSize.init_with(int(name[1:])))
+            .append_trait(Traits.Signed))
+
+
 class Types:
     Bool = Type.from_str('bool').append_trait(Traits.Bool).freeze()
-    I16 = (Type.from_str('i16')
-           .append_trait(Traits.Numeric)
-           .append_trait(Traits.Integer)
-           .append_trait(Traits.BitSize.init_with(16))
-           .append_trait(Traits.Signed)
-           .freeze())
-    I32 = (Type.from_str('i32')
-           .append_trait(Traits.Numeric)
-           .append_trait(Traits.Integer)
-           .append_trait(Traits.BitSize.init_with(32))
-           .append_trait(Traits.Signed)
-           .freeze())
-    I64 = (Type.from_str('i64')
-           .append_trait(Traits.Numeric)
-           .append_trait(Traits.Integer)
-           .append_trait(Traits.BitSize.init_with(64))
-           .append_trait(Traits.Signed)
-           .freeze())
-    String = Type.from_str('string').append_trait(Traits.String).freeze()
-    Float = (Type.from_str('f32')
-             .append_trait(Traits.Numeric)
-             .append_trait(Traits.Floating)
-             .append_trait(Traits.BitSize.init_with(32))
-             .append_trait(Traits.Signed)
-             .freeze())
 
-    Double = (Type.from_str('f64')
-              .append_trait(Traits.Numeric)
-              .append_trait(Traits.Floating)
-              .append_trait(Traits.BitSize.init_with(64))
-              .append_trait(Traits.Signed)
-              .freeze())
+    I8 = build_int('i8').freeze()
+    I16 = build_int('i16').freeze()
+    I32 = build_int('i32').freeze()
+    I64 = build_int('i64').freeze()
+    I128 = build_int('i128').freeze()
+
+    U8 = build_int('u8').freeze()
+    U16 = build_int('u16').freeze()
+    U32 = build_int('u32').freeze()
+    U64 = build_int('u64').freeze()
+    U128 = build_int('u128').freeze()
+
+    String = Type.from_str('string').append_trait(Traits.String).freeze()
+    Float = build_float('f32').freeze()
+
+    Double = build_float('f64').freeze()
 
     Vector = Type.from_str('vector').append_trait(Traits.Vector).freeze()
 
@@ -218,7 +226,7 @@ class TypeRegistry(BaseModel):
     types: dict[str, Type] = {}
     traits: dict[str, Trait] = {}
     type_detector: list = []
-
+    @beartype
     def insert_type(self, ty: Type):
         name = ty.get_trait(Traits.Name)
         assert ty.frozen, 'type should be frozen ' + name
@@ -227,12 +235,14 @@ class TypeRegistry(BaseModel):
         elif self.types[name] != ty:
             raise TypeAlreadyExistsAndConflict(name)
 
+    @beartype
     def insert_trait(self, trait: Trait):
         if trait.name not in self.traits:
             self.traits[trait.name] = trait
         elif self.traits[trait.name] != trait:
             raise TraitAlreadyExistsAndConflict(trait.name)
 
+    @beartype
     def get_type(self, name: str) -> Optional[Type]:
         val = self.types.get(name)
         if val:
@@ -242,9 +252,11 @@ class TypeRegistry(BaseModel):
             if val:
                 return val
 
+    @beartype
     def get_trait(self, name: str) -> Optional[Trait]:
         return self.traits.get(name)
 
+    @beartype
     def is_subclass(self, child: Type, parent: Type) -> bool:
         assert isinstance(child, Type)
         assert isinstance(parent, Type)
@@ -253,13 +265,16 @@ class TypeRegistry(BaseModel):
         p = child.get_trait(Traits.Parent).value
         return self.is_subclass(p, parent)
 
+    @beartype
     def list_types(self) -> list[Type]:
         return self.types.values()
 
+    @beartype
     def list_traits(self) -> list[Trait]:
         return self.traits.values()
 
 
+@beartype
 def to_second_scale(s: str) -> float:
     if s == 'sec' or s == 's':
         return 1.0
@@ -329,7 +344,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: st
         prefix = stringcase.snakecase(prefix)
 
         ty = Types.I64
-        # TODO:
+        # TODO: detect words in the field name without prefix
         if '_ts' in prefix or 'time' in prefix or '_at' in prefix:
             ty = ty.copy().replace_trait(Traits.TsUnit.init_with(detect_timestamp_unit(obj)))
 

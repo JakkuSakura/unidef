@@ -88,7 +88,10 @@ def map_type_to_rust(ty: Type) -> str:
     elif ty.get_trait(Traits.TsUnit):
         return 'TimeStamp' + stringcase.pascalcase(ty.get_trait(Traits.TsUnit))
     elif ty.get_trait(Traits.Struct):
-        return RustStruct.parse_name(ty.get_trait(Traits.Name))
+        if ty.get_trait(Traits.TypeRef):
+            return ty.get_trait(Traits.TypeRef)
+        else:
+            return RustStruct.parse_name(ty.get_trait(Traits.Name))
     elif ty.get_trait(Traits.Enum):
         return RustEnum.parse_variant_name(ty.get_trait(Traits.TypeRef))
     elif ty.get_trait(Traits.Tuple):

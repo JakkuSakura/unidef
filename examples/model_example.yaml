@@ -4,7 +4,7 @@ name: model
 note: This is a example
 fields:
   - name: id_ts
-    type: i64
+    type: i128
     primary: true
 
   - name: query
