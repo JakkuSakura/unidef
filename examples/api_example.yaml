@@ -1,3 +1,53 @@
+type: private-api
+name: HuobiSwapAccountPositionResponse
+example:
+  format: JSON
+  text: |
+    {
+        "status":"ok",
+        "data":{
+            "positions":[
+                {
+                }
+            ],
+            "margin_mode":"cross",
+            "margin_account":"USDT",
+            "margin_asset":"USDT",
+            "margin_balance":999.488009549410817836,
+            "margin_static":999.488009549410817836,
+            "margin_position":10.33582,
+            "margin_frozen":0,
+            "profit_real":-0.511991,
+            "profit_unreal":0,
+            "withdraw_available":989.152189549410817836,
+            "risk_rate":176.349367815895629991,
+            "contract_detail":[
+                {
+                    "symbol":"BTC",
+                    "contract_code":"BTC-USDT",
+                    "margin_position":10.23582,
+                    "margin_frozen":0,
+                    "margin_available":989.152189549410817836,
+                    "profit_unreal":0,
+                    "liquidation_price":100599.901021850363890402,
+                    "lever_rate":100,
+                    "adjust_factor":0.55
+                },
+                {
+                    "symbol":"ETH",
+                    "contract_code":"ETH-USDT",
+                    "margin_position":0.1,
+                    "margin_frozen":0,
+                    "margin_available":989.152189549410817836,
+                    "profit_unreal":0,
+                    "liquidation_price":98256.749856661148007509,
+                    "lever_rate":5,
+                    "adjust_factor":0.06
+                }
+            ]
+        },
+        "ts":1606965138763
+    }
 ---
 type: private-api
 name: HuobiSpotPlaceOrderRequest

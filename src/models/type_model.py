@@ -342,17 +342,16 @@ def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: st
     elif isinstance(obj, dict):
         fields = []
         for key, value in obj.items():
-            value = parse_data_example(value, key)
+            value = parse_data_example(value, prefix_join(prefix, key))
             if value.get_trait(Traits.Struct):
                 value.replace_trait(Traits.Name.init_with(prefix_join(prefix, key)))
 
-            for val in value.traits:
-                if val.name == Traits.ValueType.name:
-                    if val.value.get_trait(Traits.Struct):
-                        new_name = prefix_join(prefix, key)
-                        if new_name.endswith('s'):
-                            new_name = new_name[:-1]
-                        val.value.replace_trait(Traits.Name.init_with(new_name))
+            for val in value.get_traits(Traits.ValueType):
+                if val.get_trait(Traits.Struct):
+                    new_name = prefix_join(prefix, key)
+                    if new_name.endswith('s'):
+                        new_name = new_name[:-1]
+                    val.replace_trait(Traits.Name.init_with(new_name))
 
             fields.append(Types.field(key, value))
         return Types.struct('struct_' + str(random.randint(0, 1000)), fields)
