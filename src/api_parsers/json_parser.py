@@ -6,10 +6,10 @@ from api_parsers.api_parser import ApiParser
 
 class JsonParser(ApiParser):
 
-    def accept(self, s: str) -> bool:
-        return s.lower() == 'json'
+    def accept(self, fmt: str) -> bool:
+        return fmt.lower() == 'json'
 
-    def parse(self, name: str, content: str) -> Type:
+    def parse(self, fmt: str, name: str, content: str) -> Type:
         content = unicodedata.normalize('NFKC', content)
         parsed = parse_data_example(dict(pyhocon.ConfigParser.parse(content)), name)
 

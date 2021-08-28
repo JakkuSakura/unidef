@@ -16,7 +16,7 @@ class ModelExample(BaseModel):
         parser = API_FORMAT_REGISTRY.find_parser(self.format)
         if parser is None:
             raise Exception(f'Could not recognize format {self.format} for {name}')
-        return parser.parse(name, self.text)
+        return parser.parse(self.format, name, self.text)
 
 
 class InvalidArgumentException(Exception):
@@ -33,7 +33,6 @@ class ModelDefinition(BaseModel):
     example: Optional[ModelExample] = None
     fields: Optional[List[Dict[str, Any]]] = None
     variants: Optional[List[Dict[str, Any]]] = None
-    fix_fields: Optional[List[Dict[str, Any]]] = None
 
     def get_parsed(self) -> Type:
         if self.example:
@@ -67,8 +66,6 @@ class ModelDefinition(BaseModel):
             for var in self.variants:
                 variants.append(Types.variant(var['name'].split()))
             return Types.enum(self.name, variants)
-        if self.fix_fields:
-            raise NotImplementedError()
 
 
 def read_model_definition(content: Union[str, IOBase]) -> List[ModelDefinition]:

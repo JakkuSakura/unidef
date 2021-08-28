@@ -3,6 +3,8 @@ from models.type_model import Type
 from typing import Optional
 from api_parsers.api_parser import ApiParser
 from api_parsers.json_parser import JsonParser
+from api_parsers.fix_parser import FixParser
+
 
 class ApiFormatRegistry:
     def __init__(self):
@@ -20,3 +22,4 @@ class ApiFormatRegistry:
 API_FORMAT_REGISTRY = ApiFormatRegistry()
 
 API_FORMAT_REGISTRY.add_api_parser(JsonParser())
+API_FORMAT_REGISTRY.add_api_parser(FixParser())

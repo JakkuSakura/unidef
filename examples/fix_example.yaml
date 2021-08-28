@@ -6,9 +6,8 @@ note: |
   35	MsgType	8	Message type
   49	SenderCompID	zyfvB4QPg0A3kkVgqUE9V1fOA-Y6jhdG3seqIIZx	Client API key (for messages from the client)
   56	TargetCompID	FTX	Must be set to "FTX" (for messages from the client)
-fix_fields:
-  - name: BeginString
-  - name: BodyLength
-  - name: MsgType
-  - name: SenderCompID
-  - name: TargetCompID
+example:
+  format: FIX42
+  text: |
+    8=FIX.4.2|9=273|35=8|49=FTX|56=u37_cg4KN3R8eZGuF1N--RYXrMXRbBWAqF_l0ojq|34=3|52=20210828-04:14:00.738|150=0|17=2f6eae81-96ba-43fe-8c3b-c01c08661b31|60=20210828-04:14:00.733|37=74562787927|11=I5J42MYRJGBYPP3JQ2QEXQCFZEaaaaaa|55=BTC/USDT|38=0.0002|44=49175.0|54=2|39=0|14=0.0|151=0.0002|6=0|10=101|
+
