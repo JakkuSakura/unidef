@@ -1,7 +1,7 @@
 import unicodedata
 import pyhocon
 from models.type_model import *
-from api_parsers.api_parser import ApiParser
+from api_parsers import ApiParser
 
 
 class JsonParser(ApiParser):

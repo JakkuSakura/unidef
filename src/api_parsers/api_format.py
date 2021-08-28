@@ -1,7 +1,7 @@
 from beartype import beartype
 from models.type_model import Type
 from typing import Optional
-from api_parsers.api_parser import ApiParser
+from api_parsers import ApiParser
 from api_parsers.json_parser import JsonParser
 from api_parsers.fix_parser import FixParser
 

@@ -1,7 +1,5 @@
-import stringcase
-
 from models.type_model import Type, Traits
-
+from utils.name_convert import *
 
 def get_real(ty: Type) -> str:
     assert ty.get_trait(Traits.Floating), True
@@ -57,7 +55,7 @@ def map_type_to_ddl(ty: Type) -> str:
 
 
 def get_field(field: Type) -> str:
-    base = stringcase.snakecase(field.get_trait(Traits.Name)) + ' ' + map_type_to_ddl(
+    base = to_snake_case(field.get_trait(Traits.Name)) + ' ' + map_type_to_ddl(
         field.get_trait(Traits.ValueType) or field)
     if field.get_trait(Traits.Primary):
         base += ' primary key'

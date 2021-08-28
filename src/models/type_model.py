@@ -1,9 +1,9 @@
 import random
 from typing import Any, Union, Optional, Iterator
 
-import stringcase
 from beartype import beartype
 from pydantic import BaseModel
+from utils.name_convert import *
 
 
 class Trait(BaseModel):
@@ -341,7 +341,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: st
     elif isinstance(obj, bool):
         return Types.Bool
     elif isinstance(obj, int):
-        prefix = stringcase.snakecase(prefix)
+        prefix = to_snake_case(prefix)
 
         ty = Types.I64
         # TODO: detect words in the field name without prefix
@@ -381,7 +381,7 @@ def parse_type_definition(ty: str) -> Type:
         ty = Types.I64.copy().replace_trait(Traits.TsUnit.init_with(unit))
         return ty
 
-    if 'enum' in stringcase.snakecase(ty):
+    if 'enum' in to_snake_case(ty):
         ty_name = ty.split('/')[0]
         ty = Types.enum(ty_name, [])
         ty.append_trait(Traits.TypeRef.init_with(ty_name))

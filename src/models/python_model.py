@@ -1,6 +1,5 @@
 from typing import List
 
-import stringcase
 from pydantic import BaseModel
 
 from formatter import IndentedWriter, Formatee, Function, IndentBlock

@@ -3,7 +3,6 @@ import traceback
 from enum import Enum
 from typing import List
 
-import stringcase
 from beartype import beartype
 from pydantic import BaseModel
 
@@ -11,6 +10,7 @@ from formatter import IndentedWriter, Formatee, Function, Braces, Text
 from models import config_model
 from models.sql_model import emit_schema_from_model
 from models.type_model import to_second_scale, Type, Traits, Types
+from utils.name_convert import *
 
 
 class ProcMacro(Formatee, BaseModel):
@@ -173,7 +173,7 @@ def map_field_name(name: str) -> str:
     if name[0].isnumeric() and name[0] != '_':
         return '_' + name
 
-    return RUST_KEYWORDS.get(name) or stringcase.snakecase(name)
+    return RUST_KEYWORDS.get(name) or to_snake_case(name)
 
 
 class RustField(Formatee, BaseModel):
