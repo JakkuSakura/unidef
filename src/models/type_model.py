@@ -1,5 +1,5 @@
 import random
-from typing import Any, Union, Optional, Iterator
+from typing import Any, Union, Optional, Iterator, List, Dict
 
 from beartype import beartype
 from pydantic import BaseModel
@@ -64,6 +64,7 @@ class Traits:
     Reference = Trait.from_str('reference').init_with(True)
     Mutable = Trait.from_str('mutable').init_with(True)
     Lifetime = Trait.from_str('lifetime')
+    Derive = Trait.from_str('derive')
 
 
 class Type(BaseModel):
@@ -71,7 +72,7 @@ class Type(BaseModel):
     Type is the type model used in this program.
     It allows single inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
     """
-    traits: list[Trait] = []
+    traits: List[Trait] = []
     frozen: bool = False
 
     @beartype
@@ -191,7 +192,7 @@ class Types:
 
     @staticmethod
     @beartype
-    def variant(name: list[str]) -> Type:
+    def variant(name: List[str]) -> Type:
         ty = Type.from_str(name[0])
         for n in name:
             ty.append_trait(Traits.VariantName.init_with(n))
@@ -199,7 +200,7 @@ class Types:
 
     @staticmethod
     @beartype
-    def struct(name: str, fields: list[Type]) -> Type:
+    def struct(name: str, fields: List[Type]) -> Type:
         ty = Type.from_str(name).append_trait(Traits.Struct)
         for f in fields:
             ty.append_trait(Traits.StructField.init_with(f))
@@ -207,7 +208,7 @@ class Types:
 
     @staticmethod
     @beartype
-    def enum(name: str, variants: list[Type]) -> Type:
+    def enum(name: str, variants: List[Type]) -> Type:
         ty = Type.from_str(name).append_trait(Traits.Enum)
         for f in variants:
             ty.append_trait(Traits.Variant.init_with(f))
@@ -223,8 +224,8 @@ class TraitAlreadyExistsAndConflict(Exception):
 
 
 class TypeRegistry(BaseModel):
-    types: dict[str, Type] = {}
-    traits: dict[str, Trait] = {}
+    types: Dict[str, Type] = {}
+    traits: Dict[str, Trait] = {}
     type_detector: list = []
     @beartype
     def insert_type(self, ty: Type):
@@ -266,12 +267,12 @@ class TypeRegistry(BaseModel):
         return self.is_subclass(p, parent)
 
     @beartype
-    def list_types(self) -> list[Type]:
-        return self.types.values()
+    def list_types(self) -> List[Type]:
+        return list(self.types.values())
 
     @beartype
-    def list_traits(self) -> list[Trait]:
-        return self.traits.values()
+    def list_traits(self) -> List[Trait]:
+        return list(self.traits.values())
 
 
 @beartype

@@ -26,10 +26,10 @@ class FixParser(ApiParser):
         fields = []
         for kv in kvs:
             k, v = kv.split('=')
-            name = dct.getFieldName(int(k), '')[0]
+            nm = dct.getFieldName(int(k), '')[0]
             try:
                 ty = parse_data_example(json.loads(v))
             except:
                 ty = Types.String
-            fields.append(Types.field(name, ty))
+            fields.append(Types.field(nm, ty))
         return Types.struct(name, fields)

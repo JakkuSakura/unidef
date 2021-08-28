@@ -1,11 +1,9 @@
 type: private-api
-name: FtxHeaders
-note: |
-  8	BeginString	FIX.4.2	Must be set to "FIX.4.2"
-  9	BodyLength	162	Length of the message body in bytes
-  35	MsgType	8	Message type
-  49	SenderCompID	zyfvB4QPg0A3kkVgqUE9V1fOA-Y6jhdG3seqIIZx	Client API key (for messages from the client)
-  56	TargetCompID	FTX	Must be set to "FTX" (for messages from the client)
+name: FtxExecutionReport
+traits:
+  - name: derive
+    value: FastFix
+
 example:
   format: FIX42
   text: |

@@ -1,7 +1,7 @@
 import sys
 import traceback
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from beartype import beartype
 from pydantic import BaseModel
@@ -36,6 +36,9 @@ class Derive(ProcMacro):
 
     def __init__(self, enabled: List[str]):
         super().__init__(enabled=enabled)
+
+    def append(self, s: str):
+        self.enabled.append(s)
 
     def format_with(self, writer: IndentedWriter):
         writer.append_line('#[derive({})]'.format(', '.join(self.enabled)))
@@ -235,6 +238,7 @@ class RustStruct(Formatee, BaseModel):
     name: str
     fields: List[RustField]
     raw: Type = None
+    derive: Optional[Derive] = None
 
     @staticmethod
     @beartype
@@ -243,13 +247,15 @@ class RustStruct(Formatee, BaseModel):
 
     def __init__(self, raw: Type = None, **kwargs):
         if raw:
-            annotations = [DEFAULT_DERIVE]
+            derive = DEFAULT_DERIVE.copy()
+            annotations = [derive]
 
             kwargs.update({
                 'raw': raw,
                 'name': RustStruct.parse_name(raw.get_trait(Traits.Name)),
                 'fields': [RustField(f) for f in raw.get_traits(Traits.StructField)],
-                'annotations': annotations
+                'annotations': annotations,
+                'derive': derive
             })
 
         super().__init__(**kwargs)
@@ -257,6 +263,8 @@ class RustStruct(Formatee, BaseModel):
             if field.val_in_str:
                 self.annotations.insert(0, SERDE_AS)
                 break
+        for derive in self.raw.get_traits(Traits.Derive):
+            self.derive.append(derive)
 
     def format_with(self, writer: IndentedWriter):
         for anno in self.annotations:
@@ -522,12 +530,12 @@ def raw_data_func(raw: str) -> RustFunc:
 
 def emit_rust_model_definition(root: config_model.ModelDefinition) -> str:
     writer = IndentedWriter()
-    RustComment(
-        f'''type: {root.type}
-url: {root.url}
-ref: {root.ref}
-note: {root.note}
-''', cargo_doc=True).format_with(writer)
+    comment = []
+    for attr in ['type', 'url', 'ref', 'note']:
+        t = getattr(root, attr)
+        if t:
+            comment.append(f'{attr}: {t}')
+    RustComment('\n'.join(comment), cargo_doc=True).format_with(writer)
     parsed = root.get_parsed()
     if parsed.get_trait(Traits.Struct):
         for struct in find_all_structs(parsed):

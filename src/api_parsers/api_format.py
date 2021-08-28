@@ -8,7 +8,7 @@ from api_parsers.fix_parser import FixParser
 
 class ApiFormatRegistry:
     def __init__(self):
-        self.api_parsers: list[ApiParser] = []
+        self.api_parsers: List[ApiParser] = []
 
     def add_api_parser(self, parser: ApiParser):
         self.api_parsers.append(parser)
