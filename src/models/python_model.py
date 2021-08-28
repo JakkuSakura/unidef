@@ -1,4 +1,4 @@
-from typing import List
+from utils.typing_compat import List
 
 from pydantic import BaseModel
 
@@ -35,7 +35,7 @@ def map_type_to_peewee_model(ty: Type, args='') -> str:
         elif bits == 64:
             return 'DoubleField({})'.format(args)
         else:
-            return NotImplementedError()
+            raise NotImplementedError()
     elif ty.get_trait(Traits.String) or ty.get_trait(Traits.Null):
         return 'TextField()'
     elif ty.get_trait(Traits.Enum):
@@ -44,7 +44,7 @@ def map_type_to_peewee_model(ty: Type, args='') -> str:
         else:
             return 'BinaryJSONField({})'.format(args)
 
-    raise Exception("Cannot map type {} to str".format(ty))
+    raise Exception("Cannot map type {} to str".format(ty.get_trait(Traits.Name)))
 
 
 PYTHON_KEYWORDS = {

@@ -1,7 +1,7 @@
 import sys
 import traceback
 from enum import Enum
-from typing import List, Optional
+from utils.typing_compat import List, Optional
 
 from beartype import beartype
 from pydantic import BaseModel
@@ -127,7 +127,7 @@ def map_type_to_rust(ty: Type) -> str:
     elif ty.get_trait(Traits.TypeRef):
         return ty.get_trait(Traits.TypeRef)
 
-    raise Exception("Cannot map type {} to str".format(ty))
+    raise Exception("Cannot map type {} to str".format(ty.get_trait(Traits.Name)))
 
 
 RUST_KEYWORDS = {
@@ -513,7 +513,7 @@ def from_sql_raw_trait(struct: RustStruct, writer: IndentedWriter):
         if s.value.get_trait(Traits.Enum) or s.value.get_trait(Traits.Struct) or (
                 s.value.get_trait(Traits.Integer) and not s.value.get_trait(Traits.Signed)) \
                 or s.value.get_trait(Traits.TsUnit):
-            print('Do not support', s.value, 'yet, skipping From<Row>', file=sys.stderr)
+            print('Do not support', s.value.get_trait(Traits.Name), 'yet, skipping From<Row>', file=sys.stderr)
             return
     functions = [
         from_sql_raw_func(struct),
@@ -552,7 +552,7 @@ def emit_rust_model_definition(root: config_model.ModelDefinition) -> str:
                 sql_model_trait(rust_struct, writer)
                 from_sql_raw_trait(rust_struct, writer)
             except Exception as e:
-                print('Error happened while generating sql_model_trait, skipping.', str(e), traceback.format_exc(),
+                print('Error happened while generating sql_model_trait, skipping.', e,
                       file=sys.stderr)
                 writer = backup
     elif parsed.get_trait(Traits.Enum):

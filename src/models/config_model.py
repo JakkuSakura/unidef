@@ -1,6 +1,6 @@
 from enum import Enum
 from io import IOBase
-from typing import Optional, List, Any, Union, Dict
+from utils.typing_compat import Optional, List, Any, Union, Dict
 from models.type_model import Type, parse_data_example, Traits, GLOBAL_TYPE_REGISTRY, Types, Trait
 import pyhocon
 import yaml

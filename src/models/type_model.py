@@ -1,5 +1,5 @@
 import random
-from typing import Any, Union, Optional, Iterator, List, Dict
+from utils.typing_compat import Any, Union, Optional, Iterator, List, Dict
 
 from beartype import beartype
 from pydantic import BaseModel

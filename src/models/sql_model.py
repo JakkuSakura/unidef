@@ -51,7 +51,7 @@ def map_type_to_ddl(ty: Type) -> str:
             return 'text'
         else:
             return 'jsonb'
-    raise Exception('Cannot map to sql type', ty)
+    raise Exception('Cannot map {} to sql type'.format(ty.get_trait(Traits.Name)))
 
 
 def get_field(field: Type) -> str:
