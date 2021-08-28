@@ -5,7 +5,7 @@ import sys
 
 import yaml
 
-from models.config_model import ModelExample, ExampleFormat, read_model_definition
+from models.config_model import ModelExample, read_model_definition
 
 
 def main():

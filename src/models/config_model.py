@@ -6,27 +6,17 @@ import pyhocon
 import yaml
 from pydantic import BaseModel
 import unicodedata
-
-
-class ExampleFormat(Enum):
-    JSON = 'JSON'
-
+from api_parsers.api_format import API_FORMAT_REGISTRY
 
 class ModelExample(BaseModel):
-    format: ExampleFormat
+    format: str
     text: str
 
-    def __init__(self, format: ExampleFormat, text: str):
-        super().__init__(format=format, text=unicodedata.normalize('NFKC', text))
-
     def get_parsed(self, name='') -> Type:
-        parsed = None
-        if self.format == ExampleFormat.JSON:
-            parsed = parse_data_example(dict(pyhocon.ConfigParser.parse(self.text)), name)
-
-        if parsed.get_trait(Traits.Struct) and name:
-            parsed.replace_trait(Traits.Name.init_with(name))
-        return parsed
+        parser = API_FORMAT_REGISTRY.find_parser(self.format)
+        if parser is None:
+            raise Exception(f'Could not recognize format {self.format} for {name}')
+        return parser.parse(name, self.text)
 
 
 class InvalidArgumentException(Exception):
