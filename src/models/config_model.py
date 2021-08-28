@@ -103,6 +103,8 @@ def read_model_definition(content: Union[str, IOBase]) -> List[ModelDefinition]:
             continue
 
         data = yaml.safe_load(seg)
+        if data is None:
+            continue
         loaded_model = ModelDefinition(**dict(data.items()))
         loaded_model.raw = seg
         defs.append(loaded_model)

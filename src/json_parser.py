@@ -14,13 +14,13 @@ def main():
 
     args = parser.parse_args()
 
-    if not args.file:
-        data = sys.stdin.read()
-        example = ModelExample(ExampleFormat.JSON, data)
-        print(yaml.dump(example.get_parsed().dict()))
-    else:
+    if args.file:
         for loaded_model in read_model_definition(open(args.file)):
             print(yaml.dump(loaded_model.get_parsed().dict()))
+    else:
+        data = sys.stdin.read()
+        example = ModelExample(format='json', text=data)
+        print(yaml.dump(example.get_parsed().dict()))
 
 
 if __name__ == '__main__':
