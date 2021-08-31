@@ -3,12 +3,15 @@ from models.config_model import ModelDefinition
 from models.type_model import Type, Traits
 from utils.formatter import IndentedWriter
 
+
 def is_numeric(s: str) -> bool:
     try:
         int(s)
         return True
     except:
         return False
+
+
 def emit_type(ty: Type, indent=0) -> str:
     formatter = IndentedWriter(indent=indent)
     if ty.get_trait(Traits.Struct):
@@ -16,6 +19,9 @@ def emit_type(ty: Type, indent=0) -> str:
         formatter.incr_indent()
         formatter.append_line('let mut node = ijson::IObject::new();')
         for field in ty.get_traits(Traits.StructField):
+
+            for line in field.get_traits(Traits.LineComment):
+                formatter.append_line('//{}'.format(line))
             formatter.append_line('node.insert("{field}", {value});'
                                   .format(field=field.get_trait(Traits.FieldName),
                                           value=emit_type(field, formatter.indent)))

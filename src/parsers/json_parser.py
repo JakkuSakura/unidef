@@ -14,10 +14,9 @@ class JsonParser(ApiParser):
     def parse_comment(self, content: str) -> Dict[(int, str), str]:
         occurrences = {}
         result = {}
-        key_re = re.compile(r'"([\w\-]+)"')
+        key_re = re.compile(r'"([\w\-]+)"\s*:')
         comment = []
         for line in content.splitlines():
-
             pos = line.find('//')
             if pos >= 0:
                 comment.append(line[pos + 2:])
@@ -29,9 +28,9 @@ class JsonParser(ApiParser):
             if key not in occurrences:
                 occurrences[key] = 0
             occurrences[key] += 1
-
-            result[(occurrences[key], key)] = ''.join(comment)
-            comment.clear()
+            if comment:
+                result[(occurrences[key], key)] = '\n'.join(comment)
+                comment.clear()
         return result
 
     def parse(self, fmt: str, name: str, content: str) -> Type:
@@ -44,7 +43,8 @@ class JsonParser(ApiParser):
 
             def process(depth: int, i: int, key: str, ty: Type):
                 if (i, key) in comments:
-                    ty.append_trait(Traits.LineComment.init_with(comments[(i, key)]))
+                    for line in comments[(i, key)].splitlines():
+                        ty.append_trait(Traits.LineComment.init_with(line))
 
             walk_type_with_count(parsed, process)
 
