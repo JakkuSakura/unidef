@@ -5,4 +5,4 @@ import sys
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    main('rust', open(args.file).read())
+    main('rust', args.format, open(args.file).read())
