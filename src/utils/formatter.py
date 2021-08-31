@@ -1,13 +1,17 @@
+from utils.typing_compat import *
+from pydantic import BaseModel
+from beartype import beartype
+
+
 class Formatter:
     def to_string(self):
         pass
 
 
-class IndentedWriter(Formatter):
-    def __init__(self, tab='    '):
-        self.indent = 0
-        self.tab = tab
-        self.content = []
+class IndentedWriter(Formatter, BaseModel):
+    indent: int = 0
+    tab: str = '    '
+    content: List[str] = []
 
     def try_indent(self):
         try:
@@ -16,15 +20,13 @@ class IndentedWriter(Formatter):
         except:
             pass
 
+    @beartype
     def append_line(self, s: str):
-        if not isinstance(s, str):
-            raise Exception('Value must be str')
         self.try_indent()
         self.content.extend([s, '\n'])
 
+    @beartype
     def append(self, s: str):
-        if not isinstance(s, str):
-            raise Exception('Value must be str')
         self.try_indent()
         self.content.append(s)
 

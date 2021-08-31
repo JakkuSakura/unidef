@@ -15,7 +15,13 @@ class JsonParser(ApiParser):
         occurrences = {}
         result = {}
         key_re = re.compile(r'"([\w\-]+)"')
+        comment = []
         for line in content.splitlines():
+
+            pos = line.find('//')
+            if pos >= 0:
+                comment.append(line[pos + 2:])
+
             try:
                 key = next(key_re.finditer(line))[1]
             except StopIteration:
@@ -24,10 +30,8 @@ class JsonParser(ApiParser):
                 occurrences[key] = 0
             occurrences[key] += 1
 
-            pos = line.find('//')
-            if pos >= 0:
-                comment = line[pos + 2:]
-                result[(occurrences[key], key)] = comment
+            result[(occurrences[key], key)] = ''.join(comment)
+            comment.clear()
         return result
 
     def parse(self, fmt: str, name: str, content: str) -> Type:

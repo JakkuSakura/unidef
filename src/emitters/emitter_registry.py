@@ -7,6 +7,9 @@ from emitters import Emitter
 from emitters.python_model import PythonEmitter
 from emitters.rust_model import RustEmitter
 from emitters.empty_emitter import EmptyEmitter
+from emitters.rust_ijson_emitter import RustIjsonEmitter
+
+
 class EmitterRegistry:
     def __init__(self):
         self.emitters: List[ApiParser] = []
@@ -24,4 +27,5 @@ EMITTER_REGISTRY = EmitterRegistry()
 
 EMITTER_REGISTRY.add_emitter(PythonEmitter())
 EMITTER_REGISTRY.add_emitter(RustEmitter())
+EMITTER_REGISTRY.add_emitter(RustIjsonEmitter())
 EMITTER_REGISTRY.add_emitter(EmptyEmitter())

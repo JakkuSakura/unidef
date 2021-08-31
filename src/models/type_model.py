@@ -143,6 +143,12 @@ class Type(BaseModel):
         kwargs["exclude"] = {'frozen'}
         return super().dict(**kwargs)
 
+    def __str__(self):
+        return f'Type{self.traits}'
+
+    def __repr__(self):
+        return self.__str__()
+
 
 Type.update_forward_refs()
 
