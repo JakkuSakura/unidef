@@ -517,7 +517,8 @@ def from_sql_raw_trait(struct: RustStruct, writer: IndentedWriter):
         if s.value.get_trait(Traits.Enum) or s.value.get_trait(Traits.Struct) or (
                 s.value.get_trait(Traits.Integer) and not s.value.get_trait(Traits.Signed)) \
                 or s.value.get_trait(Traits.TsUnit):
-            print('Do not support', s.value.get_trait(Traits.FieldName), 'yet, skipping From<Row>', file=sys.stderr)
+            print('Do not support', s.value.get_trait(Traits.FieldName), s.value.get_trait(Traits.TypeName),
+                  'yet, skipping From<Row>', file=sys.stderr)
             return
     functions = [
         from_sql_raw_func(struct),
@@ -530,6 +531,26 @@ def raw_data_func(raw: str) -> RustFunc:
     return RustFunc(name='get_raw_data', args=[], ret=Types.String.copy().append_trait(Traits.Reference).append_trait(
         Traits.Lifetime.init_with('static')),
                     content=f'r#"{raw}"#')
+
+
+def emit_rust_type(struct: Type, root: Optional[ModelDefinition] = None) -> str:
+    writer = IndentedWriter()
+    rust_struct = RustStruct(struct)
+    rust_struct.format_with(writer)
+    if root and struct.get_trait(Traits.TypeName) == root.name:
+        funcs = [
+            raw_data_func(root.raw)
+        ]
+        RustImpl(name=rust_struct.name, functions=funcs).format_with(writer)
+    backup = writer.clone()
+    try:
+        sql_model_trait(rust_struct, writer)
+        from_sql_raw_trait(rust_struct, writer)
+    except Exception as e:
+        print('Error happened while generating sql_model_trait, skipping.', e,
+              file=sys.stderr)
+        writer = backup
+    return writer.to_string()
 
 
 def emit_rust_model_definition(root: ModelDefinition) -> str:
@@ -545,21 +566,8 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
         for struct in find_all_structs(parsed):
             if struct.get_trait(Traits.TypeRef):
                 continue
-            rust_struct = RustStruct(struct)
-            rust_struct.format_with(writer)
-            if struct.get_trait(Traits.TypeName) == root.name:
-                funcs = [
-                    raw_data_func(root.raw)
-                ]
-                RustImpl(name=rust_struct.name, functions=funcs).format_with(writer)
-            backup = writer.clone()
-            try:
-                sql_model_trait(rust_struct, writer)
-                from_sql_raw_trait(rust_struct, writer)
-            except Exception as e:
-                print('Error happened while generating sql_model_trait, skipping.', e,
-                      file=sys.stderr)
-                writer = backup
+            writer.append_line(emit_rust_type(struct, root))
+
     elif parsed.get_trait(Traits.Enum):
         rust_enum = RustEnum(parsed)
         rust_enum.format_with(writer)
@@ -596,4 +604,4 @@ class RustEmitter(Emitter):
         return emit_rust_model_definition(model)
 
     def emit_type(self, target: str, ty: Type) -> str:
-        raise NotImplementedError()
+        raise emit_rust_type(ty)
