@@ -2,11 +2,11 @@ import logging
 import sys
 import traceback
 from enum import Enum
-from utils.typing_compat import List, Optional
-
 from beartype import beartype
 from pydantic import BaseModel
 
+
+from utils.typing_compat import List, Optional
 from utils.formatter import IndentedWriter, Formatee, Function, Braces, Text
 from models import config_model
 from emitters.sql_model import emit_schema_from_model
@@ -579,7 +579,7 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
     return try_rustfmt(writer.to_string())
 
 
-def try_rustfmt(s: str):
+def try_rustfmt(s: str) -> str:
     import subprocess
     import sys
     try:

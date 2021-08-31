@@ -14,7 +14,7 @@ parser.add_argument('--format', '-f', type=str, nargs='?', help='input format')
 parser.add_argument('file', default='/dev/stdin', type=str, nargs='?', help='input file')
 
 
-def main(target: str, fmt: Optional[str], content: str):
+def main(target: str, fmt: Optional[str], content: str, output: Callable[[str], None] = print):
     if fmt:
         model = ModelDefinition(name='stdin', example=ModelExample(format=fmt, text=content))
         models = [
@@ -26,7 +26,7 @@ def main(target: str, fmt: Optional[str], content: str):
     if emitter is None:
         raise Exception(f'Could not find emitter for {target}')
     for loaded_model in models:
-        print(emitter.emit_model(target, loaded_model))
+        output(emitter.emit_model(target, loaded_model))
 
 
 if __name__ == '__main__':
