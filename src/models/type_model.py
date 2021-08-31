@@ -112,10 +112,12 @@ class Type(BaseModel):
             if t.name == name.name:
                 return t.value
 
-    def get_traits(self, name: Trait) -> Iterator[Any]:
+    def get_traits(self, name: Trait) -> List[Any]:
+        traits = []
         for t in self.traits:
             if t.name == name.name:
-                yield t.value
+                traits.append(t.value)
+        return traits
 
     @beartype
     def set_parent(self, parent: 'Type') -> 'Type':
