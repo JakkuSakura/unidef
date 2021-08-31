@@ -96,7 +96,7 @@ def map_type_to_rust(ty: Type) -> str:
         if ty.get_trait(Traits.TypeRef):
             return ty.get_trait(Traits.TypeRef)
         else:
-            return RustStruct.parse_name(ty.get_trait(Traits.Name))
+            return RustStruct.parse_name(ty.get_trait(Traits.TypeName))
     elif ty.get_trait(Traits.Enum):
         return RustEnum.parse_variant_name(ty.get_trait(Traits.TypeRef))
     elif ty.get_trait(Traits.Tuple):
@@ -129,7 +129,7 @@ def map_type_to_rust(ty: Type) -> str:
     elif ty.get_trait(Traits.TypeRef):
         return ty.get_trait(Traits.TypeRef)
 
-    raise Exception("Cannot map type {} to str".format(ty.get_trait(Traits.Name)))
+    raise Exception("Cannot map type {} to str".format(ty.get_trait(Traits.TypeName)))
 
 
 RUST_KEYWORDS = {
@@ -199,8 +199,8 @@ class RustField(Formatee, BaseModel):
             value = ty.get_trait(Traits.ValueType) or ty
             assert value is not None, 'Is not an valid field ' + repr(ty)
             kwargs.update({
-                'name': map_field_name(ty.get_trait(Traits.Name)),
-                'original_name': ty.get_trait(Traits.Name),
+                'name': map_field_name(ty.get_trait(Traits.FieldName)),
+                'original_name': ty.get_trait(Traits.FieldName),
                 'value': value,
                 'val_in_str': value.get_trait(Traits.StringWrapped) or False
             })
@@ -214,6 +214,8 @@ class RustField(Formatee, BaseModel):
             # or self.original_name == self.name and len(self.name) < 3: # For binance's convenience
 
             Serde(rename=[self.original_name]).format_with(writer)
+        for comment in self.value.get_traits(Traits.LineComment):
+            RustComment(comment, cargo_doc=True).format_with(writer)
         writer.append_line(f'{self.access.value}{self.name}: {map_type_to_rust(self.value)},')
 
 
@@ -254,7 +256,7 @@ class RustStruct(Formatee, BaseModel):
 
             kwargs.update({
                 'raw': raw,
-                'name': RustStruct.parse_name(raw.get_trait(Traits.Name)),
+                'name': RustStruct.parse_name(raw.get_trait(Traits.TypeName)),
                 'fields': [RustField(f) for f in raw.get_traits(Traits.StructField)],
                 'annotations': annotations,
                 'derive': derive
@@ -301,7 +303,7 @@ class RustEnum(Formatee, BaseModel):
 
             kwargs.update({
                 'raw': raw,
-                'name': RustStruct.parse_name(raw.get_trait(Traits.Name)),
+                'name': RustStruct.parse_name(raw.get_trait(Traits.TypeName)),
                 'variants': list(raw.get_traits(Traits.Variant)),
                 'annotations': annotations
             })
@@ -349,7 +351,7 @@ class RustFunc(Formatee, BaseModel):
 
         def for_arg(writer1: IndentedWriter):
             for arg in self.args:
-                if arg.value.get_trait(Traits.TypeRef) and 'self' in arg.value.get_trait(Traits.Name):
+                if arg.value.get_trait(Traits.TypeRef) and 'self' in arg.value.get_trait(Traits.TypeName):
                     writer1.append(arg.name + ', ')
                 else:
                     writer1.append(arg.name + ': ' + map_type_to_rust(arg.value) + ', ')
@@ -515,7 +517,7 @@ def from_sql_raw_trait(struct: RustStruct, writer: IndentedWriter):
         if s.value.get_trait(Traits.Enum) or s.value.get_trait(Traits.Struct) or (
                 s.value.get_trait(Traits.Integer) and not s.value.get_trait(Traits.Signed)) \
                 or s.value.get_trait(Traits.TsUnit):
-            print('Do not support', s.value.get_trait(Traits.Name), 'yet, skipping From<Row>', file=sys.stderr)
+            print('Do not support', s.value.get_trait(Traits.FieldName), 'yet, skipping From<Row>', file=sys.stderr)
             return
     functions = [
         from_sql_raw_func(struct),
@@ -545,10 +547,11 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
                 continue
             rust_struct = RustStruct(struct)
             rust_struct.format_with(writer)
-            funcs = [
-                raw_data_func(root.raw)
-            ]
-            RustImpl(name=rust_struct.name, functions=funcs).format_with(writer)
+            if struct.get_trait(Traits.TypeName) == root.name:
+                funcs = [
+                    raw_data_func(root.raw)
+                ]
+                RustImpl(name=rust_struct.name, functions=funcs).format_with(writer)
             backup = writer.clone()
             try:
                 sql_model_trait(rust_struct, writer)

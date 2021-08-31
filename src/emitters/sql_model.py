@@ -53,12 +53,12 @@ def map_type_to_ddl(ty: Type) -> str:
             return 'text'
         else:
             return 'jsonb'
-    raise Exception('Cannot map {} to sql type'.format(ty.get_trait(Traits.Name)))
+    raise Exception('Cannot map {} to sql type'.format(ty.get_trait(Traits.TypeName)))
 
 
 def get_field(field: Type) -> str:
-    base = to_snake_case(field.get_trait(Traits.Name)) + ' ' + map_type_to_ddl(
-        field.get_trait(Traits.ValueType) or field)
+    base = to_snake_case(field.get_trait(Traits.FieldName)) + ' ' +\
+           map_type_to_ddl(field.get_trait(Traits.ValueType) or field)
     if field.get_trait(Traits.Primary):
         base += ' primary key'
 
@@ -74,7 +74,7 @@ def emit_schema_from_model(model: Type) -> str:
 
 
 def emit_field_names_from_model(model: Type) -> str:
-    fields = ','.join([field.get_trait(Traits.Name) for field in model.get_traits(Traits.StructField)])
+    fields = ','.join([field.get_trait(Traits.TypeName) for field in model.get_traits(Traits.StructField)])
     return fields
 
 

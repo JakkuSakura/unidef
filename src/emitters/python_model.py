@@ -7,6 +7,8 @@ from models import type_model, config_model
 from models.type_model import Type, Traits
 from emitters import Emitter
 from models.config_model import ModelDefinition
+from utils.name_convert import to_pascal_case
+from beartype import beartype
 
 
 def map_type_to_peewee_model(ty: Type, args='') -> str:
@@ -46,7 +48,8 @@ def map_type_to_peewee_model(ty: Type, args='') -> str:
         else:
             return 'BinaryJSONField({})'.format(args)
 
-    raise Exception("Cannot map type {} to str".format(ty.get_trait(Traits.Name)))
+    raise Exception(
+        "Cannot map type {} {} to peewee model".format(ty.get_trait(Traits.FieldName), ty.get_trait(Traits.TypeName)))
 
 
 PYTHON_KEYWORDS = {
@@ -100,8 +103,8 @@ class PythonField(Formatee, BaseModel):
     def __init__(self, f: Type = None, **kwargs):
         if f:
             kwargs.update({
-                'name': map_field_name(f.get_trait(Traits.Name)),
-                'original_name': f.get_trait(Traits.Name),
+                'name': map_field_name(f.get_trait(Traits.TypeName)),
+                'original_name': f.get_trait(Traits.TypeName),
                 'value': f,
             })
 
@@ -137,12 +140,12 @@ class PythonStruct(Formatee, BaseModel):
 
     @staticmethod
     def parse_name(name):
-        return stringcase.pascalcase(name)
+        return to_pascal_case(name)
 
     def __init__(self, raw: Type, **kwargs):
         if raw:
             kwargs.update({
-                'name': PythonStruct.parse_name(raw.get_trait(Traits.Name)),
+                'name': PythonStruct.parse_name(raw.get_trait(Traits.TypeName)),
                 'fields': [PythonField(f) for f in raw.get_traits(Traits.StructField)],
             })
 
@@ -174,7 +177,7 @@ class PythonEnum(Formatee, BaseModel):
         if raw:
             kwargs.update({
                 'raw': raw,
-                'name': PythonEnum.parse_name(raw.get_trait(Traits.Name)),
+                'name': PythonEnum.parse_name(raw.get_trait(Traits.TypeName)),
                 'variants': raw.get_traits(Traits.Variant),
             })
 
@@ -203,11 +206,12 @@ class StructRegistry:
 
 def find_all_structs_impl(reg: StructRegistry, s: Type):
     if s.get_trait(Traits.Struct):
-        reg.add_struct(s)
+        reg.add_struct(PythonStruct(s))
     else:
         raise NotImplementedError()
 
 
+@beartype
 def find_all_structs(s: Type) -> List[PythonStruct]:
     reg = StructRegistry()
     find_all_structs_impl(reg, s)
@@ -217,7 +221,7 @@ def find_all_structs(s: Type) -> List[PythonStruct]:
 def emit_struct(root: Type) -> str:
     writer = IndentedWriter()
     for s in find_all_structs(root):
-        python_struct = PythonStruct(s)
+        python_struct = s
         python_struct.format_with(writer)
     return writer.to_string()
 
@@ -233,7 +237,7 @@ def emit_python_model_definition(root: ModelDefinition) -> str:
     parsed = root.get_parsed()
     if parsed.get_trait(Traits.Struct):
         for i, struct in enumerate(find_all_structs(parsed)):
-            python_struct = PythonStruct(struct)
+            python_struct = struct
             if i == 0:
                 python_struct.comment = comment
             python_struct.format_with(writer)

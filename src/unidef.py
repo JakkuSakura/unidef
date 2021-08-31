@@ -11,13 +11,14 @@ parser.add_argument('file', type=str, help='input file')
 
 def main(target: Optional[str], content: str):
     target = target or 'no_target'
+    models = read_model_definition(content)
     emitter = EMITTER_REGISTRY.find_emitter(target)
     if emitter is None:
         raise Exception(f'Could not find emitter for {target}')
-    for loaded_model in read_model_definition(content):
+    for loaded_model in models:
         print(emitter.emit_model(target, loaded_model))
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    main(args['target'], open(args.file).read())
+    main(args.target, open(args.file).read())

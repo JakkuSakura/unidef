@@ -1,5 +1,5 @@
 import random
-from utils.typing_compat import Any, Union, Optional, Iterator, List, Dict
+from utils.typing_compat import *
 
 from beartype import beartype
 from pydantic import BaseModel
@@ -20,23 +20,29 @@ class Trait(BaseModel):
     def from_str(name: str) -> 'Trait':
         return Trait(name=name)
 
+    def __repr__(self):
+        return f'{self.name}: {self.value}'
+
 
 Trait.update_forward_refs()
 
 
 class Traits:
-    Name = Trait.from_str('name')
+    TypeName = Trait.from_str('name')
+    FieldName = Trait.from_str('field_name')
     BitSize = Trait.from_str('bit_size')
     Signed = Trait.from_str('signed').init_with(True)
     KeyType = Trait.from_str('key')
     ValueType = Trait.from_str('value')
     Parent = Trait.from_str('parent')
-    StructField = Trait.from_str('field').init_with(True)
+    StructField = Trait.from_str('field')
     Struct = Trait.from_str('struct').init_with(True)
     Enum = Trait.from_str('enum').init_with(True)
     TypeRef = Trait.from_str('type_ref')
     Variant = Trait.from_str('variant')
     VariantName = Trait.from_str('variant_name')
+    RawValue = Trait.from_str('raw_value')
+    LineComment = Trait.from_str('line_comment')
 
     # Types
     Bool = Trait.from_str('bool').init_with(True)
@@ -121,7 +127,7 @@ class Type(BaseModel):
     @staticmethod
     @beartype
     def from_str(name: str) -> 'Type':
-        return Type().replace_trait(Traits.Name.init_with(name))
+        return Type().replace_trait(Traits.TypeName.init_with(name))
 
     def freeze(self) -> 'Type':
         self.frozen = True
@@ -136,6 +142,9 @@ class Type(BaseModel):
     def dict(self, **kwargs):
         kwargs["exclude"] = {'frozen'}
         return super().dict(**kwargs)
+
+
+Type.update_forward_refs()
 
 
 def build_int(name: str) -> Type:
@@ -188,7 +197,7 @@ class Types:
     @staticmethod
     @beartype
     def field(name: str, ty: Type) -> Type:
-        return Type.from_str(name).append_trait(Traits.ValueType.init_with(ty))
+        return ty.append_trait(Traits.FieldName.init_with(name))
 
     @staticmethod
     @beartype
@@ -227,9 +236,10 @@ class TypeRegistry(BaseModel):
     types: Dict[str, Type] = {}
     traits: Dict[str, Trait] = {}
     type_detector: list = []
+
     @beartype
     def insert_type(self, ty: Type):
-        name = ty.get_trait(Traits.Name)
+        name = ty.get_trait(Traits.TypeName)
         assert ty.frozen, 'type should be frozen ' + name
         if name not in self.types:
             self.types[name] = ty
@@ -322,58 +332,92 @@ class CouldNotParseDataExample(Exception):
 
 @beartype
 def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: str = '') -> Type:
-    if obj is None:
-        return Types.NoneType
+    def inner(obj, prefix) -> Type:
+        if obj is None:
+            return Types.NoneType
 
-    if isinstance(obj, str):
-        if '.' in obj:
+        if isinstance(obj, str):
+            if '.' in obj:
+                try:
+                    float(obj)
+                    return string_wrapped(Types.Double)
+                except:
+                    pass
             try:
-                float(obj)
-                return string_wrapped(Types.Double)
+                int(obj)
+                return string_wrapped(Types.I64)
             except:
                 pass
-        try:
-            int(obj)
-            return string_wrapped(Types.I64)
-        except:
-            pass
 
-        return Types.String
-    elif isinstance(obj, bool):
-        return Types.Bool
-    elif isinstance(obj, int):
-        prefix = to_snake_case(prefix)
+            return Types.String
+        elif isinstance(obj, bool):
+            return Types.Bool
+        elif isinstance(obj, int):
+            prefix = to_snake_case(prefix)
 
-        ty = Types.I64
-        # TODO: detect words in the field name without prefix
-        if '_ts' in prefix or 'time' in prefix or '_at' in prefix:
-            ty = ty.copy().replace_trait(Traits.TsUnit.init_with(detect_timestamp_unit(obj)))
+            ty = Types.I64
+            # TODO: detect words in the field name without prefix
+            if '_ts' in prefix or 'time' in prefix or '_at' in prefix:
+                ty = ty.copy().append_trait(
+                    Traits.TsUnit.init_with(detect_timestamp_unit(obj))
+                ).replace_trait(
+                    Traits.TypeName.init_with('timestamp')
+                )
 
-        return ty
-    elif isinstance(obj, float):
-        return Types.Double
-    elif isinstance(obj, list):
-        content = None
-        if len(obj):
-            content = parse_data_example(obj[0], prefix)
-        return Types.Vector.copy().replace_trait(Traits.ValueType.init_with(content))
-    elif isinstance(obj, dict):
-        fields = []
-        for key, value in obj.items():
-            value = parse_data_example(value, prefix_join(prefix, key))
-            if value.get_trait(Traits.Struct):
-                value.replace_trait(Traits.Name.init_with(prefix_join(prefix, key)))
+            return ty
+        elif isinstance(obj, float):
+            return Types.Double
+        elif isinstance(obj, list):
+            content = None
+            if len(obj):
+                content = parse_data_example(obj[0], prefix)
+            return Types.Vector.copy().replace_trait(Traits.ValueType.init_with(content))
+        elif isinstance(obj, dict):
+            fields = []
+            for key, value in obj.items():
+                value = parse_data_example(value, prefix_join(prefix, key))
+                if value.get_trait(Traits.Struct):
+                    value.replace_trait(Traits.TypeName.init_with(prefix_join(prefix, key)))
 
-            for val in value.get_traits(Traits.ValueType):
-                if val.get_trait(Traits.Struct):
-                    new_name = prefix_join(prefix, key)
-                    if new_name.endswith('s'):
-                        new_name = new_name[:-1]
-                    val.replace_trait(Traits.Name.init_with(new_name))
+                for val in value.get_traits(Traits.ValueType):
+                    if val.get_trait(Traits.Struct):
+                        new_name = prefix_join(prefix, key)
+                        if new_name.endswith('s'):
+                            new_name = new_name[:-1]
+                        val.replace_trait(Traits.TypeName.init_with(new_name))
 
-            fields.append(Types.field(key, value))
-        return Types.struct('struct_' + str(random.randint(0, 1000)), fields)
-    raise CouldNotParseDataExample(str(obj))
+                fields.append(Types.field(key, value))
+            return Types.struct('struct_' + str(random.randint(0, 1000)), fields)
+        raise CouldNotParseDataExample(str(obj))
+
+    return inner(obj, prefix).copy().append_trait(Traits.RawValue.init_with(obj))
+
+
+def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None:
+    if node.get_trait(Traits.Struct):
+        for field in node.get_traits(Traits.StructField):
+            process(depth, field)
+            walk_type(field, process, depth + 1)
+    if node.get_trait(Traits.Vector):
+        ty = node.get_trait(Traits.ValueType)
+        process(depth, ty)
+        walk_type(ty, process, depth + 1)
+    else:
+        process(depth, node)
+
+
+def walk_type_with_count(node: Type, process: Callable[[int, int, str, Type], None]) -> None:
+    counts = {}
+
+    def pre_process(depth, ty: Type):
+        name = ty.get_trait(Traits.FieldName)
+        if name:
+            if name not in counts:
+                counts[name] = 0
+            counts[name] += 1
+            process(depth, counts[name], name, ty)
+
+    walk_type(node, pre_process)
 
 
 def parse_type_definition(ty: str) -> Type:
