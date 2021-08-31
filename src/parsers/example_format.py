@@ -1,5 +1,5 @@
 import sys
-
+import logging
 from beartype import beartype
 from models.type_model import Type
 from utils.typing_compat import Optional
@@ -28,4 +28,4 @@ try:
 
     EXAMPLE_FORMAT_REGISTRY.add_api_parser(FixParser())
 except Exception as e:
-    print('Does not support fix parser', e, file=sys.stderr)
+    logging.warning('Does not support fix parser %s', e)

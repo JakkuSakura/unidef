@@ -1,3 +1,4 @@
+import logging
 import sys
 import traceback
 from enum import Enum
@@ -517,8 +518,10 @@ def from_sql_raw_trait(struct: RustStruct, writer: IndentedWriter):
         if s.value.get_trait(Traits.Enum) or s.value.get_trait(Traits.Struct) or (
                 s.value.get_trait(Traits.Integer) and not s.value.get_trait(Traits.Signed)) \
                 or s.value.get_trait(Traits.TsUnit):
-            print('Do not support', s.value.get_trait(Traits.FieldName), s.value.get_trait(Traits.TypeName),
-                  'yet, skipping From<Row>', file=sys.stderr)
+            logging.warning('Do not support %s %s yet, skipping From<Row>',
+                            s.value.get_trait(Traits.FieldName),
+                            s.value.get_trait(Traits.TypeName),
+                            )
             return
     functions = [
         from_sql_raw_func(struct),
@@ -547,8 +550,7 @@ def emit_rust_type(struct: Type, root: Optional[ModelDefinition] = None) -> str:
         sql_model_trait(rust_struct, writer)
         from_sql_raw_trait(rust_struct, writer)
     except Exception as e:
-        print('Error happened while generating sql_model_trait, skipping.', e,
-              file=sys.stderr)
+        logging.warning('Error happened while generating sql_model_trait, skipping. %s', e)
         writer = backup
     return writer.to_string()
 
@@ -587,12 +589,12 @@ def try_rustfmt(s: str):
         parsed = rustfmt.stdout.read().decode()
         error = rustfmt.stderr.read().decode()
         if error:
-            print('Error when formatting with rustfmt: ', error, file=sys.stderr)
+            logging.error('Error when formatting with rustfmt: %s', error)
             return s
         else:
             return parsed
     except Exception as e:
-        print('Error while trying to use rustfmt, defaulting to raw', repr(e), file=sys.stderr)
+        logging.error('Error while trying to use rustfmt, defaulting to raw %s', e)
         return s
 
 

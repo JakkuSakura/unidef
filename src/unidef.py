@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+import logging
+import sys
+
+logging.basicConfig(stream=sys.stderr)
 from emitters.emitter_registry import EMITTER_REGISTRY
 from models.config_model import read_model_definition
 from utils.typing_compat import *
