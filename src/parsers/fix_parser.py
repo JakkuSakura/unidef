@@ -5,7 +5,7 @@ import os
 import sys
 
 from models.type_model import *
-from api_parsers import ApiParser
+from parsers import ApiParser
 
 
 class FixParser(ApiParser):

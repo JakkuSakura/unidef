@@ -6,7 +6,7 @@ import pyhocon
 import yaml
 from pydantic import BaseModel
 import unicodedata
-from api_parsers.api_format import API_FORMAT_REGISTRY
+from parsers.example_format import EXAMPLE_FORMAT_REGISTRY
 
 
 class ModelExample(BaseModel):
@@ -14,7 +14,7 @@ class ModelExample(BaseModel):
     text: str
 
     def get_parsed(self, name='') -> Type:
-        parser = API_FORMAT_REGISTRY.find_parser(self.format)
+        parser = EXAMPLE_FORMAT_REGISTRY.find_parser(self.format)
         if parser is None:
             raise Exception(f'Could not recognize format {self.format} for {name}')
         return parser.parse(self.format, name, self.text)
@@ -91,10 +91,7 @@ class ModelDefinition(BaseModel):
         return parsed
 
 
-def read_model_definition(content: Union[str, IOBase]) -> List[ModelDefinition]:
-    if isinstance(content, IOBase):
-        content = content.read()
-
+def read_model_definition(content: str) -> List[ModelDefinition]:
     defs = []
     segments = content.split('---')
     for seg in segments:

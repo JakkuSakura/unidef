@@ -6,11 +6,13 @@ from utils.typing_compat import List, Optional
 from beartype import beartype
 from pydantic import BaseModel
 
-from formatter import IndentedWriter, Formatee, Function, Braces, Text
+from utils.formatter import IndentedWriter, Formatee, Function, Braces, Text
 from models import config_model
-from models.sql_model import emit_schema_from_model
+from emitters.sql_model import emit_schema_from_model
 from models.type_model import to_second_scale, Type, Traits, Types
+from models.config_model import ModelDefinition
 from utils.name_convert import *
+from emitters import Emitter
 
 
 class ProcMacro(Formatee, BaseModel):
@@ -528,7 +530,7 @@ def raw_data_func(raw: str) -> RustFunc:
                     content=f'r#"{raw}"#')
 
 
-def emit_rust_model_definition(root: config_model.ModelDefinition) -> str:
+def emit_rust_model_definition(root: ModelDefinition) -> str:
     writer = IndentedWriter()
     comment = []
     for attr in ['type', 'url', 'ref', 'note']:
@@ -581,3 +583,14 @@ def try_rustfmt(s: str):
     except Exception as e:
         print('Error while trying to use rustfmt, defaulting to raw', repr(e), file=sys.stderr)
         return s
+
+
+class RustEmitter(Emitter):
+    def accept(self, s: str) -> bool:
+        return s == 'rust'
+
+    def emit_model(self, target: str, model: ModelDefinition) -> str:
+        return emit_rust_model_definition(model)
+
+    def emit_type(self, target: str, ty: Type) -> str:
+        raise NotImplementedError()

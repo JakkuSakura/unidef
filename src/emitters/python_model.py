@@ -2,9 +2,11 @@ from utils.typing_compat import List
 
 from pydantic import BaseModel
 
-from formatter import IndentedWriter, Formatee, Function, IndentBlock
+from utils.formatter import IndentedWriter, Formatee, Function, IndentBlock
 from models import type_model, config_model
 from models.type_model import Type, Traits
+from emitters import Emitter
+from models.config_model import ModelDefinition
 
 
 def map_type_to_peewee_model(ty: Type, args='') -> str:
@@ -220,14 +222,14 @@ def emit_struct(root: Type) -> str:
     return writer.to_string()
 
 
-def emit_rust_model_definition(root: config_model.ModelDefinition) -> str:
+def emit_python_model_definition(root: ModelDefinition) -> str:
     writer = IndentedWriter()
-    comment = PythonComment(
-        f'''type: {root.type}
-url: {root.url}
-ref: {root.ref}
-note: {root.note}
-''', python_doc=True)
+    comment = []
+    for attr in ['type', 'url', 'ref', 'note']:
+        t = getattr(root, attr)
+        if t:
+            comment.append(f'{attr}: {t}')
+    comment = PythonComment('\n'.join(comment), python_doc=True)
     parsed = root.get_parsed()
     if parsed.get_trait(Traits.Struct):
         for i, struct in enumerate(find_all_structs(parsed)):
@@ -242,3 +244,14 @@ note: {root.note}
         raise Exception('must be a struct or enum', root)
 
     return writer.to_string()
+
+
+class PythonEmitter(Emitter):
+    def accept(self, s: str) -> bool:
+        return s == 'python'
+
+    def emit_model(self, target: str, model: ModelDefinition) -> str:
+        return emit_python_model_definition(model)
+
+    def emit_type(self, target: str, ty: Type) -> str:
+        return emit_struct(ty)

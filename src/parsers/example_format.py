@@ -1,14 +1,13 @@
-import logging
 import sys
 
 from beartype import beartype
 from models.type_model import Type
 from utils.typing_compat import Optional
-from api_parsers import ApiParser
-from api_parsers.json_parser import JsonParser
+from parsers import ApiParser
+from parsers.json_parser import JsonParser
 
 
-class ApiFormatRegistry:
+class ExampleFormatRegistry:
     def __init__(self):
         self.api_parsers: List[ApiParser] = []
 
@@ -21,11 +20,12 @@ class ApiFormatRegistry:
                 return p
 
 
-API_FORMAT_REGISTRY = ApiFormatRegistry()
+EXAMPLE_FORMAT_REGISTRY = ExampleFormatRegistry()
 
-API_FORMAT_REGISTRY.add_api_parser(JsonParser())
+EXAMPLE_FORMAT_REGISTRY.add_api_parser(JsonParser())
 try:
-    from api_parsers.fix_parser import FixParser
-    API_FORMAT_REGISTRY.add_api_parser(FixParser())
+    from parsers.fix_parser import FixParser
+
+    EXAMPLE_FORMAT_REGISTRY.add_api_parser(FixParser())
 except Exception as e:
     print('Does not support fix parser', e, file=sys.stderr)

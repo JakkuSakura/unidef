@@ -1,5 +1,7 @@
 from models.type_model import Type, Traits
 from utils.name_convert import *
+from emitters import Emitter
+from models.config_model import ModelDefinition
 
 def get_real(ty: Type) -> str:
     assert ty.get_trait(Traits.Floating), True
@@ -76,20 +78,12 @@ def emit_field_names_from_model(model: Type) -> str:
     return fields
 
 
-def main():
-    from models.config_model import read_model_definition
-    import argparse
+class SqlEmitter(Emitter):
+    def accept(self, s: str) -> bool:
+        return s == 'sql'
 
-    parser = argparse.ArgumentParser(description='Export rust source code')
-    parser.add_argument('file', type=str, help='input file')
+    def emit_model(self, target: str, model: ModelDefinition) -> str:
+        return emit_schema_from_model(model.get_parsed())
 
-    args = parser.parse_args()
-
-    for loaded_model in read_model_definition(open(args.file)):
-        s = emit_schema_from_model(loaded_model.get_parsed())
-        print(s)
-        print()
-
-
-if __name__ == '__main__':
-    main()
+    def emit_type(self, target: str, ty: Type) -> str:
+        return emit_schema_from_model(ty)
