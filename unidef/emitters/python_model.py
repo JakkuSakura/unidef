@@ -1,13 +1,13 @@
 from pydantic import BaseModel
 from beartype import beartype
 
-from utils.typing_compat import List
-from utils.formatter import IndentedWriter, Formatee, Function, IndentBlock
-from models import type_model, config_model
-from models.type_model import Type, Traits
-from emitters import Emitter
-from models.config_model import ModelDefinition
-from utils.name_convert import to_pascal_case
+from unidef.utils.typing_compat import List
+from unidef.utils.formatter import IndentedWriter, Formatee, Function, IndentBlock
+from unidef.models import type_model, config_model
+from unidef.models.type_model import Type, Traits
+from unidef.emitters import Emitter
+from unidef.models.config_model import ModelDefinition
+from unidef.utils.name_convert import to_pascal_case
 
 
 def map_type_to_peewee_model(ty: Type, args='') -> str:

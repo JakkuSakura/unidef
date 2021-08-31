@@ -6,14 +6,14 @@ from beartype import beartype
 from pydantic import BaseModel
 
 
-from utils.typing_compat import List, Optional
-from utils.formatter import IndentedWriter, Formatee, Function, Braces, Text
-from models import config_model
-from emitters.sql_model import emit_schema_from_model
-from models.type_model import to_second_scale, Type, Traits, Types
-from models.config_model import ModelDefinition
-from utils.name_convert import *
-from emitters import Emitter
+from unidef.utils.typing_compat import List, Optional
+from unidef.utils.formatter import IndentedWriter, Formatee, Function, Braces, Text
+from unidef.models import config_model
+from unidef.emitters.sql_model import emit_schema_from_model
+from unidef.models.type_model import to_second_scale, Type, Traits, Types
+from unidef.models.config_model import ModelDefinition
+from unidef.utils.name_convert import *
+from unidef.emitters import Emitter
 
 
 class ProcMacro(Formatee, BaseModel):

@@ -1,7 +1,7 @@
-from models.type_model import Type, Traits
-from utils.name_convert import *
-from emitters import Emitter
-from models.config_model import ModelDefinition
+from unidef.models.type_model import Type, Traits
+from unidef.utils.name_convert import *
+from unidef.emitters import Emitter
+from unidef.models.config_model import ModelDefinition
 
 def get_real(ty: Type) -> str:
     assert ty.get_trait(Traits.Floating), True

@@ -4,8 +4,8 @@ import quickfix
 import os
 import sys
 
-from models.type_model import *
-from parsers import ApiParser
+from unidef.models.type_model import *
+from unidef.parsers import ApiParser
 
 
 class FixParser(ApiParser):

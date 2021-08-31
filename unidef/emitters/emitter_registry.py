@@ -1,13 +1,13 @@
 import sys
 
 from beartype import beartype
-from models.type_model import Type
-from utils.typing_compat import Optional
-from emitters import Emitter
-from emitters.python_model import PythonEmitter
-from emitters.rust_model import RustEmitter
-from emitters.empty_emitter import EmptyEmitter
-from emitters.rust_ijson_emitter import RustIjsonEmitter
+from unidef.models.type_model import Type
+from unidef.utils.typing_compat import Optional
+from unidef.emitters import Emitter
+from unidef.emitters.python_model import PythonEmitter
+from unidef.emitters.rust_model import RustEmitter
+from unidef.emitters.empty_emitter import EmptyEmitter
+from unidef.emitters.rust_ijson_emitter import RustIjsonEmitter
 
 
 class EmitterRegistry:

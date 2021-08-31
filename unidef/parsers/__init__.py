@@ -1,4 +1,4 @@
-from models.type_model import Type
+from unidef.models.type_model import Type
 
 
 class ApiParser:

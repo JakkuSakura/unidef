@@ -1,9 +1,9 @@
 import random
-from utils.typing_compat import *
+from unidef.utils.typing_compat import *
 
 from beartype import beartype
 from pydantic import BaseModel
-from utils.name_convert import *
+from unidef.utils.name_convert import *
 
 
 class Trait(BaseModel):

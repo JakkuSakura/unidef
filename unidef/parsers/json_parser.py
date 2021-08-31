@@ -1,8 +1,8 @@
 import unicodedata
 import pyhocon
-from models.type_model import *
-from parsers import ApiParser
-from utils.typing_compat import *
+from unidef.models.type_model import *
+from unidef.parsers import ApiParser
+from unidef.utils.typing_compat import *
 import re
 
 

@@ -1,4 +1,4 @@
-from utils.typing_compat import *
+from unidef.utils.typing_compat import *
 from pydantic import BaseModel
 from beartype import beartype
 

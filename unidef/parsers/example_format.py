@@ -1,10 +1,10 @@
 import sys
 import logging
 from beartype import beartype
-from models.type_model import Type
-from utils.typing_compat import Optional
-from parsers import ApiParser
-from parsers.json_parser import JsonParser
+from unidef.models.type_model import Type
+from unidef.utils.typing_compat import Optional
+from unidef.parsers import ApiParser
+from unidef.parsers.json_parser import JsonParser
 
 
 class ExampleFormatRegistry:
@@ -24,7 +24,7 @@ EXAMPLE_FORMAT_REGISTRY = ExampleFormatRegistry()
 
 EXAMPLE_FORMAT_REGISTRY.add_api_parser(JsonParser())
 try:
-    from parsers.fix_parser import FixParser
+    from unidef.parsers.fix_parser import FixParser
 
     EXAMPLE_FORMAT_REGISTRY.add_api_parser(FixParser())
 except Exception as e:

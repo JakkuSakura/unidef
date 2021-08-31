@@ -1,12 +1,12 @@
 from enum import Enum
 from io import IOBase
-from utils.typing_compat import Optional, List, Any, Union, Dict
-from models.type_model import Type, parse_data_example, Traits, GLOBAL_TYPE_REGISTRY, Types, Trait
+from unidef.utils.typing_compat import Optional, List, Any, Union, Dict
+from unidef.models.type_model import Type, parse_data_example, Traits, GLOBAL_TYPE_REGISTRY, Types, Trait
 import pyhocon
 import yaml
 from pydantic import BaseModel
 import unicodedata
-from parsers.example_format import EXAMPLE_FORMAT_REGISTRY
+from unidef.parsers.example_format import EXAMPLE_FORMAT_REGISTRY
 
 
 class ModelExample(BaseModel):

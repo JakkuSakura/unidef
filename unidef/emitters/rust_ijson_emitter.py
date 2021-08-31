@@ -1,7 +1,7 @@
-from emitters.emitter_registry import Emitter
-from models.config_model import ModelDefinition
-from models.type_model import Type, Traits
-from utils.formatter import IndentedWriter
+from unidef.emitters.emitter_registry import Emitter
+from unidef.models.config_model import ModelDefinition
+from unidef.models.type_model import Type, Traits
+from unidef.utils.formatter import IndentedWriter
 
 
 def is_numeric(s: str) -> bool:

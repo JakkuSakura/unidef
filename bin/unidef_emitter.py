@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import logging
+import os.path
 import sys
 
 logging.basicConfig(stream=sys.stderr)
-from emitters.emitter_registry import EMITTER_REGISTRY
-from models.config_model import read_model_definition, ModelDefinition, ModelExample
-from utils.typing_compat import *
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+from unidef.emitters.emitter_registry import EMITTER_REGISTRY
+from unidef.models.config_model import read_model_definition, ModelDefinition, ModelExample
+from unidef.utils.typing_compat import *
 import argparse
 
 parser = argparse.ArgumentParser(description='define once, export everywhere')
