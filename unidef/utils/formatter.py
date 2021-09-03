@@ -39,8 +39,11 @@ class IndentedWriter(Formatter, BaseModel):
     def decr_indent(self, level=1):
         self.indent -= level
 
-    def to_string(self):
-        return ''.join(self.content)
+    def to_string(self, strip_left=False):
+        if strip_left and self.content[0].isspace():
+            return ''.join(self.content[1:])
+        else:
+            return ''.join(self.content)
 
     def clone(self):
         writer = IndentedWriter()

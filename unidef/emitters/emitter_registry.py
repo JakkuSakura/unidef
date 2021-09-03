@@ -7,7 +7,7 @@ from unidef.emitters import Emitter
 from unidef.emitters.python_model import PythonEmitter
 from unidef.emitters.rust_model import RustEmitter
 from unidef.emitters.empty_emitter import EmptyEmitter
-from unidef.emitters.rust_ijson_emitter import RustIjsonEmitter
+from unidef.emitters.rust_json_emitter import RustJsonEmitter
 
 
 class EmitterRegistry:
@@ -27,5 +27,5 @@ EMITTER_REGISTRY = EmitterRegistry()
 
 EMITTER_REGISTRY.add_emitter(PythonEmitter())
 EMITTER_REGISTRY.add_emitter(RustEmitter())
-EMITTER_REGISTRY.add_emitter(RustIjsonEmitter())
+EMITTER_REGISTRY.add_emitter(RustJsonEmitter())
 EMITTER_REGISTRY.add_emitter(EmptyEmitter())
