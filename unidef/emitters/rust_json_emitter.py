@@ -75,7 +75,7 @@ class IjsonCrate(JsonCrate):
 class SerdeJsonCrate(JsonCrate):
     object_type = 'serde_json::Map<String, serde_json::Value>'
     array_type = 'Vec<serde_json::Value>'
-    none_type = 'None'
+    none_type = 'serde_json::json!(null)'
     value_type = 'serde_json::Value'
     only_outlier = False
 
