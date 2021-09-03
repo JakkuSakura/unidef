@@ -15,26 +15,29 @@ class IndentedWriter(Formatter, BaseModel):
 
     def try_indent(self):
         try:
-            if self.content[-1] == '\n':
+            if len(self.content) == 0 or self.content[-1] == '\n':
                 self.content.append(self.tab * self.indent)
         except:
             pass
 
     @beartype
-    def append_line(self, s: str):
-        self.try_indent()
-        self.content.extend([s, '\n'])
+    def append_line(self, s: str = ''):
+        if s:
+            self.try_indent()
+            self.content.extend([s, '\n'])
+        else:
+            self.content.append('\n')
 
     @beartype
     def append(self, s: str):
         self.try_indent()
         self.content.append(s)
 
-    def incr_indent(self):
-        self.indent += 1
+    def incr_indent(self, level=1):
+        self.indent += level
 
-    def decr_indent(self):
-        self.indent -= 1
+    def decr_indent(self, level=1):
+        self.indent -= level
 
     def to_string(self):
         return ''.join(self.content)
