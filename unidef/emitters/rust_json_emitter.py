@@ -48,7 +48,7 @@ def emit_type(json_crate: JsonCrate, ty: Type, indent=0) -> str:
         if fields:
             formatter.append_line('{')
             formatter.incr_indent()
-            formatter.append_line(f'let mut node = {json_crate.object_type}::new();')
+            formatter.append_line(f'let mut node = <{json_crate.object_type}>::new();')
             for field in ty.get_traits(Traits.StructField):
                 for line in field.get_traits(Traits.LineComment):
                     formatter.append_line('//{}'.format(line))
@@ -60,7 +60,7 @@ def emit_type(json_crate: JsonCrate, ty: Type, indent=0) -> str:
             formatter.decr_indent()
             formatter.append('}')
         else:
-            formatter.append_line(f'{json_crate.object_type}::new()')
+            formatter.append(f'{json_crate.object_type}::new()')
     elif ty.get_trait(Traits.RawValue) == 'undefined':
         formatter.append(f'{json_crate.none_type}')
     elif ty.get_trait(Traits.Bool):
