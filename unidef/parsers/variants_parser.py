@@ -7,7 +7,7 @@ from unidef.utils.typing_compat import *
 import re
 
 
-class FieldsParser(Parser):
+class VariantsParser(Parser):
 
     def accept(self, fmt: Definition) -> bool:
         return isinstance(fmt, Variants)

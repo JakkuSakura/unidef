@@ -6,6 +6,9 @@ from unidef.models.definitions import Definition
 from unidef.utils.typing_compat import Optional
 from unidef.parsers import Parser
 from unidef.parsers.json_parser import JsonParser
+from unidef.parsers.fields_parser import FieldsParser
+from unidef.parsers.variants_parser import VariantsParser
+from unidef.parsers.javascript_parser import JavascriptParser
 from enum import Enum
 
 
@@ -25,6 +28,10 @@ class ParserRegistry:
 PARSER_REGISTRY = ParserRegistry()
 
 PARSER_REGISTRY.add_parser(JsonParser())
+PARSER_REGISTRY.add_parser(FieldsParser())
+PARSER_REGISTRY.add_parser(VariantsParser())
+PARSER_REGISTRY.add_parser(JavascriptParser())
+
 try:
     from unidef.parsers.fix_parser import FixParser
 
