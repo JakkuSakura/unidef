@@ -2,7 +2,9 @@ from unidef.emitters.emitter_registry import Emitter
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Type, Traits
 from unidef.utils.formatter import IndentedWriter
+from unidef.utils.typing_compat import *
 from pydantic import BaseModel
+
 
 class JsonCrate(BaseModel):
     object_type: str
@@ -10,6 +12,9 @@ class JsonCrate(BaseModel):
     none_type: str
     value_type: str
     no_macro: bool = False
+
+    def process_raw_value(self, s: Any) -> str:
+        return f'"{s}"'
 
     def map_value(self, ty: Type, indent=0) -> str:
         formatter = IndentedWriter(indent=indent)
@@ -59,7 +64,7 @@ class JsonCrate(BaseModel):
         elif ty.get_trait(Traits.Bool):
             formatter.append(str(ty.get_trait(Traits.RawValue)).lower())
         elif ty.get_trait(Traits.RawValue):
-            formatter.append('"{}"'.format(ty.get_trait(Traits.RawValue)))
+            formatter.append(self.process_raw_value(ty.get_trait(Traits.RawValue)))
         else:
             formatter.append('Could not process {}'.format(ty))
         return formatter.to_string(strip_left=True)
@@ -117,7 +122,7 @@ class SerdeJsonCrate(JsonCrate):
         elif ty.get_trait(Traits.Bool):
             formatter.append(str(ty.get_trait(Traits.RawValue)).lower())
         elif ty.get_trait(Traits.RawValue):
-            formatter.append('"{}"'.format(ty.get_trait(Traits.RawValue)))
+            formatter.append(self.process_raw_value(ty.get_trait(Traits.RawValue)))
         else:
             formatter.append('Could not process {}'.format(ty))
         if self.only_outlier and indent == 0:
