@@ -1,4 +1,4 @@
-from unidef.emitters.emitter_registry import Emitter
+from unidef.emitters.registry import Emitter
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Type, Traits
 from unidef.utils.formatter import IndentedWriter

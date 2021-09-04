@@ -4,11 +4,8 @@ from beartype import beartype
 from unidef.models.type_model import Type
 from unidef.models.definitions import Definition
 from unidef.utils.typing_compat import Optional
+from unidef.utils.loader import load_module
 from unidef.parsers import Parser
-from unidef.parsers.json_parser import JsonParser
-from unidef.parsers.fields_parser import FieldsParser
-from unidef.parsers.variants_parser import VariantsParser
-from unidef.parsers.javascript_parser import JavascriptParser
 from enum import Enum
 
 
@@ -27,14 +24,15 @@ class ParserRegistry:
 
 PARSER_REGISTRY = ParserRegistry()
 
-PARSER_REGISTRY.add_parser(JsonParser())
-PARSER_REGISTRY.add_parser(FieldsParser())
-PARSER_REGISTRY.add_parser(VariantsParser())
-PARSER_REGISTRY.add_parser(JavascriptParser())
 
-try:
-    from unidef.parsers.fix_parser import FixParser
+def add_parser(name: str, emitter: str):
+    module = load_module(f'unidef.parsers.{name}')
+    if module:
+        PARSER_REGISTRY.add_parser(module.__dict__[emitter]())
 
-    PARSER_REGISTRY.add_parser(FixParser())
-except Exception as e:
-    logging.warning('Does not support fix parser %s', e)
+
+add_parser('json_parser', 'JsonParser')
+add_parser('fields_parser', 'FieldsParser')
+add_parser('variants_parser', 'VariantsParser')
+add_parser('javascript_parser', 'JavascriptParser')
+add_parser('fix_parser', 'FixParser')

@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-from unidef.emitters.emitter_registry import EMITTER_REGISTRY
+from unidef.emitters.registry import EMITTER_REGISTRY
 from unidef.models.config_model import read_model_definition, ModelDefinition, ModelExample
 from unidef.utils.typing_compat import *
 import argparse
