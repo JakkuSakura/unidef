@@ -1,0 +1,8 @@
+---
+type: example
+name: model
+note: This is a example
+source:
+  lang: javascript
+  code: |
+    console.log("hello")

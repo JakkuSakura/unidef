@@ -5,14 +5,14 @@ import os
 import sys
 
 from unidef.models.type_model import *
-from unidef.parsers import ApiParser
+from unidef.models.definitions import ModelExample
+from unidef.parsers import Parser, Category
 
-
-class FixParser(ApiParser):
+class FixParser(Parser):
     BASE_DIR = 'quickfix'
 
-    def accept(self, fmt: str) -> bool:
-        return fmt.lower().startswith('fix')
+    def accept(self, fmt: Definition) -> bool:
+        return category == Category.EXAMPLE and fmt.lower().startswith('fix')
 
     def get_dictionary(self, version: str) -> quickfix.DataDictionary:
         if not os.path.exists(FixParser.BASE_DIR):
@@ -20,8 +20,9 @@ class FixParser(ApiParser):
 
         return quickfix.DataDictionary(f'{FixParser.BASE_DIR}/spec/{version}.xml')
 
-    def parse(self, fmt: str, name: str, content: str) -> Type:
-        dct = self.get_dictionary(fmt)
+    def parse(self, name: str, fmt: ModelExample) -> Type:
+        content = fmt.text
+        dct = self.get_dictionary(fmt.format)
         kvs = content.split('|')[:-1]
         fields = []
         for kv in kvs:

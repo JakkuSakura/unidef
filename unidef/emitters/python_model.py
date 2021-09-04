@@ -1,3 +1,5 @@
+import logging
+
 from pydantic import BaseModel
 from beartype import beartype
 
@@ -251,7 +253,12 @@ def emit_python_model_definition(root: ModelDefinition) -> str:
 
 class PythonEmitter(Emitter):
     def accept(self, s: str) -> bool:
-        return s == 'python'
+        if 'python' in s:
+            if 'peewee' in s:
+                return True
+            else:
+                logging.warning('target=python is deprecated, use target=python_peewee instead')
+                return True
 
     def emit_model(self, target: str, model: ModelDefinition) -> str:
         return emit_python_model_definition(model)

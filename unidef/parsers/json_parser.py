@@ -1,15 +1,16 @@
 import unicodedata
 import pyhocon
 from unidef.models.type_model import *
-from unidef.parsers import ApiParser
+from unidef.models.definitions import ModelExample, Definition
+from unidef.parsers import Parser
 from unidef.utils.typing_compat import *
 import re
 
 
-class JsonParser(ApiParser):
+class JsonParser(Parser):
 
-    def accept(self, fmt: str) -> bool:
-        return fmt.lower() == 'json'
+    def accept(self, fmt: Definition) -> bool:
+        return isinstance(fmt, ModelExample) and fmt.format.lower() == 'json'
 
     def parse_comment(self, content: str) -> Dict[(int, str), str]:
         occurrences = {}
@@ -33,7 +34,8 @@ class JsonParser(ApiParser):
                 comment.clear()
         return result
 
-    def parse(self, fmt: str, name: str, content: str) -> Type:
+    def parse(self, name: str, fmt: ModelExample) -> Type:
+        content = fmt.text
         content = unicodedata.normalize('NFKC', content)
         comments = self.parse_comment(content)
 

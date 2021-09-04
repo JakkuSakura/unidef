@@ -1,27 +1,13 @@
 from enum import Enum
 from io import IOBase
-from unidef.utils.typing_compat import Optional, List, Any, Union, Dict
+from unidef.utils.typing_compat import *
 from unidef.models.type_model import Type, parse_data_example, Traits, GLOBAL_TYPE_REGISTRY, Types, Trait
+from unidef.models.definitions import *
 import pyhocon
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 import unicodedata
-from unidef.parsers.example_format import EXAMPLE_FORMAT_REGISTRY
-
-
-class ModelExample(BaseModel):
-    format: str
-    text: str
-
-    def get_parsed(self, name='') -> Type:
-        parser = EXAMPLE_FORMAT_REGISTRY.find_parser(self.format)
-        if parser is None:
-            raise Exception(f'Could not recognize format {self.format} for {name}')
-        return parser.parse(self.format, name, self.text)
-
-
-class InvalidArgumentException(Exception):
-    pass
+from unidef.parsers.registry import PARSER_REGISTRY
 
 
 class ModelDefinition(BaseModel):
@@ -33,27 +19,9 @@ class ModelDefinition(BaseModel):
     raw: str = ''
     traits: List[Dict[str, Any]] = []
     example: Optional[ModelExample] = None
-    fields: Optional[List[Dict[str, Any]]] = None
+    fields: Optional[Fields] = None
     variants: Optional[List[Dict[str, Any]]] = None
-
-    def parse_field(self, field: Dict[str, Any]) -> Type:
-        field = field.copy()
-        name = field.pop('name')
-        type_ref = field.pop('type')
-        ty = GLOBAL_TYPE_REGISTRY.get_type(type_ref)
-        if ty:
-            ty = ty.copy()
-            ty.replace_trait(Traits.TypeName.init_with(name))
-        else:
-            ty = Type.from_str(name).append_trait(Traits.TypeRef.init_with(type_ref))
-
-        for key, val in field.items():
-            trait = GLOBAL_TYPE_REGISTRY.get_trait(key)
-            if trait is not None:
-                ty.append_trait(trait.init_with(val))
-            else:
-                raise InvalidArgumentException(key)
-        return ty
+    source: Optional[SourceExample] = None
 
     def get_traits(self) -> List[Trait]:
         traits = []
@@ -69,23 +37,19 @@ class ModelDefinition(BaseModel):
         return traits
 
     def get_parsed(self) -> Type:
-        def inner():
-            if self.example:
-                parsed = self.example.get_parsed(self.name)
-                return parsed
-            if self.fields:
-                fields = []
-                for field in self.fields:
-                    fields.append(self.parse_field(field))
+        for to_parse in [self.example, self.fields, self.source, self.variants]:
+            if to_parse:
+                parser = PARSER_REGISTRY.find_parser(to_parse)
 
-                return Types.struct(self.name, fields)
-            if self.variants:
-                variants = []
-                for var in self.variants:
-                    variants.append(Types.variant(var['name'].split()))
-                return Types.enum(self.name, variants)
+                if parser is not None:
+                    parsed = parser.parse(self.name, to_parse)
+                    break
+                else:
+                    raise Exception(f'Could not find parser for {to_parse}')
 
-        parsed = inner()
+        else:
+            raise Exception(f'No invalid input for {self.name}')
+
         for t in self.get_traits():
             parsed.append_trait(t)
         return parsed
@@ -102,7 +66,7 @@ def read_model_definition(content: str) -> List[ModelDefinition]:
         data = yaml.safe_load(seg)
         if data is None:
             continue
-        loaded_model = ModelDefinition(**dict(data.items()))
+        loaded_model = ModelDefinition.parse_obj(dict(data.items()))
         loaded_model.raw = seg
         defs.append(loaded_model)
 

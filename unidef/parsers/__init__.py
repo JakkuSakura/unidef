@@ -1,10 +1,13 @@
 from unidef.models.type_model import Type
+from unidef.models.definitions import Definition
+from pydantic import BaseModel
+from enum import Enum
 
 
-class ApiParser:
+class Parser:
 
-    def accept(self, fmt: str) -> bool:
+    def accept(self, fmt: Definition) -> bool:
         raise NotImplementedError()
 
-    def parse(self, fmt: str, name: str, content: str) -> Type:
+    def parse(self, name: str, fmt: Definition) -> Type:
         raise NotImplementedError()
