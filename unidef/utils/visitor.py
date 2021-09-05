@@ -2,7 +2,7 @@ from unidef.utils.typing_compat import *
 
 
 class VisitorPattern:
-    def get_functions(self, prefix: str):
+    def get_functions(self, prefix: str) -> List[Tuple[str, Callable]]:
         functions = []
         for key in dir(self):
             value = getattr(self, key)

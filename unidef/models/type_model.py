@@ -4,177 +4,88 @@ from unidef.utils.typing_compat import *
 from beartype import beartype
 from pydantic import BaseModel, PrivateAttr
 from unidef.utils.name_convert import *
+from unidef.models.base_model import *
 
 
-class Trait(BaseModel):
-    name: str
-    value: Any = None
-
-    def default(self, value: Any) -> __qualname__:
-        return self(value)
-
-    def __call__(self, value: Any) -> __qualname__:
-        trait = self.copy(deep=True)
-        trait.value = value
-        return trait
-
-    @classmethod
-    @beartype
-    def from_str(cls, name: str) -> __qualname__:
-        return cls(name=name)
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __repr__(self):
-        return f'{self.name}: {self.value}'
+class Trait(MyField):
+    pass
 
 
 class Traits:
-    TypeName = Trait.from_str('name')
-    FieldName = Trait.from_str('field_name')
-    BitSize = Trait.from_str('bit_size')
-    Signed = Trait.from_str('signed').default(True)
-    KeyType = Trait.from_str('key')
-    ValueType = Trait.from_str('value')
-    Parent = Trait.from_str('parent')
-    StructField = Trait.from_str('field')
-    Struct = Trait.from_str('struct').default(True)
-    Enum = Trait.from_str('enum').default(True)
-    TypeRef = Trait.from_str('type_ref')
-    Variant = Trait.from_str('variant')
-    VariantName = Trait.from_str('variant_name')
-    RawValue = Trait.from_str('raw_value')
+    TypeName = Trait(key='name')
+    FieldName = Trait(key='field_name')
+    BitSize = Trait(key='bit_size')
+    Signed = Trait(key='signed', default_present=True, default_absent=False)
+    KeyType = Trait(key='key')
+    ValueType = Trait(key='value', default_present=[], default_absent=[])
+    Parent = Trait(key='parent')
+    StructField = Trait(key='field', default_present=[], default_absent=[])
+    Struct = Trait(key='struct', default_present=True, default_absent=False)
+    Enum = Trait(key='enum', default_present=True, default_absent=False)
+    TypeRef = Trait(key='type_ref')
+    Variant = Trait(key='variant')
+    VariantName = Trait(key='variant_name')
+    RawValue = Trait(key='raw_value')
     # TODO: distinguish in line or before line comments
-    BeforeLineComment = Trait.from_str('before_line_comment')
-    InLineComment = Trait.from_str('in_line_comment')
-    BlockComment = Trait.from_str('block_comment')
-    Frozen = Trait.from_str('frozen').default(True)
+    BeforeLineComment = Trait(key='before_line_comment', default_present=[], default_absent=[])
+    InLineComment = Trait(key='in_line_comment', default_present=[], default_absent=[])
+    BlockComment = Trait(key='block_comment')
 
     # Types
-    Bool = Trait.from_str('bool').default(True)
-    Numeric = Trait.from_str('numeric').default(True)
-    Floating = Trait.from_str('floating').default(True)
-    Integer = Trait.from_str('integer').default(True)
-    String = Trait.from_str('string').default(True)
-    TupleField = Trait.from_str('tuple_field')
-    Tuple = Trait.from_str('tuple').default(True)
-    Vector = Trait.from_str('vector').default(True)
-    Map = Trait.from_str('map').default(True)
-    Unit = Trait.from_str('unit').default(True)
-    Null = Trait.from_str('null').default(True)
-    AllValue = Trait.from_str('all_value').default(True)
+    Bool = Trait(key='bool', default_present=True, default_absent=False)
+    Numeric = Trait(key='numeric', default_present=True, default_absent=False)
+    Floating = Trait(key='floating', default_present=True, default_absent=False)
+    Integer = Trait(key='integer', default_present=True, default_absent=False)
+    String = Trait(key='string', default_present=True, default_absent=False)
+    TupleField = Trait(key='tuple_field', default_present=[], default_absent=[])
+    Tuple = Trait(key='tuple', default_present=True, default_absent=False)
+    Vector = Trait(key='vector', default_present=True, default_absent=False)
+    Map = Trait(key='map', default_present=True, default_absent=False)
+    Unit = Trait(key='unit', default_present=True, default_absent=False)
+    Null = Trait(key='null', default_present=True, default_absent=False)
+    AllValue = Trait(key='all_value', default_present=True, default_absent=False)
 
     # Format
-    SimpleEnum = Trait.from_str('simple_enum')
-    StringWrapped = Trait.from_str('string_wrapped').default(True)
-    TsUnit = Trait.from_str('ts_unit')
+    SimpleEnum = Trait(key='simple_enum', default_present=True, default_absent=False)
+    StringWrapped = Trait(key='string_wrapped', default_present=True, default_absent=False)
+    TsUnit = Trait(key='ts_unit')
 
     # SQL related
-    Primary = Trait.from_str('primary').default(True)
-    Nullable = Trait.from_str('nullable').default(True)
+    Primary = Trait(key='primary', default_present=True, default_absent=False)
+    Nullable = Trait(key='nullable', default_present=True, default_absent=False)
 
     # Rust related
-    Reference = Trait.from_str('reference').default(True)
-    Mutable = Trait.from_str('mutable').default(True)
-    Lifetime = Trait.from_str('lifetime')
-    Derive = Trait.from_str('derive')
+    Reference = Trait(key='reference', default_present=True, default_absent=False)
+    Mutable = Trait(key='mutable', default_present=True, default_absent=False)
+    Lifetime = Trait(key='lifetime')
+    Derive = Trait(key='derive', default_present=[], default_absent=[])
 
 
-class Type(BaseModel):
+class Type(MyBaseModel):
     """
     Type is the type model used in this program.
     It allows inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
     """
-    __root__: List[Trait] = []
-
-    @property
-    def traits(self):
-        return self.__root__
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @beartype
-    def append_trait(self, trait: Trait) -> __qualname__:
-        assert not self.is_frozen()
-        if trait.value is not None:
-            assert trait.value is not None, f'{trait.name} should not be None'
-            self.traits.append(trait)
-        return self
-
-    @beartype
-    def extend_traits(self, trait: Trait, values: Iterable[Any]) -> __qualname__:
-        assert not self.is_frozen()
-
-        for value in values:
-            self.traits.append(trait(value))
-        return self
-
-    @beartype
-    def replace_trait(self, trait: Trait) -> __qualname__:
-        for i, trait0 in enumerate(self.traits):
-            if trait0.name == trait.name:
-                self.traits[i] = trait
-                return self
-        self.traits.append(trait)
-        return self
-
-    @beartype
-    def remove_trait(self, trait: Trait) -> __qualname__:
-        assert not self.is_frozen()
-        for i, t in enumerate(self.traits):
-            if trait.name == t.name:
-                del self.traits[i]
-                break
-        return self
-
-    def get_trait(self, name: Trait) -> Any:
-        return self.get_trait_by_name(name.name)
-
-    def get_trait_by_name(self, name: str) -> Any:
-        for trait in self.traits:
-            if trait.name == name:
-                return trait.value
-
-    def get_traits(self, name: Trait) -> List[Any]:
-        return self.get_traits_by_name(name.name)
-
-    def get_traits_by_name(self, name: str) -> List[Any]:
-        traits = []
-        for t in self.traits:
-            if t.name == name:
-                traits.append(t.value)
-        return traits
-
-    def keys(self) -> List[str]:
-        return [trait.name for trait in self.traits]
-
-    def __iter__(self):
-        return self.traits
 
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
         return cls().append_trait(Traits.TypeName(name))
 
-    def is_frozen(self):
-        return self.get_trait(Traits.Frozen)
+    def append_trait(self, trait: Trait) -> __qualname__:
+        return self.append_field(trait)
 
-    def freeze(self) -> __qualname__:
-        return self.append_trait(Traits.Frozen)
+    def get_trait(self, trait: Trait) -> Any:
+        return self.get_field(trait)
 
-    def copy(self, *args, **kwargs) -> __qualname__:
-        kwargs['deep'] = True
-        this = super().copy(*args, **kwargs)
-        this.remove_trait(Traits.Frozen)
-        return this
+    def get_traits(self, trait: Trait) -> List[Any]:
+        return self.get_field(trait)
 
-    def __str__(self):
-        return f'{type(self).__name__}{self.traits}'
+    def replace_trait(self, trait: Trait) -> __qualname__:
+        return self.replace_field(trait)
 
-    def __repr__(self):
-        return self.__str__()
+    def extend_traits(self, field: Trait, values: Iterable[Any]) -> __qualname__:
+        return self.extend_field(field, values)
 
 
 def build_int(name: str) -> Type:
@@ -271,9 +182,9 @@ class TypeRegistry(BaseModel):
 
     @beartype
     def insert_trait(self, trait: Trait):
-        if trait.name not in self.traits:
-            self.traits[trait.name] = trait
-        elif self.traits[trait.name] != trait:
+        if trait.key not in self.traits:
+            self.traits[trait.key] = trait
+        elif self.traits[trait.key] != trait:
             raise Exception(f'TraitAlreadyExistsAndConflict{trait.name}')
 
     @beartype
@@ -422,9 +333,9 @@ def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None
             process(depth, field)
             walk_type(field, process, depth + 1)
     if node.get_trait(Traits.Vector):
-        ty = node.get_trait(Traits.ValueType)
-        process(depth, ty)
-        walk_type(ty, process, depth + 1)
+        for ty in node.get_trait(Traits.ValueType):
+            process(depth, ty)
+            walk_type(ty, process, depth + 1)
     else:
         process(depth, node)
 

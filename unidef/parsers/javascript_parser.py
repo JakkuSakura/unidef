@@ -1,3 +1,4 @@
+import json
 import logging
 import traceback
 
@@ -75,7 +76,8 @@ class VisitorBase(VisitorPattern):
 
     def visit_program(self, node) -> Node:
         program = Node.from_str('program')
-        program.extend_traits(Attributes.Child, [self.visit_node(stmt) for stmt in node['body']])
+        body = self.visit_node(node['body']) or []
+        program.extend_traits(Attributes.Child, body)
         return program
 
     def visit_other(self, node) -> Node:
@@ -85,7 +87,12 @@ class VisitorBase(VisitorPattern):
             n = Node.from_str(node.pop('name'))
 
         for key, value in node.items():
-            n.append_trait(Attribute.from_str(key)(self.visit_node(value)))
+            value = self.visit_node(value)
+            default = [] if isinstance(value, list) else None
+            if n.exist_field(Attribute(key=key)):
+                logging.warning('Ignoring key %s value %s', key, value)
+            else:
+                n.append_trait(Attribute(key=key, default=default, value=value))
         return n
 
     def visit_literal(self, node) -> Node:
@@ -119,12 +126,15 @@ class VisitorBase(VisitorPattern):
                     result.append_trait(Traits.BeforeLineComment(comment['value']))
             return result
         elif isinstance(node, list):
-            return list(map(self.visit_node, node))
+            result = [self.visit_node(n) for n in node]
+            return result
         else:
             return node
 
 
 class VisitorImpl(VisitorBase):
+    pass
+
     def visit_variable_declaration(self, node) -> Node:
         for decl in node['declarations']:
             if self.match_func_call(decl['init'], 'require'):
@@ -134,7 +144,7 @@ class VisitorImpl(VisitorBase):
                 paths = paths[0]
                 return Nodes.require_node(paths, names,
                                           self.visit_node(decl))
-            return NotImplemented
+        return NotImplemented
 
     def visit_assignment_expression(self, node):
         name = self.get_name(node['left'])
@@ -145,19 +155,23 @@ class VisitorImpl(VisitorBase):
     def visit_class_expression(self, node):
         class_name = self.get_name(node['id'])
         super_class = self.get_name(node['superClass'])
-        body = self.visit_node(node['body']['body'])
-        return (
+
+        body = self.visit_node(node['body']['body']) or []
+
+        n = (
             Node.from_attribute(Attributes.ClassDecl)
                 .append_trait(Attributes.Name(class_name))
                 .append_trait(Attributes.SuperClass(super_class))
                 .extend_traits(Attributes.Child, body)
         )
 
+        return n
+
     def visit_method_definition(self, node):
         name = self.get_name(node['key'])
         is_async = node['value']['async']
-        params = map(self.visit_arg, node['value']['params'])
-        children = self.visit_node(node['value']['body']['body'])
+        params = list(map(self.visit_arg, node['value']['params']))
+        children = self.visit_node(node['value']['body']['body']) or []
         return (
             Node.from_attribute(Attributes.FunctionDecl)
                 .append_trait(Attributes.Name(name))
@@ -178,16 +192,14 @@ class VisitorImpl(VisitorBase):
             return Nodes.print_node(self.visit_node(node['arguments']))
         n = Node.from_attribute(Attributes.FunctionCall)
         n.append_trait(Attributes.Callee(self.visit_node(node['callee'])))
-        n.extend_traits(Attributes.Argument, map(self.visit_node, node['arguments']))
+        arguments = self.visit_node(node['arguments']) or []
+        n.extend_traits(Attributes.Argument, arguments)
         return n
 
     def visit_return_statement(self, node) -> Node:
         return (
             Node.from_attribute(Attributes.Return(self.visit_node(node['argument'])))
         )
-
-    def visit_object_expression(self, node) -> Node:
-        raise NotImplementedError()
 
 
 class JavascriptParser(Parser):

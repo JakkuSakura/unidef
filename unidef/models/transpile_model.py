@@ -2,40 +2,43 @@ from unidef.models.type_model import Type, Trait, Traits
 from beartype import beartype
 from unidef.utils.typing_compat import *
 from unidef.utils.safelist import safelist
+from unidef.models.base_model import MyBaseModel, MyField
 from pydantic import BaseModel
 
 
-class Attribute(Trait):
+class Attribute(MyField):
     pass
 
 
 class Attributes:
-    Kind = Attribute.from_str('kind')
-    Name = Attribute.from_str('name')
-    Id = Attribute.from_str('id')
-    Child = Attribute.from_str('child')
-    Statement = Attribute.from_str('statement')
-    ClassDecl = Attribute.from_str('class_declaration').default(True)
-    SuperClass = Attribute.from_str('super_class')
-    WhileLoop = Attribute.from_str('while_loop')
-    Expression = Attribute.from_str('expression')
-    FunctionCall = Attribute.from_str('function_call').default(True)
-    FunctionDecl = Attribute.from_str('function_decl').default(True)
-    RawCode = Attribute.from_str('raw_code')
-    RawValue = Attribute.from_str('raw_value')
-    Callee = Attribute.from_str('callee')
-    Argument = Attribute.from_str('argument')
-    ArgumentName = Attribute.from_str('argument_name')
-    ArgumentType = Attribute.from_str('argument_type')
-    Literal = Attribute.from_str('literal').default(True)
-    Async = Attribute.from_str('async').default(True)
-    Return = Attribute.from_str('return')
+    Kind = Attribute(key='kind')
+    Name = Attribute(key='name')
+    Id = Attribute(key='id')
+    Child = Attribute(key='child', default_present=[], default_absent=[])
+    Statement = Attribute(key='statement')
+    ClassDecl = Attribute(key='class_declaration', default_present=True, default_absent=False)
+    SuperClass = Attribute(key='super_class', default_present=[], default_absent=[])
+    WhileLoop = Attribute(key='while_loop')
+    Expression = Attribute(key='expression')
+    FunctionCall = Attribute(key='function_call', default_present=True, default_absent=False)
+    FunctionDecl = Attribute(key='function_decl', default_present=True, default_absent=False)
+    RawCode = Attribute(key='raw_code')
+    RawValue = Attribute(key='raw_value')
+    Callee = Attribute(key='callee')
+    Argument = Attribute(key='argument', default_present=[], default_absent=[])
+    ArgumentName = Attribute(key='argument_name')
+    ArgumentType = Attribute(key='argument_type')
+    Literal = Attribute(key='literal', default_present=True, default_absent=False)
+    Async = Attribute(key='async', default_present=True, default_absent=False)
+    Return = Attribute(key='return')
+    # FIXME
+    VarDecl = Attribute(key='declarations', default_present=[], default_absent=[])
 
-    Print = Attribute.from_str('print').default(True)
-    Require = Attribute.from_str('require')
+    Print = Attribute(key='print', default_present=True, default_absent=False)
+    Require = Attribute(key='require', default_present=[], default_absent=[])
 
 
-class Node(Type):
+class Node(MyBaseModel):
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
@@ -44,7 +47,19 @@ class Node(Type):
     @classmethod
     @beartype
     def from_attribute(cls, attr: Attribute) -> __qualname__:
-        return cls.from_str(attr.name).append_trait(attr)
+        return cls.from_str(attr.key).append_trait(attr)
+
+    def append_trait(self, trait: Trait) -> __qualname__:
+        return self.append_field(trait)
+
+    def get_trait(self, trait: Trait) -> Any:
+        return self.get_field(trait)
+
+    def get_traits(self, trait: Trait) -> List[Any]:
+        return self.get_field(trait)
+
+    def extend_traits(self, field: MyField, values: List[Any]) -> __qualname__:
+        return self.extend_field(field, values)
 
 
 class RequireNode(BaseModel):

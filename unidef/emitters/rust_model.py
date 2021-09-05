@@ -86,7 +86,7 @@ def map_type_to_rust(ty: Type) -> str:
     #     return map_type_to_str(ty.get_trait(Traits.ValueType))
     if ty.get_trait(Traits.Nullable):
         ty = ty.copy()
-        ty.remove_trait(Traits.Nullable)
+        ty.remove_field(Traits.Nullable)
         return 'Option<{}>'.format(map_type_to_rust(ty))
     if ty.get_trait(Traits.Null):
         return 'String'
@@ -393,8 +393,8 @@ def find_all_structs_impl(reg: StructRegistry, s: Type):
         reg.add_struct(s)
         for field in s.get_traits(Traits.StructField):
             find_all_structs_impl(reg, field)
-    elif s.get_trait(Traits.ValueType):
-        find_all_structs_impl(reg, s.get_trait(Traits.ValueType))
+    for vt in s.get_trait(Traits.ValueType):
+        find_all_structs_impl(reg, vt)
 
 
 def find_all_structs(s: Type) -> List[Type]:

@@ -20,7 +20,7 @@ class EmitterBase(VisitorPattern):
         self.formatter = IndentedWriter()
 
     def emit_node(self, node):
-        if isinstance(node, Type):
+        if isinstance(node, Node):
             if self.functions is None:
                 self.functions = self.get_functions('emit_')
             node_name = node.get_trait(Attributes.Kind)
@@ -36,7 +36,7 @@ class EmitterBase(VisitorPattern):
         elif isinstance(node, str):
             self.emit_raw(node)
         else:
-            raise Exception('Could not emit ' + node)
+            raise Exception('Could not emit ' + str(node))
 
     def write(self, elem: Formatee):
         elem.format_with(self.formatter)
@@ -99,6 +99,7 @@ class EmitterBase(VisitorPattern):
         for i, a in enumerate(arguments):
             if i > 0:
                 self.formatter.append(', ')
+
             self.emit_node(a)
         self.formatter.append(f')')
 
@@ -121,7 +122,7 @@ class EmitterBase(VisitorPattern):
                 self.formatter.append_line(f'use {path};')
 
     def emit_variable_declaration(self, node):
-        for decl in node.get_trait_by_name('declarations'):
+        for decl in node.get_trait(Attributes.VarDecl):
             assert isinstance(decl, Node), f'decl should be node, got {type(decl)}'
             name = decl.get_trait(Attributes.Id).get_trait(Attributes.Name)
             self.formatter.append(f'let {name}')
@@ -142,13 +143,14 @@ class EmitterBase(VisitorPattern):
                     .append_trait(Traits.TypeRef(base))
                     .append_trait(Traits.FieldName('base'))
             )
-        rust_struct = RustStruct(raw=Types.struct(node.get_trait(Attributes.Name), fields))
+        name = node.get_trait(Attributes.Name)
+        rust_struct = RustStruct(raw=Types.struct(name, fields))
         self.write(rust_struct)
 
         self.formatter.append_line(f'''impl {rust_struct.name} {{''')
         self.formatter.incr_indent()
 
-        for child in node.get_traits(Attributes.Child):
+        for i, child in enumerate(node.get_traits(Attributes.Child)):
             self.emit_node(child)
 
         self.formatter.decr_indent()
