@@ -1,3 +1,6 @@
+import logging
+import traceback
+
 from unidef.parsers import Parser, Definition
 from unidef.models.type_model import Type
 from unidef.utils.name_convert import *
@@ -20,6 +23,45 @@ class VisitorBase:
                 node_name = key[len('visit_'):]
                 functions[node_name] = value
         return functions
+
+    def get_recursive(self, obj: Dict, path: str) -> Any:
+        for to_visit in path.split('.'):
+            obj = obj.get(to_visit)
+            if obj is None:
+                return None
+        return obj
+
+    def get_name(self, node) -> Optional[str]:
+        ty = self.get_recursive(node, 'object.type')
+        if ty:
+            if ty == 'ThisExpression':
+                return 'this'
+            elif ty == 'Identifier':
+                return self.get_recursive(node, 'object.name')
+            else:
+                logging.warning('could not process %s', node)
+                return
+        else:
+            ty = node.get('type')
+            if ty == 'Identifier':
+                return node.get('name')
+            else:
+                logging.warning('could not process %s', node)
+                return
+
+    def match_func_call(self, node, name: str) -> bool:
+        obj, method = tuple(name.split('.'))
+        try:
+            callee = node['callee']
+
+            obj0 = self.get_name(callee)
+            if obj0 == obj and self.get_recursive(callee, 'property.name') == method:
+                return True
+
+        except KeyError as e:
+            traceback.print_exc()
+
+        return False
 
     def visit_program(self, node) -> Node:
         program = Node.from_str('program')
@@ -64,15 +106,8 @@ class VisitorBase:
 
 
 class VisitorImpl(VisitorBase):
-    def match_func_call(self, node, name: str) -> bool:
-        obj, method = tuple(name.split('.'))
-        callee = node['callee']
-        if callee['object']['name'] == obj and callee['property']['name'] == method:
-            return True
-        else:
-            return False
 
-    def visit_statement(self, node) -> Node:
+    def visit_expression_statement(self, node) -> Node:
         return Node.from_str('statement'). \
             append_trait(Attributes.expression(self.visit_node(node['expression'])))
 
@@ -84,11 +119,11 @@ class VisitorImpl(VisitorBase):
 
 class JavascriptParser(Parser):
     def accept(self, fmt: Definition) -> bool:
-        return isinstance(fmt, SourceExample) and fmt.lang == 'javascript' and load_module('pyjsparser')
+        return isinstance(fmt, SourceExample) and fmt.lang == 'javascript' and load_module('esprima')
 
     def parse(self, name: str, fmt: Definition) -> Node:
         assert isinstance(fmt, SourceExample)
-        import pyjsparser
-        parsed = pyjsparser.parse(fmt.code)
-        node = VisitorImpl().visit_node(parsed)
+        import esprima
+        parsed = esprima.parseScript(fmt.code)
+        node = VisitorImpl().visit_node(parsed.toDict())
         return node

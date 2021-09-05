@@ -46,6 +46,7 @@ class Traits:
     VariantName = Trait.from_str('variant_name')
     RawValue = Trait.from_str('raw_value')
     LineComment = Trait.from_str('line_comment')
+    Frozen = Trait.from_str('frozen').default(True)
 
     # Types
     Bool = Trait.from_str('bool').default(True)
@@ -79,13 +80,15 @@ class Traits:
 class Type(BaseModel):
     """
     Type is the type model used in this program.
-    It allows single inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
+    It allows inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
     """
-    traits: List[Trait] = []
-    _frozen: bool = PrivateAttr(default=False)
+    __root__: List[Trait] = []
+    @property
+    def traits(self):
+        return self.__root__
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @beartype
     def append_trait(self, trait: Trait) -> __qualname__:
@@ -104,7 +107,7 @@ class Type(BaseModel):
     def replace_trait(self, trait: Trait) -> __qualname__:
         for i, t in enumerate(self.traits):
             if t.name == trait.name:
-                self.traits[i] = trait
+                self[i] = trait
                 return self
         self.traits.append(trait)
         return self
@@ -137,16 +140,15 @@ class Type(BaseModel):
         return cls().replace_trait(Traits.TypeName(name))
 
     def is_frozen(self):
-        return self._frozen
+        return self.get_trait(Traits.Frozen)
 
     def freeze(self) -> __qualname__:
-        self._frozen = True
-        return self
+        return self.append_trait(Traits.Frozen)
 
     def copy(self, *args, **kwargs) -> __qualname__:
         kwargs['deep'] = True
         this = super().copy(*args, **kwargs)
-        this._frozen = False
+        this.remove_trait(Traits.Frozen)
         return this
 
     def __str__(self):
@@ -277,13 +279,13 @@ class TypeRegistry(BaseModel):
 
     @beartype
     def get_trait(self, name: str) -> Optional[Trait]:
-        return self.traits.get(name)
+        return self.__root__.get(name)
 
     @beartype
     def is_subclass(self, child: Type, parent: Type) -> bool:
         assert isinstance(child, Type)
         assert isinstance(parent, Type)
-        if Traits.Parent(parent) in child.traits:
+        if Traits.Parent(parent) in child.__root__:
             return True
         p = child.get_trait(Traits.Parent).value
         return self.is_subclass(p, parent)
@@ -294,7 +296,7 @@ class TypeRegistry(BaseModel):
 
     @beartype
     def list_traits(self) -> List[Trait]:
-        return list(self.traits.values())
+        return list(self.__root__.values())
 
 
 @beartype

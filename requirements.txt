@@ -4,3 +4,4 @@ pydantic
 case-conversion
 beartype
 quickfix
+esprima

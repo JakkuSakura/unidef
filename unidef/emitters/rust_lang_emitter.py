@@ -8,11 +8,11 @@ from unidef.models.type_model import Type, Traits
 from unidef.models.transpile_model import Node, Attributes
 from unidef.emitters import Emitter
 from unidef.models.config_model import ModelDefinition
-
+import pprint
 
 class RustBuilder:
     def build(self, node: Node) -> str:
-        return str(node)
+        return node.json()
 
 
 class RustLangEmitter(Emitter):
