@@ -1,8 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 from unidef.utils.typing_compat import *
 
+
 class Definition(BaseModel):
-    pass
+    def __str__(self):
+        s = super().__str__()
+        return s[:100]
 
 
 class ModelExample(Definition):
@@ -21,4 +24,3 @@ class Fields(BaseModel):
 
 class Variants(BaseModel):
     __root__: List[Dict[str, Any]]
-

@@ -9,3 +9,4 @@ if sys.version_info >= (3, 8, 8):
     import collections.abc
     Iterable = collections.abc.Iterable
     Iterator = collections.abc.Iterator
+    Callable = collections.abc.Callable

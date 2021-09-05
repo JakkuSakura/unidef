@@ -20,7 +20,7 @@ class ModelDefinition(BaseModel):
     traits: List[Dict[str, Any]] = []
     example: Optional[ModelExample] = None
     fields: Optional[Fields] = None
-    variants: Optional[List[Dict[str, Any]]] = None
+    variants: Optional[Variants] = None
     source: Optional[SourceExample] = None
 
     def get_traits(self) -> List[Trait]:

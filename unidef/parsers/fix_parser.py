@@ -13,7 +13,7 @@ class FixParser(Parser):
     BASE_DIR = 'quickfix'
 
     def accept(self, fmt: Definition) -> bool:
-        return category == Category.EXAMPLE and fmt.lower().startswith('fix') and load_module('quickfix')
+        return isinstance(fmt, ModelExample) and fmt.format.lower().startswith('fix') and load_module('quickfix')
 
     def get_dictionary(self, version: str) -> 'quickfix.DataDictionary':
         if not os.path.exists(FixParser.BASE_DIR):

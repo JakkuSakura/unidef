@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-from unidef_emitter import *
+from unidef import *
 import sys
 
 if __name__ == '__main__':
     logging.warning('using this wrapper is deprecated, use unidef_emitter instead')
     args = parser.parse_args()
-    main('rust', args.format, open(args.file).read())
+    config = CommandLineConfig.from_args(args, target='rust')
+
+    main(config, open(args.file).read())
