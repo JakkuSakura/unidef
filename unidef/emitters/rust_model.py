@@ -5,7 +5,6 @@ from enum import Enum
 from beartype import beartype
 from pydantic import BaseModel
 
-
 from unidef.utils.typing_compat import List, Optional
 from unidef.utils.formatter import IndentedWriter, Formatee, Function, Braces, Text
 from unidef.models import config_model
@@ -193,7 +192,7 @@ class RustField(Formatee, BaseModel):
     def from_name(name: str, ty: str = ''):
         name = map_field_name(name)
         ty_or_name = ty or name
-        return RustField(name=name, value=Type.from_str(ty_or_name).append_trait(Traits.TypeRef.init_with(ty_or_name)))
+        return RustField(name=name, value=Type.from_str(ty_or_name).append_trait(Traits.TypeRef(ty_or_name)))
 
     def __init__(self, ty: Type = None, **kwargs):
         if ty:
@@ -400,7 +399,7 @@ def find_all_structs(s: Type) -> List[Type]:
 def sql_model_get_sql_ddl(struct: RustStruct) -> RustFunc:
     return RustFunc(name='get_sql_ddl', args=[],
                     ret=Types.String.copy().append_trait(Traits.Reference).append_trait(
-                        Traits.Lifetime.init_with('static')),
+                        Traits.Lifetime('static')),
                     content=f'r#"{emit_schema_from_model(struct.raw)}"#')
 
 
@@ -465,7 +464,7 @@ def sql_model_get_fields_sql(struct: RustStruct) -> RustFunc:
     return RustFunc(name='get_fields_sql',
                     args=[RustField.from_name('&self')],
                     ret=Types.String.copy().append_trait(Traits.Reference).append_trait(
-                        Traits.Lifetime.init_with('static')),
+                        Traits.Lifetime('static')),
                     content=
                     f'''r#"{field_names}"#'''
                     )
@@ -508,7 +507,7 @@ def from_sql_raw_func(struct: RustStruct) -> RustFunc:
     '''
     return RustFunc(name='from',
                     args=[RustField.from_name(name='row', ty='Row')],
-                    ret=Type.from_str('Self').append_trait(Traits.TypeRef.init_with('Self')),
+                    ret=Type.from_str('Self').append_trait(Traits.TypeRef('Self')),
                     content=content
                     )
 
@@ -532,7 +531,7 @@ def from_sql_raw_trait(struct: RustStruct, writer: IndentedWriter):
 
 def raw_data_func(raw: str) -> RustFunc:
     return RustFunc(name='get_raw_data', args=[], ret=Types.String.copy().append_trait(Traits.Reference).append_trait(
-        Traits.Lifetime.init_with('static')),
+        Traits.Lifetime('static')),
                     content=f'r#"{raw}"#')
 
 

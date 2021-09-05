@@ -19,9 +19,9 @@ class FieldsParser(Parser):
         ty = GLOBAL_TYPE_REGISTRY.get_type(type_ref)
         if ty:
             ty = ty.copy()
-            ty.replace_trait(Traits.TypeName.init_with(name))
+            ty.replace_trait(Traits.TypeName(name))
         else:
-            ty = Type.from_str(name).append_trait(Traits.TypeRef.init_with(type_ref))
+            ty = Type.from_str(name).append_trait(Traits.TypeRef(type_ref))
 
         for key, val in field.items():
             trait = GLOBAL_TYPE_REGISTRY.get_trait(key)

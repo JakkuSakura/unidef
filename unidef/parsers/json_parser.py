@@ -41,12 +41,12 @@ class JsonParser(Parser):
 
         parsed = parse_data_example(dict(pyhocon.ConfigParser.parse(content)), name)
         if parsed.get_trait(Traits.Struct) and name:
-            parsed.replace_trait(Traits.TypeName.init_with(name))
+            parsed.replace_trait(Traits.TypeName(name))
 
             def process(depth: int, i: int, key: str, ty: Type):
                 if (i, key) in comments:
                     for line in comments[(i, key)].splitlines():
-                        ty.append_trait(Traits.LineComment.init_with(line))
+                        ty.append_trait(Traits.LineComment(line))
 
             walk_type_with_count(parsed, process)
 

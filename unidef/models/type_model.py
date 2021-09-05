@@ -2,7 +2,7 @@ import random
 from unidef.utils.typing_compat import *
 
 from beartype import beartype
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 from unidef.utils.name_convert import *
 
 
@@ -11,6 +11,9 @@ class Trait(BaseModel):
     value: Any = None
 
     def init_with(self, value: Any) -> 'Trait':
+        return self(value)
+
+    def __call__(self, value: Any) -> 'Trait':
         t = self.copy(deep=True)
         t.value = value
         return t
@@ -79,17 +82,26 @@ class Type(BaseModel):
     It allows single inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
     """
     traits: List[Trait] = []
-    frozen: bool = False
+    _frozen: bool = PrivateAttr(default=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @beartype
     def append_trait(self, trait: Trait) -> 'Type':
-        assert not self.frozen
+        assert not self.is_frozen()
         self.traits.append(trait)
         return self
 
     @beartype
+    def extend_traits(self, trait: Trait, values: Iterable[Any]) -> 'Type':
+        assert not self.is_frozen()
+        for value in values:
+            self.traits.append(trait.init_with(value))
+        return self
+
+    @beartype
     def replace_trait(self, trait: Trait) -> 'Type':
-        assert not self.frozen
         for i, t in enumerate(self.traits):
             if t.name == trait.name:
                 self.traits[i] = trait
@@ -99,7 +111,7 @@ class Type(BaseModel):
 
     @beartype
     def remove_trait(self, trait: Trait) -> 'Type':
-        assert not self.frozen
+        assert not self.is_frozen()
         new = []
         for i, t in enumerate(self.traits):
             if t.name != trait.name:
@@ -124,26 +136,26 @@ class Type(BaseModel):
         return self.replace_trait(parent.as_parent())
 
     def as_parent(self) -> Trait:
-        return Traits.Parent.init_with(self)
+        return Traits.Parent(self)
 
     @staticmethod
     @beartype
     def from_str(name: str) -> 'Type':
-        return Type().replace_trait(Traits.TypeName.init_with(name))
+        return Type().replace_trait(Traits.TypeName(name))
+
+    def is_frozen(self):
+        return self._frozen
 
     def freeze(self) -> 'Type':
-        self.frozen = True
+        self._frozen = True
         return self
 
     def copy(self, *args, **kwargs) -> 'Type':
         kwargs['deep'] = True
         this = super().copy(*args, **kwargs)
-        this.frozen = False
+        assert isinstance(this, Type)
+        this._frozen = False
         return this
-
-    def dict(self, **kwargs):
-        kwargs["exclude"] = {'frozen'}
-        return super().dict(**kwargs)
 
     def __str__(self):
         return f'Type{self.traits}'
@@ -160,12 +172,12 @@ def build_int(name: str) -> Type:
 
     ty.append_trait(Traits.Numeric)
     ty.append_trait(Traits.Integer)
-    ty.append_trait(Traits.BitSize.init_with(int(name[1:])))
+    ty.append_trait(Traits.BitSize(int(name[1:])))
 
     if name.startswith('i'):
         ty.append_trait(Traits.Signed)
     else:
-        ty.append_trait(Traits.Signed.init_with(False))
+        ty.append_trait(Traits.Signed(False))
 
     return ty
 
@@ -174,7 +186,7 @@ def build_float(name: str) -> Type:
     return (Type.from_str(name)
             .append_trait(Traits.Numeric)
             .append_trait(Traits.Floating)
-            .append_trait(Traits.BitSize.init_with(int(name[1:])))
+            .append_trait(Traits.BitSize(int(name[1:])))
             .append_trait(Traits.Signed))
 
 
@@ -205,14 +217,14 @@ class Types:
     @staticmethod
     @beartype
     def field(name: str, ty: Type) -> Type:
-        return ty.append_trait(Traits.FieldName.init_with(name))
+        return ty.append_trait(Traits.FieldName(name))
 
     @staticmethod
     @beartype
     def variant(name: List[str]) -> Type:
         ty = Type.from_str(name[0])
         for n in name:
-            ty.append_trait(Traits.VariantName.init_with(n))
+            ty.append_trait(Traits.VariantName(n))
         return ty
 
     @staticmethod
@@ -220,7 +232,7 @@ class Types:
     def struct(name: str, fields: List[Type]) -> Type:
         ty = Type.from_str(name).append_trait(Traits.Struct)
         for f in fields:
-            ty.append_trait(Traits.StructField.init_with(f))
+            ty.append_trait(Traits.StructField(f))
         return ty
 
     @staticmethod
@@ -228,7 +240,7 @@ class Types:
     def enum(name: str, variants: List[Type]) -> Type:
         ty = Type.from_str(name).append_trait(Traits.Enum)
         for f in variants:
-            ty.append_trait(Traits.Variant.init_with(f))
+            ty.append_trait(Traits.Variant(f))
         return ty
 
 
@@ -248,7 +260,7 @@ class TypeRegistry(BaseModel):
     @beartype
     def insert_type(self, ty: Type):
         name = ty.get_trait(Traits.TypeName)
-        assert ty.frozen, 'type should be frozen ' + name
+        assert ty.is_frozen(), f'type {name} should be frozen'
         if name not in self.types:
             self.types[name] = ty
         elif self.types[name] != ty:
@@ -367,9 +379,9 @@ def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: st
             # TODO: detect words in the field name without prefix
             if '_ts' in prefix or 'time' in prefix or '_at' in prefix:
                 ty = ty.copy().append_trait(
-                    Traits.TsUnit.init_with(detect_timestamp_unit(obj))
+                    Traits.TsUnit(detect_timestamp_unit(obj))
                 ).replace_trait(
-                    Traits.TypeName.init_with('timestamp')
+                    Traits.TypeName('timestamp')
                 )
 
             return ty
@@ -379,26 +391,26 @@ def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: st
             content = None
             if len(obj):
                 content = parse_data_example(obj[0], prefix)
-            return Types.Vector.copy().replace_trait(Traits.ValueType.init_with(content))
+            return Types.Vector.copy().replace_trait(Traits.ValueType(content))
         elif isinstance(obj, dict):
             fields = []
             for key, value in obj.items():
                 value = parse_data_example(value, prefix_join(prefix, key))
                 if value.get_trait(Traits.Struct):
-                    value.replace_trait(Traits.TypeName.init_with(prefix_join(prefix, key)))
+                    value.replace_trait(Traits.TypeName(prefix_join(prefix, key)))
 
                 for val in value.get_traits(Traits.ValueType):
                     if val.get_trait(Traits.Struct):
                         new_name = prefix_join(prefix, key)
                         if new_name.endswith('s'):
                             new_name = new_name[:-1]
-                        val.replace_trait(Traits.TypeName.init_with(new_name))
+                        val.replace_trait(Traits.TypeName(new_name))
 
                 fields.append(Types.field(key, value))
             return Types.struct('struct_' + str(random.randint(0, 1000)), fields)
         raise CouldNotParseDataExample(str(obj))
 
-    return inner(obj, prefix).copy().append_trait(Traits.RawValue.init_with(obj))
+    return inner(obj, prefix).copy().append_trait(Traits.RawValue(obj))
 
 
 def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None:
@@ -431,18 +443,18 @@ def walk_type_with_count(node: Type, process: Callable[[int, int, str, Type], No
 def parse_type_definition(ty: str) -> Type:
     if ty.startswith('timestamp'):
         unit = ty.split('/')[1]
-        ty = Types.I64.copy().replace_trait(Traits.TsUnit.init_with(unit))
+        ty = Types.I64.copy().replace_trait(Traits.TsUnit(unit))
         return ty
 
     if 'enum' in to_snake_case(ty):
         ty_name = ty.split('/')[0]
         ty = Types.enum(ty_name, [])
-        ty.append_trait(Traits.TypeRef.init_with(ty_name))
+        ty.append_trait(Traits.TypeRef(ty_name))
         return ty
     else:
         ty_name = ty
         ty = Types.struct(ty_name, [])
-        ty.append_trait(Traits.TypeRef.init_with(ty_name))
+        ty.append_trait(Traits.TypeRef(ty_name))
         return ty
 
 
