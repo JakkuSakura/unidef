@@ -10,7 +10,7 @@ class Trait(BaseModel):
     name: str
     value: Any = None
 
-    def init_with(self, value: Any) -> 'Trait':
+    def default(self, value: Any) -> 'Trait':
         return self(value)
 
     def __call__(self, value: Any) -> 'Trait':
@@ -34,13 +34,13 @@ class Traits:
     TypeName = Trait.from_str('name')
     FieldName = Trait.from_str('field_name')
     BitSize = Trait.from_str('bit_size')
-    Signed = Trait.from_str('signed').init_with(True)
+    Signed = Trait.from_str('signed').default(True)
     KeyType = Trait.from_str('key')
     ValueType = Trait.from_str('value')
     Parent = Trait.from_str('parent')
     StructField = Trait.from_str('field')
-    Struct = Trait.from_str('struct').init_with(True)
-    Enum = Trait.from_str('enum').init_with(True)
+    Struct = Trait.from_str('struct').default(True)
+    Enum = Trait.from_str('enum').default(True)
     TypeRef = Trait.from_str('type_ref')
     Variant = Trait.from_str('variant')
     VariantName = Trait.from_str('variant_name')
@@ -48,30 +48,30 @@ class Traits:
     LineComment = Trait.from_str('line_comment')
 
     # Types
-    Bool = Trait.from_str('bool').init_with(True)
-    Numeric = Trait.from_str('numeric').init_with(True)
-    Floating = Trait.from_str('floating').init_with(True)
-    Integer = Trait.from_str('integer').init_with(True)
-    String = Trait.from_str('string').init_with(True)
+    Bool = Trait.from_str('bool').default(True)
+    Numeric = Trait.from_str('numeric').default(True)
+    Floating = Trait.from_str('floating').default(True)
+    Integer = Trait.from_str('integer').default(True)
+    String = Trait.from_str('string').default(True)
     TupleField = Trait.from_str('tuple_field')
-    Tuple = Trait.from_str('tuple').init_with(True)
-    Vector = Trait.from_str('vector').init_with(True)
-    Map = Trait.from_str('map').init_with(True)
-    Unit = Trait.from_str('unit').init_with(True)
-    Null = Trait.from_str('null').init_with(True)
+    Tuple = Trait.from_str('tuple').default(True)
+    Vector = Trait.from_str('vector').default(True)
+    Map = Trait.from_str('map').default(True)
+    Unit = Trait.from_str('unit').default(True)
+    Null = Trait.from_str('null').default(True)
 
     # Format
     SimpleEnum = Trait.from_str('simple_enum')
-    StringWrapped = Trait.from_str('string_wrapped').init_with(True)
+    StringWrapped = Trait.from_str('string_wrapped').default(True)
     TsUnit = Trait.from_str('ts_unit')
 
     # SQL related
-    Primary = Trait.from_str('primary').init_with(True)
-    Nullable = Trait.from_str('nullable').init_with(True)
+    Primary = Trait.from_str('primary').default(True)
+    Nullable = Trait.from_str('nullable').default(True)
 
     # Rust related
-    Reference = Trait.from_str('reference').init_with(True)
-    Mutable = Trait.from_str('mutable').init_with(True)
+    Reference = Trait.from_str('reference').default(True)
+    Mutable = Trait.from_str('mutable').default(True)
     Lifetime = Trait.from_str('lifetime')
     Derive = Trait.from_str('derive')
 
@@ -97,7 +97,7 @@ class Type(BaseModel):
     def extend_traits(self, trait: Trait, values: Iterable[Any]) -> 'Type':
         assert not self.is_frozen()
         for value in values:
-            self.traits.append(trait.init_with(value))
+            self.traits.append(trait.default(value))
         return self
 
     @beartype
@@ -158,7 +158,7 @@ class Type(BaseModel):
         return this
 
     def __str__(self):
-        return f'Type{self.traits}'
+        return f'{type(self).__name__}{self.traits}'
 
     def __repr__(self):
         return self.__str__()

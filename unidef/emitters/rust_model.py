@@ -91,7 +91,7 @@ def map_type_to_rust(ty: Type) -> str:
     if ty.get_trait(Traits.Null):
         return 'String'
     elif ty.get_trait(Traits.TsUnit):
-        return 'TimeStamp' + stringcase.pascalcase(ty.get_trait(Traits.TsUnit))
+        return 'TimeStamp' + to_pascal_case(ty.get_trait(Traits.TsUnit))
     elif ty.get_trait(Traits.Struct):
         if ty.get_trait(Traits.TypeRef):
             return ty.get_trait(Traits.TypeRef)
@@ -247,7 +247,7 @@ class RustStruct(Formatee, BaseModel):
     @staticmethod
     @beartype
     def parse_name(name: str):
-        return stringcase.pascalcase(name)
+        return to_pascal_case(name)
 
     def __init__(self, raw: Type = None, **kwargs):
         if raw:

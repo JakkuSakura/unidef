@@ -18,9 +18,6 @@ class Attributes:
 
 
 class Node(Type):
-    @staticmethod
-    def print_node(content: 'Node') -> 'Node':
-        return Node.from_str('print').append_trait(Attributes.child(content))
 
     @staticmethod
     @beartype
@@ -29,4 +26,6 @@ class Node(Type):
 
 
 class Nodes:
-    pass
+    @staticmethod
+    def print_node(content: 'Node') -> 'Node':
+        return Node.from_str('print').append_trait(Attributes.child(content))

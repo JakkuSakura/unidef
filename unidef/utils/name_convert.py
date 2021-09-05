@@ -1,4 +1,4 @@
-import stringcase
+import case_conversion
 
 
 def to_lower(s: str) -> str:
@@ -6,10 +6,8 @@ def to_lower(s: str) -> str:
 
 
 def to_snake_case(s: str) -> str:
-    s = stringcase.snakecase(s)
-    s = s.replace('i_d', 'id')
-    return s
+    return case_conversion.snakecase(s)
 
 
 def to_pascal_case(s: str) -> str:
-    return stringcase.pascalcase(to_snake_case(s))
+    return case_conversion.pascalcase(s)

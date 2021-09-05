@@ -171,7 +171,7 @@ class PythonEnum(Formatee, BaseModel):
 
     @staticmethod
     def parse_name(name):
-        return stringcase.pascalcase(name)
+        return to_pascal_case(name)
 
     def __init__(self, raw: Type = None, **kwargs):
 

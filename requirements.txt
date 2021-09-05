@@ -1,6 +1,6 @@
 pyhocon
 pyyaml
 pydantic
-stringcase
+case-conversion
 beartype
 quickfix

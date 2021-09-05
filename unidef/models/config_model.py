@@ -30,9 +30,9 @@ class ModelDefinition(BaseModel):
             value = t['value']
             trait = GLOBAL_TYPE_REGISTRY.get_trait(name)
             if trait is None:
-                trait = Trait.from_str(name).init_with(value)
+                trait = Trait.from_str(name).default(value)
             else:
-                trait = trait.init_with(value)
+                trait = trait.default(value)
             traits.append(trait)
         return traits
 

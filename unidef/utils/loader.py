@@ -8,6 +8,6 @@ def load_module(name: str):
         return importlib.import_module(name)
     except Exception as e:
         logging.warning('Could not load module %s %s %s, skipping', name, type(e), e)
-        if not isinstance(e, ImportError):
+        if not isinstance(e, ModuleNotFoundError):
             traceback.print_exc()
 
