@@ -288,7 +288,7 @@ class TypeRegistry(BaseModel):
 
     @beartype
     def get_trait(self, name: str) -> Optional[Trait]:
-        return self.__root__.get(name)
+        return self.traits.get(name)
 
     @beartype
     def is_subclass(self, child: Type, parent: Type) -> bool:
