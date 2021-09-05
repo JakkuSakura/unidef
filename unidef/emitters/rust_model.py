@@ -105,6 +105,8 @@ def map_type_to_rust(ty: Type) -> str:
         return 'Vec<{}>'.format(map_type_to_rust(ty.get_trait(Traits.ValueType)))
     elif ty.get_trait(Traits.Bool):
         return 'bool'
+    elif ty.get_trait(Traits.AllValue):
+        return 'serde_json::Value'
     elif ty.get_trait(Traits.Integer):
         bits = ty.get_trait(Traits.BitSize)
         if ty.get_trait(Traits.Signed):
@@ -214,9 +216,9 @@ class RustField(Formatee, BaseModel):
             # or self.original_name == self.name and len(self.name) < 3: # For binance's convenience
 
             Serde(rename=[self.original_name]).format_with(writer)
-        for comment in self.value.get_traits(Traits.LineComment):
+        for comment in self.value.get_traits(Traits.BeforeLineComment):
             RustComment(comment, cargo_doc=True).format_with(writer)
-        writer.append_line(f'{self.access.value}{self.name}: {map_type_to_rust(self.value)},')
+        writer.append(f'{self.access.value}{self.name}: {map_type_to_rust(self.value)}')
 
 
 class RustComment(Formatee, BaseModel):
@@ -267,8 +269,9 @@ class RustStruct(Formatee, BaseModel):
             if field.val_in_str:
                 self.annotations.insert(0, SERDE_AS)
                 break
-        for derive in self.raw.get_traits(Traits.Derive):
-            self.derive.append(derive)
+        if self.raw:
+            for derive in self.raw.get_traits(Traits.Derive):
+                self.derive.append(derive)
 
     def format_with(self, writer: IndentedWriter):
         for anno in self.annotations:
@@ -277,8 +280,12 @@ class RustStruct(Formatee, BaseModel):
         writer.append(f'{self.access.value}struct {self.name} ')
 
         def for_field(writer1: IndentedWriter):
-            for field in self.fields:
-                field.format_with(writer1)
+            if self.fields:
+                for i, field in enumerate(self.fields):
+                    if i > 0:
+                        writer1.append_line(',')
+                    field.format_with(writer1)
+                writer1.append_line()
 
         Braces(Function(for_field)).format_with(writer)
 

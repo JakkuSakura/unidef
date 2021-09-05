@@ -25,7 +25,7 @@ class JsonCrate(BaseModel):
                 formatter.incr_indent()
                 formatter.append_line(f'let mut node = <{self.object_type}>::new();')
                 for field in fields:
-                    for line in field.get_traits(Traits.LineComment):
+                    for line in field.get_traits(Traits.BeforeLineComment):
                         formatter.append_line('//{}'.format(line))
                     formatter.append_line('node.insert("{field}".into(), {value}.into());'
                                           .format(field=field.get_trait(Traits.FieldName),
@@ -44,7 +44,7 @@ class JsonCrate(BaseModel):
                     formatter.incr_indent()
                     formatter.append_line('let mut node = Vec::new();')
                     for field in traits:
-                        for line in field.get_traits(Traits.LineComment):
+                        for line in field.get_traits(Traits.BeforeLineComment):
                             formatter.append_line('//{}'.format(line))
                         formatter.append_line(
                             'node.push({});'.format(self.map_value(field, formatter.indent)))
@@ -99,7 +99,7 @@ class SerdeJsonCrate(JsonCrate):
                 formatter.append_line('{')
                 formatter.incr_indent()
                 for field in ty.get_traits(Traits.StructField):
-                    for line in field.get_traits(Traits.LineComment):
+                    for line in field.get_traits(Traits.BeforeLineComment):
                         formatter.append_line('//{}'.format(line))
                     formatter.append_line('"{field}": {value},'
                                           .format(field=field.get_trait(Traits.FieldName),

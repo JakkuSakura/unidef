@@ -14,20 +14,20 @@ class Trait(BaseModel):
         return self(value)
 
     def __call__(self, value: Any) -> __qualname__:
-        t = self.copy(deep=True)
-        t.value = value
-        return t
+        trait = self.copy(deep=True)
+        trait.value = value
+        return trait
 
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
         return cls(name=name)
 
+    def __str__(self):
+        return self.__repr__()
+
     def __repr__(self):
         return f'{self.name}: {self.value}'
-
-
-Trait.update_forward_refs()
 
 
 class Traits:
@@ -45,7 +45,10 @@ class Traits:
     Variant = Trait.from_str('variant')
     VariantName = Trait.from_str('variant_name')
     RawValue = Trait.from_str('raw_value')
-    LineComment = Trait.from_str('line_comment')
+    # TODO: distinguish in line or before line comments
+    BeforeLineComment = Trait.from_str('before_line_comment')
+    InLineComment = Trait.from_str('in_line_comment')
+    BlockComment = Trait.from_str('block_comment')
     Frozen = Trait.from_str('frozen').default(True)
 
     # Types
@@ -60,6 +63,7 @@ class Traits:
     Map = Trait.from_str('map').default(True)
     Unit = Trait.from_str('unit').default(True)
     Null = Trait.from_str('null').default(True)
+    AllValue = Trait.from_str('all_value').default(True)
 
     # Format
     SimpleEnum = Trait.from_str('simple_enum')
@@ -83,6 +87,7 @@ class Type(BaseModel):
     It allows inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
     """
     __root__: List[Trait] = []
+
     @property
     def traits(self):
         return self.__root__
@@ -93,21 +98,24 @@ class Type(BaseModel):
     @beartype
     def append_trait(self, trait: Trait) -> __qualname__:
         assert not self.is_frozen()
-        self.traits.append(trait)
+        if trait.value is not None:
+            assert trait.value is not None, f'{trait.name} should not be None'
+            self.traits.append(trait)
         return self
 
     @beartype
     def extend_traits(self, trait: Trait, values: Iterable[Any]) -> __qualname__:
         assert not self.is_frozen()
+
         for value in values:
-            self.traits.append(trait.default(value))
+            self.traits.append(trait(value))
         return self
 
     @beartype
     def replace_trait(self, trait: Trait) -> __qualname__:
-        for i, t in enumerate(self.traits):
-            if t.name == trait.name:
-                self[i] = trait
+        for i, trait0 in enumerate(self.traits):
+            if trait0.name == trait.name:
+                self.traits[i] = trait
                 return self
         self.traits.append(trait)
         return self
@@ -115,29 +123,40 @@ class Type(BaseModel):
     @beartype
     def remove_trait(self, trait: Trait) -> __qualname__:
         assert not self.is_frozen()
-        new = []
         for i, t in enumerate(self.traits):
-            if t.name != trait.name:
-                new.append(t)
-        self.traits = new
+            if trait.name == t.name:
+                del self.traits[i]
+                break
         return self
 
     def get_trait(self, name: Trait) -> Any:
-        for t in self.traits:
-            if t.name == name.name:
-                return t.value
+        return self.get_trait_by_name(name.name)
+
+    def get_trait_by_name(self, name: str) -> Any:
+        for trait in self.traits:
+            if trait.name == name:
+                return trait.value
 
     def get_traits(self, name: Trait) -> List[Any]:
+        return self.get_traits_by_name(name.name)
+
+    def get_traits_by_name(self, name: str) -> List[Any]:
         traits = []
         for t in self.traits:
-            if t.name == name.name:
+            if t.name == name:
                 traits.append(t.value)
         return traits
+
+    def keys(self) -> List[str]:
+        return [trait.name for trait in self.traits]
+
+    def __iter__(self):
+        return self.traits
 
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
-        return cls().replace_trait(Traits.TypeName(name))
+        return cls().append_trait(Traits.TypeName(name))
 
     def is_frozen(self):
         return self.get_trait(Traits.Frozen)
@@ -156,9 +175,6 @@ class Type(BaseModel):
 
     def __repr__(self):
         return self.__str__()
-
-
-Type.update_forward_refs()
 
 
 def build_int(name: str) -> Type:
@@ -207,6 +223,7 @@ class Types:
     Vector = Type.from_str('vector').append_trait(Traits.Vector).freeze()
 
     NoneType = Type.from_str('none').append_trait(Traits.Nullable).append_trait(Traits.Null).freeze()
+    AllValue = Type.from_str('all_value').append_trait(Traits.AllValue).freeze()
 
     @staticmethod
     @beartype
@@ -238,14 +255,6 @@ class Types:
         return ty
 
 
-class TypeAlreadyExistsAndConflict(Exception):
-    pass
-
-
-class TraitAlreadyExistsAndConflict(Exception):
-    pass
-
-
 class TypeRegistry(BaseModel):
     types: Dict[str, Type] = {}
     traits: Dict[str, Trait] = {}
@@ -258,14 +267,14 @@ class TypeRegistry(BaseModel):
         if name not in self.types:
             self.types[name] = ty
         elif self.types[name] != ty:
-            raise TypeAlreadyExistsAndConflict(name)
+            raise Exception(f'TypeAlreadyExistsAndConflict{name}')
 
     @beartype
     def insert_trait(self, trait: Trait):
         if trait.name not in self.traits:
             self.traits[trait.name] = trait
         elif self.traits[trait.name] != trait:
-            raise TraitAlreadyExistsAndConflict(trait.name)
+            raise Exception(f'TraitAlreadyExistsAndConflict{trait.name}')
 
     @beartype
     def get_type(self, name: str) -> Optional[Type]:
@@ -329,8 +338,8 @@ def detect_timestamp_unit(inputtext: Union[str, int, float]) -> str:
         return 'sec'
 
 
-def string_wrapped(t: Type) -> Type:
-    return t.copy().replace_trait(Traits.StringWrapped)
+def string_wrapped(trait: Type) -> Type:
+    return trait.copy().replace_trait(Traits.StringWrapped)
 
 
 def prefix_join(prefix: str, name: str) -> str:
