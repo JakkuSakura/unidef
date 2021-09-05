@@ -10,18 +10,18 @@ class Trait(BaseModel):
     name: str
     value: Any = None
 
-    def default(self, value: Any) -> 'Trait':
+    def default(self, value: Any) -> __qualname__:
         return self(value)
 
-    def __call__(self, value: Any) -> 'Trait':
+    def __call__(self, value: Any) -> __qualname__:
         t = self.copy(deep=True)
         t.value = value
         return t
 
-    @staticmethod
+    @classmethod
     @beartype
-    def from_str(name: str) -> 'Trait':
-        return Trait(name=name)
+    def from_str(cls, name: str) -> __qualname__:
+        return cls(name=name)
 
     def __repr__(self):
         return f'{self.name}: {self.value}'
@@ -88,20 +88,20 @@ class Type(BaseModel):
         super().__init__(*args, **kwargs)
 
     @beartype
-    def append_trait(self, trait: Trait) -> 'Type':
+    def append_trait(self, trait: Trait) -> __qualname__:
         assert not self.is_frozen()
         self.traits.append(trait)
         return self
 
     @beartype
-    def extend_traits(self, trait: Trait, values: Iterable[Any]) -> 'Type':
+    def extend_traits(self, trait: Trait, values: Iterable[Any]) -> __qualname__:
         assert not self.is_frozen()
         for value in values:
             self.traits.append(trait.default(value))
         return self
 
     @beartype
-    def replace_trait(self, trait: Trait) -> 'Type':
+    def replace_trait(self, trait: Trait) -> __qualname__:
         for i, t in enumerate(self.traits):
             if t.name == trait.name:
                 self.traits[i] = trait
@@ -110,7 +110,7 @@ class Type(BaseModel):
         return self
 
     @beartype
-    def remove_trait(self, trait: Trait) -> 'Type':
+    def remove_trait(self, trait: Trait) -> __qualname__:
         assert not self.is_frozen()
         new = []
         for i, t in enumerate(self.traits):
@@ -131,29 +131,21 @@ class Type(BaseModel):
                 traits.append(t.value)
         return traits
 
+    @classmethod
     @beartype
-    def set_parent(self, parent: 'Type') -> 'Type':
-        return self.replace_trait(parent.as_parent())
-
-    def as_parent(self) -> Trait:
-        return Traits.Parent(self)
-
-    @staticmethod
-    @beartype
-    def from_str(name: str) -> 'Type':
-        return Type().replace_trait(Traits.TypeName(name))
+    def from_str(cls, name: str) -> __qualname__:
+        return cls().replace_trait(Traits.TypeName(name))
 
     def is_frozen(self):
         return self._frozen
 
-    def freeze(self) -> 'Type':
+    def freeze(self) -> __qualname__:
         self._frozen = True
         return self
 
-    def copy(self, *args, **kwargs) -> 'Type':
+    def copy(self, *args, **kwargs) -> __qualname__:
         kwargs['deep'] = True
         this = super().copy(*args, **kwargs)
-        assert isinstance(this, Type)
         this._frozen = False
         return this
 
@@ -291,7 +283,7 @@ class TypeRegistry(BaseModel):
     def is_subclass(self, child: Type, parent: Type) -> bool:
         assert isinstance(child, Type)
         assert isinstance(parent, Type)
-        if parent.as_parent() in child.traits:
+        if Traits.Parent(parent) in child.traits:
             return True
         p = child.get_trait(Traits.Parent).value
         return self.is_subclass(p, parent)

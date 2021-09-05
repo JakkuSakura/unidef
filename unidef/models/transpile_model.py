@@ -18,14 +18,10 @@ class Attributes:
 
 
 class Node(Type):
-
-    @staticmethod
-    @beartype
-    def from_str(name: str) -> 'Node':
-        return Node().replace_trait(Traits.TypeName(name))
+    pass
 
 
 class Nodes:
     @staticmethod
-    def print_node(content: 'Node') -> 'Node':
+    def print_node(content: Node) -> Node:
         return Node.from_str('print').append_trait(Attributes.child(content))
