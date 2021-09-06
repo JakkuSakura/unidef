@@ -49,6 +49,7 @@ class Traits:
     Null = Trait(key="null", default_present=True, default_absent=False)
     AllValue = Trait(key="all_value", default_present=True, default_absent=False)
 
+    NotInferredType = Trait(key='not_inferred_type', default_present=True, default_absent=False)
     # Format
     SimpleEnum = Trait(key="simple_enum", default_present=True, default_absent=False)
     StringWrapped = Trait(
@@ -76,40 +77,25 @@ class Type(MyBaseModel):
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
-        return cls().append_trait(Traits.TypeName(name))
+        return cls().append_field(Traits.TypeName(name))
 
     @classmethod
     @beartype
     def from_trait(cls, name: str, trait: Trait) -> __qualname__:
         return (
-            cls.from_str(name).append_trait(Traits.Kind(trait.key)).append_trait(trait)
+            cls.from_str(name).append_field(Traits.Kind(trait.key)).append_field(trait)
         )
-
-    def append_trait(self, trait: Trait) -> __qualname__:
-        return self.append_field(trait)
-
-    def get_trait(self, trait: Trait) -> Any:
-        return self.get_field(trait)
-
-    def get_traits(self, trait: Trait) -> List[Any]:
-        return self.get_field(trait)
-
-    def replace_trait(self, trait: Trait) -> __qualname__:
-        return self.replace_field(trait)
-
-    def extend_traits(self, field: Trait, values: Iterable[Any]) -> __qualname__:
-        return self.extend_field(field, values)
 
 
 def build_int(name: str) -> Type:
     ty = Type.from_trait(name, Traits.Integer)
-    ty.append_trait(Traits.Numeric)
-    ty.append_trait(Traits.BitSize(int(name[1:])))
+    ty.append_field(Traits.Numeric)
+    ty.append_field(Traits.BitSize(int(name[1:])))
 
     if name.startswith("i"):
-        ty.append_trait(Traits.Signed)
+        ty.append_field(Traits.Signed)
     else:
-        ty.append_trait(Traits.Signed(False))
+        ty.append_field(Traits.Signed(False))
 
     return ty
 
@@ -117,9 +103,9 @@ def build_int(name: str) -> Type:
 def build_float(name: str) -> Type:
     return (
         Type.from_trait(name, Traits.Floating)
-        .append_trait(Traits.Numeric)
-        .append_trait(Traits.BitSize(int(name[1:])))
-        .append_trait(Traits.Signed)
+            .append_field(Traits.Numeric)
+            .append_field(Traits.BitSize(int(name[1:])))
+            .append_field(Traits.Signed)
     )
 
 
@@ -146,35 +132,35 @@ class Types:
     Vector = Type.from_trait("vector", Traits.Vector).freeze()
 
     NoneType = (
-        Type.from_trait("none", Traits.Null).append_trait(Traits.Nullable).freeze()
+        Type.from_trait("none", Traits.Null).append_field(Traits.Nullable).freeze()
     )
     AllValue = Type.from_trait("all_value", Traits.AllValue).freeze()
 
     @staticmethod
     @beartype
     def field(name: str, ty: Type) -> Type:
-        return ty.append_trait(Traits.FieldName(name))
+        return ty.append_field(Traits.FieldName(name))
 
     @staticmethod
     @beartype
     def variant(name: List[str]) -> Type:
         ty = Type.from_str(name[0])
         for n in name:
-            ty.append_trait(Traits.VariantName(n))
+            ty.append_field(Traits.VariantName(n))
         return ty
 
     @staticmethod
     @beartype
     def struct(name: str, fields: List[Type]) -> Type:
         ty = Type.from_trait(name, Traits.Struct(name))
-        ty.append_trait(Traits.StructFields(fields))
+        ty.append_field(Traits.StructFields(fields))
         return ty
 
     @staticmethod
     @beartype
     def enum(name: str, variants: List[Type]) -> Type:
         ty = Type.from_trait(Traits.Enum(name))
-        ty.append_trait(Traits.Variant(variants))
+        ty.append_field(Traits.Variant(variants))
         return ty
 
 
@@ -185,7 +171,7 @@ class TypeRegistry(BaseModel):
 
     @beartype
     def insert_type(self, ty: Type):
-        name = ty.get_trait(Traits.TypeName)
+        name = ty.get_field(Traits.TypeName)
         assert ty.is_frozen(), f"type {name} should be frozen"
         if name not in self.types:
             self.types[name] = ty
@@ -210,7 +196,7 @@ class TypeRegistry(BaseModel):
                 return val
 
     @beartype
-    def get_trait(self, name: str) -> Optional[Trait]:
+    def get_field(self, name: str) -> Optional[Trait]:
         return self.traits.get(name)
 
     @beartype
@@ -219,7 +205,7 @@ class TypeRegistry(BaseModel):
         assert isinstance(parent, Type)
         if Traits.Parent(parent) in child.__root__:
             return True
-        p = child.get_trait(Traits.Parent).value
+        p = child.get_field(Traits.Parent).value
         return self.is_subclass(p, parent)
 
     @beartype
@@ -262,7 +248,7 @@ def detect_timestamp_unit(inputtext: Union[str, int, float]) -> str:
 
 
 def string_wrapped(trait: Type) -> Type:
-    return trait.copy().replace_trait(Traits.StringWrapped)
+    return trait.copy().replace_field(Traits.StringWrapped)
 
 
 def prefix_join(prefix: str, name: str) -> str:
@@ -278,7 +264,7 @@ class CouldNotParseDataExample(Exception):
 
 @beartype
 def parse_data_example(
-    obj: Union[str, int, float, dict, list, None], prefix: str = ""
+        obj: Union[str, int, float, dict, list, None], prefix: str = ""
 ) -> Type:
     def inner(obj, prefix) -> Type:
         if obj is None:
@@ -308,8 +294,8 @@ def parse_data_example(
             if "_ts" in prefix or "time" in prefix or "_at" in prefix:
                 ty = (
                     ty.copy()
-                    .append_trait(Traits.TsUnit(detect_timestamp_unit(obj)))
-                    .replace_trait(Traits.TypeName("timestamp"))
+                        .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
+                        .replace_field(Traits.TypeName("timestamp"))
                 )
 
             return ty
@@ -319,35 +305,35 @@ def parse_data_example(
             content = None
             if len(obj):
                 content = parse_data_example(obj[0], prefix)
-            return Types.Vector.copy().replace_trait(Traits.ValueType([content]))
+            return Types.Vector.copy().replace_field(Traits.ValueType([content]))
         elif isinstance(obj, dict):
             fields = []
             for key, value in obj.items():
                 value = parse_data_example(value, prefix_join(prefix, key))
-                if value.get_trait(Traits.Struct):
-                    value.replace_trait(Traits.TypeName(prefix_join(prefix, key)))
+                if value.get_field(Traits.Struct):
+                    value.replace_field(Traits.TypeName(prefix_join(prefix, key)))
 
-                for val in value.get_traits(Traits.ValueType):
-                    if val.get_trait(Traits.Struct):
+                for val in value.get_field(Traits.ValueType):
+                    if val.get_field(Traits.Struct):
                         new_name = prefix_join(prefix, key)
                         if new_name.endswith("s"):
                             new_name = new_name[:-1]
-                        val.replace_trait(Traits.TypeName(new_name))
+                        val.replace_field(Traits.TypeName(new_name))
 
                 fields.append(Types.field(key, value))
             return Types.struct("struct_" + str(random.randint(0, 1000)), fields)
         raise CouldNotParseDataExample(str(obj))
 
-    return inner(obj, prefix).copy().append_trait(Traits.RawValue(obj))
+    return inner(obj, prefix).copy().append_field(Traits.RawValue(obj))
 
 
 def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None:
-    if node.get_trait(Traits.Struct):
-        for field in node.get_traits(Traits.StructFields):
+    if node.get_field(Traits.Struct):
+        for field in node.get_field(Traits.StructFields):
             process(depth, field)
             walk_type(field, process, depth + 1)
-    if node.get_trait(Traits.Vector):
-        for ty in node.get_trait(Traits.ValueType):
+    if node.get_field(Traits.Vector):
+        for ty in node.get_field(Traits.ValueType):
             process(depth, ty)
             walk_type(ty, process, depth + 1)
     else:
@@ -355,12 +341,12 @@ def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None
 
 
 def walk_type_with_count(
-    node: Type, process: Callable[[int, int, str, Type], None]
+        node: Type, process: Callable[[int, int, str, Type], None]
 ) -> None:
     counts = {}
 
     def pre_process(depth, ty: Type):
-        name = ty.get_trait(Traits.FieldName)
+        name = ty.get_field(Traits.FieldName)
         if name:
             if name not in counts:
                 counts[name] = 0
@@ -373,18 +359,18 @@ def walk_type_with_count(
 def parse_type_definition(ty: str) -> Type:
     if ty.startswith("timestamp"):
         unit = ty.split("/")[1]
-        ty = Types.I64.copy().replace_trait(Traits.TsUnit(unit))
+        ty = Types.I64.copy().replace_field(Traits.TsUnit(unit))
         return ty
 
     if "enum" in to_snake_case(ty):
         ty_name = ty.split("/")[0]
         ty = Types.enum(ty_name, [])
-        ty.append_trait(Traits.TypeRef(ty_name))
+        ty.append_field(Traits.TypeRef(ty_name))
         return ty
     else:
         ty_name = ty
         ty = Types.struct(ty_name, [])
-        ty.append_trait(Traits.TypeRef(ty_name))
+        ty.append_field(Traits.TypeRef(ty_name))
         return ty
 
 

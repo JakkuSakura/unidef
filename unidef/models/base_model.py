@@ -9,12 +9,12 @@ from pydantic.fields import ModelField
 from unidef.utils.typing_compat import *
 
 
-def get_validator(default, allow_none):
+def get_validator(ty, default, allow_none):
     def inner(val):
         if not allow_none and val is None:
-            raise ValueError("Type should not be None")
+            raise ValueError(f"Type {ty} should not be None")
         if default is not None and type(default) != type(val):
-            raise ValueError(f"Type does not match {type(default)} != {type(val)}")
+            raise ValueError(f"Type {ty} does not match {type(default)} != {type(val)}")
         return val
 
     return Validator(inner)
@@ -34,7 +34,7 @@ class MyField:
             field = ModelField(
                 name=key,
                 type_=Any,
-                class_validators={"value": get_validator(default_present, allow_none)},
+                class_validators={"value": get_validator(key, default_present, allow_none)},
                 required=True,
                 model_config=BaseConfig,
                 default_factory=lambda: copy.deepcopy(default_absent),
@@ -86,24 +86,13 @@ class MyBaseModel(BaseModel):
             assert isinstance(value, list) and isinstance(
                 field.default_present, list
             ), f"{field.key} is not list, cannot be appended multiple times"
-            value.append(field.value)
+            if isinstance(field.value, list):
+                value.extend(field.value)
+            else:
+                value.append(field.value)
         else:
             self.replace_field(field)
 
-        return self
-
-    @beartype
-    def extend_field(self, field: MyField, values: Iterable[Any]) -> __qualname__:
-        assert not self.is_frozen()
-        assert isinstance(
-            field.default_present, list
-        ), f"default value of {field.key} is not list"
-        fields = []
-        for value in values:
-            fields.append(value)
-        if field.key not in self.fields:
-            self.fields[field.key] = field.default_present[:]
-        self.fields[field.key].extend(fields)
         return self
 
     @beartype

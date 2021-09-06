@@ -15,26 +15,26 @@ from unidef.emitters.rust_json_emitter import *
 
 class RustEmitterBase(EmitterBase):
     def emit_program(self, node):
-        for child in node.get_traits(Attributes.Children):
+        for child in node.get_field(Attributes.Children):
             self.emit_node(child)
 
     def emit_expression_statement(self, node):
-        expr = node.get_trait(Attributes.Expression)
-        if expr.get_trait(Attributes.Kind) == "literal":
-            self.write(RustComment(expr.get_trait(Attributes.RawCode)))
+        expr = node.get_field(Attributes.Expression)
+        if expr.get_field(Attributes.Kind) == "literal":
+            self.write(RustComment(expr.get_field(Attributes.RawCode)))
         else:
             self.emit_node(expr)
 
     def emit_return(self, node):
-        returnee = node.get_trait(Attributes.Return)
+        returnee = node.get_field(Attributes.Return)
         self.formatter.append("return ")
         self.emit_node(returnee)
         self.formatter.append_line(";")
 
     def emit_argument_name(self, node):
-        self.formatter.append(node.get_trait(Attributes.ArgumentName))
+        self.formatter.append(node.get_field(Attributes.ArgumentName))
         self.formatter.append(": ")
-        self.formatter.append(self.format_type(node.get_trait(Attributes.ArgumentType)))
+        self.formatter.append(self.format_type(node.get_field(Attributes.ArgumentType)))
 
     def format_type(self, ty: Type) -> str:
         return map_type_to_rust(ty)
@@ -44,14 +44,14 @@ class RustEmitterBase(EmitterBase):
 
     def emit_function_decl(self, node):
         is_pub = True
-        is_async = node.get_trait(Attributes.Async)
+        is_async = node.get_field(Attributes.Async)
         if is_pub:
             self.formatter.append("pub ")
         if is_async:
             self.formatter.append("async ")
-        name = node.get_trait(Attributes.Name)
+        name = node.get_field(Attributes.Name)
         self.formatter.append(f"fn {name}(&self")
-        for arg in node.get_traits(Attributes.Arguments):
+        for arg in node.get_field(Attributes.Arguments):
             self.formatter.append(", ")
             self.emit_node(arg)
         self.formatter.append(")")
@@ -60,15 +60,15 @@ class RustEmitterBase(EmitterBase):
             self.formatter.append(f"-> {return_type}")
         self.formatter.append_line(" {")
         self.formatter.incr_indent()
-        for child in node.get_traits(Attributes.Children):
+        for child in node.get_field(Attributes.Children):
             self.emit_node(child)
         self.formatter.decr_indent()
         self.formatter.append_line("}")
 
     def emit_function_call(self, node):
-        name = node.get_trait(Attributes.Callee)
+        name = node.get_field(Attributes.Callee)
         name = name.replace('this.', 'self.')
-        arguments = node.get_traits(Attributes.Arguments)
+        arguments = node.get_field(Attributes.Arguments)
         self.formatter.append(f"{name}(")
         for i, a in enumerate(arguments):
             if i > 0:
@@ -81,10 +81,10 @@ class RustEmitterBase(EmitterBase):
         self.formatter.append(f"{node}")
 
     def emit_literal(self, node):
-        self.formatter.append(node.get_trait(Attributes.RawCode).replace('\'', '"'))
+        self.formatter.append(node.get_field(Attributes.RawCode).replace('\'', '"'))
 
     def emit_require(self, node):
-        required = node.get_traits(Attributes.Require)
+        required = node.get_field(Attributes.Require)
         for req in required:
             req: RequireNode = req
             path = req.path.replace(".", "self").replace("/", "::")
@@ -96,11 +96,11 @@ class RustEmitterBase(EmitterBase):
                 self.formatter.append_line(f"use {path};")
 
     def emit_variable_declaration(self, node):
-        for decl in node.get_trait(Attributes.VarDecl):
+        for decl in node.get_field(Attributes.VarDecl):
             assert isinstance(decl, Node), f"decl should be node, got {type(decl)}"
-            name = decl.get_trait(Attributes.Id).get_trait(Attributes.Name)
+            name = decl.get_field(Attributes.Id).get_field(Attributes.Name)
             self.formatter.append(f"let {name}")
-            init = decl.get_trait_by_name("init")
+            init = decl.get_field_by_name("init")
             if init:
                 self.formatter.append(" = ")
                 self.emit_node(init)
@@ -108,20 +108,20 @@ class RustEmitterBase(EmitterBase):
 
     def emit_class_declaration(self, node):
         fields = []
-        for base in node.get_traits(Attributes.SuperClasses):
+        for base in node.get_field(Attributes.SuperClasses):
             fields.append(
                 Type.from_str(base)
-                    .append_trait(Traits.TypeRef(base))
-                    .append_trait(Traits.FieldName("base"))
+                    .append_field(Traits.TypeRef(base))
+                    .append_field(Traits.FieldName("base"))
             )
-        name = node.get_trait(Attributes.Name)
+        name = node.get_field(Attributes.Name)
         rust_struct = RustStruct(raw=Types.struct(name, fields))
         self.write(rust_struct)
 
         self.formatter.append_line(f"""impl {rust_struct.name} {{""")
         self.formatter.incr_indent()
 
-        for i, child in enumerate(node.get_traits(Attributes.Children)):
+        for i, child in enumerate(node.get_field(Attributes.Children)):
             self.emit_node(child)
 
         self.formatter.decr_indent()

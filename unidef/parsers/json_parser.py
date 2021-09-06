@@ -21,7 +21,7 @@ class JsonParser(Parser):
         for line in content.splitlines():
             pos = line.find("//")
             if pos >= 0:
-                comment.append(line[pos + 2 :])
+                comment.append(line[pos + 2:])
 
             try:
                 key = next(key_re.finditer(line))[1]
@@ -41,13 +41,13 @@ class JsonParser(Parser):
         comments = self.parse_comment(content)
 
         parsed = parse_data_example(dict(pyhocon.ConfigParser.parse(content)), name)
-        if parsed.get_trait(Traits.Struct) and name:
-            parsed.replace_trait(Traits.TypeName(name))
+        if parsed.get_field(Traits.Struct) and name:
+            parsed.replace_field(Traits.TypeName(name))
 
             def process(depth: int, i: int, key: str, ty: Type):
                 if (i, key) in comments:
-                    ty.extend_traits(
-                        Traits.BeforeLineComment, comments[(i, key)].splitlines()
+                    ty.append_field(
+                        Traits.BeforeLineComment(comments[(i, key)].splitlines())
                     )
 
             walk_type_with_count(parsed, process)

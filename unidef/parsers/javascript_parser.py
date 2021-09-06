@@ -27,7 +27,7 @@ class VisitorBase(VisitorPattern):
         return obj
 
     def get_name(
-        self, node, warn=True
+            self, node, warn=True
     ) -> Union[List[str], List[(str, str)], Optional[str]]:
         if node is None:
             return
@@ -54,20 +54,19 @@ class VisitorBase(VisitorPattern):
             return node.get("name")
         else:
             if warn:
-                logging.warning("could not process %s", node)
+                logging.warning("could not get name from %s", node)
             return
 
     def match_func_call(self, node, name: str) -> bool:
+        if node['type'] != 'CallExpression':
+            return False
         spt = tuple(name.split("."))
         try:
             if len(spt) == 2:
                 obj, method = spt
                 callee = node["callee"]
                 obj0 = self.get_name(callee)
-                if (
-                    obj0 == obj
-                    and self.get_recursive(callee, "property.name") == method
-                ):
+                if obj0 == obj and self.get_name(callee.get('property')) == method:
                     return True
             elif len(spt) == 1:
                 (obj,) = spt
@@ -75,6 +74,7 @@ class VisitorBase(VisitorPattern):
                 obj0 = self.get_name(callee)
                 return obj0 == obj
         except KeyError as e:
+            print(node)
             traceback.print_exc()
 
         return False
@@ -82,7 +82,7 @@ class VisitorBase(VisitorPattern):
     def visit_program(self, node) -> Node:
         program = Node.from_str("program")
         body = self.visit_node(node["body"]) or []
-        program.extend_traits(Attributes.Children, body)
+        program.append_field(Attributes.Children(body))
         return program
 
     def visit_other(self, node) -> Node:
@@ -98,14 +98,14 @@ class VisitorBase(VisitorPattern):
             if n.exist_field(attr):
                 attr.key = key + "_"
 
-            n.append_trait(attr)
+            n.append_field(attr)
         return n
 
     def visit_literal(self, node) -> Node:
         return (
             Node.from_attribute(Attributes.Literal)
-            .append_trait(Attributes.RawCode(node["raw"]))
-            .append_trait(Attributes.RawValue(node["value"]))
+                .append_field(Attributes.RawCode(node["raw"]))
+                .append_field(Attributes.RawValue(node["value"]))
         )
 
     def visit_node(self, node) -> Union[Optional[Node], List[Any], Any]:
@@ -131,7 +131,7 @@ class VisitorBase(VisitorPattern):
                 for comment in node.get("comments"):
                     # TODO: check comment['type']
                     comments.append(comment["value"])
-                result.append_trait(Traits.BeforeLineComment(comments))
+                result.append_field(Traits.BeforeLineComment(comments))
             return result
         elif isinstance(node, list):
             result = [self.visit_node(n) for n in node]
@@ -144,13 +144,17 @@ class VisitorImpl(VisitorBase):
     pass
 
     def visit_variable_declaration(self, node) -> Node:
-        for decl in node["declarations"]:
+        declarations = node["declarations"]
+        if len(declarations) == 1:
+            decl = declarations[0]
             if self.match_func_call(decl["init"], "require"):
                 names = self.get_name(decl.get("id"))
                 paths = [arg["value"] for arg in decl["init"]["arguments"]]
                 assert len(paths) == 1
                 paths = paths[0]
-                return Nodes.require_node(paths, names, self.visit_node(decl))
+                decl_node = self.visit_node(decl)
+                req = Nodes.require(paths, names, decl_node)
+                return req
         return NotImplemented
 
     def visit_assignment_expression(self, node):
@@ -167,9 +171,9 @@ class VisitorImpl(VisitorBase):
 
         n = (
             Node.from_attribute(Attributes.ClassDecl)
-            .append_trait(Attributes.Name(class_name))
-            .append_trait(Attributes.SuperClasses([super_class]))
-            .extend_traits(Attributes.Children, body)
+            .append_field(Attributes.Name(class_name))
+            .append_field(Attributes.SuperClasses([super_class]))
+            .append_field(Attributes.Children(body))
         )
 
         return n
@@ -179,26 +183,36 @@ class VisitorImpl(VisitorBase):
         is_async = node["value"]["async"]
         params = list(map(self.visit_arg, node["value"]["params"]))
         children = self.visit_node(node["value"]["body"]["body"]) or []
+        node1 = Node.from_attribute(Attributes.FunctionDecl)
+        trait = Attributes.Name(name)
         return (
-            Node.from_attribute(Attributes.FunctionDecl)
-            .append_trait(Attributes.Name(name))
-            .append_trait(Attributes.Async(is_async))
-            .extend_traits(Attributes.Children, children)
-            .extend_traits(Attributes.Arguments, params)
+            node1.append_field(trait)
+                .append_field(Attributes.Async(is_async))
+                .append_field(Attributes.Children(children))
+                .append_field(Attributes.Arguments(params))
         )
 
     def visit_arg(self, node) -> Node:
-        return Node.from_attribute(
-            Attributes.ArgumentName(self.get_name(node))
-        ).append_trait(Attributes.ArgumentType(Types.AllValue))
+        if node['type'] == 'AssignmentPattern':
+            name = self.get_name(node['left'])
+            default = self.visit_node(node['right'])
+        else:
+            name = self.get_name(node)
+            default = None
+        n = Node.from_attribute(
+            Attributes.ArgumentName(name)
+        ).append_field(Attributes.ArgumentType(Types.AllValue.copy().append_field(Traits.NotInferredType).freeze()))
+        if default:
+            n.append_field(Attributes.DefaultValue(default))
+        return n
 
     def visit_call_expression(self, node) -> Optional[Node]:
         if self.match_func_call(node, "console.log"):
             return Nodes.print_node(self.visit_node(node["arguments"]))
         n = Node.from_attribute(Attributes.FunctionCall)
-        n.append_trait(Attributes.Callee(self.visit_node(node["callee"])))
+        n.append_field(Attributes.Callee(self.visit_node(node["callee"])))
         arguments = self.visit_node(node["arguments"]) or []
-        n.extend_traits(Attributes.Arguments, arguments)
+        n.append_field(Attributes.Arguments(arguments))
         return n
 
     def visit_return_statement(self, node) -> Node:
@@ -207,8 +221,8 @@ class VisitorImpl(VisitorBase):
     def visit_property(self, node) -> Node:
         return (
             Node.from_attribute(Attributes.ObjectProperty)
-            .append_trait(Attributes.KeyName(self.visit_node(node["key"])))
-            .append_trait(Attributes.Value(self.visit_node(node["value"])))
+                .append_field(Attributes.KeyName(self.visit_node(node["key"])))
+                .append_field(Attributes.Value(self.visit_node(node["value"])))
         )
 
     def visit_object_expression(self, node) -> Node:
@@ -220,9 +234,9 @@ class VisitorImpl(VisitorBase):
 class JavascriptParser(Parser):
     def accept(self, fmt: Definition) -> bool:
         return (
-            isinstance(fmt, SourceExample)
-            and fmt.lang == "javascript"
-            and load_module("esprima")
+                isinstance(fmt, SourceExample)
+                and fmt.lang == "javascript"
+                and load_module("esprima")
         )
 
     def parse(self, name: str, fmt: Definition) -> Node:

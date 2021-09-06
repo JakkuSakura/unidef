@@ -23,7 +23,7 @@ class EmitterBase(BaseModel, VisitorPattern):
             if self.functions is None:
                 self.functions = self.get_functions("emit_")
 
-            node_name = node.get_trait(Attributes.Kind)
+            node_name = node.get_field(Attributes.Kind)
             assert node_name, f"Name cannot be empty to emit: {node}"
             node_name = to_snake_case(node_name)
 

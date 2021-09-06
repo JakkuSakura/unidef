@@ -35,6 +35,7 @@ class Attributes:
     Arguments = Attribute(key="argument", default_present=[], default_absent=[])
     ArgumentName = Attribute(key="argument_name")
     ArgumentType = Attribute(key="argument_type")
+    DefaultValue = Attribute(key="default_value")
     Literal = Attribute(key="literal", default_present=True, default_absent=False)
     Async = Attribute(key="async", default_present=True, default_absent=False)
     Return = Attribute(key="return")
@@ -57,24 +58,12 @@ class Node(MyBaseModel):
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
-        return cls().append_trait(Attributes.Kind(name))
+        return cls().append_field(Attributes.Kind(name))
 
     @classmethod
     @beartype
     def from_attribute(cls, attr: Attribute) -> __qualname__:
-        return cls.from_str(attr.key).append_trait(attr)
-
-    def append_trait(self, trait: Trait) -> __qualname__:
-        return self.append_field(trait)
-
-    def get_trait(self, trait: Trait) -> Any:
-        return self.get_field(trait)
-
-    def get_traits(self, trait: Trait) -> List[Any]:
-        return self.get_field(trait)
-
-    def extend_traits(self, field: MyField, values: List[Any]) -> __qualname__:
-        return self.extend_field(field, values)
+        return cls.from_str(attr.key).append_field(attr)
 
 
 class RequireNode(BaseModel):
@@ -85,15 +74,15 @@ class RequireNode(BaseModel):
 
 class Nodes:
     @staticmethod
-    def print_node(content: Node) -> Node:
+    def print(content: Node) -> Node:
         return (
             Node.from_str(Attributes.Print.name)
-            .append_trait(Attributes.Print)
-            .append_trait(Attributes.Children(content))
+                .append_field(Attributes.Print)
+                .append_field(Attributes.Children(content))
         )
 
     @staticmethod
-    def require_node(import_paths, import_name, raw: Node) -> Node:
+    def require(import_paths, import_name, raw: Node) -> Node:
         if isinstance(import_name, list):
             if isinstance(import_paths, list):
                 zipped = [
@@ -112,7 +101,6 @@ class Nodes:
         else:
             zipped = [RequireNode(path=import_paths, key=import_name)]
         return (
-            Node.from_attribute(Attributes.Require)
-            .extend_traits(Attributes.Require, zipped)
-            .append_trait(Attributes.RawCode(raw))
+            Node.from_attribute(Attributes.Require(zipped))
+                .append_field(Attributes.RawCode(raw))
         )

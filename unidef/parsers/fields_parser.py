@@ -20,14 +20,14 @@ class FieldsParser(Parser):
         ty = GLOBAL_TYPE_REGISTRY.get_type(type_ref)
         if ty:
             ty = ty.copy()
-            ty.replace_trait(Traits.TypeName(name))
+            ty.replace_field(Traits.TypeName(name))
         else:
-            ty = Type.from_str(name).append_trait(Traits.TypeRef(type_ref))
+            ty = Type.from_str(name).append_field(Traits.TypeRef(type_ref))
 
         for key, val in field.items():
-            trait = GLOBAL_TYPE_REGISTRY.get_trait(key)
+            trait = GLOBAL_TYPE_REGISTRY.get_field(key)
             if trait is not None:
-                ty.append_trait(trait.default_present(val))
+                ty.append_field(trait.default_present(val))
             else:
                 raise Exception("InvalidArgumentException: " + key)
         return ty

@@ -20,14 +20,14 @@ class JsonCrate(EmitterBase):
         super().__init__(**data)
 
     def emit_vector(self, node):
-        traits = node.get_traits(Traits.ValueType)
+        traits = node.get_field(Traits.ValueType)
         if self.no_macro:
             if traits:
                 self.formatter.append_line("{")
                 self.formatter.incr_indent()
                 self.formatter.append_line("let mut node = Vec::new();")
                 for field in traits:
-                    for line in field.get_traits(Traits.BeforeLineComment):
+                    for line in field.get_field(Traits.BeforeLineComment):
                         self.formatter.append_line("// {}".format(line))
                     self.formatter.append("node.push(")
                     self.emit_node(field)
@@ -39,56 +39,56 @@ class JsonCrate(EmitterBase):
                 self.formatter.append("Vec::new()")
         else:
             self.formatter.append("vec![")
-            for field in node.get_traits(Traits.ValueType):
+            for field in node.get_field(Traits.ValueType):
                 self.emit_node(field)
                 self.formatter.append(",")
             self.formatter.append("]")
 
     def emit_string(self, node):
-        self.formatter.append('"{}"'.format(node.get_trait(Traits.RawValue)))
+        self.formatter.append('"{}"'.format(node.get_field(Traits.RawValue)))
 
     def emit_node(self, node):
-        if node.get_trait(Traits.RawValue) == "undefined":
+        if node.get_field(Traits.RawValue) == "undefined":
             self.formatter.append(self.none_type)
             return
         return super().emit_node(node)
 
     def emit_bool(self, node):
-        self.formatter.append(str(node.get_trait(Traits.RawValue)).lower())
+        self.formatter.append(str(node.get_field(Traits.RawValue)).lower())
 
     def emit_field_key(self, node):
-        if node.get_trait(Attributes.ObjectProperty):
-            self.emit_node(node.get_trait(Attributes.KeyName))
+        if node.get_field(Attributes.ObjectProperty):
+            self.emit_node(node.get_field(Attributes.KeyName))
         else:
-            field_name = node.get_trait(Traits.FieldName)
+            field_name = node.get_field(Traits.FieldName)
             if field_name:
                 self.formatter.append(f'"{field_name}"')
             else:
-                self.emit_node(node.get_trait(Attributes.KeyName))
+                self.emit_node(node.get_field(Attributes.KeyName))
 
     def emit_field_value(self, node):
-        if node.get_trait(Attributes.ObjectProperty):
-            self.emit_node(node.get_trait(Attributes.Value))
+        if node.get_field(Attributes.ObjectProperty):
+            self.emit_node(node.get_field(Attributes.Value))
         else:
             self.emit_node(node)
 
     def emit_integer(self, node):
-        self.formatter.append("{}".format(node.get_trait(Traits.RawValue)))
+        self.formatter.append("{}".format(node.get_field(Traits.RawValue)))
 
     def emit_float(self, node):
-        self.formatter.append("{}".format(node.get_trait(Traits.RawValue)))
+        self.formatter.append("{}".format(node.get_field(Traits.RawValue)))
 
     def emit_object_properties(self, node):
         self.emit_struct(node)
 
     def emit_struct(self, node):
-        fields = node.get_traits(Traits.StructFields) or node.get_traits(Attributes.ObjectProperties)
+        fields = node.get_field(Traits.StructFields) or node.get_field(Attributes.ObjectProperties)
         if fields:
             self.formatter.append_line("{")
             self.formatter.incr_indent()
             self.formatter.append_line(f"let mut node = <{self.object_type}>::new();")
             for field in fields:
-                for line in field.get_traits(Traits.BeforeLineComment):
+                for line in field.get_field(Traits.BeforeLineComment):
                     self.formatter.append_line("//{}".format(line))
                 self.formatter.append("node.insert(")
                 self.emit_field_key(field)
@@ -136,12 +136,12 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
     def emit_struct(self, node):
         if not self.only_outlier:
             self.formatter.append("serde_json::json!(")
-        fields = node.get_traits(Traits.StructFields)
+        fields = node.get_field(Traits.StructFields)
         if fields:
             self.formatter.append_line("{")
             self.formatter.incr_indent()
-            for field in node.get_traits(Traits.StructFields):
-                for line in field.get_traits(Traits.BeforeLineComment):
+            for field in node.get_field(Traits.StructFields):
+                for line in field.get_field(Traits.BeforeLineComment):
                     self.formatter.append_line("// {}".format(line))
                 self.emit_field_key(field)
                 self.formatter.append(": ")
@@ -157,7 +157,7 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
 
     def emit_vector(self, node):
         self.formatter.append("[")
-        for field in node.get_traits(Traits.ValueType):
+        for field in node.get_field(Traits.ValueType):
             self.emit_node(field)
             self.formatter.append(",")
         self.formatter.append("]")

@@ -32,12 +32,12 @@ class ModelDefinition(BaseModel):
     variants: Optional[Variants] = None
     source: Optional[SourceExample] = None
 
-    def get_traits(self) -> List[Trait]:
+    def get_field(self) -> List[Trait]:
         traits = []
         for t in self.traits:
             name = t["name"]
             value = t["value"]
-            trait = GLOBAL_TYPE_REGISTRY.get_trait(name)
+            trait = GLOBAL_TYPE_REGISTRY.get_field(name)
             if trait is None:
                 trait = Trait.from_str(name).default_present(value)
             else:
@@ -59,8 +59,8 @@ class ModelDefinition(BaseModel):
         else:
             raise Exception(f"No invalid input for {self.name}")
 
-        for t in self.get_traits():
-            parsed.append_trait(t)
+        for t in self.get_field():
+            parsed.append_field(t)
         return parsed
 
 

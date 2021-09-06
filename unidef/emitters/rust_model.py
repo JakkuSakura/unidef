@@ -94,60 +94,60 @@ class AccessModifier(Enum):
 
 
 def map_type_to_rust(ty: Type) -> str:
-    # if ty.get_trait(Traits.ValueType):
-    #     return map_type_to_str(ty.get_trait(Traits.ValueType))
-    if ty.get_trait(Traits.Nullable):
+    # if ty.get_field(Traits.ValueType):
+    #     return map_type_to_str(ty.get_field(Traits.ValueType))
+    if ty.get_field(Traits.Nullable):
         ty = ty.copy()
         ty.remove_field(Traits.Nullable)
         return "Option<{}>".format(map_type_to_rust(ty))
-    if ty.get_trait(Traits.Null):
+    if ty.get_field(Traits.Null):
         return "String"
-    elif ty.get_trait(Traits.TsUnit):
-        return "TimeStamp" + to_pascal_case(ty.get_trait(Traits.TsUnit))
-    elif ty.get_trait(Traits.Struct):
-        if ty.get_trait(Traits.TypeRef):
-            return ty.get_trait(Traits.TypeRef)
+    elif ty.get_field(Traits.TsUnit):
+        return "TimeStamp" + to_pascal_case(ty.get_field(Traits.TsUnit))
+    elif ty.get_field(Traits.Struct):
+        if ty.get_field(Traits.TypeRef):
+            return ty.get_field(Traits.TypeRef)
         else:
-            return RustStruct.parse_name(ty.get_trait(Traits.TypeName))
-    elif ty.get_trait(Traits.Enum):
-        return RustEnum.parse_variant_name(ty.get_trait(Traits.TypeRef))
-    elif ty.get_trait(Traits.Tuple):
+            return RustStruct.parse_name(ty.get_field(Traits.TypeName))
+    elif ty.get_field(Traits.Enum):
+        return RustEnum.parse_variant_name(ty.get_field(Traits.TypeRef))
+    elif ty.get_field(Traits.Tuple):
         return "({})".format(
-            ", ".join([map_type_to_rust(t) for t in ty.get_traits(Traits.TupleField)])
+            ", ".join([map_type_to_rust(t) for t in ty.get_field(Traits.TupleField)])
         )
-    elif ty.get_trait(Traits.Vector):
-        return "Vec<{}>".format(map_type_to_rust(ty.get_trait(Traits.ValueType)))
-    elif ty.get_trait(Traits.Bool):
+    elif ty.get_field(Traits.Vector):
+        return "Vec<{}>".format(map_type_to_rust(ty.get_field(Traits.ValueType)))
+    elif ty.get_field(Traits.Bool):
         return "bool"
-    elif ty.get_trait(Traits.AllValue):
+    elif ty.get_field(Traits.AllValue):
         return "serde_json::Value"
-    elif ty.get_trait(Traits.Integer):
-        bits = ty.get_trait(Traits.BitSize)
-        if ty.get_trait(Traits.Signed):
+    elif ty.get_field(Traits.Integer):
+        bits = ty.get_field(Traits.BitSize)
+        if ty.get_field(Traits.Signed):
             return "i" + str(bits)
         else:
             return "u" + str(bits)
 
-    elif ty.get_trait(Traits.Floating):
-        bits = ty.get_trait(Traits.BitSize)
+    elif ty.get_field(Traits.Floating):
+        bits = ty.get_field(Traits.BitSize)
         return "f" + str(bits)
-    elif ty.get_trait(Traits.Map):
+    elif ty.get_field(Traits.Map):
         return "HashMap<{}, {}>".format(
-            map_type_to_rust(ty.get_trait(Traits.KeyType)),
-            map_type_to_rust(ty.get_trait(Traits.ValueType)),
+            map_type_to_rust(ty.get_field(Traits.KeyType)),
+            map_type_to_rust(ty.get_field(Traits.ValueType)),
         )
-    elif ty.get_trait(Traits.String):
-        if ty.get_trait(Traits.Reference):
-            lifetime = ty.get_trait(Traits.Lifetime)
+    elif ty.get_field(Traits.String):
+        if ty.get_field(Traits.Reference):
+            lifetime = ty.get_field(Traits.Lifetime)
             return "&{}str".format(lifetime and "'" + lifetime + " " or "")
         else:
             return "String"
-    elif ty.get_trait(Traits.Unit):
+    elif ty.get_field(Traits.Unit):
         return "()"
-    elif ty.get_trait(Traits.TypeRef):
-        return ty.get_trait(Traits.TypeRef)
+    elif ty.get_field(Traits.TypeRef):
+        return ty.get_field(Traits.TypeRef)
 
-    raise Exception("Cannot map type {} to str".format(ty.get_trait(Traits.TypeName)))
+    raise Exception("Cannot map type {} to str".format(ty.get_field(Traits.TypeName)))
 
 
 RUST_KEYWORDS = {
@@ -212,22 +212,22 @@ class RustField(Formatee, BaseModel):
         ty_or_name = ty or name
         return RustField(
             name=name,
-            value=Type.from_str(ty_or_name).append_trait(Traits.TypeRef(ty_or_name)),
+            value=Type.from_str(ty_or_name).append_field(Traits.TypeRef(ty_or_name)),
         )
 
     def __init__(self, ty: Type = None, **kwargs):
         if ty:
-            value = ty.get_trait(Traits.ValueType) or ty
+            value = ty.get_field(Traits.ValueType) or ty
             if isinstance(value, list):
                 value = value[0]
 
             assert value is not None, "Is not an valid field " + repr(ty)
             kwargs.update(
                 {
-                    "name": map_field_name(ty.get_trait(Traits.FieldName)),
-                    "original_name": ty.get_trait(Traits.FieldName),
+                    "name": map_field_name(ty.get_field(Traits.FieldName)),
+                    "original_name": ty.get_field(Traits.FieldName),
                     "value": value,
-                    "val_in_str": value.get_trait(Traits.StringWrapped) or False,
+                    "val_in_str": value.get_field(Traits.StringWrapped) or False,
                 }
             )
 
@@ -240,7 +240,7 @@ class RustField(Formatee, BaseModel):
             # or self.original_name == self.name and len(self.name) < 3: # For binance's convenience
 
             Serde(rename=[self.original_name]).format_with(writer)
-        for comment in self.value.get_traits(Traits.BeforeLineComment):
+        for comment in self.value.get_field(Traits.BeforeLineComment):
             RustComment(comment, cargo_doc=True).format_with(writer)
         writer.append(f"{self.access.value}{self.name}: {map_type_to_rust(self.value)}")
 
@@ -283,9 +283,9 @@ class RustStruct(Formatee, BaseModel):
             kwargs.update(
                 {
                     "raw": raw,
-                    "name": RustStruct.parse_name(raw.get_trait(Traits.TypeName)),
+                    "name": RustStruct.parse_name(raw.get_field(Traits.TypeName)),
                     "fields": [
-                        RustField(f) for f in raw.get_traits(Traits.StructFields)
+                        RustField(f) for f in raw.get_field(Traits.StructFields)
                     ],
                     "annotations": annotations,
                     "derive": derive,
@@ -298,7 +298,7 @@ class RustStruct(Formatee, BaseModel):
                 self.annotations.insert(0, SERDE_AS)
                 break
         if self.raw:
-            for derive in self.raw.get_traits(Traits.Derive):
+            for derive in self.raw.get_field(Traits.Derive):
                 self.derive.append(derive)
 
     def format_with(self, writer: IndentedWriter):
@@ -339,8 +339,8 @@ class RustEnum(Formatee, BaseModel):
             kwargs.update(
                 {
                     "raw": raw,
-                    "name": RustStruct.parse_name(raw.get_trait(Traits.TypeName)),
-                    "variants": list(raw.get_traits(Traits.Variant)),
+                    "name": RustStruct.parse_name(raw.get_field(Traits.TypeName)),
+                    "variants": list(raw.get_field(Traits.Variant)),
                     "annotations": annotations,
                 }
             )
@@ -355,7 +355,7 @@ class RustEnum(Formatee, BaseModel):
 
         def for_field(writer1: IndentedWriter):
             for field in self.variants:
-                name = list(field.get_traits(Traits.VariantName))
+                name = list(field.get_field(Traits.VariantName))
                 mapped = map_field_name(name[0])
                 if len(name) > 1 or mapped != name[0]:
                     reversed_names = name[:]
@@ -388,9 +388,9 @@ class RustFunc(Formatee, BaseModel):
 
         def for_arg(writer1: IndentedWriter):
             for arg in self.args:
-                if arg.value.get_trait(
+                if arg.value.get_field(
                     Traits.TypeRef
-                ) and "self" in arg.value.get_trait(Traits.TypeName):
+                ) and "self" in arg.value.get_field(Traits.TypeName):
                     writer1.append(arg.name + ", ")
                 else:
                     writer1.append(arg.name + ": " + map_type_to_rust(arg.value) + ", ")
@@ -423,11 +423,11 @@ class RustImpl(Formatee, BaseModel):
 
 
 def find_all_structs_impl(reg: StructRegistry, s: Type):
-    if s.get_trait(Traits.Struct):
+    if s.get_field(Traits.Struct):
         reg.add_struct(s)
-        for field in s.get_traits(Traits.StructFields):
+        for field in s.get_field(Traits.StructFields):
             find_all_structs_impl(reg, field)
-    for vt in s.get_trait(Traits.ValueType):
+    for vt in s.get_field(Traits.ValueType):
         find_all_structs_impl(reg, vt)
 
 
@@ -442,31 +442,31 @@ def sql_model_get_sql_ddl(struct: RustStruct) -> RustFunc:
         name="get_sql_ddl",
         args=[],
         ret=Types.String.copy()
-        .append_trait(Traits.Reference)
-        .append_trait(Traits.Lifetime("static")),
+        .append_field(Traits.Reference)
+        .append_field(Traits.Lifetime("static")),
         content=f'r#"{emit_schema_from_model(struct.raw)}"#',
     )
 
 
 def sql_model_get_value_inner(f: RustField) -> str:
-    if f.value.get_trait(Traits.Nullable):
+    if f.value.get_field(Traits.Nullable):
         # TODO: nullable value not complete
         return 'self.{}.as_ref().map(|x| x.to_string()).unwrap_or("NULL".to_owned())'.format(
             f.name
         )
-    elif f.value.get_trait(Traits.Enum):
-        if f.value.get_trait(Traits.SimpleEnum):
+    elif f.value.get_field(Traits.Enum):
+        if f.value.get_field(Traits.SimpleEnum):
             return "self.{}".format(f.name)
         else:
             return "serde_json::to_string(&self.{}).unwrap()".format(f.name)
-    elif f.value.get_trait(Traits.TsUnit):
+    elif f.value.get_field(Traits.TsUnit):
         return "self.{}.val() as f64 * {}".format(
-            f.name, to_second_scale(f.value.get_trait(Traits.TsUnit))
+            f.name, to_second_scale(f.value.get_field(Traits.TsUnit))
         )
     elif (
-        f.value.get_trait(Traits.Struct)
-        or f.value.get_trait(Traits.Vector)
-        or f.value.get_trait(Traits.Tuple)
+        f.value.get_field(Traits.Struct)
+        or f.value.get_field(Traits.Vector)
+        or f.value.get_field(Traits.Tuple)
     ):
         return "serde_json::to_string(&self.{}).unwrap()".format(f.name)
     else:
@@ -483,15 +483,15 @@ def sql_model_get_values_inner(struct: RustStruct) -> List[str]:
 def sql_model_field_names_in_format(struct: RustStruct) -> str:
     fields = []
     for field in struct.fields:
-        if field.value.get_trait(Traits.SimpleEnum):
+        if field.value.get_field(Traits.SimpleEnum):
             fields.append("'{%s:?}'" % field.name)
         elif (
-            field.value.get_trait(Traits.String)
-            or field.value.get_trait(Traits.Enum)
-            or field.value.get_trait(Traits.Struct)
+            field.value.get_field(Traits.String)
+            or field.value.get_field(Traits.Enum)
+            or field.value.get_field(Traits.Struct)
         ):
             fields.append("'{%s}'" % field.name)
-        elif field.value.get_trait(Traits.TsUnit):
+        elif field.value.get_field(Traits.TsUnit):
             fields.append("to_timestamp({%s})" % field.name)
         else:
             fields.append("{%s}" % field.name)
@@ -511,7 +511,7 @@ def sql_model_get_insert_into_sql(struct: RustStruct) -> RustFunc:
         args=[
             RustField.from_name("&self"),
             RustField(
-                name="table", value=Types.String.copy().append_trait(Traits.Reference)
+                name="table", value=Types.String.copy().append_field(Traits.Reference)
             ),
         ],
         ret=Types.String,
@@ -520,14 +520,14 @@ def sql_model_get_insert_into_sql(struct: RustStruct) -> RustFunc:
     )
 
 
-def sql_model_get_fields_sql(struct: RustStruct) -> RustFunc:
+def sql_model_get_field_sql(struct: RustStruct) -> RustFunc:
     field_names = ",".join([field.name for field in struct.fields])
     return RustFunc(
-        name="get_fields_sql",
+        name="get_field_sql",
         args=[RustField.from_name("&self")],
         ret=Types.String.copy()
-        .append_trait(Traits.Reference)
-        .append_trait(Traits.Lifetime("static")),
+        .append_field(Traits.Reference)
+        .append_field(Traits.Lifetime("static")),
         content=f"""r#"{field_names}"#""",
     )
 
@@ -551,7 +551,7 @@ def sql_model_trait(struct: RustStruct, writer: IndentedWriter):
         sql_model_get_sql_ddl(struct),
         sql_model_get_insert_into_sql(struct),
         sql_model_get_values_sql(struct),
-        sql_model_get_fields_sql(struct),
+        sql_model_get_field_sql(struct),
     ]
 
     RustImpl(name=struct.name, trait="SqlModel", functions=functions).format_with(
@@ -572,7 +572,7 @@ def from_sql_raw_func(struct: RustStruct) -> RustFunc:
     return RustFunc(
         name="from",
         args=[RustField.from_name(name="row", ty="Row")],
-        ret=Type.from_str("Self").append_trait(Traits.TypeRef("Self")),
+        ret=Type.from_str("Self").append_field(Traits.TypeRef("Self")),
         content=content,
     )
 
@@ -580,18 +580,18 @@ def from_sql_raw_func(struct: RustStruct) -> RustFunc:
 def from_sql_raw_trait(struct: RustStruct, writer: IndentedWriter):
     for s in struct.fields:
         if (
-            s.value.get_trait(Traits.Enum)
-            or s.value.get_trait(Traits.Struct)
+            s.value.get_field(Traits.Enum)
+            or s.value.get_field(Traits.Struct)
             or (
-                s.value.get_trait(Traits.Integer)
-                and not s.value.get_trait(Traits.Signed)
+                s.value.get_field(Traits.Integer)
+                and not s.value.get_field(Traits.Signed)
             )
-            or s.value.get_trait(Traits.TsUnit)
+            or s.value.get_field(Traits.TsUnit)
         ):
             logging.warning(
                 "Do not support %s %s yet, skipping From<Row>",
-                s.value.get_trait(Traits.FieldName),
-                s.value.get_trait(Traits.TypeName),
+                s.value.get_field(Traits.FieldName),
+                s.value.get_field(Traits.TypeName),
             )
             return
     functions = [
@@ -608,8 +608,8 @@ def raw_data_func(raw: str) -> RustFunc:
         name="get_raw_data",
         args=[],
         ret=Types.String.copy()
-        .append_trait(Traits.Reference)
-        .append_trait(Traits.Lifetime("static")),
+        .append_field(Traits.Reference)
+        .append_field(Traits.Lifetime("static")),
         content=f'r#"{raw}"#',
     )
 
@@ -618,7 +618,7 @@ def emit_rust_type(struct: Type, root: Optional[ModelDefinition] = None) -> str:
     writer = IndentedWriter()
     rust_struct = RustStruct(struct)
     rust_struct.format_with(writer)
-    if root and struct.get_trait(Traits.TypeName) == root.name:
+    if root and struct.get_field(Traits.TypeName) == root.name:
         funcs = [raw_data_func(root.raw)]
         RustImpl(name=rust_struct.name, functions=funcs).format_with(writer)
     backup = writer.clone()
@@ -642,13 +642,13 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
             comment.append(f"{attr}: {t}")
     RustComment("\n".join(comment), cargo_doc=True).format_with(writer)
     parsed = root.get_parsed()
-    if parsed.get_trait(Traits.Struct):
+    if parsed.get_field(Traits.Struct):
         for struct in find_all_structs(parsed):
-            if struct.get_trait(Traits.TypeRef):
+            if struct.get_field(Traits.TypeRef):
                 continue
             writer.append_line(emit_rust_type(struct, root))
 
-    elif parsed.get_trait(Traits.Enum):
+    elif parsed.get_field(Traits.Enum):
         rust_enum = RustEnum(parsed)
         rust_enum.format_with(writer)
     else:

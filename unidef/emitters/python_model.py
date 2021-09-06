@@ -13,17 +13,17 @@ from unidef.utils.typing_compat import List
 
 
 def map_type_to_peewee_model(ty: Type, args="") -> str:
-    if ty.get_trait(Traits.Nullable):
+    if ty.get_field(Traits.Nullable):
         args += "null=True"
-    if ty.get_trait(Traits.Primary):
+    if ty.get_field(Traits.Primary):
         args += "primary=True"
 
-    if ty.get_trait(Traits.Bool):
+    if ty.get_field(Traits.Bool):
         return "BoolField({})".format(args)
-    elif ty.get_trait(Traits.TsUnit):
+    elif ty.get_field(Traits.TsUnit):
         return "DateTimeField()"
-    elif ty.get_trait(Traits.Integer):
-        bits = ty.get_trait(Traits.BitSize)
+    elif ty.get_field(Traits.Integer):
+        bits = ty.get_field(Traits.BitSize)
         if bits < 32:
             return "SmallIntegerField({})".format(args)
         elif bits == 32:
@@ -33,22 +33,22 @@ def map_type_to_peewee_model(ty: Type, args="") -> str:
         else:
             raise NotImplementedError()
 
-    elif ty.get_trait(Traits.Floating):
-        bits = ty.get_trait(Traits.BitSize)
+    elif ty.get_field(Traits.Floating):
+        bits = ty.get_field(Traits.BitSize)
         if bits == 32:
             return "FloatField({})".format(args)
         elif bits == 64:
             return "DoubleField({})".format(args)
         else:
             raise NotImplementedError()
-    elif ty.get_trait(Traits.String) or ty.get_trait(Traits.Null):
+    elif ty.get_field(Traits.String) or ty.get_field(Traits.Null):
         return "TextField()"
-    elif ty.get_trait(Traits.Enum):
-        if ty.get_trait(Traits.SimpleEnum):
+    elif ty.get_field(Traits.Enum):
+        if ty.get_field(Traits.SimpleEnum):
             return "TextField({})".format(args)
         else:
             return "BinaryJSONField({})".format(args)
-    return ty.get_trait(Traits.TypeName)
+    return ty.get_field(Traits.TypeName)
 
 
 PYTHON_KEYWORDS = {
@@ -103,8 +103,8 @@ class PythonField(Formatee, BaseModel):
         if f:
             kwargs.update(
                 {
-                    "name": map_field_name(f.get_trait(Traits.FieldName)),
-                    "original_name": f.get_trait(Traits.TypeName),
+                    "name": map_field_name(f.get_field(Traits.FieldName)),
+                    "original_name": f.get_field(Traits.TypeName),
                     "value": f,
                 }
             )
@@ -147,9 +147,9 @@ class PythonStruct(Formatee, BaseModel):
         if raw:
             kwargs.update(
                 {
-                    "name": PythonStruct.parse_name(raw.get_trait(Traits.TypeName)),
+                    "name": PythonStruct.parse_name(raw.get_field(Traits.TypeName)),
                     "fields": [
-                        PythonField(f) for f in raw.get_traits(Traits.StructFields)
+                        PythonField(f) for f in raw.get_field(Traits.StructFields)
                     ],
                 }
             )
@@ -183,8 +183,8 @@ class PythonEnum(Formatee, BaseModel):
             kwargs.update(
                 {
                     "raw": raw,
-                    "name": PythonEnum.parse_name(raw.get_trait(Traits.TypeName)),
-                    "variants": raw.get_traits(Traits.Variant),
+                    "name": PythonEnum.parse_name(raw.get_field(Traits.TypeName)),
+                    "variants": raw.get_field(Traits.Variant),
                 }
             )
 
@@ -195,7 +195,7 @@ class PythonEnum(Formatee, BaseModel):
 
         def for_field(writer1: IndentedWriter):
             for field in self.variants:
-                name = field.get_trait(Traits.VariantName)
+                name = field.get_field(Traits.VariantName)
                 writer1.append_line(
                     "{lname} = '{rname}'".format(lname=map_field_name(name), rname=name)
                 )
@@ -213,7 +213,7 @@ class StructRegistry:
 
 
 def find_all_structs_impl(reg: StructRegistry, s: Type):
-    if s.get_trait(Traits.Struct):
+    if s.get_field(Traits.Struct):
         reg.add_struct(PythonStruct(s))
     else:
         raise NotImplementedError()
@@ -243,13 +243,13 @@ def emit_python_model_definition(root: ModelDefinition) -> str:
             comment.append(f"{attr}: {t}")
     comment = PythonComment("\n".join(comment), python_doc=True)
     parsed = root.get_parsed()
-    if parsed.get_trait(Traits.Struct):
+    if parsed.get_field(Traits.Struct):
         for i, struct in enumerate(find_all_structs(parsed)):
             python_struct = struct
             if i == 0:
                 python_struct.comment = comment
             python_struct.format_with(writer)
-    elif parsed.get_trait(Traits.Enum):
+    elif parsed.get_field(Traits.Enum):
         python_struct = PythonEnum(parsed)
         python_struct.format_with(writer)
     else:

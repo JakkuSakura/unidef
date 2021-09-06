@@ -7,3 +7,4 @@ quickfix # the fix protocol
 esprima # for javascript parsing
 isort # python imports sort
 black # python reformatting
+pytest
