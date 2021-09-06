@@ -1,33 +1,44 @@
 import copy
 
-from pydantic import BaseModel, BaseConfig
-from pydantic.fields import ModelField
+from beartype import beartype
+from pydantic import BaseConfig, BaseModel
 from pydantic.class_validators import Validator
 from pydantic.error_wrappers import ErrorWrapper
+from pydantic.fields import ModelField
+
 from unidef.utils.typing_compat import *
-from beartype import beartype
 
 
 def get_validator(default, allow_none):
     def inner(val):
         if not allow_none and val is None:
-            return Validator(f'Type should be None')
+            return Validator(f"Type should be None")
         if default is not None and type(default) != type(val):
-            raise ValueError(f'Type does not match {type(default)} != {type(val)}')
+            raise ValueError(f"Type does not match {type(default)} != {type(val)}")
         return val
 
     return Validator(inner)
 
 
 class MyField:
-    def __init__(self, key, default_present=None, default_absent=None, allow_none=False, field=None):
+    def __init__(
+        self,
+        key,
+        default_present=None,
+        default_absent=None,
+        allow_none=False,
+        field=None,
+    ):
 
         if field is None:
-            field = ModelField(name=key, type_=Any,
-                               class_validators={'value': get_validator(default_present, allow_none)},
-                               required=True,
-                               model_config=BaseConfig,
-                               default_factory=lambda: copy.deepcopy(default_absent))
+            field = ModelField(
+                name=key,
+                type_=Any,
+                class_validators={"value": get_validator(default_present, allow_none)},
+                required=True,
+                model_config=BaseConfig,
+                default_factory=lambda: copy.deepcopy(default_absent),
+            )
         self.key: str = key
         self.field: ModelField = field
         self.default_present = default_present
@@ -46,7 +57,7 @@ class MyField:
 
     def __call__(self, value: Any) -> __qualname__:
         field = copy.copy(self)
-        field_name, validate_result = field.field.validate(value, {}, loc='')
+        field_name, validate_result = field.field.validate(value, {}, loc="")
         if isinstance(validate_result, ErrorWrapper):
             raise validate_result.exc
 
@@ -69,8 +80,9 @@ class MyBaseModel(BaseModel):
         assert not self.is_frozen()
         value = self.fields.get(field.key)
         if value is not None:
-            assert isinstance(value, list) and isinstance(field.default_present, list), \
-                f'{field.key} is not list, cannot be appended multiple times'
+            assert isinstance(value, list) and isinstance(
+                field.default_present, list
+            ), f"{field.key} is not list, cannot be appended multiple times"
             value.append(field.value)
         else:
             self.replace_field(field)
@@ -80,7 +92,9 @@ class MyBaseModel(BaseModel):
     @beartype
     def extend_field(self, field: MyField, values: Iterable[Any]) -> __qualname__:
         assert not self.is_frozen()
-        assert isinstance(field.default_present, list), f'default value of {field.key} is not list'
+        assert isinstance(
+            field.default_present, list
+        ), f"default value of {field.key} is not list"
         fields = []
         for value in values:
             fields.append(value)
@@ -92,7 +106,9 @@ class MyBaseModel(BaseModel):
     @beartype
     def replace_field(self, field: MyField) -> __qualname__:
         assert not self.is_frozen()
-        if isinstance(field.default_present, list) and not isinstance(field.value, list):
+        if isinstance(field.default_present, list) and not isinstance(
+            field.value, list
+        ):
             self.fields[field.key] = [field.value]
         else:
             self.fields[field.key] = field.value
@@ -127,24 +143,24 @@ class MyBaseModel(BaseModel):
         yield from self.fields.items()
 
     def is_frozen(self) -> bool:
-        return self.fields.get('frozen')
+        return self.fields.get("frozen")
 
     def freeze(self) -> __qualname__:
-        self.fields['frozen'] = True
+        self.fields["frozen"] = True
         return self
 
     def unfreeze(self) -> __qualname__:
-        self.fields['frozen'] = False
+        self.fields["frozen"] = False
         return self
 
     def copy(self, *args, **kwargs) -> __qualname__:
-        kwargs['deep'] = True
+        kwargs["deep"] = True
         this = super().copy(*args, **kwargs)
         this.unfreeze()
         return this
 
     def __str__(self):
-        return f'{type(self).__name__}{self.fields}'
+        return f"{type(self).__name__}{self.fields}"
 
     def __repr__(self):
         return self.__str__()

@@ -1,7 +1,9 @@
-pyhocon
+pyhocon # error insensitive json parser
 pyyaml
-pydantic
+pydantic # data model and validation in python
 case-conversion
-beartype
-quickfix
-esprima
+beartype # argument validation
+quickfix # the fix protocol
+esprima # for javascript parsing
+isort # python imports sort
+black # python reformatting

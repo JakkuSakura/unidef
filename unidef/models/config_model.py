@@ -1,22 +1,25 @@
+import unicodedata
 from enum import Enum
 from io import IOBase
-from unidef.utils.typing_compat import *
-from unidef.models.type_model import Type, parse_data_example, Traits, GLOBAL_TYPE_REGISTRY, Types, Trait
-from unidef.models.definitions import *
+
 import pyhocon
 import yaml
 from pydantic import BaseModel, root_validator
-import unicodedata
+
+from unidef.models.definitions import *
+from unidef.models.type_model import (GLOBAL_TYPE_REGISTRY, Trait, Traits,
+                                      Type, Types, parse_data_example)
 from unidef.parsers.registry import PARSER_REGISTRY
+from unidef.utils.typing_compat import *
 
 
 class ModelDefinition(BaseModel):
-    type: str = 'untyped'
+    type: str = "untyped"
     name: str
-    url: str = ''
-    ref: str = ''
-    note: str = ''
-    raw: str = ''
+    url: str = ""
+    ref: str = ""
+    note: str = ""
+    raw: str = ""
     traits: List[Dict[str, Any]] = []
     example: Optional[ModelExample] = None
     fields: Optional[Fields] = None
@@ -26,8 +29,8 @@ class ModelDefinition(BaseModel):
     def get_traits(self) -> List[Trait]:
         traits = []
         for t in self.traits:
-            name = t['name']
-            value = t['value']
+            name = t["name"]
+            value = t["value"]
             trait = GLOBAL_TYPE_REGISTRY.get_trait(name)
             if trait is None:
                 trait = Trait.from_str(name).default_present(value)
@@ -45,10 +48,10 @@ class ModelDefinition(BaseModel):
                     parsed = parser.parse(self.name, to_parse)
                     break
                 else:
-                    raise Exception(f'Could not find parser for {to_parse}')
+                    raise Exception(f"Could not find parser for {to_parse}")
 
         else:
-            raise Exception(f'No invalid input for {self.name}')
+            raise Exception(f"No invalid input for {self.name}")
 
         for t in self.get_traits():
             parsed.append_trait(t)
@@ -57,7 +60,7 @@ class ModelDefinition(BaseModel):
 
 def read_model_definition(content: str) -> List[ModelDefinition]:
     defs = []
-    segments = content.split('---')
+    segments = content.split("---")
     for seg in segments:
         seg = seg.strip()
         if not seg:

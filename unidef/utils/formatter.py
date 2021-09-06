@@ -1,6 +1,7 @@
-from unidef.utils.typing_compat import *
-from pydantic import BaseModel
 from beartype import beartype
+from pydantic import BaseModel
+
+from unidef.utils.typing_compat import *
 
 
 class Formatter:
@@ -10,23 +11,23 @@ class Formatter:
 
 class IndentedWriter(Formatter, BaseModel):
     indent: int = 0
-    tab: str = '    '
+    tab: str = "    "
     content: List[str] = []
 
     def try_indent(self):
         try:
-            if len(self.content) == 0 or self.content[-1] == '\n':
+            if len(self.content) == 0 or self.content[-1] == "\n":
                 self.content.append(self.tab * self.indent)
         except:
             pass
 
     @beartype
-    def append_line(self, s: str = ''):
+    def append_line(self, s: str = ""):
         if s:
             self.try_indent()
-            self.content.extend([s, '\n'])
+            self.content.extend([s, "\n"])
         else:
-            self.content.append('\n')
+            self.content.append("\n")
 
     @beartype
     def append(self, s: str):
@@ -41,9 +42,9 @@ class IndentedWriter(Formatter, BaseModel):
 
     def to_string(self, strip_left=False):
         if strip_left and self.content[0].isspace():
-            return ''.join(self.content[1:])
+            return "".join(self.content[1:])
         else:
-            return ''.join(self.content)
+            return "".join(self.content)
 
     def clone(self):
         writer = IndentedWriter()
@@ -59,7 +60,7 @@ class Formatee:
 
 
 class Braces(Formatee):
-    def __init__(self, val: Formatee, open='{', close='}', new_line=True):
+    def __init__(self, val: Formatee, open="{", close="}", new_line=True):
         self.value = val
         self.open = open
         self.close = close
@@ -83,7 +84,7 @@ class Braces(Formatee):
 
 class IndentBlock(Braces):
     def __init__(self, val: Formatee):
-        super().__init__(val, open=':', close='')
+        super().__init__(val, open=":", close="")
 
 
 class Function(Formatee):

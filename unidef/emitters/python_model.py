@@ -1,96 +1,97 @@
 import logging
 
-from pydantic import BaseModel
 from beartype import beartype
+from pydantic import BaseModel
 
-from unidef.utils.typing_compat import List
-from unidef.utils.formatter import IndentedWriter, Formatee, Function, IndentBlock
-from unidef.models import type_model, config_model
-from unidef.models.type_model import Type, Traits
 from unidef.emitters import Emitter
+from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
+from unidef.models.type_model import Traits, Type
+from unidef.utils.formatter import (Formatee, Function, IndentBlock,
+                                    IndentedWriter)
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
+from unidef.utils.typing_compat import List
 
 
-def map_type_to_peewee_model(ty: Type, args='') -> str:
+def map_type_to_peewee_model(ty: Type, args="") -> str:
     if ty.get_trait(Traits.Nullable):
-        args += 'null=True'
+        args += "null=True"
     if ty.get_trait(Traits.Primary):
-        args += 'primary=True'
+        args += "primary=True"
 
     if ty.get_trait(Traits.Bool):
-        return 'BoolField({})'.format(args)
+        return "BoolField({})".format(args)
     elif ty.get_trait(Traits.TsUnit):
-        return 'DateTimeField()'
+        return "DateTimeField()"
     elif ty.get_trait(Traits.Integer):
         bits = ty.get_trait(Traits.BitSize)
         if bits < 32:
-            return 'SmallIntegerField({})'.format(args)
+            return "SmallIntegerField({})".format(args)
         elif bits == 32:
-            return 'IntegerField({})'.format(args)
+            return "IntegerField({})".format(args)
         elif bits > 32:
-            return 'BigIntegerField({})'.format(args)
+            return "BigIntegerField({})".format(args)
         else:
             raise NotImplementedError()
 
     elif ty.get_trait(Traits.Floating):
         bits = ty.get_trait(Traits.BitSize)
         if bits == 32:
-            return 'FloatField({})'.format(args)
+            return "FloatField({})".format(args)
         elif bits == 64:
-            return 'DoubleField({})'.format(args)
+            return "DoubleField({})".format(args)
         else:
             raise NotImplementedError()
     elif ty.get_trait(Traits.String) or ty.get_trait(Traits.Null):
-        return 'TextField()'
+        return "TextField()"
     elif ty.get_trait(Traits.Enum):
         if ty.get_trait(Traits.SimpleEnum):
-            return 'TextField({})'.format(args)
+            return "TextField({})".format(args)
         else:
-            return 'BinaryJSONField({})'.format(args)
+            return "BinaryJSONField({})".format(args)
     return ty.get_trait(Traits.TypeName)
 
 
 PYTHON_KEYWORDS = {
-    'and': 'and_',
-    'as': 'as_',
-    'assert': 'assert_',
-    'break': 'break_',
-    'class': 'class_',
-    'continue': 'continue_',
-    'def': 'def_',
-    'del': 'del_',
-    'elif': 'elif_',
-    'else': 'else_',
-    'except': 'except_',
-    'False': 'False_',
-    'finally': 'finally_',
-    'for': 'for_',
-    'from': 'from_',
-    'global': 'global_',
-    'if': 'if_',
-    'import': 'import_',
-    'in': 'in_',
-    'is': 'is_',
-    'lambda': 'lambda_',
-    'None': 'None_',
-    'nonlocal': 'nonlocal_',
-    'not': 'not_',
-    'or': 'or_',
-    'pass': 'pass_',
-    'raise': 'raise_',
-    'return': 'return_',
-    'True': 'True_',
-    'try': 'try_',
-    'while': 'while_',
-    'with': 'with_',
-    'yield': 'yield_'
+    "and": "and_",
+    "as": "as_",
+    "assert": "assert_",
+    "break": "break_",
+    "class": "class_",
+    "continue": "continue_",
+    "def": "def_",
+    "del": "del_",
+    "elif": "elif_",
+    "else": "else_",
+    "except": "except_",
+    "False": "False_",
+    "finally": "finally_",
+    "for": "for_",
+    "from": "from_",
+    "global": "global_",
+    "if": "if_",
+    "import": "import_",
+    "in": "in_",
+    "is": "is_",
+    "lambda": "lambda_",
+    "None": "None_",
+    "nonlocal": "nonlocal_",
+    "not": "not_",
+    "or": "or_",
+    "pass": "pass_",
+    "raise": "raise_",
+    "return": "return_",
+    "True": "True_",
+    "try": "try_",
+    "while": "while_",
+    "with": "with_",
+    "yield": "yield_",
 }
 
 
 def map_field_name(name: str) -> str:
-    if not name[0].isalpha() and name[0] != '_':
-        return '_' + name
+    if not name[0].isalpha() and name[0] != "_":
+        return "_" + name
     return to_snake_case(PYTHON_KEYWORDS.get(name) or name)
 
 
@@ -101,16 +102,18 @@ class PythonField(Formatee, BaseModel):
 
     def __init__(self, f: Type = None, **kwargs):
         if f:
-            kwargs.update({
-                'name': map_field_name(f.get_trait(Traits.FieldName)),
-                'original_name': f.get_trait(Traits.TypeName),
-                'value': f,
-            })
+            kwargs.update(
+                {
+                    "name": map_field_name(f.get_trait(Traits.FieldName)),
+                    "original_name": f.get_trait(Traits.TypeName),
+                    "value": f,
+                }
+            )
 
         super().__init__(**kwargs)
 
     def format_with(self, writer: IndentedWriter):
-        writer.append_line(f'{self.name} = {map_type_to_peewee_model(self.value)}')
+        writer.append_line(f"{self.name} = {map_type_to_peewee_model(self.value)}")
 
 
 class PythonComment(Formatee, BaseModel):
@@ -128,14 +131,14 @@ class PythonComment(Formatee, BaseModel):
             writer.append_line('"""')
         else:
             for line in self.content:
-                writer.append_line('# ' + line)
+                writer.append_line("# " + line)
 
 
 class PythonStruct(Formatee, BaseModel):
     name: str
     fields: List[PythonField]
     comment: PythonComment = None
-    model: str = 'BaseModel'
+    model: str = "BaseModel"
 
     @staticmethod
     def parse_name(name):
@@ -143,15 +146,19 @@ class PythonStruct(Formatee, BaseModel):
 
     def __init__(self, raw: Type, **kwargs):
         if raw:
-            kwargs.update({
-                'name': PythonStruct.parse_name(raw.get_trait(Traits.TypeName)),
-                'fields': [PythonField(f) for f in raw.get_traits(Traits.StructField)],
-            })
+            kwargs.update(
+                {
+                    "name": PythonStruct.parse_name(raw.get_trait(Traits.TypeName)),
+                    "fields": [
+                        PythonField(f) for f in raw.get_traits(Traits.StructField)
+                    ],
+                }
+            )
 
         super().__init__(**kwargs)
 
     def format_with(self, writer: IndentedWriter):
-        writer.append(f'class {self.name}({self.model})')
+        writer.append(f"class {self.name}({self.model})")
 
         def for_field(writer1: IndentedWriter):
             self.comment.format_with(writer1)
@@ -164,7 +171,7 @@ class PythonStruct(Formatee, BaseModel):
 class PythonEnum(Formatee, BaseModel):
     name: str
     variants: List[Type]
-    model: str = 'enum.Enum'
+    model: str = "enum.Enum"
     raw: Type = None
 
     @staticmethod
@@ -174,22 +181,25 @@ class PythonEnum(Formatee, BaseModel):
     def __init__(self, raw: Type = None, **kwargs):
 
         if raw:
-            kwargs.update({
-                'raw': raw,
-                'name': PythonEnum.parse_name(raw.get_trait(Traits.TypeName)),
-                'variants': raw.get_traits(Traits.Variant),
-            })
+            kwargs.update(
+                {
+                    "raw": raw,
+                    "name": PythonEnum.parse_name(raw.get_trait(Traits.TypeName)),
+                    "variants": raw.get_traits(Traits.Variant),
+                }
+            )
 
         super().__init__(**kwargs)
 
     def format_with(self, writer: IndentedWriter):
-        writer.append(f'class {self.name}({self.model})')
+        writer.append(f"class {self.name}({self.model})")
 
         def for_field(writer1: IndentedWriter):
             for field in self.variants:
                 name = field.get_trait(Traits.VariantName)
                 writer1.append_line(
-                    '{lname} = \'{rname}\''.format(lname=map_field_name(name), rname=name))
+                    "{lname} = '{rname}'".format(lname=map_field_name(name), rname=name)
+                )
 
         IndentBlock(Function(for_field)).format_with(writer)
 
@@ -228,11 +238,11 @@ def emit_struct(root: Type) -> str:
 def emit_python_model_definition(root: ModelDefinition) -> str:
     writer = IndentedWriter()
     comment = []
-    for attr in ['type', 'url', 'ref', 'note']:
+    for attr in ["type", "url", "ref", "note"]:
         t = getattr(root, attr)
         if t:
-            comment.append(f'{attr}: {t}')
-    comment = PythonComment('\n'.join(comment), python_doc=True)
+            comment.append(f"{attr}: {t}")
+    comment = PythonComment("\n".join(comment), python_doc=True)
     parsed = root.get_parsed()
     if parsed.get_trait(Traits.Struct):
         for i, struct in enumerate(find_all_structs(parsed)):
@@ -244,18 +254,20 @@ def emit_python_model_definition(root: ModelDefinition) -> str:
         python_struct = PythonEnum(parsed)
         python_struct.format_with(writer)
     else:
-        raise Exception('must be a struct or enum', root)
+        raise Exception("must be a struct or enum", root)
 
     return writer.to_string()
 
 
 class PythonEmitter(Emitter):
     def accept(self, s: str) -> bool:
-        if 'python' in s:
-            if 'peewee' in s:
+        if "python" in s:
+            if "peewee" in s:
                 return True
             else:
-                logging.warning('target=python is deprecated, use target=python_peewee instead')
+                logging.warning(
+                    "target=python is deprecated, use target=python_peewee instead"
+                )
                 return True
 
     def emit_model(self, target: str, model: ModelDefinition) -> str:

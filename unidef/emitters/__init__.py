@@ -1,5 +1,6 @@
-from unidef.models.type_model import Type
 from unidef.models.config_model import ModelDefinition
+from unidef.models.type_model import Type
+
 
 class Emitter:
     def accept(self, target: str) -> bool:

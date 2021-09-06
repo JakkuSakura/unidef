@@ -1,4 +1,5 @@
 from pydantic import BaseModel, PrivateAttr
+
 from unidef.utils.typing_compat import *
 
 

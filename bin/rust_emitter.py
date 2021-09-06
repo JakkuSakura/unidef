@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import logging
-from unidef import *
 import sys
+
+from unidef import *
 
 if __name__ == '__main__':
     logging.warning('using this wrapper is deprecated, use unidef_emitter instead')
