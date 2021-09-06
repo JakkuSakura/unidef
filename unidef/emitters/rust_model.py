@@ -285,7 +285,7 @@ class RustStruct(Formatee, BaseModel):
                     "raw": raw,
                     "name": RustStruct.parse_name(raw.get_trait(Traits.TypeName)),
                     "fields": [
-                        RustField(f) for f in raw.get_traits(Traits.StructField)
+                        RustField(f) for f in raw.get_traits(Traits.StructFields)
                     ],
                     "annotations": annotations,
                     "derive": derive,
@@ -425,7 +425,7 @@ class RustImpl(Formatee, BaseModel):
 def find_all_structs_impl(reg: StructRegistry, s: Type):
     if s.get_trait(Traits.Struct):
         reg.add_struct(s)
-        for field in s.get_traits(Traits.StructField):
+        for field in s.get_traits(Traits.StructFields):
             find_all_structs_impl(reg, field)
     for vt in s.get_trait(Traits.ValueType):
         find_all_structs_impl(reg, vt)

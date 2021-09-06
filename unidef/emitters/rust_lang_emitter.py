@@ -10,6 +10,7 @@ from unidef.utils.formatter import Formatee, Function, IndentBlock, IndentedWrit
 from unidef.utils.typing_compat import *
 from unidef.utils.typing_compat import List
 from unidef.emitters.emitter_base import EmitterBase
+from unidef.emitters.rust_json_emitter import *
 
 
 class RustEmitterBase(EmitterBase):
@@ -66,6 +67,7 @@ class RustEmitterBase(EmitterBase):
 
     def emit_function_call(self, node):
         name = node.get_trait(Attributes.Callee)
+        name = name.replace('this.', 'self.')
         arguments = node.get_traits(Attributes.Arguments)
         self.formatter.append(f"{name}(")
         for i, a in enumerate(arguments):
@@ -75,11 +77,11 @@ class RustEmitterBase(EmitterBase):
             self.emit_node(a)
         self.formatter.append(f")")
 
-    def emit_raw(self, node):
+    def emit_raw_code(self, node):
         self.formatter.append(f"{node}")
 
     def emit_literal(self, node):
-        self.formatter.append(node.get_trait(Attributes.RawCode))
+        self.formatter.append(node.get_trait(Attributes.RawCode).replace('\'', '"'))
 
     def emit_require(self, node):
         required = node.get_traits(Attributes.Require)
@@ -109,8 +111,8 @@ class RustEmitterBase(EmitterBase):
         for base in node.get_traits(Attributes.SuperClasses):
             fields.append(
                 Type.from_str(base)
-                .append_trait(Traits.TypeRef(base))
-                .append_trait(Traits.FieldName("base"))
+                    .append_trait(Traits.TypeRef(base))
+                    .append_trait(Traits.FieldName("base"))
             )
         name = node.get_trait(Attributes.Name)
         rust_struct = RustStruct(raw=Types.struct(name, fields))
@@ -126,12 +128,15 @@ class RustEmitterBase(EmitterBase):
         self.formatter.append_line("}")
 
     def emit_object_properties(self, node):
-        self.formatter.append("{")
-        self.formatter.incr_indent()
-        for prop in node.get_traits(Attributes.ObjectProperties):
-            self.emit_node(prop)
-        self.formatter.decr_indent()
-        self.formatter.append("{")
+        class MyJsonCrate(SerdeJsonNoMacroCrate):
+            this: Any
+            formatter: Any
+
+            def emit_others(self, nd):
+                self.this.emit_node(nd)
+
+        json_crate = MyJsonCrate(this=self, formatter=self.formatter)
+        json_crate.emit_node(node)
 
 
 class RustLangEmitter(Emitter):

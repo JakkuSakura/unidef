@@ -21,7 +21,7 @@ class Traits:
     KeyType = Trait(key="key")
     ValueType = Trait(key="value", default_present=[], default_absent=[])
     Parent = Trait(key="parent")
-    StructField = Trait(key="field", default_present=[], default_absent=[])
+    StructFields = Trait(key="field", default_present=[], default_absent=[])
     Struct = Trait(key="struct", default_present="", default_absent="")
     Enum = Trait(key="enum", default_present="", default_absent="")
     TypeRef = Trait(key="type_ref")
@@ -167,7 +167,7 @@ class Types:
     @beartype
     def struct(name: str, fields: List[Type]) -> Type:
         ty = Type.from_trait(name, Traits.Struct(name))
-        ty.append_trait(Traits.StructField(fields))
+        ty.append_trait(Traits.StructFields(fields))
         return ty
 
     @staticmethod
@@ -343,7 +343,7 @@ def parse_data_example(
 
 def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None:
     if node.get_trait(Traits.Struct):
-        for field in node.get_traits(Traits.StructField):
+        for field in node.get_traits(Traits.StructFields):
             process(depth, field)
             walk_type(field, process, depth + 1)
     if node.get_trait(Traits.Vector):

@@ -149,7 +149,7 @@ class PythonStruct(Formatee, BaseModel):
                 {
                     "name": PythonStruct.parse_name(raw.get_trait(Traits.TypeName)),
                     "fields": [
-                        PythonField(f) for f in raw.get_traits(Traits.StructField)
+                        PythonField(f) for f in raw.get_traits(Traits.StructFields)
                     ],
                 }
             )

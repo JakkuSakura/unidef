@@ -74,7 +74,7 @@ def get_field(field: Type) -> str:
 
 def emit_schema_from_model(model: Type) -> str:
     fields = ",\n".join(
-        [get_field(field) for field in model.get_traits(Traits.StructField)]
+        [get_field(field) for field in model.get_traits(Traits.StructFields)]
     )
     return fields
 
@@ -83,7 +83,7 @@ def emit_field_names_from_model(model: Type) -> str:
     fields = ",".join(
         [
             field.get_trait(Traits.TypeName)
-            for field in model.get_traits(Traits.StructField)
+            for field in model.get_traits(Traits.StructFields)
         ]
     )
     return fields

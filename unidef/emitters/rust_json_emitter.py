@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from unidef.emitters.registry import Emitter
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type
+from unidef.models.transpile_model import Attributes
 from unidef.utils.formatter import IndentedWriter
 from unidef.utils.typing_compat import *
 from unidef.emitters.emitter_base import EmitterBase
@@ -56,15 +57,20 @@ class JsonCrate(EmitterBase):
         self.formatter.append(str(node.get_trait(Traits.RawValue)).lower())
 
     def emit_field_key(self, node):
-        field_name = node.get_trait(Traits.FieldName)
-        if field_name:
-            self.formatter.append(f'"{field_name}"')
+        if node.get_trait(Attributes.ObjectProperty):
+            self.emit_node(node.get_trait(Attributes.KeyName))
         else:
-            field_name = node.get_field(Traits.TypeName)
-            self.formatter.append(f'"{field_name}"')
+            field_name = node.get_trait(Traits.FieldName)
+            if field_name:
+                self.formatter.append(f'"{field_name}"')
+            else:
+                self.emit_node(node.get_trait(Attributes.KeyName))
 
     def emit_field_value(self, node):
-        self.emit_node(node)
+        if node.get_trait(Attributes.ObjectProperty):
+            self.emit_node(node.get_trait(Attributes.Value))
+        else:
+            self.emit_node(node)
 
     def emit_integer(self, node):
         self.formatter.append("{}".format(node.get_trait(Traits.RawValue)))
@@ -72,8 +78,11 @@ class JsonCrate(EmitterBase):
     def emit_float(self, node):
         self.formatter.append("{}".format(node.get_trait(Traits.RawValue)))
 
+    def emit_object_properties(self, node):
+        self.emit_struct(node)
+
     def emit_struct(self, node):
-        fields = node.get_traits(Traits.StructField)
+        fields = node.get_traits(Traits.StructFields) or node.get_traits(Attributes.ObjectProperties)
         if fields:
             self.formatter.append_line("{")
             self.formatter.incr_indent()
@@ -106,13 +115,12 @@ class SerdeJsonNoMacroCrate(JsonCrate):
     array_type = "Vec<serde_json::Value>"
     none_type = "serde_json::json!(null)"
     value_type = "serde_json::Value"
-    only_outlier = False
     no_macro = True
-    depth = 0
 
 
 class SerdeJsonCrate(SerdeJsonNoMacroCrate):
     only_outlier = False
+    depth = 0
     no_macro = False
 
     def emit_node(self, node):
@@ -128,11 +136,11 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
     def emit_struct(self, node):
         if not self.only_outlier:
             self.formatter.append("serde_json::json!(")
-        fields = node.get_traits(Traits.StructField)
+        fields = node.get_traits(Traits.StructFields)
         if fields:
             self.formatter.append_line("{")
             self.formatter.incr_indent()
-            for field in node.get_traits(Traits.StructField):
+            for field in node.get_traits(Traits.StructFields):
                 for line in field.get_traits(Traits.BeforeLineComment):
                     self.formatter.append_line("// {}".format(line))
                 self.emit_field_key(field)

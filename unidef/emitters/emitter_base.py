@@ -15,6 +15,9 @@ class EmitterBase(BaseModel, VisitorPattern):
     functions: Any = None
     formatter: Any = IndentedWriter()
 
+    def emit_others(self, node):
+        self.formatter.append_line(str(node))
+
     def emit_node(self, node):
         if isinstance(node, Node) or isinstance(node, Type):
             if self.functions is None:
@@ -23,6 +26,7 @@ class EmitterBase(BaseModel, VisitorPattern):
             node_name = node.get_trait(Attributes.Kind)
             assert node_name, f"Name cannot be empty to emit: {node}"
             node_name = to_snake_case(node_name)
+
             for name, func in self.functions:
                 if name in node_name:
                     result = func(node)
@@ -30,11 +34,14 @@ class EmitterBase(BaseModel, VisitorPattern):
             else:
                 result = NotImplemented
             if result is NotImplemented:
-                self.formatter.append_line(str(node))
+                self.emit_others(node)
         elif isinstance(node, str):
-            self.emit_raw(node)
+            self.emit_raw_code(node)
         else:
             raise Exception("Could not emit " + str(node))
+
+    def emit_raw_code(self, node):
+        self.formatter.append(str(node))
 
     def write(self, elem: Formatee):
         elem.format_with(self.formatter)

@@ -5,25 +5,9 @@
 const Exchange = require('./base/Exchange');
 const {
     ExchangeError,
-    ArgumentsRequired,
-    ExchangeNotAvailable,
-    InsufficientFunds,
-    OrderNotFound,
-    InvalidOrder,
-    DDoSProtection,
-    InvalidNonce,
-    AuthenticationError,
-    RateLimitExceeded,
-    PermissionDenied,
-    NotSupported,
-    BadRequest,
-    BadSymbol,
-    AccountSuspended,
-    OrderImmediatelyFillable
+    ArgumentsRequired
 } = require('./base/errors');
 const {TRUNCATE} = require('./base/functions/number');
-const Precise = require('./base/Precise');
-
 //  ---------------------------------------------------------------------------
 
 module.exports = class binance extends Exchange {
