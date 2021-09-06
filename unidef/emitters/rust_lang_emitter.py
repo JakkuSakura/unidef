@@ -4,44 +4,15 @@ from unidef.emitters import Emitter
 from unidef.emitters.rust_model import *
 from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
-from unidef.models.transpile_model import (Attribute, Attributes, Node,
-                                           RequireNode)
+from unidef.models.transpile_model import Attribute, Attributes, Node, RequireNode
 from unidef.models.type_model import Traits, Type
-from unidef.utils.formatter import (Formatee, Function, IndentBlock,
-                                    IndentedWriter)
+from unidef.utils.formatter import Formatee, Function, IndentBlock, IndentedWriter
 from unidef.utils.typing_compat import *
 from unidef.utils.typing_compat import List
-from unidef.utils.visitor import VisitorPattern
+from unidef.emitters.emitter_base import EmitterBase
 
 
-class EmitterBase(VisitorPattern):
-    def __init__(self):
-        super().__init__()
-        self.functions = None
-        self.formatter = IndentedWriter()
-
-    def emit_node(self, node):
-        if isinstance(node, Node):
-            if self.functions is None:
-                self.functions = self.get_functions("emit_")
-            node_name = node.get_trait(Attributes.Kind)
-            node_name = to_snake_case(node_name)
-            for name, func in self.functions:
-                if name in node_name:
-                    result = func(node)
-                    break
-            else:
-                result = NotImplemented
-            if result is NotImplemented:
-                self.formatter.append_line(str(node))
-        elif isinstance(node, str):
-            self.emit_raw(node)
-        else:
-            raise Exception("Could not emit " + str(node))
-
-    def write(self, elem: Formatee):
-        elem.format_with(self.formatter)
-
+class RustEmitterBase(EmitterBase):
     def emit_program(self, node):
         for child in node.get_traits(Attributes.Children):
             self.emit_node(child)
@@ -133,9 +104,6 @@ class EmitterBase(VisitorPattern):
                 self.emit_node(init)
             self.formatter.append_line(";")
 
-    def emit_method_definition(self, node):
-        return NotImplemented
-
     def emit_class_declaration(self, node):
         fields = []
         for base in node.get_traits(Attributes.SuperClasses):
@@ -157,10 +125,13 @@ class EmitterBase(VisitorPattern):
         self.formatter.decr_indent()
         self.formatter.append_line("}")
 
-
-class RustEmitter(EmitterBase):
-    def __init__(self):
-        super().__init__()
+    def emit_object_properties(self, node):
+        self.formatter.append("{")
+        self.formatter.incr_indent()
+        for prop in node.get_traits(Attributes.ObjectProperties):
+            self.emit_node(prop)
+        self.formatter.decr_indent()
+        self.formatter.append("{")
 
 
 class RustLangEmitter(Emitter):
@@ -170,11 +141,11 @@ class RustLangEmitter(Emitter):
     def emit_model(self, target: str, model: ModelDefinition) -> str:
         parsed = model.get_parsed()
         assert isinstance(parsed, Node)
-        builder = RustEmitter()
+        builder = RustEmitterBase()
         builder.emit_node(parsed)
         return builder.formatter.to_string()
 
     def emit_type(self, target: str, ty: Type) -> str:
-        builder = RustEmitter()
+        builder = RustEmitterBase()
         builder.emit_node(parsed)
         return builder.formatter.to_string()

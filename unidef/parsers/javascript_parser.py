@@ -204,11 +204,17 @@ class VisitorImpl(VisitorBase):
     def visit_return_statement(self, node) -> Node:
         return Node.from_attribute(Attributes.Return(self.visit_node(node["argument"])))
 
-    # def visit_object_expression(self, node) -> Node:
-    #     return (
-    #         Node.from_attribute(Attributes.ObjectProperties)
-    #
-    #     )
+    def visit_property(self, node) -> Node:
+        return (
+            Node.from_attribute(Attributes.ObjectProperty)
+            .append_trait(Attributes.KeyName(self.visit_node(node["key"])))
+            .append_trait(Attributes.Value(self.visit_node(node["value"])))
+        )
+
+    def visit_object_expression(self, node) -> Node:
+        return Node.from_attribute(
+            Attributes.ObjectProperties(self.visit_node(node["properties"]))
+        )
 
 
 class JavascriptParser(Parser):

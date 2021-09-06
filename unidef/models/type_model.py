@@ -13,6 +13,7 @@ class Trait(MyField):
 
 
 class Traits:
+    Kind = Trait(key="kind", default_present="", default_absent="")
     TypeName = Trait(key="name")
     FieldName = Trait(key="field_name")
     BitSize = Trait(key="bit_size")
@@ -21,8 +22,8 @@ class Traits:
     ValueType = Trait(key="value", default_present=[], default_absent=[])
     Parent = Trait(key="parent")
     StructField = Trait(key="field", default_present=[], default_absent=[])
-    Struct = Trait(key="struct", default_present=True, default_absent=False)
-    Enum = Trait(key="enum", default_present=True, default_absent=False)
+    Struct = Trait(key="struct", default_present="", default_absent="")
+    Enum = Trait(key="enum", default_present="", default_absent="")
     TypeRef = Trait(key="type_ref")
     Variant = Trait(key="variant")
     VariantName = Trait(key="variant_name")
@@ -77,6 +78,13 @@ class Type(MyBaseModel):
     def from_str(cls, name: str) -> __qualname__:
         return cls().append_trait(Traits.TypeName(name))
 
+    @classmethod
+    @beartype
+    def from_trait(cls, name: str, trait: Trait) -> __qualname__:
+        return (
+            cls.from_str(name).append_trait(Traits.Kind(trait.key)).append_trait(trait)
+        )
+
     def append_trait(self, trait: Trait) -> __qualname__:
         return self.append_field(trait)
 
@@ -94,10 +102,8 @@ class Type(MyBaseModel):
 
 
 def build_int(name: str) -> Type:
-    ty = Type.from_str(name)
-
+    ty = Type.from_trait(name, Traits.Integer)
     ty.append_trait(Traits.Numeric)
-    ty.append_trait(Traits.Integer)
     ty.append_trait(Traits.BitSize(int(name[1:])))
 
     if name.startswith("i"):
@@ -110,16 +116,15 @@ def build_int(name: str) -> Type:
 
 def build_float(name: str) -> Type:
     return (
-        Type.from_str(name)
+        Type.from_trait(name, Traits.Floating)
         .append_trait(Traits.Numeric)
-        .append_trait(Traits.Floating)
         .append_trait(Traits.BitSize(int(name[1:])))
         .append_trait(Traits.Signed)
     )
 
 
 class Types:
-    Bool = Type.from_str("bool").append_trait(Traits.Bool).freeze()
+    Bool = Type.from_trait("bool", Traits.Bool).freeze()
 
     I8 = build_int("i8").freeze()
     I16 = build_int("i16").freeze()
@@ -133,20 +138,17 @@ class Types:
     U64 = build_int("u64").freeze()
     U128 = build_int("u128").freeze()
 
-    String = Type.from_str("string").append_trait(Traits.String).freeze()
+    String = Type.from_trait("string", Traits.String).freeze()
     Float = build_float("f32").freeze()
 
     Double = build_float("f64").freeze()
 
-    Vector = Type.from_str("vector").append_trait(Traits.Vector).freeze()
+    Vector = Type.from_trait("vector", Traits.Vector).freeze()
 
     NoneType = (
-        Type.from_str("none")
-        .append_trait(Traits.Nullable)
-        .append_trait(Traits.Null)
-        .freeze()
+        Type.from_trait("none", Traits.Null).append_trait(Traits.Nullable).freeze()
     )
-    AllValue = Type.from_str("all_value").append_trait(Traits.AllValue).freeze()
+    AllValue = Type.from_trait("all_value", Traits.AllValue).freeze()
 
     @staticmethod
     @beartype
@@ -164,14 +166,14 @@ class Types:
     @staticmethod
     @beartype
     def struct(name: str, fields: List[Type]) -> Type:
-        ty = Type.from_str(name).append_trait(Traits.Struct)
+        ty = Type.from_trait(name, Traits.Struct(name))
         ty.append_trait(Traits.StructField(fields))
         return ty
 
     @staticmethod
     @beartype
     def enum(name: str, variants: List[Type]) -> Type:
-        ty = Type.from_str(name).append_trait(Traits.Enum)
+        ty = Type.from_trait(Traits.Enum(name))
         ty.append_trait(Traits.Variant(variants))
         return ty
 

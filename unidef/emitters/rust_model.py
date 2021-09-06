@@ -11,8 +11,7 @@ from unidef.emitters.sql_model import emit_schema_from_model
 from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type, Types, to_second_scale
-from unidef.utils.formatter import (Braces, Formatee, Function, IndentedWriter,
-                                    Text)
+from unidef.utils.formatter import Braces, Formatee, Function, IndentedWriter, Text
 from unidef.utils.name_convert import *
 from unidef.utils.typing_compat import List, Optional
 

@@ -7,8 +7,14 @@ import yaml
 from pydantic import BaseModel, root_validator
 
 from unidef.models.definitions import *
-from unidef.models.type_model import (GLOBAL_TYPE_REGISTRY, Trait, Traits,
-                                      Type, Types, parse_data_example)
+from unidef.models.type_model import (
+    GLOBAL_TYPE_REGISTRY,
+    Trait,
+    Traits,
+    Type,
+    Types,
+    parse_data_example,
+)
 from unidef.parsers.registry import PARSER_REGISTRY
 from unidef.utils.typing_compat import *
 

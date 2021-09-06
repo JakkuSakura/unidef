@@ -1,6 +1,16 @@
 import sys
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Set, Tuple, Union)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 # handle type annotation changes in PEP 3107, 484, 526, 544, 560, 563, 585
 if sys.version_info >= (3, 8, 8):

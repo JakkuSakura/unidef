@@ -7,8 +7,7 @@ from unidef.emitters import Emitter
 from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type
-from unidef.utils.formatter import (Formatee, Function, IndentBlock,
-                                    IndentedWriter)
+from unidef.utils.formatter import Formatee, Function, IndentBlock, IndentedWriter
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
 from unidef.utils.typing_compat import List
 

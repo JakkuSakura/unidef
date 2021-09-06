@@ -44,8 +44,13 @@ class Attributes:
     Print = Attribute(key="print", default_present=True, default_absent=False)
     Require = Attribute(key="require", default_present=[], default_absent=[])
     ObjectProperties = Attribute(
-        key="object_expression", default_present=[], default_absent=[]
+        key="object_properties", default_present=[], default_absent=[]
     )
+    ObjectProperty = Attribute(
+        key="object_property", default_present=True, default_absent=False
+    )
+    KeyName = Attribute(key="key")
+    Value = Attribute(key="value")
 
 
 class Node(MyBaseModel):
