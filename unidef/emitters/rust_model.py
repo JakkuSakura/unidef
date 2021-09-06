@@ -199,6 +199,9 @@ class RustField(Formatee, BaseModel):
     def __init__(self, ty: Type = None, **kwargs):
         if ty:
             value = ty.get_trait(Traits.ValueType) or ty
+            if isinstance(value, list):
+                value = value[0]
+
             assert value is not None, 'Is not an valid field ' + repr(ty)
             kwargs.update({
                 'name': map_field_name(ty.get_trait(Traits.FieldName)),

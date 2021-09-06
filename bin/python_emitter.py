@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import logging
 from unidef import *
 import sys
 

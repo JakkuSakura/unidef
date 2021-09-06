@@ -2,7 +2,7 @@ import random
 from unidef.utils.typing_compat import *
 
 from beartype import beartype
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, validator
 from unidef.utils.name_convert import *
 from unidef.models.base_model import *
 
@@ -25,7 +25,7 @@ class Traits:
     TypeRef = Trait(key='type_ref')
     Variant = Trait(key='variant')
     VariantName = Trait(key='variant_name')
-    RawValue = Trait(key='raw_value')
+    RawValue = Trait(key='raw_value', allow_none=True)
     # TODO: distinguish in line or before line comments
     BeforeLineComment = Trait(key='before_line_comment', default_present=[], default_absent=[])
     InLineComment = Trait(key='in_line_comment', default_present=[], default_absent=[])
@@ -153,22 +153,20 @@ class Types:
     @beartype
     def struct(name: str, fields: List[Type]) -> Type:
         ty = Type.from_str(name).append_trait(Traits.Struct)
-        for f in fields:
-            ty.append_trait(Traits.StructField(f))
+        ty.append_trait(Traits.StructField(fields))
         return ty
 
     @staticmethod
     @beartype
     def enum(name: str, variants: List[Type]) -> Type:
         ty = Type.from_str(name).append_trait(Traits.Enum)
-        for f in variants:
-            ty.append_trait(Traits.Variant(f))
+        ty.append_trait(Traits.Variant(variants))
         return ty
 
 
 class TypeRegistry(BaseModel):
     types: Dict[str, Type] = {}
-    traits: Dict[str, Trait] = {}
+    traits = {}
     type_detector: list = []
 
     @beartype
@@ -305,7 +303,7 @@ def parse_data_example(obj: Union[str, int, float, dict, list, None], prefix: st
             content = None
             if len(obj):
                 content = parse_data_example(obj[0], prefix)
-            return Types.Vector.copy().replace_trait(Traits.ValueType(content))
+            return Types.Vector.copy().replace_trait(Traits.ValueType([content]))
         elif isinstance(obj, dict):
             fields = []
             for key, value in obj.items():

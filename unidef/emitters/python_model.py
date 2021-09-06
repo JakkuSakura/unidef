@@ -9,7 +9,7 @@ from unidef.models import type_model, config_model
 from unidef.models.type_model import Type, Traits
 from unidef.emitters import Emitter
 from unidef.models.config_model import ModelDefinition
-from unidef.utils.name_convert import to_pascal_case
+from unidef.utils.name_convert import to_pascal_case, to_snake_case
 
 
 def map_type_to_peewee_model(ty: Type, args='') -> str:
@@ -48,9 +48,7 @@ def map_type_to_peewee_model(ty: Type, args='') -> str:
             return 'TextField({})'.format(args)
         else:
             return 'BinaryJSONField({})'.format(args)
-
-    raise Exception(
-        "Cannot map type {} {} to peewee model".format(ty.get_trait(Traits.FieldName), ty.get_trait(Traits.TypeName)))
+    return ty.get_trait(Traits.TypeName)
 
 
 PYTHON_KEYWORDS = {
@@ -93,7 +91,7 @@ PYTHON_KEYWORDS = {
 def map_field_name(name: str) -> str:
     if not name[0].isalpha() and name[0] != '_':
         return '_' + name
-    return PYTHON_KEYWORDS.get(name) or name
+    return to_snake_case(PYTHON_KEYWORDS.get(name) or name)
 
 
 class PythonField(Formatee, BaseModel):
@@ -104,7 +102,7 @@ class PythonField(Formatee, BaseModel):
     def __init__(self, f: Type = None, **kwargs):
         if f:
             kwargs.update({
-                'name': map_field_name(f.get_trait(Traits.TypeName)),
+                'name': map_field_name(f.get_trait(Traits.FieldName)),
                 'original_name': f.get_trait(Traits.TypeName),
                 'value': f,
             })

@@ -3,7 +3,7 @@ from beartype import beartype
 from unidef.utils.typing_compat import *
 from unidef.utils.safelist import safelist
 from unidef.models.base_model import MyBaseModel, MyField
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Attribute(MyField):
@@ -14,10 +14,10 @@ class Attributes:
     Kind = Attribute(key='kind')
     Name = Attribute(key='name')
     Id = Attribute(key='id')
-    Child = Attribute(key='child', default_present=[], default_absent=[])
+    Children = Attribute(key='children', default_present=[], default_absent=[])
     Statement = Attribute(key='statement')
     ClassDecl = Attribute(key='class_declaration', default_present=True, default_absent=False)
-    SuperClass = Attribute(key='super_class', default_present=[], default_absent=[])
+    SuperClasses = Attribute(key='super_class', default_present=[], default_absent=[])
     WhileLoop = Attribute(key='while_loop')
     Expression = Attribute(key='expression')
     FunctionCall = Attribute(key='function_call', default_present=True, default_absent=False)
@@ -25,7 +25,7 @@ class Attributes:
     RawCode = Attribute(key='raw_code')
     RawValue = Attribute(key='raw_value')
     Callee = Attribute(key='callee')
-    Argument = Attribute(key='argument', default_present=[], default_absent=[])
+    Arguments = Attribute(key='argument', default_present=[], default_absent=[])
     ArgumentName = Attribute(key='argument_name')
     ArgumentType = Attribute(key='argument_type')
     Literal = Attribute(key='literal', default_present=True, default_absent=False)
@@ -36,6 +36,7 @@ class Attributes:
 
     Print = Attribute(key='print', default_present=True, default_absent=False)
     Require = Attribute(key='require', default_present=[], default_absent=[])
+    ObjectProperties = Attribute(key='object_expression', default_present=[], default_absent=[])
 
 
 class Node(MyBaseModel):
@@ -74,7 +75,7 @@ class Nodes:
         return (
             Node.from_str(Attributes.Print.name)
                 .append_trait(Attributes.Print)
-                .append_trait(Attributes.Child(content))
+                .append_trait(Attributes.Children(content))
         )
 
     @staticmethod

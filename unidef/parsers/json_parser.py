@@ -45,8 +45,7 @@ class JsonParser(Parser):
 
             def process(depth: int, i: int, key: str, ty: Type):
                 if (i, key) in comments:
-                    for line in comments[(i, key)].splitlines():
-                        ty.append_trait(Traits.BeforeLineComment(line))
+                    ty.extend_traits(Traits.BeforeLineComment, comments[(i, key)].splitlines())
 
             walk_type_with_count(parsed, process)
 

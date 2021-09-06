@@ -1,30 +1,57 @@
-from pydantic import BaseModel
-from pydantic.fields import FieldInfo
+import copy
+
+from pydantic import BaseModel, BaseConfig
+from pydantic.fields import ModelField
+from pydantic.class_validators import Validator
+from pydantic.error_wrappers import ErrorWrapper
 from unidef.utils.typing_compat import *
 from beartype import beartype
 
 
-class MyField(BaseModel):
-    key: str
-    default_absent: Any = None
-    default_present: Any = None
-    value: Any = None
+def get_validator(default, allow_none):
+    def inner(val):
+        if not allow_none and val is None:
+            return Validator(f'Type should be None')
+        if default is not None and type(default) != type(val):
+            raise ValueError(f'Type does not match {type(default)} != {type(val)}')
+        return val
 
-    def __init__(self, **kwargs):
-        if 'value' not in kwargs:
-            kwargs['value'] = kwargs.get('default_present')
-        super().__init__(**kwargs)
+    return Validator(inner)
+
+
+class MyField:
+    def __init__(self, key, default_present=None, default_absent=None, allow_none=False, field=None):
+
+        if field is None:
+            field = ModelField(name=key, type_=Any,
+                               class_validators={'value': get_validator(default_present, allow_none)},
+                               required=True,
+                               model_config=BaseConfig,
+                               default_factory=lambda: copy.deepcopy(default_absent))
+        self.key: str = key
+        self.field: ModelField = field
+        self.default_present = default_present
+        self.value_: Any = None
+
+    @property
+    def value(self):
+        if self.value_ is not None:
+            return self.value_
+        else:
+            return self.default_present
+
+    @property
+    def default_absent(self) -> Any:
+        return self.field.get_default()
 
     def __call__(self, value: Any) -> __qualname__:
-        field = self.copy(deep=True)
-        field.value = value
+        field = copy.copy(self)
+        field_name, validate_result = field.field.validate(value, {}, loc='')
+        if isinstance(validate_result, ErrorWrapper):
+            raise validate_result.exc
+
+        field.value_ = value
         return field
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __repr__(self):
-        return f'{self.key}: {self.value}'
 
 
 class MyBaseModel(BaseModel):
@@ -40,7 +67,6 @@ class MyBaseModel(BaseModel):
     @beartype
     def append_field(self, field: MyField) -> __qualname__:
         assert not self.is_frozen()
-        assert field.value is not None, f'value of {field.key} should not be None'
         value = self.fields.get(field.key)
         if value is not None:
             assert isinstance(value, list) and isinstance(field.default_present, list), \
