@@ -8,7 +8,7 @@ from unidef.models.input_model import InputDefinition
 from unidef.models.type_model import Type
 from unidef.parsers import Parser
 from unidef.utils.loader import load_module
-from unidef.utils.typing_compat import Optional
+from unidef.utils.typing import Optional
 
 
 class ParserRegistry:

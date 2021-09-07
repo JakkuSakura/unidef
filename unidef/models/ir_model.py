@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from unidef.models.base_model import MyBaseModel, MyField
 from unidef.models.type_model import Trait, Traits, Type
 from unidef.utils.safelist import safelist
-from unidef.utils.typing_compat import *
+from unidef.utils.typing import *
 
 
 class Attribute(MyField):
@@ -100,7 +100,7 @@ class Attributes:
     ThisExpression = Attribute(
         key="this_expression", default_present=True, default_absent=False
     )
-    SuperExpression = Attribute(key="super", default_present=True, default_absent=False)
+    SuperExpression = Attribute(key="super_expression", default_present=True, default_absent=False)
 
 
 class Node(MyBaseModel):

@@ -6,7 +6,7 @@ import pyhocon
 from unidef.models.input_model import InputDefinition, ExampleInput
 from unidef.models.type_model import *
 from unidef.parsers import Parser
-from unidef.utils.typing_compat import *
+from unidef.utils.typing import *
 
 
 class JsonParser(Parser):

@@ -7,9 +7,9 @@ from unidef.emitters import Emitter
 from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type
-from unidef.utils.formatter import IndentedFormatee, Function, IndentBlock, IndentedWriter
+from unidef.utils.formatter import *
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
-from unidef.utils.typing_compat import List
+from unidef.utils.typing import List
 
 
 def map_type_to_peewee_model(ty: Type, args="") -> str:
@@ -94,7 +94,7 @@ def map_field_name(name: str) -> str:
     return to_snake_case(PYTHON_KEYWORDS.get(name) or name)
 
 
-class PythonField(IndentedFormatee, BaseModel):
+class PythonField(BaseModel):
     name: str
     original_name: str = None
     value: type_model.Type
@@ -111,29 +111,27 @@ class PythonField(IndentedFormatee, BaseModel):
 
         super().__init__(**kwargs)
 
-    def format_with(self, writer: IndentedWriter):
-        writer.append_line(f"{self.name} = {map_type_to_peewee_model(self.value)}")
+    def transform(self) -> SourceNode:
+        return LineNode(content=TextNode(text=f"{self.name} = {map_type_to_peewee_model(self.value)}"))
 
 
-class PythonComment(IndentedFormatee, BaseModel):
+class PythonComment(BaseModel):
     content: List[str]
     python_doc: bool = False
 
-    def __init__(self, content: str, python_doc: bool = False):
-        super().__init__(content=content.splitlines(), python_doc=python_doc)
+    def __init__(self, lines: List[str], python_doc: bool = False):
+        super().__init__(content=lines, python_doc=python_doc)
 
-    def format_with(self, writer: IndentedWriter):
+    def transform(self) -> SourceNode:
         if self.python_doc:
-            writer.append_line('"""')
-            for line in self.content:
-                writer.append_line(line)
-            writer.append_line('"""')
+            lines = [LineNode(content=TextNode(text=line)) for line in self.content]
+            return BracesNode(value=BulkNode(sources=lines), open='"""', close='"""')
         else:
-            for line in self.content:
-                writer.append_line("# " + line)
+            lines = [LineNode(content=TextNode(text="# " + line)) for line in self.content]
+            return BulkNode(sources=lines)
 
 
-class PythonStruct(IndentedFormatee, BaseModel):
+class PythonClass(BaseModel):
     name: str
     fields: List[PythonField]
     comment: PythonComment = None
@@ -147,7 +145,7 @@ class PythonStruct(IndentedFormatee, BaseModel):
         if raw:
             kwargs.update(
                 {
-                    "name": PythonStruct.parse_name(raw.get_field(Traits.TypeName)),
+                    "name": PythonClass.parse_name(raw.get_field(Traits.TypeName)),
                     "fields": [
                         PythonField(f) for f in raw.get_field(Traits.StructFields)
                     ],
@@ -156,18 +154,20 @@ class PythonStruct(IndentedFormatee, BaseModel):
 
         super().__init__(**kwargs)
 
-    def format_with(self, writer: IndentedWriter):
-        writer.append(f"class {self.name}({self.model})")
+    def transform(self) -> SourceNode:
+        sources = []
+        sources.append(TextNode(text=f"class {self.name}({self.model})"))
+        in_indent_block = []
+        in_indent_block.append(self.comment.transform())
 
-        def for_field(writer1: IndentedWriter):
-            self.comment.format_with(writer1)
-            for field in self.fields:
-                field.format_with(writer1)
+        for field in self.fields:
+            in_indent_block.append(field.transform())
+        sources.append(BracesNode(value=BulkNode(sources=in_indent_block), open=':', close=''))
 
-        IndentBlock(Function(for_field)).format_with(writer)
+        return BulkNode(sources=sources)
 
 
-class PythonEnum(IndentedFormatee, BaseModel):
+class PythonEnum(BaseModel):
     name: str
     variants: List[Type]
     model: str = "enum.Enum"
@@ -190,72 +190,74 @@ class PythonEnum(IndentedFormatee, BaseModel):
 
         super().__init__(**kwargs)
 
-    def format_with(self, writer: IndentedWriter):
-        writer.append(f"class {self.name}({self.model})")
+    def transform(self) -> SourceNode:
+        sources = []
+        sources.append(TextNode(text=f"class {self.name}({self.model})"))
 
-        def for_field(writer1: IndentedWriter):
-            for field in self.variants:
-                name = field.get_field(Traits.VariantName)
-                writer1.append_line(
-                    "{lname} = '{rname}'".format(lname=map_field_name(name), rname=name)
-                )
+        in_indent_block = []
+        for field in self.variants:
+            name = field.get_field(Traits.VariantName)
 
-        IndentBlock(Function(for_field)).format_with(writer)
+            in_indent_block.append(
+                LineNode(content=TextNode(text="{lname} = '{rname}'".format(lname=map_field_name(name), rname=name))))
+
+        sources.append(BracesNode(value=BulkNode(sources=in_indent_block), open=':', close=''))
+
+        return BulkNode(sources=sources)
 
 
 class StructRegistry:
     def __init__(self):
-        self.structs: List[PythonStruct] = []
+        self.structs: List[PythonClass] = []
 
-    def add_struct(self, struct: PythonStruct):
+    def add_struct(self, struct: PythonClass):
         if struct not in self.structs:
             self.structs.append(struct)
 
 
 def find_all_structs_impl(reg: StructRegistry, s: Type):
     if s.get_field(Traits.Struct):
-        reg.add_struct(PythonStruct(s))
+        reg.add_struct(PythonClass(s))
     else:
         raise NotImplementedError()
 
 
 @beartype
-def find_all_structs(s: Type) -> List[PythonStruct]:
+def find_all_structs(s: Type) -> List[PythonClass]:
     reg = StructRegistry()
     find_all_structs_impl(reg, s)
     return reg.structs
 
 
-def emit_struct(root: Type) -> str:
-    writer = IndentedWriter()
-    for s in find_all_structs(root):
-        python_struct = s
-        python_struct.format_with(writer)
-    return writer.to_string()
+def emit_struct(root: Type) -> SourceNode:
+    sources = []
+    for python_struct in find_all_structs(root):
+        sources.append(python_struct.transform())
+    return BulkNode(sources=sources)
 
 
-def emit_python_model_definition(root: ModelDefinition) -> str:
-    writer = IndentedWriter()
+def emit_python_model_definition(root: ModelDefinition) -> SourceNode:
+    sources = []
     comment = []
     for attr in ["type", "url", "ref", "note"]:
         t = getattr(root, attr)
         if t:
             comment.append(f"{attr}: {t}")
-    comment = PythonComment("\n".join(comment), python_doc=True)
+    comment = PythonComment(comment, python_doc=True)
     parsed = root.get_parsed()
     if parsed.get_field(Traits.Struct):
         for i, struct in enumerate(find_all_structs(parsed)):
             python_struct = struct
             if i == 0:
                 python_struct.comment = comment
-            python_struct.format_with(writer)
+            sources.append(python_struct.transform())
     elif parsed.get_field(Traits.Enum):
         python_struct = PythonEnum(parsed)
-        python_struct.format_with(writer)
+        sources.append(python_struct.transform())
     else:
         raise Exception("must be a struct or enum", root)
 
-    return writer.to_string()
+    return BulkNode(sources=sources)
 
 
 class PythonDataEmitter(Emitter):
@@ -270,7 +272,9 @@ class PythonDataEmitter(Emitter):
                 return True
 
     def emit_model(self, target: str, model: ModelDefinition) -> str:
-        return emit_python_model_definition(model)
+        formatter = StructuredFormatter(nodes=[emit_python_model_definition(model)])
+        return formatter.to_string()
 
     def emit_type(self, target: str, ty: Type) -> str:
-        return emit_struct(ty)
+        formatter = StructuredFormatter(nodes=[emit_struct(model)])
+        return formatter.to_string()

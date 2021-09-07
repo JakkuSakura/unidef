@@ -11,6 +11,23 @@ const {TRUNCATE} = require('./base/functions/number');
 //  ---------------------------------------------------------------------------
 
 module.exports = class binance extends Exchange {
+      calculateRateLimiterCost (api, method, path, params, config = {}, context = {}) {
+        if (('noSymbol' in config) && !('symbol' in params)) {
+            return config['noSymbol'];
+        } else if (('noPoolId' in config) && !('poolId' in params)) {
+            return config['noPoolId'];
+        } else if (('byLimit' in config) && ('limit' in params)) {
+            const limit = params['limit'];
+            const byLimit = config['byLimit'];
+            for (let i = 0; i < byLimit.length; i++) {
+                const entry = byLimit[i];
+                if (limit <= entry[0]) {
+                    return entry[1];
+                }
+            }
+        }
+        return this.safeInteger (config, 'cost', 1);
+    }
     describe() {
         return this.deepExtend(super.describe(), {
             // new metainfo interface
@@ -35,21 +52,5 @@ module.exports = class binance extends Exchange {
     async costToPrecisionAsync(symbol, cost) {
         return this.decimalToPrecision(cost, TRUNCATE, this.markets[symbol]['precision']['quote'], this.precisionMode, this.paddingMode);
     }
-    calculateRateLimiterCost (api, method, path, params, config = {}, context = {}) {
-        if (('noSymbol' in config) && !('symbol' in params)) {
-            return config['noSymbol'];
-        } else if (('noPoolId' in config) && !('poolId' in params)) {
-            return config['noPoolId'];
-        } else if (('byLimit' in config) && ('limit' in params)) {
-            const limit = params['limit'];
-            const byLimit = config['byLimit'];
-            for (let i = 0; i < byLimit.length; i++) {
-                const entry = byLimit[i];
-                if (limit <= entry[0]) {
-                    return entry[1];
-                }
-            }
-        }
-        return this.safeInteger (config, 'cost', 1);
-    }
+
 };

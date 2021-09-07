@@ -10,14 +10,13 @@ from unidef.models.type_model import Traits, Type, Types
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.name_convert import *
-from unidef.utils.typing_compat import *
+from unidef.utils.typing import *
 from unidef.utils.visitor import VisitorPattern
+from unidef.utils.transformer import NodeTransformer
 
 
-class VisitorBase(VisitorPattern):
-    def __init__(self):
-        super().__init__()
-        self.functions = None
+class VisitorBase(NodeTransformer[Any, Type], VisitorPattern):
+    functions: Any = None
 
     def get_recursive(self, obj: Dict, path: str) -> Any:
         for to_visit in path.split("."):
@@ -96,30 +95,30 @@ class VisitorBase(VisitorPattern):
 
         return False
 
-    def visit_program(self, node) -> Node:
+    def transform_program(self, node) -> Node:
         program = Node.from_str("program")
-        body = self.visit_node(node["body"]) or []
+        body = self.transform_node(node["body"]) or []
         program.append_field(Attributes.Children(body))
         return program
 
-    def visit_member_expression(self, node) -> Node:
+    def transform_member_expression(self, node) -> Node:
         n = Node.from_attribute(Attributes.MemberExpression)
         n.append_field(
-            Attributes.MemberExpressionObject(self.visit_node(node["object"]))
+            Attributes.MemberExpressionObject(self.transform_node(node["object"]))
         )
         n.append_field(
-            Attributes.MemberExpressionProperty(self.visit_node(node["property"]))
+            Attributes.MemberExpressionProperty(self.transform_node(node["property"]))
         )
         return n
 
-    def visit_other(self, node) -> Node:
+    def transform_other(self, node) -> Node:
         if node.get("type"):
             n = Node.from_str(node.pop("type"))
         else:
             n = Node.from_str(node.pop("name"))
 
         for key, value in node.items():
-            value = self.visit_node(value)
+            value = self.transform_node(value)
             default = [] if isinstance(value, list) else None
             attr = Attribute(key=key, default_present=default)(value)
             if n.exist_field(attr):
@@ -128,19 +127,19 @@ class VisitorBase(VisitorPattern):
             n.append_field(attr)
         return n
 
-    def visit_literal(self, node) -> Node:
+    def transform_literal(self, node) -> Node:
         return (
             Node.from_attribute(Attributes.Literal)
                 .append_field(Attributes.RawCode(node["raw"]))
                 .append_field(Attributes.RawValue(node["value"]))
         )
 
-    def visit_identifier(self, node) -> Node:
+    def transform_identifier(self, node) -> Node:
         return Node.from_attribute(Attributes.Identifier).append_field(
             Attributes.Name(node["name"])
         )
 
-    def visit_node(self, node) -> Union[Optional[Node], List[Any], Any]:
+    def transform_node(self, node) -> Union[Optional[Node], List[Any], Any]:
         if isinstance(node, dict):
             if node.get("type") is None and "operator" in node:
                 ty = "operator"
@@ -148,7 +147,7 @@ class VisitorBase(VisitorPattern):
                 ty = to_snake_case(node.get("type"))
 
             if self.functions is None:
-                self.functions = self.get_functions("visit_")
+                self.functions = self.get_functions("transform_")
             for name, func in self.functions:
                 if name in ty:
                     result = func(node)
@@ -157,7 +156,7 @@ class VisitorBase(VisitorPattern):
                 result = NotImplemented
 
             if result is NotImplemented:
-                result = self.visit_other(node)
+                result = self.transform_other(node)
             if result and node.get("comments"):
                 comments = []
                 for comment in node.get("comments"):
@@ -166,14 +165,14 @@ class VisitorBase(VisitorPattern):
                 result.append_field(Traits.BeforeLineComment(comments))
             return result
         elif isinstance(node, list):
-            result = [self.visit_node(n) for n in node]
+            result = [self.transform_node(n) for n in node]
             return result
         else:
             return node
 
 
 class VisitorImpl(VisitorBase):
-    def visit_variable_declaration(self, node) -> Node:
+    def transform_variable_declaration(self, node) -> Node:
         declarations = node["declarations"]
         if len(declarations) == 1:
             decl = declarations[0]
@@ -182,13 +181,13 @@ class VisitorImpl(VisitorBase):
                 paths = [arg["value"] for arg in decl["init"]["arguments"]]
                 assert len(paths) == 1
                 paths = paths[0]
-                decl_node = self.visit_node(decl)
+                decl_node = self.transform_node(decl)
                 req = Nodes.requires(paths, names, decl_node)
                 return req
         decls = []
         for decl in declarations:
             id = self.get_name(decl["id"])
-            init = self.visit_node(decl["init"])
+            init = self.transform_node(decl["init"])
             decls.append(
                 Node.from_attribute(Attributes.VariableDeclaration)
                     .append_field(Attributes.Id(id))
@@ -196,17 +195,17 @@ class VisitorImpl(VisitorBase):
             )
         return Node.from_attribute(Attributes.VariableDeclarations(decls))
 
-    def visit_assignment_expression(self, node):
+    def transform_assignment_expression(self, node):
         name = self.get_name(node["left"], member_expression=True, warn=False)
         if name == "module.exports":
-            return self.visit_node(node["right"])
+            return self.transform_node(node["right"])
         return NotImplemented
 
-    def visit_class_expression(self, node):
+    def transform_class_expression(self, node):
         class_name = self.get_name(node["id"])
         super_class = self.get_name(node["superClass"])
 
-        body = self.visit_node(node["body"]["body"]) or []
+        body = self.transform_node(node["body"]["body"]) or []
 
         n = (
             Node.from_attribute(Attributes.ClassDecl)
@@ -217,21 +216,19 @@ class VisitorImpl(VisitorBase):
 
         return n
 
-    def visit_this_expression(self, node):
+    def transform_this_expression(self, node):
         assert node["type"] == "ThisExpression"
         return Node.from_attribute(Attributes.ThisExpression)
 
-    def visit_super(self, node):
+    def transform_super(self, node):
         assert node["type"] == "Super"
         return Node.from_attribute(Attributes.SuperExpression)
 
-    def visit_method_definition(self, node):
+    def transform_method_definition(self, node):
         name = self.get_name(node["key"])
         is_async = node["value"]["async"]
-        params = list(map(self.visit_arg, node["value"]["params"]))
-        children = self.visit_node(node["value"]["body"]["body"]) or []
-        if children[0] is None:
-            print("children", children)
+        params = list(map(self.transform_arg, node["value"]["params"]))
+        children = self.transform_node(node["value"]["body"]["body"]) or []
 
         n = Node.from_attribute(Attributes.FunctionDecl)
         n.append_field(Attributes.Name(name))
@@ -241,10 +238,10 @@ class VisitorImpl(VisitorBase):
 
         return n
 
-    def visit_arg(self, node) -> Node:
+    def transform_arg(self, node) -> Node:
         if node["type"] == "AssignmentPattern":
             name = self.get_name(node["left"])
-            default = self.visit_node(node["right"])
+            default = self.transform_node(node["right"])
         else:
             name = self.get_name(node)
             default = None
@@ -257,43 +254,43 @@ class VisitorImpl(VisitorBase):
             n.append_field(Attributes.DefaultValue(default))
         return n
 
-    def visit_call_expression(self, node) -> Optional[Node]:
+    def transform_call_expression(self, node) -> Optional[Node]:
         if self.match_func_call(node, "console.log"):
-            return Nodes.print_node(self.visit_node(node["arguments"]))
+            return Nodes.print_node(self.transform_node(node["arguments"]))
         n = Node.from_attribute(Attributes.FunctionCall)
-        n.append_field(Attributes.Callee(self.visit_node(node["callee"])))
-        arguments = self.visit_node(node["arguments"]) or []
+        n.append_field(Attributes.Callee(self.transform_node(node["callee"])))
+        arguments = self.transform_node(node["arguments"]) or []
         n.append_field(Attributes.Arguments(arguments))
         return n
 
-    def visit_return_statement(self, node) -> Node:
-        return Node.from_attribute(Attributes.Return(self.visit_node(node["argument"])))
+    def transform_return_statement(self, node) -> Node:
+        return Node.from_attribute(Attributes.Return(self.transform_node(node["argument"])))
 
-    def visit_property(self, node) -> Node:
+    def transform_property(self, node) -> Node:
         return (
             Node.from_attribute(Attributes.ObjectProperty)
-                .append_field(Attributes.KeyName(self.visit_node(node["key"])))
-                .append_field(Attributes.Value(self.visit_node(node["value"])))
+                .append_field(Attributes.KeyName(self.transform_node(node["key"])))
+                .append_field(Attributes.Value(self.transform_node(node["value"])))
         )
 
-    def visit_object_expression(self, node) -> Node:
+    def transform_object_expression(self, node) -> Node:
         return Node.from_attribute(
-            Attributes.ObjectProperties(self.visit_node(node["properties"]))
+            Attributes.ObjectProperties(self.transform_node(node["properties"]))
         )
 
-    def visit_logical_expression(self, node) -> Node:
-        return self.visit_operator(node)
+    def transform_logical_expression(self, node) -> Node:
+        return self.transform_operator(node)
 
-    def visit_binary_expression(self, node) -> Node:
-        return self.visit_operator(node)
+    def transform_binary_expression(self, node) -> Node:
+        return self.transform_operator(node)
 
-    def visit_unary_expression(self, node) -> Node:
-        return self.visit_operator(node)
+    def transform_unary_expression(self, node) -> Node:
+        return self.transform_operator(node)
 
-    def visit_update_expression(self, node) -> Node:
-        return Node.from_attribute(Attributes.Statement(self.visit_operator(node)))
+    def transform_update_expression(self, node) -> Node:
+        return Node.from_attribute(Attributes.Statement(self.transform_operator(node)))
 
-    def visit_operator(self, node) -> Node:
+    def transform_operator(self, node) -> Node:
         operator = Node.from_attribute(Attributes.Operator(node["operator"]))
         positions = [
             ("left", "left", Attributes.OperatorLeft),
@@ -303,12 +300,12 @@ class VisitorImpl(VisitorBase):
         ]
         for key, value_key, attr in positions:
             if node.get(key):
-                operator.append_field(attr(self.visit_node(node[value_key])))
+                operator.append_field(attr(self.transform_node(node[value_key])))
         if node.get('prefix') is False:
-            operator.append_field(Attributes.OperatorSinglePostfix(self.visit_node(node['argument'])))
+            operator.append_field(Attributes.OperatorSinglePostfix(self.transform_node(node['argument'])))
         return operator
 
-    def visit_if_statement(self, node) -> Node:
+    def transform_if_statement(self, node) -> Node:
         if_clauses = []
         while node:
             if node.get("type") == "BlockStatement":
@@ -319,10 +316,10 @@ class VisitorImpl(VisitorBase):
                     attr = Attributes.ElseIfClause
                 else:
                     attr = Attributes.IfClause
-                test = self.visit_node(node["test"])
+                test = self.transform_node(node["test"])
             else:
                 raise Exception("Could not process in if statement" + str(node))
-            body = self.visit_node(node["consequent"])
+            body = self.transform_node(node["consequent"])
 
             n = Node.from_attribute(attr).append_field(Attributes.Consequence(body))
             if test is not None:
@@ -335,20 +332,20 @@ class VisitorImpl(VisitorBase):
             Attributes.Children(if_clauses)
         )
 
-    def visit_block_statement(self, node) -> Node:
+    def transform_block_statement(self, node) -> Node:
         return Node.from_attribute(Attributes.BlockStatement).append_field(
-            Attributes.Children(self.visit_node(node["body"]))
+            Attributes.Children(self.transform_node(node["body"]))
         )
 
-    def visit_for_statement(self, node) -> Node:
+    def transform_for_statement(self, node) -> Node:
         n = Node.from_attribute(Attributes.CForLoop)
-        init = self.visit_node(node["init"])
+        init = self.transform_node(node["init"])
         n.append_field(Attributes.CForLoopInit(init))
-        test = self.visit_node(node["test"])
+        test = self.transform_node(node["test"])
         n.append_field(Attributes.CForLoopTest(test))
-        update = self.visit_node(node["update"])
+        update = self.transform_node(node["update"])
         n.append_field(Attributes.CForLoopUpdate(update))
-        body = self.visit_node(node["body"]["body"])
+        body = self.transform_node(node["body"]["body"])
         n.append_field(Attributes.Children(body))
         return n
 
@@ -366,5 +363,5 @@ class JavascriptParser(Parser):
         import esprima
 
         parsed = esprima.parseScript(fmt.code, {"comment": True})
-        node = VisitorImpl().visit_node(parsed.toDict())
+        node = VisitorImpl().transform_node(parsed.toDict())
         return node

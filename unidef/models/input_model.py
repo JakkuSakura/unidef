@@ -1,6 +1,6 @@
 from pydantic import BaseModel, PrivateAttr
 
-from unidef.utils.typing_compat import *
+from unidef.utils.typing import *
 
 
 class InputDefinition(BaseModel):

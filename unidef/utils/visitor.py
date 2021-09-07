@@ -1,4 +1,4 @@
-from unidef.utils.typing_compat import *
+from unidef.utils.typing import *
 
 
 class VisitorPattern:

@@ -58,10 +58,15 @@ def map_type_to_ddl(ty: Type) -> str:
 
 
 def get_field(field: Type) -> str:
+    value_types = field.get_field(Traits.ValueType)
+    if isinstance(value_types, list) and value_types:
+        value_types = value_types[0]
+    else:
+        value_types = value_types or field
     base = (
         to_snake_case(field.get_field(Traits.FieldName))
         + " "
-        + map_type_to_ddl(field.get_field(Traits.ValueType) or field)
+        + map_type_to_ddl(value_types)
     )
     if field.get_field(Traits.Primary):
         base += " primary key"

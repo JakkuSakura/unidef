@@ -5,7 +5,7 @@ from beartype import beartype
 from unidef.emitters import Emitter
 from unidef.models.type_model import Type
 from unidef.utils.loader import load_module
-from unidef.utils.typing_compat import Optional
+from unidef.utils.typing import Optional
 
 
 class EmitterRegistry:

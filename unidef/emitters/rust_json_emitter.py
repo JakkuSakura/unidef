@@ -3,13 +3,52 @@ from pydantic import BaseModel
 from unidef.emitters.registry import Emitter
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type
-from unidef.models.ir_model import Attributes
-from unidef.utils.formatter import IndentedWriter
-from unidef.utils.typing_compat import *
-from unidef.emitters.emitter_base import EmitterBase
+from unidef.utils.typing import *
+from unidef.languages.rust.rust_ast import *
+from unidef.utils.transformer import *
+from unidef.utils.visitor import *
+from unidef.utils.formatter import StructuredFormatter
+from unidef.models.ir_model import Node, Attributes
 
 
-class JsonCrate(EmitterBase):
+class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
+    def accept(self, node: Input) -> bool:
+        return True
+
+    functions: List[(str, Callable)] = None
+
+    def transform_others(self, node):
+        raise NotImplementedError()
+
+    def transform_node(self, node) -> RustAstNode:
+
+        if isinstance(node, Node) or isinstance(node, Type):
+            if self.functions is None:
+                self.functions = self.get_functions("transform_")
+
+            if node.get_field(Traits.RawValue) == "undefined":
+                return RustRawNode(raw=self.none_type)
+
+            node_name = node.get_field(Attributes.Kind)
+            assert node_name, f"Name cannot be empty to emit: {node}"
+            node_name = to_snake_case(node_name)
+
+            for name, func in self.functions:
+                if name in node_name:
+                    result = func(node)
+                    break
+            else:
+                result = NotImplemented
+            # TODO print comments
+            if result is NotImplemented:
+                return self.transform_others(node)
+            return result
+        elif isinstance(node, list):
+            for n in node:
+                self.emit_node(n)
+        else:
+            raise Exception("Could not emit " + str(node))
+
     object_type: str
     array_type: str
     none_type: str
@@ -19,90 +58,101 @@ class JsonCrate(EmitterBase):
     def __init__(self, **data: Any):
         super().__init__(**data)
 
-    def emit_vector(self, node):
+    @beartype
+    def transform_vector(self, node) -> RustAstNode:
         traits = node.get_field(Traits.ValueType)
+        sources = []
         if self.no_macro:
             if traits:
-                self.formatter.append_line("{")
-                self.formatter.incr_indent()
-                self.formatter.append_line("let mut node = Vec::new();")
+                lines = []
+                lines.append(RustStatementNode(raw="let mut node = Vec::new();"))
                 for field in traits:
-                    for line in field.get_field(Traits.BeforeLineComment):
-                        self.formatter.append_line("// {}".format(line))
-                    self.formatter.append("node.push(")
-                    self.emit_node(field)
-                    self.formatter.append_line(");")
-                self.formatter.append_line("node")
-                self.formatter.decr_indent()
-                self.formatter.append_line("}")
+                    comments = field.get_field(Traits.BeforeLineComment)
+                    if comments:
+                        lines.append(RustCommentNode(comments))
+
+                    line = [RustRawNode(raw="node.push("), self.transform_node(field), RustRawNode(raw=");")]
+                    lines.append(RustBulkNode(nodes=line))
+                lines.append(RustStatementNode(raw="node"))
+                sources.append(RustBlockNode(nodes=lines))
             else:
-                self.formatter.append("Vec::new()")
+                sources.append(RustStatementNode(raw="Vec::new()"))
         else:
-            self.formatter.append("vec![")
-            for field in node.get_field(Traits.ValueType):
-                self.emit_node(field)
-                self.formatter.append(",")
-            self.formatter.append("]")
+            inner = []
+            inner.append(RustRawNode(raw="vec!["))
+            for i, field in enumerate(node.get_field(Traits.ValueType)):
+                if i > 0:
+                    inner.append(RustRawNode(raw=","))
+                inner.append(self.transform_node(field))
+            sources.append(RustIndentedNode(nodes=inner))
+            sources.append(RustRawNode(raw="]"))
+        return RustBulkNode(nodes=sources)
 
-    def emit_string(self, node):
-        self.formatter.append('"{}"'.format(node.get_field(Traits.RawValue)))
+    @beartype
+    def transform_string(self, node) -> RustAstNode:
+        return RustRawNode(raw='"{}"'.format(node.get_field(Traits.RawValue)))
 
-    def emit_node(self, node):
-        if node.get_field(Traits.RawValue) == "undefined":
-            self.formatter.append(self.none_type)
-            return
-        return super().emit_node(node)
+    @beartype
+    def transform_bool(self, node) -> RustAstNode:
+        return RustRawNode(raw=str(node.get_field(Traits.RawValue)).lower())
 
-    def emit_bool(self, node):
-        self.formatter.append(str(node.get_field(Traits.RawValue)).lower())
-
-    def emit_field_key(self, node):
+    @beartype
+    def transform_field_key(self, node) -> RustAstNode:
         if node.get_field(Attributes.ObjectProperty):
-            self.emit_node(node.get_field(Attributes.KeyName))
+            result = self.transform_node(node.get_field(Attributes.KeyName))
         else:
             field_name = node.get_field(Traits.FieldName)
             if field_name:
-                self.formatter.append(f'"{field_name}"')
+                result = RustRawNode(raw=f'"{field_name}"')
             else:
-                self.emit_node(node.get_field(Attributes.KeyName))
+                result = self.transform_node(node.get_field(Attributes.KeyName))
+        return result
 
-    def emit_field_value(self, node):
+    @beartype
+    def transform_field_value(self, node) -> RustAstNode:
         if node.get_field(Attributes.ObjectProperty):
-            self.emit_node(node.get_field(Attributes.Value))
+            return self.transform_node(node.get_field(Attributes.Value))
         else:
-            self.emit_node(node)
+            return self.transform_node(node)
 
-    def emit_integer(self, node):
-        self.formatter.append("{}".format(node.get_field(Traits.RawValue)))
+    @beartype
+    def transform_integer(self, node):
+        return RustRawNode(raw="{}".format(node.get_field(Traits.RawValue)))
 
-    def emit_float(self, node):
-        self.formatter.append("{}".format(node.get_field(Traits.RawValue)))
+    @beartype
+    def transform_float(self, node):
+        return RustRawNode(raw="{}".format(node.get_field(Traits.RawValue)))
 
-    def emit_object_properties(self, node):
-        self.emit_struct(node)
+    @beartype
+    def transform_object_properties(self, node):
+        return self.transform_struct(node)
 
-    def emit_struct(self, node):
+    @beartype
+    def transform_struct(self, node):
         fields = node.get_field(Traits.StructFields) or node.get_field(
             Attributes.ObjectProperties
         )
         if fields:
-            self.formatter.append_line("{")
-            self.formatter.incr_indent()
-            self.formatter.append_line(f"let mut node = <{self.object_type}>::new();")
+            lines = []
+            lines.append(RustStatementNode(raw=f"let mut node = <{self.object_type}>::new();"))
             for field in fields:
-                for line in field.get_field(Traits.BeforeLineComment):
-                    self.formatter.append_line("//{}".format(line))
-                self.formatter.append("node.insert(")
-                self.emit_field_key(field)
-                self.formatter.append(".into(), ")
-                self.emit_field_value(field)
-                self.formatter.append_line(".into());")
+                comments = field.get_field(Traits.BeforeLineComment)
+                if comments:
+                    lines.append(RustCommentNode(content=comments))
+                inline = \
+                    [
+                        RustRawNode(raw="node.insert("),
+                        self.transform_field_key(field),
+                        RustRawNode(raw=".into(), "),
+                        self.transform_field_value(field),
+                        RustRawNode(raw=".into());", new_line=True)
+                    ]
+                lines.append(RustBulkNode(nodes=inline))
 
-            self.formatter.append_line("node")
-            self.formatter.decr_indent()
-            self.formatter.append("}")
+            lines.append(RustStatementNode(raw="node"))
+            return RustBlockNode(nodes=lines)
         else:
-            self.formatter.append(f"<{self.object_type}>::new()")
+            return RustStatementNode(raw=f"<{self.object_type}>::new()")
 
 
 class IjsonCrate(JsonCrate):
@@ -125,44 +175,60 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
     depth = 0
     no_macro = False
 
-    def emit_node(self, node):
+    def transform_node(self, node):
         if self.only_outlier and self.depth == 0:
-            self.formatter.append("serde_json::json!(")
+            inline = []
+            inline.append(RustRawNode(raw="serde_json::json!("))
             self.depth += 1
-            super().emit_node(node)
+            inline.append(super().emit_node(node))
             self.depth -= 1
-            self.formatter.append(")")
+            inline.append(RustRawNode(raw=")"))
+            return RustBulkNode(nodes=inline)
         else:
-            super().emit_node(node)
+            return super().transform_node(node)
 
-    def emit_struct(self, node):
-        if not self.only_outlier:
-            self.formatter.append("serde_json::json!(")
+    def transform_struct(self, node) -> RustAstNode:
+        sources = []
+        # FIXME: missing comments due to limitation of esprima
+        emit_wrapper = not self.only_outlier
+        if emit_wrapper:
+            sources.append(RustRawNode(raw="serde_json::json!("))
         fields = node.get_field(Traits.StructFields)
+
         if fields:
-            self.formatter.append_line("{")
-            self.formatter.incr_indent()
-            for field in node.get_field(Traits.StructFields):
-                for line in field.get_field(Traits.BeforeLineComment):
-                    self.formatter.append_line("// {}".format(line))
-                self.emit_field_key(field)
-                self.formatter.append(": ")
-                self.emit_field_value(field)
-                self.formatter.append_line(", ")
+            lines = []
+            fields = node.get_field(Traits.StructFields)
+            for i, field in enumerate(fields):
+                comments = field.get_field(Traits.BeforeLineComment)
+                if comments:
+                    lines.append(RustCommentNode(comments))
+                inline = \
+                    [
+                        self.transform_field_key(field),
+                        RustRawNode(raw=": "),
+                        self.transform_field_value(field)
+                    ]
+                if i < len(fields) - 1:
+                    inline.append(RustRawNode(raw=", "))
+                lines.append(RustStatementNode(nodes=inline))
 
-            self.formatter.decr_indent()
-            self.formatter.append("}")
+            sources.append(RustBlockNode(nodes=lines, new_line=not emit_wrapper))
+
         else:
-            self.formatter.append("{}")
-        if not self.only_outlier:
-            self.formatter.append(")")
+            sources.append(RustRawNode(raw="{}"))
+        if emit_wrapper:
+            sources.append(RustRawNode(raw=")"))
+        return RustBulkNode(nodes=sources)
 
-    def emit_vector(self, node):
-        self.formatter.append("[")
-        for field in node.get_field(Traits.ValueType):
-            self.emit_node(field)
-            self.formatter.append(",")
-        self.formatter.append("]")
+    def transform_vector(self, node) -> RustAstNode:
+        sources = []
+        sources.append(RustRawNode(raw="["))
+        for i, field in enumerate(node.get_field(Traits.ValueType)):
+            if i > 0:
+                sources.append(RustRawNode(raw=","))
+            sources.append(self.emit_node(field))
+        sources.append(RustRawNode(raw="]"))
+        return RustBulkNode(nodes=sources)
 
 
 def get_json_crate(target: str) -> JsonCrate:
@@ -188,5 +254,9 @@ class RustJsonEmitter(Emitter):
 
     def emit_type(self, target: str, ty: Type) -> str:
         json_crate = get_json_crate(target)
-        json_crate.emit_node(ty)
-        return json_crate.formatter.to_string(strip_left=True)
+        node = json_crate.transform_node(ty)
+        formatter = RustFormatter()
+        node = formatter.transform_node(node)
+        formatter = StructuredFormatter(nodes=[node])
+
+        return formatter.to_string(strip_left=True)

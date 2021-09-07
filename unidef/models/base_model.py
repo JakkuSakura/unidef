@@ -6,7 +6,7 @@ from pydantic.class_validators import Validator
 from pydantic.error_wrappers import ErrorWrapper
 from pydantic.fields import ModelField
 
-from unidef.utils.typing_compat import *
+from unidef.utils.typing import *
 
 
 def get_validator(ty, default, allow_none):

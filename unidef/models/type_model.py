@@ -5,7 +5,7 @@ from pydantic import BaseModel, validator
 
 from unidef.models.base_model import *
 from unidef.utils.name_convert import *
-from unidef.utils.typing_compat import *
+from unidef.utils.typing import *
 
 
 class Trait(MyField):
@@ -28,6 +28,7 @@ class Traits:
     Variant = Trait(key="variant")
     VariantName = Trait(key="variant_name")
     RawValue = Trait(key="raw_value", allow_none=True)
+    Raw = Trait(key="raw")
     # TODO: distinguish in line or before line comments
     BeforeLineComment = Trait(
         key="before_line_comment", default_present=[], default_absent=[]

@@ -4,8 +4,8 @@ from unidef.emitters import Emitter
 from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type
-from unidef.utils.formatter import IndentedFormatee, Function, IndentBlock, IndentedWriter
-from unidef.utils.typing_compat import List
+from unidef.utils.formatter import *
+from unidef.utils.typing import List
 
 
 class EmptyEmitter(Emitter):
