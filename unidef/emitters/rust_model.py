@@ -199,6 +199,13 @@ def map_field_name(name: str) -> str:
     return RUST_KEYWORDS.get(name) or to_snake_case(name)
 
 
+def map_func_name(name: str) -> str:
+    if name[0].isnumeric() and name[0] != "_":
+        return "_" + name
+
+    return RUST_KEYWORDS.get(name) or to_snake_case(name)
+
+
 class RustField(Formatee, BaseModel):
     name: str
     original_name: str = None

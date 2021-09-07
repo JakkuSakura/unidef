@@ -49,7 +49,9 @@ class Traits:
     Null = Trait(key="null", default_present=True, default_absent=False)
     AllValue = Trait(key="all_value", default_present=True, default_absent=False)
 
-    NotInferredType = Trait(key='not_inferred_type', default_present=True, default_absent=False)
+    NotInferredType = Trait(
+        key="not_inferred_type", default_present=True, default_absent=False
+    )
     # Format
     SimpleEnum = Trait(key="simple_enum", default_present=True, default_absent=False)
     StringWrapped = Trait(
@@ -103,9 +105,9 @@ def build_int(name: str) -> Type:
 def build_float(name: str) -> Type:
     return (
         Type.from_trait(name, Traits.Floating)
-            .append_field(Traits.Numeric)
-            .append_field(Traits.BitSize(int(name[1:])))
-            .append_field(Traits.Signed)
+        .append_field(Traits.Numeric)
+        .append_field(Traits.BitSize(int(name[1:])))
+        .append_field(Traits.Signed)
     )
 
 
@@ -264,7 +266,7 @@ class CouldNotParseDataExample(Exception):
 
 @beartype
 def parse_data_example(
-        obj: Union[str, int, float, dict, list, None], prefix: str = ""
+    obj: Union[str, int, float, dict, list, None], prefix: str = ""
 ) -> Type:
     def inner(obj, prefix) -> Type:
         if obj is None:
@@ -294,8 +296,8 @@ def parse_data_example(
             if "_ts" in prefix or "time" in prefix or "_at" in prefix:
                 ty = (
                     ty.copy()
-                        .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
-                        .replace_field(Traits.TypeName("timestamp"))
+                    .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
+                    .replace_field(Traits.TypeName("timestamp"))
                 )
 
             return ty
@@ -341,7 +343,7 @@ def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None
 
 
 def walk_type_with_count(
-        node: Type, process: Callable[[int, int, str, Type], None]
+    node: Type, process: Callable[[int, int, str, Type], None]
 ) -> None:
     counts = {}
 

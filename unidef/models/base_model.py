@@ -34,22 +34,24 @@ class MyField:
             field = ModelField(
                 name=key,
                 type_=Any,
-                class_validators={"value": get_validator(key, default_present, allow_none)},
+                class_validators={
+                    "value": get_validator(key, default_present, allow_none)
+                },
                 required=True,
                 model_config=BaseConfig,
                 default_factory=lambda: copy.deepcopy(default_absent),
             )
         self.key: str = key
         self.field: ModelField = field
-        self.default_present = default_present
-        self.value_: Any = None
+        self._default_present = default_present
+        self._value: Any = None
 
     @property
     def value(self):
-        if self.value_ is not None:
-            return self.value_
+        if self._value is not None:
+            return self._value
         else:
-            return self.default_present
+            return self._default_present
 
     @property
     def default_absent(self) -> Any:
@@ -62,7 +64,7 @@ class MyField:
 
     def __call__(self, value: Any) -> __qualname__:
         field = copy.copy(self)
-        field.value_ = value
+        field._value = value
         field.validate()
         return field
 
@@ -84,7 +86,7 @@ class MyBaseModel(BaseModel):
         value = self.fields.get(field.key)
         if value is not None:
             assert isinstance(value, list) and isinstance(
-                field.default_present, list
+                field._default_present, list
             ), f"{field.key} is not list, cannot be appended multiple times"
             if isinstance(field.value, list):
                 value.extend(field.value)
@@ -98,7 +100,7 @@ class MyBaseModel(BaseModel):
     @beartype
     def replace_field(self, field: MyField) -> __qualname__:
         assert not self.is_frozen()
-        if isinstance(field.default_present, list) and not isinstance(
+        if isinstance(field._default_present, list) and not isinstance(
             field.value, list
         ):
             self.fields[field.key] = [field.value]

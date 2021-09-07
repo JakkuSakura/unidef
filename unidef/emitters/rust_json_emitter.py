@@ -82,7 +82,9 @@ class JsonCrate(EmitterBase):
         self.emit_struct(node)
 
     def emit_struct(self, node):
-        fields = node.get_field(Traits.StructFields) or node.get_field(Attributes.ObjectProperties)
+        fields = node.get_field(Traits.StructFields) or node.get_field(
+            Attributes.ObjectProperties
+        )
         if fields:
             self.formatter.append_line("{")
             self.formatter.incr_indent()

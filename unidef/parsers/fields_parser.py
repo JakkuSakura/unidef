@@ -35,7 +35,7 @@ class FieldsParser(Parser):
     def parse(self, name: str, fmt: Definition) -> Type:
         assert isinstance(fmt, Fields)
         fields = []
-        for field in fmt.fields:
+        for field in fmt.__root__:
             fields.append(self.parse_field(field))
 
         return Types.struct(name, fields)

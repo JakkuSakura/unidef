@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from unidef.emitters import Emitter
 from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
-from unidef.models.transpile_model import Attribute, Attributes, Node, RequireNode
+from unidef.models.transpile_model import Attribute, Attributes, Node
 from unidef.models.type_model import Traits, Type
 from unidef.utils.formatter import Formatee, Function, IndentBlock, IndentedWriter
 from unidef.utils.typing_compat import *
@@ -35,13 +35,11 @@ class EmitterBase(BaseModel, VisitorPattern):
                 result = NotImplemented
             if result is NotImplemented:
                 self.emit_others(node)
-        elif isinstance(node, str):
-            self.emit_raw_code(node)
+        elif isinstance(node, list):
+            for n in node:
+                self.emit_node(n)
         else:
             raise Exception("Could not emit " + str(node))
-
-    def emit_raw_code(self, node):
-        self.formatter.append(str(node))
 
     def write(self, elem: Formatee):
         elem.format_with(self.formatter)
