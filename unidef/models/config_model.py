@@ -6,7 +6,7 @@ import pyhocon
 import yaml
 from pydantic import BaseModel, root_validator
 
-from unidef.models.definitions import *
+from unidef.models.input_model import *
 from unidef.models.type_model import (
     GLOBAL_TYPE_REGISTRY,
     Trait,
@@ -27,10 +27,10 @@ class ModelDefinition(BaseModel):
     note: str = ""
     raw: str = ""
     traits: List[Dict[str, Any]] = []
-    example: Optional[ModelExample] = None
-    fields: Optional[Fields] = None
-    variants: Optional[Variants] = None
-    source: Optional[SourceExample] = None
+    example: Optional[ExampleInput] = None
+    fields: Optional[FieldsInput] = None
+    variants: Optional[VariantsInput] = None
+    source: Optional[SourceInput] = None
 
     def get_field(self) -> List[Trait]:
         traits = []

@@ -3,25 +3,25 @@ from pydantic import BaseModel, PrivateAttr
 from unidef.utils.typing_compat import *
 
 
-class Definition(BaseModel):
+class InputDefinition(BaseModel):
     def __str__(self):
         s = super().__str__()
         return s[:100]
 
 
-class ModelExample(Definition):
+class ExampleInput(InputDefinition):
     format: str
     text: str
 
 
-class SourceExample(Definition):
+class SourceInput(InputDefinition):
     lang: str
     code: str
 
 
-class Fields(BaseModel):
+class FieldsInput(BaseModel):
     __root__: List[Dict[str, Any]]
 
 
-class Variants(BaseModel):
+class VariantsInput(BaseModel):
     __root__: List[Dict[str, Any]]

@@ -30,8 +30,8 @@ def add_emitter(name: str, emitter: str):
         EMITTER_REGISTRY.add_emitter(module.__dict__[emitter]())
 
 
-add_emitter("python_model", "PythonEmitter")
-add_emitter("rust_model", "RustEmitter")
+add_emitter("python_data_emitter", "PythonDataEmitter")
+add_emitter("rust_data_emitter", "RustDataEmitter")
 add_emitter("rust_json_emitter", "RustJsonEmitter")
 add_emitter("sql_model", "SqlEmitter")
 add_emitter("empty_emitter", "EmptyEmitter")

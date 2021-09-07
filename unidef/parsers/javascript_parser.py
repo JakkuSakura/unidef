@@ -4,10 +4,10 @@ import traceback
 
 from beartype import beartype
 
-from unidef.models.definitions import SourceExample
-from unidef.models.transpile_model import Attribute, Attributes, Node, Nodes
+from unidef.models.input_model import SourceInput
+from unidef.models.ir_model import Attribute, Attributes, Node, Nodes
 from unidef.models.type_model import Traits, Type, Types
-from unidef.parsers import Definition, Parser
+from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.name_convert import *
 from unidef.utils.typing_compat import *
@@ -354,15 +354,15 @@ class VisitorImpl(VisitorBase):
 
 
 class JavascriptParser(Parser):
-    def accept(self, fmt: Definition) -> bool:
+    def accept(self, fmt: InputDefinition) -> bool:
         return (
-                isinstance(fmt, SourceExample)
+                isinstance(fmt, SourceInput)
                 and fmt.lang == "javascript"
                 and load_module("esprima")
         )
 
-    def parse(self, name: str, fmt: Definition) -> Node:
-        assert isinstance(fmt, SourceExample)
+    def parse(self, name: str, fmt: InputDefinition) -> Node:
+        assert isinstance(fmt, SourceInput)
         import esprima
 
         parsed = esprima.parseScript(fmt.code, {"comment": True})

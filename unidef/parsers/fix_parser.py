@@ -3,7 +3,7 @@ import os
 import sys
 import unicodedata
 
-from unidef.models.definitions import Definition, ModelExample
+from unidef.models.input_model import InputDefinition, ExampleInput
 from unidef.models.type_model import *
 from unidef.parsers import Parser
 from unidef.utils.loader import load_module
@@ -12,9 +12,9 @@ from unidef.utils.loader import load_module
 class FixParser(Parser):
     BASE_DIR = "quickfix"
 
-    def accept(self, fmt: Definition) -> bool:
+    def accept(self, fmt: InputDefinition) -> bool:
         return (
-            isinstance(fmt, ModelExample)
+            isinstance(fmt, ExampleInput)
             and fmt.format.lower().startswith("fix")
             and load_module("quickfix")
         )
@@ -28,7 +28,7 @@ class FixParser(Parser):
 
         return quickfix.DataDictionary(f"{FixParser.BASE_DIR}/spec/{version}.xml")
 
-    def parse(self, name: str, fmt: ModelExample) -> Type:
+    def parse(self, name: str, fmt: ExampleInput) -> Type:
         import quickfix
 
         content = fmt.text

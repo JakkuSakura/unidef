@@ -689,7 +689,7 @@ def try_rustfmt(s: str) -> str:
         return s
 
 
-class RustEmitter(Emitter):
+class RustDataEmitter(Emitter):
     def accept(self, s: str) -> bool:
         return s == "rust"
 

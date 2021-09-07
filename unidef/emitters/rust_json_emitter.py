@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from unidef.emitters.registry import Emitter
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type
-from unidef.models.transpile_model import Attributes
+from unidef.models.ir_model import Attributes
 from unidef.utils.formatter import IndentedWriter
 from unidef.utils.typing_compat import *
 from unidef.emitters.emitter_base import EmitterBase

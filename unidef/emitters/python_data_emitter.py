@@ -258,7 +258,7 @@ def emit_python_model_definition(root: ModelDefinition) -> str:
     return writer.to_string()
 
 
-class PythonEmitter(Emitter):
+class PythonDataEmitter(Emitter):
     def accept(self, s: str) -> bool:
         if "python" in s:
             if "peewee" in s:

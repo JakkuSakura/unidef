@@ -4,7 +4,7 @@ from enum import Enum
 
 from beartype import beartype
 
-from unidef.models.definitions import Definition
+from unidef.models.input_model import InputDefinition
 from unidef.models.type_model import Type
 from unidef.parsers import Parser
 from unidef.utils.loader import load_module
@@ -18,7 +18,7 @@ class ParserRegistry:
     def add_parser(self, parser: Parser):
         self.parsers.append(parser)
 
-    def find_parser(self, fmt: Definition) -> Optional[Parser]:
+    def find_parser(self, fmt: InputDefinition) -> Optional[Parser]:
         for p in self.parsers:
             if p.accept(fmt):
                 return p

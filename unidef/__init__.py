@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from unidef.emitters.registry import EMITTER_REGISTRY
 from unidef.models.config_model import ModelDefinition, read_model_definition
-from unidef.models.definitions import *
+from unidef.models.input_model import *
 from unidef.utils.typing_compat import *
 
 parser = argparse.ArgumentParser(description="define once, export everywhere")
@@ -43,10 +43,10 @@ def main(
     if config.format or config.lang:
         if config.format:
             key = "example"
-            value = ModelExample(name="stdin", format=config.format, text=content)
+            value = ExampleInput(format=config.format, text=content)
         elif config.lang:
             key = "source"
-            value = SourceExample(name="stdin", lang=config.lang, code=content)
+            value = SourceInput(lang=config.lang, code=content)
         else:
             raise Exception("Must specify either format or lang")
         model = ModelDefinition(name="stdin", **{key: value})

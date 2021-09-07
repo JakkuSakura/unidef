@@ -3,15 +3,15 @@ import unicodedata
 
 import pyhocon
 
-from unidef.models.definitions import Definition, Fields
+from unidef.models.input_model import InputDefinition, FieldsInput
 from unidef.models.type_model import *
 from unidef.parsers import Parser
 from unidef.utils.typing_compat import *
 
 
 class FieldsParser(Parser):
-    def accept(self, fmt: Definition) -> bool:
-        return isinstance(fmt, Fields)
+    def accept(self, fmt: InputDefinition) -> bool:
+        return isinstance(fmt, FieldsInput)
 
     def parse_field(self, field: Dict[str, Any]) -> Type:
         field = field.copy()
@@ -32,8 +32,8 @@ class FieldsParser(Parser):
                 raise Exception("InvalidArgumentException: " + key)
         return ty
 
-    def parse(self, name: str, fmt: Definition) -> Type:
-        assert isinstance(fmt, Fields)
+    def parse(self, name: str, fmt: InputDefinition) -> Type:
+        assert isinstance(fmt, FieldsInput)
         fields = []
         for field in fmt.__root__:
             fields.append(self.parse_field(field))

@@ -12,3 +12,4 @@ class VisitorPattern:
                     functions.append((node_name, value))
         functions.sort(key=lambda x: len(x[0]), reverse=True)
         return functions
+
