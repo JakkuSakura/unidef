@@ -7,7 +7,7 @@ from unidef.emitters import Emitter
 from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type
-from unidef.utils.formatter import Formatee, Function, IndentBlock, IndentedWriter
+from unidef.utils.formatter import IndentedFormatee, Function, IndentBlock, IndentedWriter
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
 from unidef.utils.typing_compat import List
 
@@ -94,7 +94,7 @@ def map_field_name(name: str) -> str:
     return to_snake_case(PYTHON_KEYWORDS.get(name) or name)
 
 
-class PythonField(Formatee, BaseModel):
+class PythonField(IndentedFormatee, BaseModel):
     name: str
     original_name: str = None
     value: type_model.Type
@@ -115,7 +115,7 @@ class PythonField(Formatee, BaseModel):
         writer.append_line(f"{self.name} = {map_type_to_peewee_model(self.value)}")
 
 
-class PythonComment(Formatee, BaseModel):
+class PythonComment(IndentedFormatee, BaseModel):
     content: List[str]
     python_doc: bool = False
 
@@ -133,7 +133,7 @@ class PythonComment(Formatee, BaseModel):
                 writer.append_line("# " + line)
 
 
-class PythonStruct(Formatee, BaseModel):
+class PythonStruct(IndentedFormatee, BaseModel):
     name: str
     fields: List[PythonField]
     comment: PythonComment = None
@@ -167,7 +167,7 @@ class PythonStruct(Formatee, BaseModel):
         IndentBlock(Function(for_field)).format_with(writer)
 
 
-class PythonEnum(Formatee, BaseModel):
+class PythonEnum(IndentedFormatee, BaseModel):
     name: str
     variants: List[Type]
     model: str = "enum.Enum"

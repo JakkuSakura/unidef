@@ -11,12 +11,12 @@ from unidef.emitters.sql_model import emit_schema_from_model
 from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
 from unidef.models.type_model import Traits, Type, Types, to_second_scale
-from unidef.utils.formatter import Braces, Formatee, Function, IndentedWriter, Text
+from unidef.utils.formatter import Braces, IndentedFormatee, Function, IndentedWriter, Text
 from unidef.utils.name_convert import *
 from unidef.utils.typing_compat import List, Optional
 
 
-class ProcMacro(Formatee, BaseModel):
+class ProcMacro(IndentedFormatee, BaseModel):
     pass
 
 
@@ -206,7 +206,7 @@ def map_func_name(name: str) -> str:
     return RUST_KEYWORDS.get(name) or to_snake_case(name)
 
 
-class RustField(Formatee, BaseModel):
+class RustField(IndentedFormatee, BaseModel):
     name: str
     original_name: str = None
     access: AccessModifier = AccessModifier.PUBLIC
@@ -252,7 +252,7 @@ class RustField(Formatee, BaseModel):
         writer.append(f"{self.access.value}{self.name}: {map_type_to_rust(self.value)}")
 
 
-class RustComment(Formatee, BaseModel):
+class RustComment(IndentedFormatee, BaseModel):
     content: List[str]
     cargo_doc: bool = False
 
@@ -269,7 +269,7 @@ class RustComment(Formatee, BaseModel):
                 writer.append_line("// " + line)
 
 
-class RustStruct(Formatee, BaseModel):
+class RustStruct(IndentedFormatee, BaseModel):
     annotations: List[ProcMacro] = []
     access: AccessModifier = AccessModifier.PUBLIC
     name: str
@@ -325,7 +325,7 @@ class RustStruct(Formatee, BaseModel):
         Braces(Function(for_field)).format_with(writer)
 
 
-class RustEnum(Formatee, BaseModel):
+class RustEnum(IndentedFormatee, BaseModel):
     annotations: List[ProcMacro] = []
     access: AccessModifier = AccessModifier.PUBLIC
     name: str
@@ -383,7 +383,7 @@ class StructRegistry:
             self.structs.append(struct)
 
 
-class RustFunc(Formatee, BaseModel):
+class RustFunc(IndentedFormatee, BaseModel):
     name: str
     access: AccessModifier = AccessModifier.PUBLIC
     args: List[RustField]
@@ -409,7 +409,7 @@ class RustFunc(Formatee, BaseModel):
         Braces(Text(self.content)).format_with(writer)
 
 
-class RustImpl(Formatee, BaseModel):
+class RustImpl(IndentedFormatee, BaseModel):
     name: str
     trait: str = ""
     functions: List[RustFunc]

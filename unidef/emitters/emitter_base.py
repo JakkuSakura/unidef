@@ -5,7 +5,7 @@ from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
 from unidef.models.ir_model import Attribute, Attributes, Node
 from unidef.models.type_model import Traits, Type
-from unidef.utils.formatter import Formatee, Function, IndentBlock, IndentedWriter
+from unidef.utils.formatter import IndentedFormatee, Function, IndentBlock, IndentedWriter
 from unidef.utils.typing_compat import *
 from unidef.utils.name_convert import *
 from unidef.utils.visitor import VisitorPattern
@@ -41,5 +41,5 @@ class EmitterBase(BaseModel, VisitorPattern):
         else:
             raise Exception("Could not emit " + str(node))
 
-    def write(self, elem: Formatee):
+    def write(self, elem: IndentedFormatee):
         elem.format_with(self.formatter)
