@@ -13,7 +13,7 @@ class FieldsParser(Parser):
     def accept(self, fmt: InputDefinition) -> bool:
         return isinstance(fmt, FieldsInput)
 
-    def parse_field(self, field: Dict[str, Any]) -> Type:
+    def parse_field(self, field: Dict[str, Any]) -> DyType:
         field = field.copy()
         name = field.pop("name")
         type_ref = field.pop("type")
@@ -22,7 +22,7 @@ class FieldsParser(Parser):
             ty = ty.copy()
             ty.replace_field(Traits.TypeName(name))
         else:
-            ty = Type.from_str(name).append_field(Traits.TypeRef(type_ref))
+            ty = DyType.from_str(name).append_field(Traits.TypeRef(type_ref))
 
         for key, val in field.items():
             trait = GLOBAL_TYPE_REGISTRY.get_field(key)
@@ -32,7 +32,7 @@ class FieldsParser(Parser):
                 raise Exception("InvalidArgumentException: " + key)
         return ty
 
-    def parse(self, name: str, fmt: InputDefinition) -> Type:
+    def parse(self, name: str, fmt: InputDefinition) -> DyType:
         assert isinstance(fmt, FieldsInput)
         fields = []
         for field in fmt.__root__:

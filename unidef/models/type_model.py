@@ -71,7 +71,7 @@ class Traits:
     Derive = Trait(key="derive", default_present=[], default_absent=[])
 
 
-class Type(MyBaseModel):
+class DyType(MyBaseModel):
     """
     Type is the type model used in this program.
     It allows inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
@@ -90,8 +90,8 @@ class Type(MyBaseModel):
         )
 
 
-def build_int(name: str) -> Type:
-    ty = Type.from_trait(name, Traits.Integer)
+def build_int(name: str) -> DyType:
+    ty = DyType.from_trait(name, Traits.Integer)
     ty.append_field(Traits.Numeric)
     ty.append_field(Traits.BitSize(int(name[1:])))
 
@@ -103,9 +103,9 @@ def build_int(name: str) -> Type:
     return ty
 
 
-def build_float(name: str) -> Type:
+def build_float(name: str) -> DyType:
     return (
-        Type.from_trait(name, Traits.Floating)
+        DyType.from_trait(name, Traits.Floating)
         .append_field(Traits.Numeric)
         .append_field(Traits.BitSize(int(name[1:])))
         .append_field(Traits.Signed)
@@ -113,7 +113,7 @@ def build_float(name: str) -> Type:
 
 
 class Types:
-    Bool = Type.from_trait("bool", Traits.Bool).freeze()
+    Bool = DyType.from_trait("bool", Traits.Bool).freeze()
 
     I8 = build_int("i8").freeze()
     I16 = build_int("i16").freeze()
@@ -127,53 +127,53 @@ class Types:
     U64 = build_int("u64").freeze()
     U128 = build_int("u128").freeze()
 
-    String = Type.from_trait("string", Traits.String).freeze()
+    String = DyType.from_trait("string", Traits.String).freeze()
     Float = build_float("f32").freeze()
 
     Double = build_float("f64").freeze()
 
-    Vector = Type.from_trait("vector", Traits.Vector).freeze()
+    Vector = DyType.from_trait("vector", Traits.Vector).freeze()
 
     NoneType = (
-        Type.from_trait("none", Traits.Null).append_field(Traits.Nullable).freeze()
+        DyType.from_trait("none", Traits.Null).append_field(Traits.Nullable).freeze()
     )
-    AllValue = Type.from_trait("all_value", Traits.AllValue).freeze()
+    AllValue = DyType.from_trait("all_value", Traits.AllValue).freeze()
 
     @staticmethod
     @beartype
-    def field(name: str, ty: Type) -> Type:
+    def field(name: str, ty: DyType) -> DyType:
         return ty.append_field(Traits.FieldName(name))
 
     @staticmethod
     @beartype
-    def variant(name: List[str]) -> Type:
-        ty = Type.from_str(name[0])
+    def variant(name: List[str]) -> DyType:
+        ty = DyType.from_str(name[0])
         for n in name:
             ty.append_field(Traits.VariantName(n))
         return ty
 
     @staticmethod
     @beartype
-    def struct(name: str, fields: List[Type]) -> Type:
-        ty = Type.from_trait(name, Traits.Struct(name))
+    def struct(name: str, fields: List[DyType]) -> DyType:
+        ty = DyType.from_trait(name, Traits.Struct(name))
         ty.append_field(Traits.StructFields(fields))
         return ty
 
     @staticmethod
     @beartype
-    def enum(name: str, variants: List[Type]) -> Type:
-        ty = Type.from_trait(Traits.Enum(name))
+    def enum(name: str, variants: List[DyType]) -> DyType:
+        ty = DyType.from_trait(Traits.Enum(name))
         ty.append_field(Traits.Variant(variants))
         return ty
 
 
 class TypeRegistry(BaseModel):
-    types: Dict[str, Type] = {}
+    types: Dict[str, DyType] = {}
     traits = {}
     type_detector: list = []
 
     @beartype
-    def insert_type(self, ty: Type):
+    def insert_type(self, ty: DyType):
         name = ty.get_field(Traits.TypeName)
         assert ty.is_frozen(), f"type {name} should be frozen"
         if name not in self.types:
@@ -189,7 +189,7 @@ class TypeRegistry(BaseModel):
             raise Exception(f"TraitAlreadyExistsAndConflict{trait.name}")
 
     @beartype
-    def get_type(self, name: str) -> Optional[Type]:
+    def get_type(self, name: str) -> Optional[DyType]:
         val = self.types.get(name)
         if val:
             return val
@@ -203,16 +203,16 @@ class TypeRegistry(BaseModel):
         return self.traits.get(name)
 
     @beartype
-    def is_subclass(self, child: Type, parent: Type) -> bool:
-        assert isinstance(child, Type)
-        assert isinstance(parent, Type)
+    def is_subclass(self, child: DyType, parent: DyType) -> bool:
+        assert isinstance(child, DyType)
+        assert isinstance(parent, DyType)
         if Traits.Parent(parent) in child.__root__:
             return True
         p = child.get_field(Traits.Parent).value
         return self.is_subclass(p, parent)
 
     @beartype
-    def list_types(self) -> List[Type]:
+    def list_types(self) -> List[DyType]:
         return list(self.types.values())
 
     @beartype
@@ -250,7 +250,7 @@ def detect_timestamp_unit(inputtext: Union[str, int, float]) -> str:
         return "sec"
 
 
-def string_wrapped(trait: Type) -> Type:
+def string_wrapped(trait: DyType) -> DyType:
     return trait.copy().replace_field(Traits.StringWrapped)
 
 
@@ -268,8 +268,8 @@ class CouldNotParseDataExample(Exception):
 @beartype
 def parse_data_example(
     obj: Union[str, int, float, dict, list, None], prefix: str = ""
-) -> Type:
-    def inner(obj, prefix) -> Type:
+) -> DyType:
+    def inner(obj, prefix) -> DyType:
         if obj is None:
             return Types.NoneType
 
@@ -330,7 +330,7 @@ def parse_data_example(
     return inner(obj, prefix).copy().append_field(Traits.RawValue(obj))
 
 
-def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None:
+def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> None:
     if node.get_field(Traits.Struct):
         for field in node.get_field(Traits.StructFields):
             process(depth, field)
@@ -344,11 +344,11 @@ def walk_type(node: Type, process: Callable[[int, Type], None], depth=0) -> None
 
 
 def walk_type_with_count(
-    node: Type, process: Callable[[int, int, str, Type], None]
+    node: DyType, process: Callable[[int, int, str, DyType], None]
 ) -> None:
     counts = {}
 
-    def pre_process(depth, ty: Type):
+    def pre_process(depth, ty: DyType):
         name = ty.get_field(Traits.FieldName)
         if name:
             if name not in counts:
@@ -359,7 +359,7 @@ def walk_type_with_count(
     walk_type(node, pre_process)
 
 
-def parse_type_definition(ty: str) -> Type:
+def parse_type_definition(ty: str) -> DyType:
     if ty.startswith("timestamp"):
         unit = ty.split("/")[1]
         ty = Types.I64.copy().replace_field(Traits.TsUnit(unit))
@@ -384,7 +384,7 @@ for t in Traits.__dict__.values():
         GLOBAL_TYPE_REGISTRY.insert_trait(t)
 
 for t in Types.__dict__.values():
-    if isinstance(t, Type):
+    if isinstance(t, DyType):
         GLOBAL_TYPE_REGISTRY.insert_type(t)
 
 GLOBAL_TYPE_REGISTRY.type_detector.append(parse_type_definition)

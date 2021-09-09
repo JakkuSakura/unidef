@@ -121,14 +121,8 @@ class MyBaseModel(BaseModel):
         else:
             return field.default_absent
 
-    def get_field_by_name(self, name: str) -> Any:
-        return self.fields.get(name)
-
     def exist_field(self, field: MyField) -> bool:
         return field.key in self.fields
-
-    def exist_field_by_name(self, name: str) -> bool:
-        return name in self.fields
 
     def keys(self) -> List[str]:
         return list(self.fields.keys())

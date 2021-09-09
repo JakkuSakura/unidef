@@ -15,7 +15,7 @@ from typing import (
     Tuple,
     Union,
     Generic,
-    TypeVar
+    TypeVar,
 )
 
 # handle type annotation changes in PEP 3107, 484, 526, 544, 560, 563, 585
@@ -36,7 +36,7 @@ def abstract(cls):
 
     def new_init(self, *args, **kwargs):
         if type(self) == cls:
-            raise TypeError(f'{cls} is abstract and cannot be initialized here')
+            raise TypeError(f"{cls} is abstract and cannot be initialized here")
         old_init(self, *args, **kwargs)
 
     cls.__init__ = new_init

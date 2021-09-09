@@ -1,10 +1,10 @@
 from unidef.emitters import Emitter
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import Traits, Type
+from unidef.models.type_model import Traits, DyType
 from unidef.utils.name_convert import *
 
 
-def get_real(ty: Type) -> str:
+def get_real(ty: DyType) -> str:
     assert ty.get_field(Traits.Floating), True
     bits = ty.get_field(Traits.BitSize)
     if bits == 32:
@@ -15,7 +15,7 @@ def get_real(ty: Type) -> str:
         raise NotImplementedError()
 
 
-def get_integer(ty: Type) -> str:
+def get_integer(ty: DyType) -> str:
     assert ty.get_field(Traits.Integer), True
     bits = ty.get_field(Traits.BitSize)
 
@@ -29,7 +29,7 @@ def get_integer(ty: Type) -> str:
         raise NotImplementedError()
 
 
-def map_type_to_ddl(ty: Type) -> str:
+def map_type_to_ddl(ty: DyType) -> str:
     assert ty is not None
     if ty.get_field(Traits.Floating):
         return get_real(ty)
@@ -57,7 +57,7 @@ def map_type_to_ddl(ty: Type) -> str:
     raise Exception("Cannot map {} to sql type".format(ty.get_field(Traits.TypeName)))
 
 
-def get_field(field: Type) -> str:
+def get_field(field: DyType) -> str:
     value_types = field.get_field(Traits.ValueType)
     if isinstance(value_types, list) and value_types:
         value_types = value_types[0]
@@ -77,14 +77,14 @@ def get_field(field: Type) -> str:
     return base
 
 
-def emit_schema_from_model(model: Type) -> str:
+def emit_schema_from_model(model: DyType) -> str:
     fields = ",\n".join(
         [get_field(field) for field in model.get_field(Traits.StructFields)]
     )
     return fields
 
 
-def emit_field_names_from_model(model: Type) -> str:
+def emit_field_names_from_model(model: DyType) -> str:
     fields = ",".join(
         [
             field.get_field(Traits.TypeName)
@@ -101,5 +101,5 @@ class SqlEmitter(Emitter):
     def emit_model(self, target: str, model: ModelDefinition) -> str:
         return emit_schema_from_model(model.get_parsed())
 
-    def emit_type(self, target: str, ty: Type) -> str:
+    def emit_type(self, target: str, ty: DyType) -> str:
         return emit_schema_from_model(ty)

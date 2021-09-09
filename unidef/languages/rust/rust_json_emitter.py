@@ -2,13 +2,13 @@ from pydantic import BaseModel
 
 from unidef.emitters.registry import Emitter
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import Traits, Type
+from unidef.models.type_model import Traits, DyType
 from unidef.utils.typing import *
 from unidef.languages.rust.rust_ast import *
 from unidef.utils.transformer import *
 from unidef.utils.visitor import *
 from unidef.utils.formatter import StructuredFormatter
-from unidef.models.ir_model import Node, Attributes
+from unidef.models.ir_model import IrNode, Attributes
 
 
 class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
@@ -22,7 +22,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
 
     def transform_node(self, node) -> RustAstNode:
 
-        if isinstance(node, Node) or isinstance(node, Type):
+        if isinstance(node, IrNode) or isinstance(node, DyType):
             if self.functions is None:
                 self.functions = self.get_functions("transform_")
 
@@ -59,22 +59,32 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
         super().__init__(**data)
 
     @beartype
+    def transform_array_elements(self, node) -> RustAstNode:
+        return self.transform_vector(node)
+
+    @beartype
     def transform_vector(self, node) -> RustAstNode:
-        traits = node.get_field(Traits.ValueType)
+        fields = node.get_field(Traits.ValueType) or node.get_field(
+            Attributes.ArrayElements
+        )
         sources = []
         if self.no_macro:
-            if traits:
+            if fields:
                 lines = []
                 lines.append(RustStatementNode(raw="let mut node = Vec::new();"))
-                for field in traits:
+                for field in fields:
                     comments = field.get_field(Traits.BeforeLineComment)
                     if comments:
                         lines.append(RustCommentNode(comments))
 
-                    line = [RustRawNode(raw="node.push("), self.transform_node(field), RustRawNode(raw=");")]
-                    lines.append(RustBulkNode(nodes=line))
+                    line = [
+                        RustRawNode(raw="node.push("),
+                        self.transform_node(field),
+                        RustRawNode(raw=")"),
+                    ]
+                    lines.append(RustStatementNode(nodes=line))
                 lines.append(RustStatementNode(raw="node"))
-                sources.append(RustBlockNode(nodes=lines))
+                sources.append(RustBlockNode(nodes=lines, new_line=False))
             else:
                 sources.append(RustStatementNode(raw="Vec::new()"))
         else:
@@ -134,23 +144,24 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
         )
         if fields:
             lines = []
-            lines.append(RustStatementNode(raw=f"let mut node = <{self.object_type}>::new();"))
+            lines.append(
+                RustStatementNode(raw=f"let mut node = <{self.object_type}>::new();")
+            )
             for field in fields:
                 comments = field.get_field(Traits.BeforeLineComment)
                 if comments:
                     lines.append(RustCommentNode(content=comments))
-                inline = \
-                    [
-                        RustRawNode(raw="node.insert("),
-                        self.transform_field_key(field),
-                        RustRawNode(raw=".into(), "),
-                        self.transform_field_value(field),
-                        RustRawNode(raw=".into());", new_line=True)
-                    ]
-                lines.append(RustBulkNode(nodes=inline))
+                inline = [
+                    RustRawNode(raw="node.insert("),
+                    self.transform_field_key(field),
+                    RustRawNode(raw=".into(), "),
+                    self.transform_field_value(field),
+                    RustRawNode(raw=".into())"),
+                ]
+                lines.append(RustStatementNode(nodes=inline))
 
             lines.append(RustStatementNode(raw="node"))
-            return RustBlockNode(nodes=lines)
+            return RustBlockNode(nodes=lines, new_line=False)
         else:
             return RustStatementNode(raw=f"<{self.object_type}>::new()")
 
@@ -202,12 +213,11 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
                 comments = field.get_field(Traits.BeforeLineComment)
                 if comments:
                     lines.append(RustCommentNode(comments))
-                inline = \
-                    [
-                        self.transform_field_key(field),
-                        RustRawNode(raw=": "),
-                        self.transform_field_value(field)
-                    ]
+                inline = [
+                    self.transform_field_key(field),
+                    RustRawNode(raw=": "),
+                    self.transform_field_value(field),
+                ]
                 if i < len(fields) - 1:
                     inline.append(RustRawNode(raw=", "))
                 lines.append(RustStatementNode(nodes=inline))
@@ -243,20 +253,3 @@ def get_json_crate(target: str) -> JsonCrate:
     if "no_macro" in target:
         result.no_macro = True
     return result
-
-
-class RustJsonEmitter(Emitter):
-    def accept(self, target: str) -> bool:
-        return "rust" in target and "json" in target
-
-    def emit_model(self, target: str, model: ModelDefinition) -> str:
-        return self.emit_type(target, model.get_parsed())
-
-    def emit_type(self, target: str, ty: Type) -> str:
-        json_crate = get_json_crate(target)
-        node = json_crate.transform_node(ty)
-        formatter = RustFormatter()
-        node = formatter.transform_node(node)
-        formatter = StructuredFormatter(nodes=[node])
-
-        return formatter.to_string(strip_left=True)

@@ -11,13 +11,14 @@ from unidef.models.type_model import (
     GLOBAL_TYPE_REGISTRY,
     Trait,
     Traits,
-    Type,
+    DyType,
     Types,
     parse_data_example,
 )
 from unidef.parsers.registry import PARSER_REGISTRY
 from unidef.utils.typing import *
-from unidef.models.ir_model import Node
+from unidef.models.ir_model import IrNode
+
 
 class ModelDefinition(BaseModel):
     type: str = "untyped"
@@ -44,8 +45,9 @@ class ModelDefinition(BaseModel):
                 trait = trait.default_present(value)
             traits.append(trait)
         return traits
+
     @beartype
-    def get_parsed(self) -> Union[Type, Node]:
+    def get_parsed(self) -> Union[DyType, IrNode]:
         for to_parse in [self.example, self.fields, self.source, self.variants]:
             if to_parse:
                 parser = PARSER_REGISTRY.find_parser(to_parse)

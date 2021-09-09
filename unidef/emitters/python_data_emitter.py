@@ -1,18 +1,15 @@
 import logging
 
-from beartype import beartype
-from pydantic import BaseModel
-
 from unidef.emitters import Emitter
 from unidef.models import config_model, type_model
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import Traits, Type
+from unidef.models.type_model import Traits, DyType
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
-from unidef.utils.typing import List
+from unidef.utils.typing import *
 
 
-def map_type_to_peewee_model(ty: Type, args="") -> str:
+def map_type_to_peewee_model(ty: DyType, args="") -> str:
     if ty.get_field(Traits.Nullable):
         args += "null=True"
     if ty.get_field(Traits.Primary):
@@ -97,9 +94,9 @@ def map_field_name(name: str) -> str:
 class PythonField(BaseModel):
     name: str
     original_name: str = None
-    value: type_model.Type
+    value: type_model.DyType
 
-    def __init__(self, f: Type = None, **kwargs):
+    def __init__(self, f: DyType = None, **kwargs):
         if f:
             kwargs.update(
                 {
@@ -112,7 +109,11 @@ class PythonField(BaseModel):
         super().__init__(**kwargs)
 
     def transform(self) -> SourceNode:
-        return LineNode(content=TextNode(text=f"{self.name} = {map_type_to_peewee_model(self.value)}"))
+        return LineNode(
+            content=TextNode(
+                text=f"{self.name} = {map_type_to_peewee_model(self.value)}"
+            )
+        )
 
 
 class PythonComment(BaseModel):
@@ -127,7 +128,9 @@ class PythonComment(BaseModel):
             lines = [LineNode(content=TextNode(text=line)) for line in self.content]
             return BracesNode(value=BulkNode(sources=lines), open='"""', close='"""')
         else:
-            lines = [LineNode(content=TextNode(text="# " + line)) for line in self.content]
+            lines = [
+                LineNode(content=TextNode(text="# " + line)) for line in self.content
+            ]
             return BulkNode(sources=lines)
 
 
@@ -141,7 +144,7 @@ class PythonClass(BaseModel):
     def parse_name(name):
         return to_pascal_case(name)
 
-    def __init__(self, raw: Type, **kwargs):
+    def __init__(self, raw: DyType, **kwargs):
         if raw:
             kwargs.update(
                 {
@@ -162,22 +165,24 @@ class PythonClass(BaseModel):
 
         for field in self.fields:
             in_indent_block.append(field.transform())
-        sources.append(BracesNode(value=BulkNode(sources=in_indent_block), open=':', close=''))
+        sources.append(
+            BracesNode(value=BulkNode(sources=in_indent_block), open=":", close="")
+        )
 
         return BulkNode(sources=sources)
 
 
 class PythonEnum(BaseModel):
     name: str
-    variants: List[Type]
+    variants: List[DyType]
     model: str = "enum.Enum"
-    raw: Type = None
+    raw: DyType = None
 
     @staticmethod
     def parse_name(name):
         return to_pascal_case(name)
 
-    def __init__(self, raw: Type = None, **kwargs):
+    def __init__(self, raw: DyType = None, **kwargs):
 
         if raw:
             kwargs.update(
@@ -199,9 +204,18 @@ class PythonEnum(BaseModel):
             name = field.get_field(Traits.VariantName)
 
             in_indent_block.append(
-                LineNode(content=TextNode(text="{lname} = '{rname}'".format(lname=map_field_name(name), rname=name))))
+                LineNode(
+                    content=TextNode(
+                        text="{lname} = '{rname}'".format(
+                            lname=map_field_name(name), rname=name
+                        )
+                    )
+                )
+            )
 
-        sources.append(BracesNode(value=BulkNode(sources=in_indent_block), open=':', close=''))
+        sources.append(
+            BracesNode(value=BulkNode(sources=in_indent_block), open=":", close="")
+        )
 
         return BulkNode(sources=sources)
 
@@ -215,7 +229,7 @@ class StructRegistry:
             self.structs.append(struct)
 
 
-def find_all_structs_impl(reg: StructRegistry, s: Type):
+def find_all_structs_impl(reg: StructRegistry, s: DyType):
     if s.get_field(Traits.Struct):
         reg.add_struct(PythonClass(s))
     else:
@@ -223,13 +237,13 @@ def find_all_structs_impl(reg: StructRegistry, s: Type):
 
 
 @beartype
-def find_all_structs(s: Type) -> List[PythonClass]:
+def find_all_structs(s: DyType) -> List[PythonClass]:
     reg = StructRegistry()
     find_all_structs_impl(reg, s)
     return reg.structs
 
 
-def emit_struct(root: Type) -> SourceNode:
+def emit_struct(root: DyType) -> SourceNode:
     sources = []
     for python_struct in find_all_structs(root):
         sources.append(python_struct.transform())
@@ -275,6 +289,6 @@ class PythonDataEmitter(Emitter):
         formatter = StructuredFormatter(nodes=[emit_python_model_definition(model)])
         return formatter.to_string()
 
-    def emit_type(self, target: str, ty: Type) -> str:
+    def emit_type(self, target: str, ty: DyType) -> str:
         formatter = StructuredFormatter(nodes=[emit_struct(model)])
         return formatter.to_string()

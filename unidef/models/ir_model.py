@@ -2,7 +2,7 @@ from beartype import beartype
 from pydantic import BaseModel, Field
 
 from unidef.models.base_model import MyBaseModel, MyField
-from unidef.models.type_model import Trait, Traits, Type
+from unidef.models.type_model import Trait, Traits, DyType
 from unidef.utils.safelist import safelist
 from unidef.utils.typing import *
 
@@ -17,7 +17,7 @@ class Attributes:
     Id = Attribute(key="id")
     Children = Attribute(key="children", default_present=[], default_absent=[])
     Statement = Attribute(key="statement")
-    ClassDecl = Attribute(
+    ClassDeclaration = Attribute(
         key="class_declaration", default_present=True, default_absent=False
     )
     SuperClasses = Attribute(key="super_class", default_present=[], default_absent=[])
@@ -45,7 +45,7 @@ class Attributes:
     DefaultValue = Attribute(key="default_value")
     Literal = Attribute(key="literal", default_present=True, default_absent=False)
     Async = Attribute(key="async", default_present=True, default_absent=False)
-    Return = Attribute(key="return")
+    Return = Attribute(key="return", allow_none=True)
 
     VariableDeclarations = Attribute(
         key="variable_declarations", default_present=[], default_absent=[]
@@ -68,6 +68,9 @@ class Attributes:
     )
     KeyName = Attribute(key="key")
     Value = Attribute(key="value")
+    ArrayElements = Attribute(
+        key="array_elements", default_present=[], default_absent=[]
+    )
 
     TestExpression = Attribute(key="test_expression")
     IfClauses = Attribute(key="if_clauses", default_present=True, default_absent=False)
@@ -83,6 +86,7 @@ class Attributes:
         key="block_statement", default_present=True, default_absent=False
     )
     Consequence = Attribute(key="consequence")
+    Alternative = Attribute(key="alternative")
     Operator = Attribute(key="operator", default_present="", default_absent="")
     OperatorLeft = Attribute(key="operator_left")
     OperatorMiddle = Attribute(key="operator_middle")
@@ -96,14 +100,50 @@ class Attributes:
     MemberExpressionObject = Attribute(key="member_expression_object")
     MemberExpressionProperty = Attribute(key="member_expression_property")
 
-    Identifier = Attribute(key="identifier", default_present=True, default_absent=False)
+    Identifier = Attribute(key="identifier", default_present="", default_absent="")
     ThisExpression = Attribute(
         key="this_expression", default_present=True, default_absent=False
     )
-    SuperExpression = Attribute(key="super_expression", default_present=True, default_absent=False)
+    SuperExpression = Attribute(
+        key="super_expression", default_present=True, default_absent=False
+    )
+
+    Directive = Attribute(key="directive")
+
+    Program = Attribute(key="program", default_present=True, default_absent=False)
+
+    AssignExpression = Attribute(
+        key="assign_expression", default_present=True, default_absent=False
+    )
+    AssignExpressionLeft = Attribute(key="assign_expression_left")
+    AssignExpressionRight = Attribute(key="assign_expression_right")
+
+    AwaitExpression = Attribute(key="await_expression")
+    ThrowStatement = Attribute(key="throw_statement")
+    NewExpression = Attribute(
+        key="new_expression", default_present=True, default_absent=False
+    )
+    ConditionalExpression = Attribute(
+        key="conditional_expression", default_present=True, default_absent=False
+    )
+    BreakStatement = Attribute(
+        key="break_statement", default_present=True, default_absent=False
+    )
+    ContinueStatement = Attribute(
+        key="continue_statement", default_present=True, default_absent=False
+    )
+
+    TryStatement = Attribute(key="try_statement", default_present=[], default_absent=[])
+    CatchClauses = Attribute(key="catch_clauses", default_present=[], default_absent=[])
+    CatchClause = Attribute(
+        key="catch_clause", default_present=True, default_absent=False
+    )
+    FinallyClause = Attribute(
+        key="finally_statement", default_present=[], default_absent=[]
+    )
 
 
-class Node(MyBaseModel):
+class IrNode(MyBaseModel):
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
@@ -117,14 +157,14 @@ class Node(MyBaseModel):
 
 class Nodes:
     @staticmethod
-    def print(content: Node) -> Node:
-        return Node.from_attribute(Attributes.Print).append_field(
+    def print(content: IrNode) -> IrNode:
+        return IrNode.from_attribute(Attributes.Print).append_field(
             Attributes.Children(content)
         )
 
     @staticmethod
-    def require(path, key=None, value=None) -> Node:
-        n = Node.from_attribute(Attributes.Require)
+    def require(path, key=None, value=None) -> IrNode:
+        n = IrNode.from_attribute(Attributes.Require)
         n.append_field(Attributes.RequirePath(path))
         if key:
             n.append_field(Attributes.RequireKey(key))
@@ -133,7 +173,7 @@ class Nodes:
         return n
 
     @staticmethod
-    def requires(import_paths, import_name, raw: Node) -> Node:
+    def requires(import_paths, import_name) -> IrNode:
         if isinstance(import_name, list):
             if isinstance(import_paths, list):
                 requires_result = [
@@ -153,6 +193,4 @@ class Nodes:
             ]
         else:
             requires_result = [Nodes.require(path=import_paths, key=import_name)]
-        return Node.from_attribute(Attributes.Requires(requires_result)).append_field(
-            Attributes.RawCode(raw)
-        )
+        return IrNode.from_attribute(Attributes.Requires(requires_result))

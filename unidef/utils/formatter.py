@@ -26,9 +26,9 @@ class BulkNode(SourceNode):
 
 
 class BracesNode(SourceNode):
-    open: str = '{'
+    open: str = "{"
     value: SourceNode
-    close: str = '}'
+    close: str = "}"
     new_line: bool = True
     post_new_line: bool = True
 
@@ -107,7 +107,7 @@ class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
     @beartype
     def format_node(self, node: SourceNode):
         if self.functions is None:
-            self.functions = self.get_functions('format_')
+            self.functions = self.get_functions("format_")
         for name, func in self.functions:
             if to_snake_case(type(node).__name__) == name:
                 func(node)
@@ -125,7 +125,7 @@ class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
             return "".join(self.collection)
 
     def copy(self, **kwargs) -> __qualname__:
-        kwargs['deep'] = True
+        kwargs["deep"] = True
         return super().copy(**kwargs)
 
     def _try_indent(self):
@@ -142,5 +142,5 @@ class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
         self.indented = False
 
     def _line_break(self):
-        self.collection.append('\n')
+        self.collection.append("\n")
         self.indented = False

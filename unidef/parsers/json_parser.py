@@ -35,7 +35,7 @@ class JsonParser(Parser):
                 comment.clear()
         return result
 
-    def parse(self, name: str, fmt: ExampleInput) -> Type:
+    def parse(self, name: str, fmt: ExampleInput) -> DyType:
         content = fmt.text
         content = unicodedata.normalize("NFKC", content)
         comments = self.parse_comment(content)
@@ -44,7 +44,7 @@ class JsonParser(Parser):
         if parsed.get_field(Traits.Struct) and name:
             parsed.replace_field(Traits.TypeName(name))
 
-            def process(depth: int, i: int, key: str, ty: Type):
+            def process(depth: int, i: int, key: str, ty: DyType):
                 if (i, key) in comments:
                     ty.append_field(
                         Traits.BeforeLineComment(comments[(i, key)].splitlines())
