@@ -43,14 +43,14 @@ class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
     indented: bool = False
     nodes: List[SourceNode] = []
     collection: List[str] = []
-    functions: Optional[List[(str, Callable)]] = None
+    functions: Optional[List[NodeTransformer]] = None
 
     @beartype
     def accept(self, node: Input) -> bool:
         return True
 
     @beartype
-    def transform_node(self, node: Input) -> Output:
+    def transform(self, node: Input) -> Output:
         self.nodes = [node]
         return self.to_string()
 
@@ -108,9 +108,9 @@ class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
     def format_node(self, node: SourceNode):
         if self.functions is None:
             self.functions = self.get_functions("format_")
-        for name, func in self.functions:
-            if to_snake_case(type(node).__name__) == name:
-                func(node)
+        for func in self.functions:
+            if func.accept(node):
+                func.transform(node)
                 break
         else:
             raise Exception("No function to format node " + type(node).__name__)

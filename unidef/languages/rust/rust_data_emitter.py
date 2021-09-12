@@ -212,20 +212,20 @@ def emit_rust_type_inner(
     rust_formatter = RustFormatter()
     sources = []
     rust_struct = RustStructNode(struct)
-    sources.append(rust_formatter.transform_node(rust_struct))
+    sources.append(rust_formatter.transform(rust_struct))
     if root and struct.get_field(Traits.TypeName) == root.name:
         funcs = [raw_data_func(root.raw)]
         sources.append(
-            rust_formatter.transform_node(
+            rust_formatter.transform(
                 RustImplNode(name=rust_struct.name, functions=funcs)
             )
         )
     backup = sources[:]
     try:
-        sources.append(rust_formatter.transform_node(sql_model_trait(rust_struct)))
+        sources.append(rust_formatter.transform(sql_model_trait(rust_struct)))
         from_sql = from_sql_raw_trait(rust_struct)
         if from_sql:
-            sources.append(rust_formatter.transform_node(from_sql))
+            sources.append(rust_formatter.transform(from_sql))
     except Exception as e:
         logging.warning(
             "Error happened while generating sql_model_trait, skipping. %s", e
@@ -248,7 +248,7 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
         if t:
             comment.append(f"{attr}: {t}")
     formatter.append_format_node(
-        rust_formatter.transform_node(RustCommentNode(comment, cargo_doc=True))
+        rust_formatter.transform(RustCommentNode(comment, cargo_doc=True))
     )
     parsed = root.get_parsed()
     if parsed.get_field(Traits.Struct):
@@ -259,7 +259,7 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
 
     elif parsed.get_field(Traits.Enum):
         rust_enum = RustEnumNode(parsed)
-        formatter.append_format_node(rust_formatter.transform_node(rust_enum))
+        formatter.append_format_node(rust_formatter.transform(rust_enum))
     else:
         raise Exception("must be a struct or enum", root)
 

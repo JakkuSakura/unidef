@@ -33,9 +33,9 @@ class RustJsonEmitter(Emitter):
         )
 
         json_crate = get_json_crate(target)
-        node = json_crate.transform_node(ty)
+        node = json_crate.transform(ty)
         formatter = RustFormatter()
-        node = formatter.transform_node(node)
+        node = formatter.transform(node)
         formatter = StructuredFormatter(nodes=[node])
 
         return formatter.to_string(strip_left=True)
@@ -58,8 +58,8 @@ class RustLangEmitter(Emitter):
         )
 
         builder = RustEmitterBase()
-        node = builder.transform_node(ty)
+        node = builder.transform(ty)
         formatter = RustFormatter()
-        node = formatter.transform_node(node)
+        node = formatter.transform(node)
         formatter = StructuredFormatter(nodes=[node])
         return formatter.to_string()

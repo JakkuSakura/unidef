@@ -1,4 +1,5 @@
 from unidef.utils.typing import *
+from unidef.utils.name_convert import *
 from pydantic import BaseModel
 
 Input = TypeVar("Input")
@@ -12,8 +13,22 @@ class NodeTransformer(BaseModel, Generic[Input, Output]):
         return NotImplemented
 
     @beartype
-    def transform_node(self, node: Input) -> Output:
+    def transform(self, node: Input) -> Output:
         return NotImplemented
+
+
+class FuncNodeTransformer(NodeTransformer[Input, Output]):
+    target_name: str
+    func: Callable
+    acceptor: Callable
+
+    @beartype
+    def accept(self, node: Input) -> bool:
+        return self.acceptor(self, node)
+
+    @beartype
+    def transform(self, node: Input) -> Output:
+        return self.func(node)
 
 
 @abstract

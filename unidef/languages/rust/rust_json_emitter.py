@@ -15,16 +15,18 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
     def accept(self, node: Input) -> bool:
         return True
 
-    functions: List[(str, Callable)] = None
+    functions: List[NodeTransformer] = None
 
     def transform_others(self, node):
         raise NotImplementedError()
 
-    def transform_node(self, node) -> RustAstNode:
+    def transform(self, node) -> RustAstNode:
 
         if isinstance(node, IrNode) or isinstance(node, DyType):
             if self.functions is None:
-                self.functions = self.get_functions("transform_")
+                def accept(this, name):
+                    return name == this.target_name
+                self.functions = self.get_functions("transform_", acceptor=accept)
 
             if node.get_field(Traits.RawValue) == "undefined":
                 return RustRawNode(raw=self.none_type)
@@ -33,10 +35,11 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
             assert node_name, f"Name cannot be empty to emit: {node}"
             node_name = to_snake_case(node_name)
 
-            for name, func in self.functions:
-                if name in node_name:
-                    result = func(node)
-                    break
+            for func in self.functions:
+                if func.accept(node_name):
+                    result = func.transform(node)
+                    if result is not NotImplemented:
+                        break
             else:
                 result = NotImplemented
             # TODO print comments
@@ -79,7 +82,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
 
                     line = [
                         RustRawNode(raw="node.push("),
-                        self.transform_node(field),
+                        self.transform(field),
                         RustRawNode(raw=")"),
                     ]
                     lines.append(RustStatementNode(nodes=line))
@@ -93,7 +96,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
             for i, field in enumerate(node.get_field(Traits.ValueType)):
                 if i > 0:
                     inner.append(RustRawNode(raw=","))
-                inner.append(self.transform_node(field))
+                inner.append(self.transform(field))
             sources.append(RustIndentedNode(nodes=inner))
             sources.append(RustRawNode(raw="]"))
         return RustBulkNode(nodes=sources)
@@ -109,21 +112,21 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
     @beartype
     def transform_field_key(self, node) -> RustAstNode:
         if node.get_field(Attributes.ObjectProperty):
-            result = self.transform_node(node.get_field(Attributes.KeyName))
+            result = self.transform(node.get_field(Attributes.KeyName))
         else:
             field_name = node.get_field(Traits.FieldName)
             if field_name:
                 result = RustRawNode(raw=f'"{field_name}"')
             else:
-                result = self.transform_node(node.get_field(Attributes.KeyName))
+                result = self.transform(node.get_field(Attributes.KeyName))
         return result
 
     @beartype
     def transform_field_value(self, node) -> RustAstNode:
         if node.get_field(Attributes.ObjectProperty):
-            return self.transform_node(node.get_field(Attributes.Value))
+            return self.transform(node.get_field(Attributes.Value))
         else:
-            return self.transform_node(node)
+            return self.transform(node)
 
     @beartype
     def transform_integer(self, node):
@@ -186,7 +189,7 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
     depth = 0
     no_macro = False
 
-    def transform_node(self, node):
+    def transform(self, node):
         if self.only_outlier and self.depth == 0:
             inline = []
             inline.append(RustRawNode(raw="serde_json::json!("))
@@ -196,7 +199,7 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
             inline.append(RustRawNode(raw=")"))
             return RustBulkNode(nodes=inline)
         else:
-            return super().transform_node(node)
+            return super().transform(node)
 
     def transform_struct(self, node) -> RustAstNode:
         sources = []
