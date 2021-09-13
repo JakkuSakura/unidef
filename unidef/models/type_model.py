@@ -19,7 +19,7 @@ class Traits:
     BitSize = Trait(key="bit_size")
     Signed = Trait(key="signed", default_present=True, default_absent=False)
     KeyType = Trait(key="key")
-    ValueType = Trait(key="value", default_present=[], default_absent=[])
+    ValueTypes = Trait(key="value", default_present=[], default_absent=[])
     Parent = Trait(key="parent")
     StructFields = Trait(key="field", default_present=[], default_absent=[])
     Struct = Trait(key="struct", default_present="", default_absent="")
@@ -48,6 +48,7 @@ class Traits:
     Map = Trait(key="map", default_present=True, default_absent=False)
     Unit = Trait(key="unit", default_present=True, default_absent=False)
     Null = Trait(key="null", default_present=True, default_absent=False)
+    Object = Trait(key="object", default_present=True, default_absent=False)
     AllValue = Trait(key="all_value", default_present=True, default_absent=False)
 
     NotInferredType = Trait(
@@ -138,6 +139,12 @@ class Types:
         DyType.from_trait("none", Traits.Null).append_field(Traits.Nullable).freeze()
     )
     AllValue = DyType.from_trait("all_value", Traits.AllValue).freeze()
+    Object = (
+        DyType.from_trait("object", Traits.Object)
+        .append_field(Traits.Map)
+        .append_field(Traits.ValueTypes([String, AllValue]))
+        .freeze()
+    )
 
     @staticmethod
     @beartype
@@ -179,14 +186,14 @@ class TypeRegistry(BaseModel):
         if name not in self.types:
             self.types[name] = ty
         elif self.types[name] != ty:
-            raise Exception(f"TypeAlreadyExistsAndConflict{name}")
+            raise Exception(f"TypeAlreadyExistsAndConflict {name}")
 
     @beartype
     def insert_trait(self, trait: Trait):
         if trait.key not in self.traits:
             self.traits[trait.key] = trait
         elif self.traits[trait.key] != trait:
-            raise Exception(f"TraitAlreadyExistsAndConflict{trait.name}")
+            raise Exception(f"Trait {trait.key} already exists")
 
     @beartype
     def get_type(self, name: str) -> Optional[DyType]:
@@ -308,7 +315,7 @@ def parse_data_example(
             content = None
             if len(obj):
                 content = parse_data_example(obj[0], prefix)
-            return Types.Vector.copy().replace_field(Traits.ValueType([content]))
+            return Types.Vector.copy().replace_field(Traits.ValueTypes([content]))
         elif isinstance(obj, dict):
             fields = []
             for key, value in obj.items():
@@ -316,7 +323,7 @@ def parse_data_example(
                 if value.get_field(Traits.Struct):
                     value.replace_field(Traits.TypeName(prefix_join(prefix, key)))
 
-                for val in value.get_field(Traits.ValueType):
+                for val in value.get_field(Traits.ValueTypes):
                     if val.get_field(Traits.Struct):
                         new_name = prefix_join(prefix, key)
                         if new_name.endswith("s"):
@@ -336,7 +343,7 @@ def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> 
             process(depth, field)
             walk_type(field, process, depth + 1)
     if node.get_field(Traits.Vector):
-        for ty in node.get_field(Traits.ValueType):
+        for ty in node.get_field(Traits.ValueTypes):
             process(depth, ty)
             walk_type(ty, process, depth + 1)
     else:

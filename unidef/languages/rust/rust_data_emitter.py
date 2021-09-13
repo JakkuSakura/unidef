@@ -23,7 +23,7 @@ def find_all_structs_impl(reg: StructRegistry, s: DyType):
         reg.add_struct(s)
         for field in s.get_field(Traits.StructFields):
             find_all_structs_impl(reg, field)
-    for vt in s.get_field(Traits.ValueType):
+    for vt in s.get_field(Traits.ValueTypes):
         find_all_structs_impl(reg, vt)
 
 

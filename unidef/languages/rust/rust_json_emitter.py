@@ -24,8 +24,10 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
 
         if isinstance(node, IrNode) or isinstance(node, DyType):
             if self.functions is None:
+
                 def accept(this, name):
                     return name == this.target_name
+
                 self.functions = self.get_functions("transform_", acceptor=accept)
 
             if node.get_field(Traits.RawValue) == "undefined":
@@ -67,7 +69,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
 
     @beartype
     def transform_vector(self, node) -> RustAstNode:
-        fields = node.get_field(Traits.ValueType) or node.get_field(
+        fields = node.get_field(Traits.ValueTypes) or node.get_field(
             Attributes.ArrayElements
         )
         sources = []
@@ -93,7 +95,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
         else:
             inner = []
             inner.append(RustRawNode(raw="vec!["))
-            for i, field in enumerate(node.get_field(Traits.ValueType)):
+            for i, field in enumerate(node.get_field(Traits.ValueTypes)):
                 if i > 0:
                     inner.append(RustRawNode(raw=","))
                 inner.append(self.transform(field))
@@ -236,7 +238,7 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
     def transform_vector(self, node) -> RustAstNode:
         sources = []
         sources.append(RustRawNode(raw="["))
-        for i, field in enumerate(node.get_field(Traits.ValueType)):
+        for i, field in enumerate(node.get_field(Traits.ValueTypes)):
             if i > 0:
                 sources.append(RustRawNode(raw=","))
             sources.append(self.emit_node(field))

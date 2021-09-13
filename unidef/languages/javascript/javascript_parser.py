@@ -6,7 +6,7 @@ from beartype import beartype
 
 from unidef.models.input_model import SourceInput
 from unidef.models.ir_model import Attribute, Attributes, IrNode, Nodes
-from unidef.models.type_model import Traits, DyType, Types
+from unidef.models.type_model import Traits, DyType, Types, parse_data_example
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.name_convert import *
@@ -107,18 +107,14 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
         self, node: StaticMemberExpression
     ) -> IrNode:
         n = IrNode.from_attribute(Attributes.MemberExpression)
-        n.append_field(
-            Attributes.MemberExpressionObject(self.transform(node.object))
-        )
+        n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
         n.append_field(
             Attributes.MemberExpressionProperty(self.transform(node.property))
         )
         return n
 
     @beartype
-    def transform_directive(
-        self, node: Directive
-    ) -> Union[IrNode, type(NotImplemented)]:
+    def transform_directive(self, node: Directive) -> IrNode:
         return IrNode.from_attribute(Attributes.Directive(node.directive))
 
     @beartype
@@ -127,6 +123,7 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
             IrNode.from_attribute(Attributes.Literal)
             .append_field(Attributes.RawCode(node.raw))
             .append_field(Attributes.RawValue(node.value))
+            .append_field(Attributes.InferredType(parse_data_example(node.value)))
         )
 
     @beartype
@@ -192,12 +189,8 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             return self.transform(node.right)
         assign = (
             IrNode.from_attribute(Attributes.AssignExpression)
-            .append_field(
-                Attributes.AssignExpressionLeft(self.transform(node.left))
-            )
-            .append_field(
-                Attributes.AssignExpressionRight(self.transform(node.right))
-            )
+            .append_field(Attributes.AssignExpressionLeft(self.transform(node.left)))
+            .append_field(Attributes.AssignExpressionRight(self.transform(node.right)))
         )
         return IrNode.from_attribute(Attributes.Statement(value=assign))
 
@@ -291,6 +284,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             IrNode.from_attribute(Attributes.ObjectProperty)
             .append_field(Attributes.KeyName(self.transform(node.key)))
             .append_field(Attributes.Value(self.transform(node.value)))
+            .append_field(Attributes.InferredType(Types.Object))
         )
 
     @beartype
@@ -329,9 +323,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         ]
         for key, value_key, attr in positions:
             if getattr(node, key):
-                operator.append_field(
-                    attr(self.transform(getattr(node, value_key)))
-                )
+                operator.append_field(attr(self.transform(getattr(node, value_key))))
         if getattr(node, "prefix") is False:
             operator.append_field(
                 Attributes.OperatorSinglePostfix(self.transform(node.argument))
@@ -390,9 +382,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         self, node: ComputedMemberExpression
     ) -> IrNode:
         n = IrNode.from_attribute(Attributes.MemberExpression)
-        n.append_field(
-            Attributes.MemberExpressionObject(self.transform(node.object))
-        )
+        n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
         n.append_field(
             Attributes.MemberExpressionProperty(self.transform(node.property))
         )

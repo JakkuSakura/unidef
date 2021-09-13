@@ -135,7 +135,7 @@ class RustFieldNode(RustAstNode, BaseModel):
 
     def __init__(self, ty: DyType = None, **kwargs):
         if ty:
-            value = ty.get_field(Traits.ValueType) or ty
+            value = ty.get_field(Traits.ValueTypes) or ty
             if isinstance(value, list):
                 value = value[0]
 
@@ -266,9 +266,9 @@ class RustStatementNode(RustAstNode):
 
     def __init__(self, **kwargs):
         assert (
-                int(bool(kwargs.get("nodes") is not None))
-                ^ int(bool(kwargs.get("raw") is not None))
-                == 1
+            int(bool(kwargs.get("nodes") is not None))
+            ^ int(bool(kwargs.get("raw") is not None))
+            == 1
         ), "only nodes xor raw can be set"
         super().__init__(**kwargs)
 
@@ -334,7 +334,7 @@ def map_type_to_rust(ty: DyType) -> str:
             ", ".join([map_type_to_rust(t) for t in ty.get_field(Traits.TupleField)])
         )
     elif ty.get_field(Traits.Vector):
-        return "Vec<{}>".format(map_type_to_rust(ty.get_field(Traits.ValueType)))
+        return "Vec<{}>".format(map_type_to_rust(ty.get_field(Traits.ValueTypes)))
     elif ty.get_field(Traits.Bool):
         return "bool"
     elif ty.get_field(Traits.AllValue):
@@ -352,7 +352,7 @@ def map_type_to_rust(ty: DyType) -> str:
     elif ty.get_field(Traits.Map):
         return "HashMap<{}, {}>".format(
             map_type_to_rust(ty.get_field(Traits.KeyType)),
-            map_type_to_rust(ty.get_field(Traits.ValueType)),
+            map_type_to_rust(ty.get_field(Traits.ValueTypes)),
         )
     elif ty.get_field(Traits.String):
         if ty.get_field(Traits.Reference):
@@ -396,7 +396,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_argument_name_node(
-            self, node: RustArgumentNameNode
+        self, node: RustArgumentNameNode
     ) -> SourceNode:
         sources = []
         if node.mutable:
@@ -479,9 +479,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
             sources.append(self.transform(Serde(rename=[node.original_name])))
         for comment in node.value.get_field(Traits.BeforeLineComment):
-            sources.append(
-                self.transform(RustCommentNode(comment, cargo_doc=True))
-            )
+            sources.append(self.transform(RustCommentNode(comment, cargo_doc=True)))
 
         sources.append(
             TextNode(
@@ -576,7 +574,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
                 in_braces.append(TextNode(text=", "))
             if isinstance(arg, RustFieldNode):
                 if arg.value.get_field(
-                        Traits.TypeRef
+                    Traits.TypeRef
                 ) and "self" in arg.value.get_field(Traits.TypeName):
                     in_braces.append(TextNode(text=arg.name))
                 else:
@@ -621,14 +619,14 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_use_node(self, node: RustUseNode) -> SourceNode:
-        if node.rename:
+        if node.rename and node.rename != node.path.split("::")[-1]:
             return LineNode(content=TextNode(text=f"use {node.path} as {node.rename}"))
         else:
             return LineNode(content=TextNode(text=f"use {node.path};"))
 
     @beartype
     def transform_rust_variable_declaration(
-            self, node: RustVariableDeclaration
+        self, node: RustVariableDeclaration
     ) -> SourceNode:
         if node.mutability:
             mutability = " mut"

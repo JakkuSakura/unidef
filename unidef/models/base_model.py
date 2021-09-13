@@ -22,12 +22,12 @@ def get_validator(ty, default, allow_none):
 
 class MyField:
     def __init__(
-            self,
-            key,
-            default_present=None,
-            default_absent=None,
-            allow_none=False,
-            field=None,
+        self,
+        key,
+        default_present=None,
+        default_absent=None,
+        allow_none=False,
+        field=None,
     ):
 
         if field is None:
@@ -101,7 +101,7 @@ class MyBaseModel(BaseModel):
     def replace_field(self, field: MyField) -> __qualname__:
         assert not self.is_frozen()
         if isinstance(field._default_present, list) and not isinstance(
-                field.value, list
+            field.value, list
         ):
             self.fields[field.key] = [field.value]
         else:

@@ -58,7 +58,7 @@ def map_type_to_ddl(ty: DyType) -> str:
 
 
 def get_field(field: DyType) -> str:
-    value_types = field.get_field(Traits.ValueType)
+    value_types = field.get_field(Traits.ValueTypes)
     if isinstance(value_types, list) and value_types:
         value_types = value_types[0]
     else:

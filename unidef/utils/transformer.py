@@ -10,11 +10,11 @@ Output = TypeVar("Output")
 class NodeTransformer(BaseModel, Generic[Input, Output]):
     @beartype
     def accept(self, node: Input) -> bool:
-        return NotImplemented
+        raise NotImplementedError()
 
     @beartype
     def transform(self, node: Input) -> Output:
-        return NotImplemented
+        raise NotImplementedError()
 
 
 class FuncNodeTransformer(NodeTransformer[Input, Output]):

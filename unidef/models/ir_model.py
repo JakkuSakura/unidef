@@ -144,6 +144,9 @@ class Attributes:
 
     Mutable = Attribute(key="mutable", default_present=True, default_absent=False)
 
+    InferredType = Attribute(key="inferred_type")
+
+
 class IrNode(MyBaseModel):
     @classmethod
     @beartype
