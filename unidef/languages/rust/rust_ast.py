@@ -240,6 +240,7 @@ class StructRegistry:
 
 
 class RustArgumentNameNode(RustAstNode):
+    mutable: Optional[bool] = None
     name: str
     type: Union[str, Optional[RustAstNode]]
 
@@ -265,9 +266,9 @@ class RustStatementNode(RustAstNode):
 
     def __init__(self, **kwargs):
         assert (
-            int(bool(kwargs.get("nodes") is not None))
-            ^ int(bool(kwargs.get("raw") is not None))
-            == 1
+                int(bool(kwargs.get("nodes") is not None))
+                ^ int(bool(kwargs.get("raw") is not None))
+                == 1
         ), "only nodes xor raw can be set"
         super().__init__(**kwargs)
 
@@ -395,14 +396,20 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_argument_name_node(
-        self, node: RustArgumentNameNode
+            self, node: RustArgumentNameNode
     ) -> SourceNode:
-        return BulkNode(
-            sources=[
-                self.transform(n)
-                for n in [node.name, RustRawNode(raw=": "), node.value]
-            ]
-        )
+        sources = []
+        if node.mutable:
+            sources.append(TextNode(text="mut "))
+
+        sources.append(TextNode(text=node.name))
+        if node.type:
+            sources.append(TextNode(text=": "))
+            if isinstance(node.type, str):
+                sources.append(TextNode(text=node.type))
+            else:
+                sources.append(node.type)
+        return BulkNode(sources=sources)
 
     @beartype
     def transform_rust_statement_node(self, node: RustStatementNode) -> SourceNode:
@@ -569,7 +576,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
                 in_braces.append(TextNode(text=", "))
             if isinstance(arg, RustFieldNode):
                 if arg.value.get_field(
-                    Traits.TypeRef
+                        Traits.TypeRef
                 ) and "self" in arg.value.get_field(Traits.TypeName):
                     in_braces.append(TextNode(text=arg.name))
                 else:
@@ -577,10 +584,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
                         TextNode(text=arg.name + ": " + map_type_to_rust(arg.value))
                     )
             elif isinstance(arg, RustArgumentNameNode):
-                in_braces.append(TextNode(text=arg.name))
-                if arg.type:
-                    in_braces.append(TextNode(text=": "))
-                    in_braces.append(TextNode(text=arg.type))
+                in_braces.append(self.transform(arg))
         sources.append(
             BracesNode(
                 value=BulkNode(sources=in_braces), open="(", close=")", new_line=False
@@ -624,7 +628,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_variable_declaration(
-        self, node: RustVariableDeclaration
+            self, node: RustVariableDeclaration
     ) -> SourceNode:
         if node.mutability:
             mutability = " mut"

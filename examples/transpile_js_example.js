@@ -11,7 +11,7 @@ const {TRUNCATE} = require('./base/functions/number');
 //  ---------------------------------------------------------------------------
 
 module.exports = class binance extends Exchange {
-      calculateRateLimiterCost (api, method, path, params, config = {}, context = {}) {
+    calculateRateLimiterCost(api, method, path, params, config = {}, context = {}) {
         if (('noSymbol' in config) && !('symbol' in params)) {
             return config['noSymbol'];
         } else if (('noPoolId' in config) && !('poolId' in params)) {
@@ -26,8 +26,9 @@ module.exports = class binance extends Exchange {
                 }
             }
         }
-        return this.safeInteger (config, 'cost', 1);
+        return this.safeInteger(config, 'cost', 1);
     }
+
     describe() {
         return this.deepExtend(super.describe(), {
             // new metainfo interface
@@ -51,6 +52,15 @@ module.exports = class binance extends Exchange {
 
     async costToPrecisionAsync(symbol, cost) {
         return this.decimalToPrecision(cost, TRUNCATE, this.markets[symbol]['precision']['quote'], this.precisionMode, this.paddingMode);
+    }
+
+    test_mutable(b) {
+        let a = 0;
+        if (a & 1 === 0) {
+            a = 10;
+            b = 6;
+        }
+        return a * b;
     }
 
 };

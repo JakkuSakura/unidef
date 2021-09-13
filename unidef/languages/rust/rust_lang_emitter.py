@@ -13,31 +13,44 @@ from unidef.languages.rust.rust_json_emitter import *
 
 
 class MutabilityHandler(NodeTransformer[IrNode, IrNode]):
-    to_modify: Set[str] = set()
+    to_modify: Dict[str, IrNode] = {}
+
     @beartype
     def accept(self, node: IrNode) -> bool:
         return node.get_field(Attributes.FunctionDecl)
 
     @beartype
     def transform(self, node: IrNode) -> IrNode:
-        self.walk_nodes(node)
-        # print('to modify', self.to_modify)
+        self.walk_nodes(node, self.collect_mutable)
+        self.walk_nodes(node, self.mark_mutable_decl)
+        for arg in node.get_field(Attributes.Arguments):
+            name = arg.get_field(Attributes.ArgumentName)
+            if name in self.to_modify:
+                arg.append_field(Attributes.Mutable)
         return node
 
-    def for_each_node(self, node: IrNode):
-        if node.get_field(Attributes.AssignExpression):
-            self.to_modify.add(node.get_field(Attributes.AssignExpressionLeft))
+    def mark_mutable_decl(self, node: IrNode):
+        if node.get_field(Attributes.VariableDeclaration):
+            id = node.get_field(Attributes.Id)
+            if id in self.to_modify:
+                node.append_field(Attributes.Mutable)
 
-    def walk_nodes(self, node: IrNode):
-        self.for_each_node(node)
+    def collect_mutable(self, node: IrNode):
+        if node.get_field(Attributes.AssignExpression):
+            left = node.get_field(Attributes.AssignExpressionLeft)
+            key = left.get_field(Attributes.Identifier)
+            self.to_modify[key] = node
+
+    def walk_nodes(self, node: IrNode, foreach: Callable[[IrNode]]):
+        foreach(node)
         for key in node.keys():
             value = node.get_field(Attribute(key=key))
             if isinstance(value, list):
                 for v in value:
                     if isinstance(v, IrNode):
-                        self.walk_nodes(v)
+                        self.walk_nodes(v, foreach)
             elif isinstance(value, IrNode):
-                self.walk_nodes(value)
+                self.walk_nodes(value, foreach)
 
 
 class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
@@ -101,6 +114,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
     @beartype
     def transform_argument_name(self, node: IrNode) -> RustArgumentNameNode:
         return RustArgumentNameNode(
+            mutable=node.get_field_opt(Attributes.Mutable),
             name=node.get_field(Attributes.ArgumentName),
             type=self.format_type(node.get_field(Attributes.ArgumentType)),
         )
@@ -240,7 +254,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             assert isinstance(decl, IrNode), f"decl should be node, got {type(decl)}"
             name = decl.get_field(Attributes.Id)
             init = self.transform(decl.get_field(Attributes.Value))
-            sources.append(RustVariableDeclaration(name=name, init=init))
+            mut = decl.get_field(Attributes.Mutable)
+            sources.append(RustVariableDeclaration(name=name, init=init, mutability=mut))
 
         return RustBulkNode(nodes=sources)
 
@@ -381,7 +396,10 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
 
     @beartype
     def transform_c_for_loop(self, node) -> RustAstNode:
-        init = self.transform(node.get_field(Attributes.CForLoopInit))
+        init = node.get_field(Attributes.CForLoopInit)
+        for d in init.get_field(Attributes.VariableDeclarations):
+            d.append_field(Attributes.Mutable)
+        init = self.transform(init)
         test = self.transform(node.get_field(Attributes.CForLoopTest))
         update = self.transform(node.get_field(Attributes.CForLoopUpdate))
         children = node.get_field(Attributes.Children)

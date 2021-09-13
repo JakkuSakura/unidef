@@ -142,6 +142,7 @@ class Attributes:
         key="finally_statement", default_present=[], default_absent=[]
     )
 
+    Mutable = Attribute(key="mutable", default_present=True, default_absent=False)
 
 class IrNode(MyBaseModel):
     @classmethod
