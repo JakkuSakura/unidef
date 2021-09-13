@@ -4,7 +4,7 @@ import os.path
 import sys
 
 logging.basicConfig(stream=sys.stderr)
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from unidef import CommandLineConfig, main, parser
 

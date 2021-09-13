@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import logging
 import sys
+import os
+
+logging.basicConfig(stream=sys.stderr)
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from unidef import *
 
