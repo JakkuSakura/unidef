@@ -479,7 +479,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
             sources.append(self.transform(Serde(rename=[node.original_name])))
         for comment in node.value.get_field(Traits.BeforeLineComment):
-            sources.append(self.transform(RustCommentNode(comment, cargo_doc=True)))
+            sources.append(self.transform(RustCommentNode(comment.splitlines(), cargo_doc=True)))
 
         sources.append(
             TextNode(

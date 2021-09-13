@@ -1,1 +1,1 @@
-from type_inference import *
+from .type_inference import *
