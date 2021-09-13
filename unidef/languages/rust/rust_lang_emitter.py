@@ -104,8 +104,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         return RustReturnNode(returnee=returnee)
 
     @beartype
-    def transform_argument_name(self, node: IrNode) -> RustArgumentNameNode:
-        return RustArgumentNameNode(
+    def transform_argument_name(self, node: IrNode) -> RustArgumentPairNode:
+        return RustArgumentPairNode(
             mutable=node.get_field_opt(Attributes.Mutable),
             name=node.get_field(Attributes.ArgumentName),
             type=self.format_type(node.get_field(Attributes.ArgumentType)),
@@ -127,7 +127,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             name=map_func_name(node.get_field(Attributes.Name)),
             is_async=node.get_field(Attributes.Async),
             access=AccessModifier.PUBLIC,
-            args=[RustArgumentNameNode(name="&self", type=None)]
+            args=[RustArgumentPairNode(name="&self", type=None)]
             + [
                 self.transform_argument_name(arg)
                 for arg in node.get_field(Attributes.Arguments)

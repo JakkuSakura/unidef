@@ -23,15 +23,14 @@ class FuncNodeTransformer(NodeTransformer[Input, Output]):
     acceptor: Callable
 
     @beartype
-    def accept(self, node: Input) -> bool:
+    def accept(self, node: Input, **kwargs) -> bool:
         return self.acceptor(self, node)
 
     @beartype
-    def transform(self, node: Input) -> Output:
-        return self.func(node)
+    def transform(self, node: Input, **kwargs) -> Output:
+        return self.func(node, **kwargs)
 
 
 @abstract
-class NodeTransformable(BaseModel, Generic[Output]):
-    def transform(self) -> Output:
-        return NotImplemented
+class NodeTransformable(BaseModel):
+    pass

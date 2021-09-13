@@ -13,7 +13,7 @@ class RustDataEmitter(Emitter):
         return emit_rust_model_definition(model)
 
     def emit_type(self, target: str, ty: DyType) -> str:
-        from unidef.languages.rust.rust_data_emitter import emit_rust_model_definition
+        from unidef.languages.rust.rust_data_emitter import emit_rust_type
 
         return emit_rust_type(ty)
 
@@ -50,7 +50,7 @@ class RustLangEmitter(Emitter):
 
         return self.emit_type(target, parsed)
 
-    def emit_type(self, target: str, ty: DyType) -> str:
+    def emit_type(self, target: str, ty) -> str:
         from unidef.languages.rust.rust_lang_emitter import (
             RustEmitterBase,
             RustFormatter,

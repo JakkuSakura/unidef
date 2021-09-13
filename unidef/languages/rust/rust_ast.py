@@ -72,18 +72,18 @@ class Derive(ProcMacro):
         self.enabled.append(s)
 
 
-DEFAULT_DERIVE = Derive(["Clone", "Debug", "Serialize", "Deserialize", "PartialEq"])
+DEFAULT_DERIVE = Derive(["Clone", "Debug", "PartialEq", "serde::Serialize", "serde::Deserialize"])
 ENUM_DEFAULT_DERIVE = Derive(
     [
         "Copy",
         "Clone",
         "Debug",
-        "Serialize",
-        "Deserialize",
         "PartialEq",
         "Eq",
-        "EnumString",
-        "Display",
+        "serde::Serialize",
+        "serde::Deserialize",
+        "strum::EnumString",
+        "strum::Display",
     ]
 )
 
@@ -117,7 +117,7 @@ def map_func_name(name: str) -> str:
     return RUST_KEYWORDS.get(name) or to_snake_case(name)
 
 
-class RustFieldNode(RustAstNode, BaseModel):
+class RustFieldNode(RustAstNode):
     name: str
     original_name: str = None
     access: AccessModifier = AccessModifier.PUBLIC
@@ -126,7 +126,8 @@ class RustFieldNode(RustAstNode, BaseModel):
 
     @staticmethod
     def from_name(name: str, ty: str = ""):
-        name = map_field_name(name)
+        if not name.startswith('&'):
+            name = map_field_name(name)
         ty_or_name = ty or name
         return RustFieldNode(
             name=name,
@@ -239,17 +240,17 @@ class StructRegistry:
             self.structs.append(struct)
 
 
-class RustArgumentNameNode(RustAstNode):
+class RustArgumentPairNode(RustAstNode):
     mutable: Optional[bool] = None
     name: str
-    type: Union[str, Optional[RustAstNode]]
+    type: str
 
 
 class RustFuncDeclNode(RustAstNode):
     name: str
     access: AccessModifier = AccessModifier.PUBLIC
     is_async: bool = False
-    args: List[Union[RustFieldNode, RustArgumentNameNode]]
+    args: List[RustArgumentPairNode]
     ret: Optional[Union[DyType, RustAstNode]]
     content: Union[str, List[RustAstNode]]
 
@@ -266,9 +267,9 @@ class RustStatementNode(RustAstNode):
 
     def __init__(self, **kwargs):
         assert (
-            int(bool(kwargs.get("nodes") is not None))
-            ^ int(bool(kwargs.get("raw") is not None))
-            == 1
+                int(bool(kwargs.get("nodes") is not None))
+                ^ int(bool(kwargs.get("raw") is not None))
+                == 1
         ), "only nodes xor raw can be set"
         super().__init__(**kwargs)
 
@@ -395,20 +396,24 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             )
 
     @beartype
-    def transform_rust_argument_name_node(
-        self, node: RustArgumentNameNode
+    def transform_rust_argument_pair_node(
+            self, node: RustArgumentPairNode
     ) -> SourceNode:
         sources = []
         if node.mutable:
             sources.append(TextNode(text="mut "))
 
         sources.append(TextNode(text=node.name))
-        if node.type:
+        if not node.name.startswith("&") and node.type:
             sources.append(TextNode(text=": "))
             if isinstance(node.type, str):
                 sources.append(TextNode(text=node.type))
-            else:
+            elif isinstance(node.type, RustAstNode):
                 sources.append(node.type)
+            elif isinstance(node.type, DyType):
+                sources.append(map_type_to_rust(node.type))
+            else:
+                raise Exception('Could not process type for ' + type(node.type).__name__)
         return BulkNode(sources=sources)
 
     @beartype
@@ -463,7 +468,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
     @beartype
     def transform_serde_as(self, node: SerdeAs) -> SourceNode:
         if not node.serde_as:
-            content = "#[serde_as]"
+            content = "#[serde_with::serde_as]"
         else:
             content = f'#[serde_as(as = "{node.serde_as}")]'
 
@@ -474,9 +479,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         sources = []
         if node.val_in_str:
             sources.append(self.transform(SERDE_AS_DISPLAY_FROM_STR))
-        if node.original_name != node.name:
-            # or node.original_name == node.name and len(node.name) < 3: # For binance's convenience
-
+        if node.original_name and node.original_name != node.name:
             sources.append(self.transform(Serde(rename=[node.original_name])))
         for comment in node.value.get_field(Traits.BeforeLineComment):
             sources.append(self.transform(RustCommentNode(comment.splitlines(), cargo_doc=True)))
@@ -572,17 +575,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         for i, arg in enumerate(node.args):
             if i > 0:
                 in_braces.append(TextNode(text=", "))
-            if isinstance(arg, RustFieldNode):
-                if arg.value.get_field(
-                    Traits.TypeRef
-                ) and "self" in arg.value.get_field(Traits.TypeName):
-                    in_braces.append(TextNode(text=arg.name))
-                else:
-                    in_braces.append(
-                        TextNode(text=arg.name + ": " + map_type_to_rust(arg.value))
-                    )
-            elif isinstance(arg, RustArgumentNameNode):
-                in_braces.append(self.transform(arg))
+            in_braces.append(self.transform(arg))
         sources.append(
             BracesNode(
                 value=BulkNode(sources=in_braces), open="(", close=")", new_line=False
@@ -626,7 +619,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_variable_declaration(
-        self, node: RustVariableDeclaration
+            self, node: RustVariableDeclaration
     ) -> SourceNode:
         if node.mutability:
             mutability = " mut"
