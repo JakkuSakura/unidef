@@ -6,7 +6,7 @@ import sys
 logging.basicConfig(stream=sys.stderr)
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from unidef import CommandLineConfig, main, parser
+from unidef.__main__ import CommandLineConfig, main, parser
 
 if __name__ == '__main__':
     args = parser.parse_args()

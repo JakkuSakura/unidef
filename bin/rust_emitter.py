@@ -6,7 +6,7 @@ import os
 logging.basicConfig(stream=sys.stderr)
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from unidef import *
+from unidef.__main__ import *
 
 if __name__ == '__main__':
     logging.warning('using this wrapper is deprecated, use unidef_emitter instead')

@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os.path
 import sys
 
@@ -38,8 +39,10 @@ class CommandLineConfig(BaseModel):
 
 @beartype
 def main(
-    config: CommandLineConfig, content: str, output: Callable[[str], None] = print
+        config: CommandLineConfig, content: str, output: Callable[[str], None] = print
 ):
+    logging.basicConfig(stream=sys.stderr)
+
     if config.format or config.lang:
         if config.format:
             key = "example"
@@ -58,3 +61,9 @@ def main(
         raise Exception(f"Could not find emitter for {config.target}")
     for loaded_model in models:
         output(emitter.emit_model(config.target, loaded_model))
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    config = CommandLineConfig.from_args(args)
+    main(config, open(args.file).read())
