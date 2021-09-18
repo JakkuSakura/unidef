@@ -27,7 +27,7 @@ class FieldsParser(Parser):
         for key, val in field.items():
             trait = GLOBAL_TYPE_REGISTRY.get_field(key)
             if trait is not None:
-                ty.append_field(trait.default_present(val))
+                ty.append_field(trait(val))
             else:
                 raise Exception("InvalidArgumentException: " + key)
         return ty

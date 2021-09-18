@@ -2,6 +2,7 @@ from unidef.utils.typing import *
 from unidef.models.type_model import *
 from unidef.utils.transformer import *
 from unidef.utils.formatter import *
+from unidef.utils.name_convert import *
 
 RUST_KEYWORDS = {
     "as": "r#as",
@@ -138,9 +139,7 @@ class RustFieldNode(RustAstNode):
 
     def __init__(self, ty: DyType = None, **kwargs):
         if ty:
-            value = ty.get_field(Traits.ValueTypes) or ty
-            if isinstance(value, list):
-                value = value[0]
+            value = ty
 
             assert value is not None, "Is not an valid field " + repr(ty)
             kwargs.update(
@@ -215,7 +214,7 @@ class RustEnumNode(RustAstNode):
         if name.isupper():
             return name
         else:
-            return stringcase.pascalcase(name)
+            return to_pascal_case(name)
 
     def __init__(self, raw: DyType = None, **kwargs):
         if raw:
@@ -338,7 +337,7 @@ def map_type_to_rust(ty: DyType) -> str:
             ", ".join([map_type_to_rust(t) for t in ty.get_field(Traits.TupleField)])
         )
     elif ty.get_field(Traits.Vector):
-        return "Vec<{}>".format(map_type_to_rust(ty.get_field(Traits.ValueTypes)))
+        return "Vec<{}>".format(map_type_to_rust(ty.get_field(Traits.ValueTypes)[0]))
     elif ty.get_field(Traits.Bool):
         return "bool"
     elif ty.get_field(Traits.AllValue):
@@ -644,3 +643,28 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             sources.append(node.init)
 
         return self.transform_rust_statement_node(RustStatementNode(nodes=sources))
+
+
+def try_rustfmt(s: str) -> str:
+    import subprocess
+    import sys
+
+    try:
+        rustfmt = subprocess.Popen(
+            ["rustfmt"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        rustfmt.stdin.write(s.encode())
+        rustfmt.stdin.close()
+        parsed = rustfmt.stdout.read().decode()
+        error = rustfmt.stderr.read().decode()
+        if error:
+            logging.error("Error when formatting with rustfmt: %s", error)
+            return s
+        else:
+            return parsed
+    except Exception as e:
+        logging.error("Error while trying to use rustfmt, defaulting to raw %s", e)
+        return s

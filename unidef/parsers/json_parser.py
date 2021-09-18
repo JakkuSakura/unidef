@@ -21,7 +21,7 @@ class JsonParser(Parser):
         for line in content.splitlines():
             pos = line.find("//")
             if pos >= 0:
-                comment.append(line[pos + 2 :])
+                comment.append(line[pos + 2:])
 
             try:
                 key = next(key_re.finditer(line))[1]

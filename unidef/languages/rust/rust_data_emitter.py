@@ -179,6 +179,7 @@ def from_sql_raw_trait(struct: RustStructNode) -> Optional[RustAstNode]:
                 and not s.value.get_field(Traits.Signed)
             )
             or s.value.get_field(Traits.TsUnit)
+            or s.value.get_field(Traits.Vector)
         ):
             logging.warning(
                 "Do not support %s %s yet, skipping From<Row>",
@@ -263,28 +264,3 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
         raise Exception("must be a struct or enum", root)
 
     return try_rustfmt(formatter.to_string())
-
-
-def try_rustfmt(s: str) -> str:
-    import subprocess
-    import sys
-
-    try:
-        rustfmt = subprocess.Popen(
-            ["rustfmt"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        rustfmt.stdin.write(s.encode())
-        rustfmt.stdin.close()
-        parsed = rustfmt.stdout.read().decode()
-        error = rustfmt.stderr.read().decode()
-        if error:
-            logging.error("Error when formatting with rustfmt: %s", error)
-            return s
-        else:
-            return parsed
-    except Exception as e:
-        logging.error("Error while trying to use rustfmt, defaulting to raw %s", e)
-        return s

@@ -327,7 +327,7 @@ def infer_type_from_example(
         elif isinstance(obj, float):
             return Types.Double
         elif isinstance(obj, list):
-            content = None
+            content = Types.AllValue
             if len(obj):
                 content = infer_type_from_example(obj[0], prefix)
             return Types.Vector.copy().replace_field(Traits.ValueTypes([content]))
