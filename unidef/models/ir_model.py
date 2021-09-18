@@ -14,7 +14,7 @@ class Attribute(MyField):
 class Attributes:
     Kind = Attribute(key="kind")
     Name = Attribute(key="name")
-    Id = Attribute(key="id")
+    VariableDeclarationId = Attribute(key="variable_declaration_id")
     Children = Attribute(key="children", default_present=[], default_absent=[])
     Statement = Attribute(key="statement")
     ClassDeclaration = Attribute(
@@ -36,10 +36,13 @@ class Attributes:
     FunctionDecl = Attribute(
         key="function_decl", default_present=True, default_absent=False
     )
+    FunctionBody = Attribute(key="function_body")
+    FunctionReturn = Attribute(key="function_return")
     RawCode = Attribute(key="raw_code")
     RawValue = Attribute(key="raw_value")
     Callee = Attribute(key="callee")
-    Arguments = Attribute(key="argument", default_present=[], default_absent=[])
+    Arguments = Attribute(key="arguments", default_present=[], default_absent=[])
+    Argument = Attribute(key="argument", default_present=True, default_absent=False)
     ArgumentName = Attribute(key="argument_name")
     ArgumentType = Attribute(key="argument_type")
     DefaultValue = Attribute(key="default_value")
@@ -145,6 +148,8 @@ class Attributes:
     Mutable = Attribute(key="mutable", default_present=True, default_absent=False)
 
     InferredType = Attribute(key="inferred_type")
+
+    GlobalPath = Attribute(key="global_path", default_present="", default_absent="")
 
 
 class IrNode(MyBaseModel):

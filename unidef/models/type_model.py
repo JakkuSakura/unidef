@@ -28,7 +28,7 @@ class Traits:
     Variant = Trait(key="variant")
     VariantName = Trait(key="variant_name")
     RawValue = Trait(key="raw_value", allow_none=True)
-    Raw = Trait(key="raw")
+
     # TODO: distinguish in line or before line comments
     BeforeLineComment = Trait(
         key="before_line_comment", default_present=[], default_absent=[]
@@ -54,6 +54,7 @@ class Traits:
     NotInferredType = Trait(
         key="not_inferred_type", default_present=True, default_absent=False
     )
+
     # Format
     SimpleEnum = Trait(key="simple_enum", default_present=True, default_absent=False)
     StringWrapped = Trait(
@@ -70,6 +71,14 @@ class Traits:
     Mutable = Trait(key="mutable", default_present=True, default_absent=False)
     Lifetime = Trait(key="lifetime")
     Derive = Trait(key="derive", default_present=[], default_absent=[])
+
+    # Function
+    Function = Trait(key="function", default_present=True, default_absent=False)
+    FunctionName = Trait(key="function_name", default_present="", default_absent="")
+    FunctionArguments = Trait(
+        key="function_arguments", default_present=[], default_absent=[]
+    )
+    FunctionReturn = Trait(key="function_return")
 
 
 class DyType(MyBaseModel):
@@ -169,9 +178,19 @@ class Types:
     @staticmethod
     @beartype
     def enum(name: str, variants: List[DyType]) -> DyType:
-        ty = DyType.from_trait(Traits.Enum(name))
+        ty = DyType.from_trait(name, Traits.Enum(name))
         ty.append_field(Traits.Variant(variants))
         return ty
+
+    @staticmethod
+    @beartype
+    def function(name: str, args: List[DyType], ret: DyType) -> DyType:
+        return (
+            DyType.from_trait(Traits.Function)
+            .append_field(Traits.FunctionName(name))
+            .append_field(Traits.FunctionArguments(args))
+            .append_field(Traits.FunctionReturn(ret))
+        )
 
 
 class TypeRegistry(BaseModel):
@@ -268,12 +287,8 @@ def prefix_join(prefix: str, name: str) -> str:
         return name
 
 
-class CouldNotParseDataExample(Exception):
-    pass
-
-
 @beartype
-def parse_data_example(
+def infer_type_from_example(
     obj: Union[str, int, float, dict, list, None], prefix: str = ""
 ) -> DyType:
     def inner(obj, prefix) -> DyType:
@@ -314,12 +329,12 @@ def parse_data_example(
         elif isinstance(obj, list):
             content = None
             if len(obj):
-                content = parse_data_example(obj[0], prefix)
+                content = infer_type_from_example(obj[0], prefix)
             return Types.Vector.copy().replace_field(Traits.ValueTypes([content]))
         elif isinstance(obj, dict):
             fields = []
             for key, value in obj.items():
-                value = parse_data_example(value, prefix_join(prefix, key))
+                value = infer_type_from_example(value, prefix_join(prefix, key))
                 if value.get_field(Traits.Struct):
                     value.replace_field(Traits.TypeName(prefix_join(prefix, key)))
 
@@ -332,7 +347,7 @@ def parse_data_example(
 
                 fields.append(Types.field(key, value))
             return Types.struct("struct_" + str(random.randint(0, 1000)), fields)
-        raise CouldNotParseDataExample(str(obj))
+        raise Exception(f"Could not infer type from {obj}")
 
     return inner(obj, prefix).copy().append_field(Traits.RawValue(obj))
 

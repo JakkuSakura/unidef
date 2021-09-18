@@ -6,7 +6,7 @@ from beartype import beartype
 
 from unidef.models.input_model import SourceInput
 from unidef.models.ir_model import Attribute, Attributes, IrNode, Nodes
-from unidef.models.type_model import Traits, DyType, Types, parse_data_example
+from unidef.models.type_model import Traits, DyType, Types, infer_type_from_example
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.name_convert import *
@@ -123,7 +123,7 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
             IrNode.from_attribute(Attributes.Literal)
             .append_field(Attributes.RawCode(node.raw))
             .append_field(Attributes.RawValue(node.value))
-            .append_field(Attributes.InferredType(parse_data_example(node.value)))
+            .append_field(Attributes.InferredType(infer_type_from_example(node.value)))
         )
 
     @beartype
@@ -174,12 +174,14 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         for decl in node.declarations:
             decl: VariableDeclarator = decl
             id = self.get_name(decl.id.toDict())
-            init = self.transform(decl.init)
-            decls.append(
-                IrNode.from_attribute(Attributes.VariableDeclaration)
-                .append_field(Attributes.Id(id))
-                .append_field(Attributes.Value(init))
+            nd = IrNode.from_attribute(Attributes.VariableDeclaration).append_field(
+                Attributes.VariableDeclarationId(id)
             )
+            if decl.init:
+                init = self.transform(decl.init)
+                nd.append_field(Attributes.DefaultValue(init))
+
+            decls.append(nd)
         return IrNode.from_attribute(Attributes.VariableDeclarations(decls))
 
     @beartype
@@ -228,7 +230,12 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         n = IrNode.from_attribute(Attributes.FunctionDecl)
         n.append_field(Attributes.Name(name))
         n.append_field(Attributes.Async(is_async))
-        n.append_field(Attributes.Children(children))
+        n.append_field(
+            Attributes.FunctionBody(
+                IrNode.from_attribute(Attributes.BlockStatement)
+                    .append_field(Attributes.Children(children))
+            )
+        )
         n.append_field(Attributes.Arguments(params))
 
         return n
@@ -243,10 +250,8 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         else:
             name = self.get_name(node.toDict())
             default = None
-        n = IrNode.from_attribute(Attributes.ArgumentName(name)).append_field(
-            Attributes.ArgumentType(
-                Types.AllValue.copy().append_field(Traits.NotInferredType).freeze()
-            )
+        n = IrNode.from_attribute(Attributes.Argument).append_field(
+            Attributes.ArgumentName(name)
         )
         if default:
             n.append_field(Attributes.DefaultValue(default))
@@ -284,7 +289,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             IrNode.from_attribute(Attributes.ObjectProperty)
             .append_field(Attributes.KeyName(self.transform(node.key)))
             .append_field(Attributes.Value(self.transform(node.value)))
-            .append_field(Attributes.InferredType(Types.Object))
+            # .append_field(Attributes.InferredType(Types.Object))
         )
 
     @beartype

@@ -40,7 +40,9 @@ class JsonParser(Parser):
         content = unicodedata.normalize("NFKC", content)
         comments = self.parse_comment(content)
 
-        parsed = parse_data_example(dict(pyhocon.ConfigParser.parse(content)), name)
+        parsed = infer_type_from_example(
+            dict(pyhocon.ConfigParser.parse(content)), name
+        )
         if parsed.get_field(Traits.Struct) and name:
             parsed.replace_field(Traits.TypeName(name))
 

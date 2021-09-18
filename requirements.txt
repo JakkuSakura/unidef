@@ -8,3 +8,5 @@ esprima # for javascript parsing
 isort # python imports sort
 black # python reformatting
 pytest
+networkx
+matplotlib

@@ -13,7 +13,7 @@ from unidef.models.type_model import (
     Traits,
     DyType,
     Types,
-    parse_data_example,
+    infer_type_from_example,
 )
 from unidef.parsers.registry import PARSER_REGISTRY
 from unidef.utils.typing import *

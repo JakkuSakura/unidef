@@ -33,7 +33,7 @@ class MutabilityHandler(NodeTransformer[IrNode, IrNode]):
 
     def mark_mutable_decl(self, node: IrNode):
         if node.get_field(Attributes.VariableDeclaration):
-            id = node.get_field(Attributes.Id)
+            id = node.get_field(Attributes.VariableDeclarationId)
             if id in self.to_modify:
                 node.append_field(Attributes.Mutable)
 
@@ -50,7 +50,6 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
     @beartype
     def transform(self, node: IrNode) -> RustAstNode:
         if self.functions is None:
-
             def acceptor(this, name):
                 return this.target_name == name
 
@@ -78,6 +77,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
 
     @beartype
     def transform_program(self, node) -> RustAstNode:
+        node = TypeInference().transform(node)
+
         sources = []
         for child in node.get_field(Attributes.Children):
             sources.append(self.transform(child))
@@ -104,11 +105,13 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         return RustReturnNode(returnee=returnee)
 
     @beartype
-    def transform_argument_name(self, node: IrNode) -> RustArgumentPairNode:
+    def transform_argument(self, node: IrNode) -> RustArgumentPairNode:
         return RustArgumentPairNode(
             mutable=node.get_field_opt(Attributes.Mutable),
             name=node.get_field(Attributes.ArgumentName),
-            type=self.format_type(node.get_field(Attributes.ArgumentType)),
+            type=self.format_type(
+                node.get_field(Attributes.ArgumentType) or Types.AllValue
+            ),
         )
 
     @beartype
@@ -116,24 +119,23 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         return map_type_to_rust(ty)
 
     @beartype
-    def get_return_type(self, node) -> str:
-        return "(/* to be guessed */)"
+    def get_return_type(self, node: IrNode) -> str:
+        return self.format_type(node.get_field(Attributes.FunctionReturn) or Types.AllValue)
 
     @beartype
     def transform_function_decl(self, node: IrNode) -> RustFuncDeclNode:
         node = MutabilityHandler().transform(node)
-        node = TypeInference().transform(node)
         return RustFuncDeclNode(
             name=map_func_name(node.get_field(Attributes.Name)),
             is_async=node.get_field(Attributes.Async),
             access=AccessModifier.PUBLIC,
-            args=[RustArgumentPairNode(name="&self", type=None)]
-            + [
-                self.transform_argument_name(arg)
-                for arg in node.get_field(Attributes.Arguments)
-            ],
+            args=[RustArgumentPairNode(name="&self", type="Self")]
+                 + [
+                     self.transform_argument(arg)
+                     for arg in node.get_field(Attributes.Arguments)
+                 ],
             ret=RustRawNode(raw=self.get_return_type(node)),
-            content=[self.transform(n) for n in node.get_field(Attributes.Children)],
+            content=[self.transform(n) for n in node.get_field(Attributes.FunctionBody).get_field(Attributes.Children)],
         )
 
     @beartype
@@ -204,8 +206,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         for req in required:
             path = (
                 req.get_field(Attributes.RequirePath)
-                .replace(".", "self")
-                .replace("/", "::")
+                    .replace(".", "self")
+                    .replace("/", "::")
             )
             key = req.get_field(Attributes.RequireKey)
             path = "::".join([path, key])
@@ -240,11 +242,14 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         sources = []
         for decl in node.get_field(Attributes.VariableDeclarations):
             assert isinstance(decl, IrNode), f"decl should be node, got {type(decl)}"
-            name = decl.get_field(Attributes.Id)
-            init = self.transform(decl.get_field(Attributes.Value))
+            name = decl.get_field(Attributes.VariableDeclarationId)
+            init = decl.get_field(Attributes.DefaultValue)
+            if init:
+                init = self.transform(init)
+            ty = decl.get_field(Attributes.InferredType)
             mut = decl.get_field(Attributes.Mutable)
             sources.append(
-                RustVariableDeclaration(name=name, init=init, mutability=mut)
+                RustVariableDeclaration(name=name, init=init, ty=ty, mutability=mut)
             )
 
         return RustBulkNode(nodes=sources)
@@ -256,8 +261,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         for base in node.get_field(Attributes.SuperClasses):
             fields.append(
                 DyType.from_str(base)
-                .append_field(Traits.TypeRef(base))
-                .append_field(Traits.FieldName("base"))
+                    .append_field(Traits.TypeRef(base))
+                    .append_field(Traits.FieldName("base"))
             )
         name = node.get_field(Attributes.Name)
         rust_struct = RustStructNode(raw=Types.struct(name, fields))

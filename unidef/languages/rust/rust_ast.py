@@ -72,7 +72,9 @@ class Derive(ProcMacro):
         self.enabled.append(s)
 
 
-DEFAULT_DERIVE = Derive(["Clone", "Debug", "PartialEq", "serde::Serialize", "serde::Deserialize"])
+DEFAULT_DERIVE = Derive(
+    ["Clone", "Debug", "PartialEq", "serde::Serialize", "serde::Deserialize"]
+)
 ENUM_DEFAULT_DERIVE = Derive(
     [
         "Copy",
@@ -126,7 +128,7 @@ class RustFieldNode(RustAstNode):
 
     @staticmethod
     def from_name(name: str, ty: str = ""):
-        if not name.startswith('&'):
+        if not name.startswith("&"):
             name = map_field_name(name)
         ty_or_name = ty or name
         return RustFieldNode(
@@ -251,7 +253,7 @@ class RustFuncDeclNode(RustAstNode):
     access: AccessModifier = AccessModifier.PUBLIC
     is_async: bool = False
     args: List[RustArgumentPairNode]
-    ret: Optional[Union[DyType, RustAstNode]]
+    ret: Optional[Union[RustAstNode, DyType]]
     content: Union[str, List[RustAstNode]]
 
 
@@ -267,9 +269,9 @@ class RustStatementNode(RustAstNode):
 
     def __init__(self, **kwargs):
         assert (
-                int(bool(kwargs.get("nodes") is not None))
-                ^ int(bool(kwargs.get("raw") is not None))
-                == 1
+            int(bool(kwargs.get("nodes") is not None))
+            ^ int(bool(kwargs.get("raw") is not None))
+            == 1
         ), "only nodes xor raw can be set"
         super().__init__(**kwargs)
 
@@ -309,6 +311,7 @@ class RustUseNode(RustAstNode):
 class RustVariableDeclaration(RustAstNode):
     mutability: Optional[bool] = None
     name: str
+    ty: Optional[DyType] = None
     init: Optional[RustAstNode]
 
 
@@ -365,8 +368,8 @@ def map_type_to_rust(ty: DyType) -> str:
         return "()"
     elif ty.get_field(Traits.TypeRef):
         return ty.get_field(Traits.TypeRef)
-    elif ty.get_field(Traits.Raw):
-        return ty.get_field(Traits.Raw)
+    # elif ty.get_field(Traits.Raw):
+    #     return ty.get_field(Traits.Raw)
 
     raise Exception("Cannot map type {} to str".format(ty.get_field(Traits.TypeName)))
 
@@ -397,7 +400,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_argument_pair_node(
-            self, node: RustArgumentPairNode
+        self, node: RustArgumentPairNode
     ) -> SourceNode:
         sources = []
         if node.mutable:
@@ -413,7 +416,9 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             elif isinstance(node.type, DyType):
                 sources.append(map_type_to_rust(node.type))
             else:
-                raise Exception('Could not process type for ' + type(node.type).__name__)
+                raise Exception(
+                    "Could not process type for " + type(node.type).__name__
+                )
         return BulkNode(sources=sources)
 
     @beartype
@@ -482,7 +487,9 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         if node.original_name and node.original_name != node.name:
             sources.append(self.transform(Serde(rename=[node.original_name])))
         for comment in node.value.get_field(Traits.BeforeLineComment):
-            sources.append(self.transform(RustCommentNode(comment.splitlines(), cargo_doc=True)))
+            sources.append(
+                self.transform(RustCommentNode(comment.splitlines(), cargo_doc=True))
+            )
 
         sources.append(
             TextNode(
@@ -585,7 +592,9 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             ty = " -> " + map_type_to_rust(node.ret) + " "
             sources.append(TextNode(text=ty))
         elif isinstance(node.ret, RustAstNode):
+            sources.append(TextNode(text=" -> "))
             sources.append(self.transform(node.ret))
+            sources.append(TextNode(text=" "))
         if isinstance(node.content, str):
             sources.append(BracesNode(value=TextNode(text=node.content)))
         elif isinstance(node.content, list):
@@ -619,13 +628,17 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_variable_declaration(
-            self, node: RustVariableDeclaration
+        self, node: RustVariableDeclaration
     ) -> SourceNode:
         if node.mutability:
             mutability = " mut"
         else:
             mutability = ""
         sources = [RustRawNode(raw=f"let{mutability} {node.name}")]
+        if node.ty:
+            sources.extend(
+                [RustRawNode(raw=": "), RustRawNode(raw=map_type_to_rust(node.ty))]
+            )
         if node.init:
             sources.append(RustRawNode(raw=" = "))
             sources.append(node.init)

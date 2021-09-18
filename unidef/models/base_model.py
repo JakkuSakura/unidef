@@ -68,6 +68,13 @@ class MyField:
         field.validate()
         return field
 
+    def __str__(self):
+        s = [type(self).__name__, " ", self.key]
+        if self._value is not None:
+            s.append(" ")
+            s.append(self._value)
+        return "".join(s)
+
 
 class MyBaseModel(BaseModel):
     __root__: Dict[str, Any] = {}
@@ -120,6 +127,9 @@ class MyBaseModel(BaseModel):
             return self.fields.get(field.key)
         else:
             return field.default_absent
+
+    def get_field_raw(self, field: MyField) -> MyField:
+        return field(self.get_field(field))
 
     def get_field_opt(self, field: MyField) -> Optional[Any]:
         if field.key in self.fields:

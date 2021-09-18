@@ -36,7 +36,7 @@ class FixParserImpl(Parser):
             k, v = kv.split("=")
             nm = dct.getFieldName(int(k), "")[0]
             try:
-                ty = parse_data_example(json.loads(v))
+                ty = infer_type_from_example(json.loads(v))
             except:
                 ty = Types.String
             fields.append(Types.field(nm, ty))
