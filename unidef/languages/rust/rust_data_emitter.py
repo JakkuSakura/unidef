@@ -117,7 +117,7 @@ def sql_model_get_insert_into_sql(struct: RustStructNode) -> RustFuncDeclNode:
 def sql_model_get_field_sql(struct: RustStructNode) -> RustFuncDeclNode:
     field_names = ",".join([field.name for field in struct.fields])
     return RustFuncDeclNode(
-        name="get_field_sql",
+        name="get_fields_sql",
         args=[RustArgumentPairNode(name="&self", type="Self")],
         ret=Types.String.copy()
         .append_field(Traits.Reference)
