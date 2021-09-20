@@ -1,1 +1,1 @@
-from .type_inference import *
+from .node_type_processors import TypeInference

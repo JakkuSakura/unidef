@@ -50,6 +50,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
     @beartype
     def transform(self, node: IrNode) -> RustAstNode:
         if self.functions is None:
+
             def acceptor(this, name):
                 return this.target_name == name
 
@@ -120,7 +121,9 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
 
     @beartype
     def get_return_type(self, node: IrNode) -> str:
-        return self.format_type(node.get_field(Attributes.FunctionReturn) or Types.AllValue)
+        return self.format_type(
+            node.get_field(Attributes.FunctionReturn) or Types.AllValue
+        )
 
     @beartype
     def transform_function_decl(self, node: IrNode) -> RustFuncDeclNode:
@@ -130,12 +133,17 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             is_async=node.get_field(Attributes.Async),
             access=AccessModifier.PUBLIC,
             args=[RustArgumentPairNode(name="&self", type="Self")]
-                 + [
-                     self.transform_argument(arg)
-                     for arg in node.get_field(Attributes.Arguments)
-                 ],
+            + [
+                self.transform_argument(arg)
+                for arg in node.get_field(Attributes.Arguments)
+            ],
             ret=RustRawNode(raw=self.get_return_type(node)),
-            content=[self.transform(n) for n in node.get_field(Attributes.FunctionBody).get_field(Attributes.Children)],
+            content=[
+                self.transform(n)
+                for n in node.get_field(Attributes.FunctionBody).get_field(
+                    Attributes.Children
+                )
+            ],
         )
 
     @beartype
@@ -206,8 +214,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         for req in required:
             path = (
                 req.get_field(Attributes.RequirePath)
-                    .replace(".", "self")
-                    .replace("/", "::")
+                .replace(".", "self")
+                .replace("/", "::")
             )
             key = req.get_field(Attributes.RequireKey)
             path = "::".join([path, key])
@@ -261,8 +269,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         for base in node.get_field(Attributes.SuperClasses):
             fields.append(
                 DyType.from_str(base)
-                    .append_field(Traits.TypeRef(base))
-                    .append_field(Traits.FieldName("base"))
+                .append_field(Traits.TypeRef(base))
+                .append_field(Traits.FieldName("base"))
             )
         name = node.get_field(Attributes.Name)
         rust_struct = RustStructNode(raw=Types.struct(name, fields))

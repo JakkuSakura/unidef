@@ -1,5 +1,4 @@
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import DyType
 
 
 class Emitter:

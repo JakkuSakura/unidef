@@ -178,16 +178,3 @@ class ScopePreparer(BaseModel):
             self.scope.clazz = self.environment.find_class(self.scope, name)
         elif node.get_field(Attributes.FunctionDecl):
             self.scope.function = self.scope.clazz.get_function(node)
-
-    def find_node_with_scope(self, root: IrNode, node: IrNode) -> __qualname__:
-        def inner(n):
-            self.with_scope(n)
-
-            if id(node) == id(n):
-                raise StopIteration
-
-        try:
-            walk_nodes(root, inner)
-        except StopIteration:
-            pass
-        return self

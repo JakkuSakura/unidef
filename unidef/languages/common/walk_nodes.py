@@ -15,6 +15,6 @@ def walk_nodes(
             if isinstance(value, list):
                 for v in value:
                     if isinstance(v, IrNode):
-                        walk_nodes(v, foreach, *args)
+                        walk_nodes(v, foreach, *args, **kwargs)
             elif isinstance(value, IrNode):
-                walk_nodes(value, foreach, *args)
+                walk_nodes(value, foreach, *args, **kwargs)

@@ -232,8 +232,9 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         n.append_field(Attributes.Async(is_async))
         n.append_field(
             Attributes.FunctionBody(
-                IrNode.from_attribute(Attributes.BlockStatement)
-                    .append_field(Attributes.Children(children))
+                IrNode.from_attribute(Attributes.BlockStatement).append_field(
+                    Attributes.Children(children)
+                )
             )
         )
         n.append_field(Attributes.Arguments(params))

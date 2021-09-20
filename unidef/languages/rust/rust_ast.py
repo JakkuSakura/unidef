@@ -269,9 +269,9 @@ class RustStatementNode(RustAstNode):
 
     def __init__(self, **kwargs):
         assert (
-                int(bool(kwargs.get("nodes") is not None))
-                ^ int(bool(kwargs.get("raw") is not None))
-                == 1
+            int(bool(kwargs.get("nodes") is not None))
+            ^ int(bool(kwargs.get("raw") is not None))
+            == 1
         ), "only nodes xor raw can be set"
         super().__init__(**kwargs)
 
@@ -400,7 +400,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_argument_pair_node(
-            self, node: RustArgumentPairNode
+        self, node: RustArgumentPairNode
     ) -> SourceNode:
         sources = []
         if node.mutable:
@@ -628,7 +628,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_variable_declaration(
-            self, node: RustVariableDeclaration
+        self, node: RustVariableDeclaration
     ) -> SourceNode:
         if node.mutability:
             mutability = " mut"
