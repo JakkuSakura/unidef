@@ -4,7 +4,7 @@ import unicodedata
 import pyhocon
 
 from unidef.models.input_model import InputDefinition, ExampleInput
-from unidef.models.type_model import *
+from unidef.languages.common.type_model import *
 from unidef.parsers import Parser
 from unidef.utils.typing import *
 

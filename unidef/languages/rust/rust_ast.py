@@ -1,6 +1,6 @@
 import logging
 from unidef.utils.typing import *
-from unidef.models.type_model import *
+from unidef.languages.common.type_model import *
 from unidef.utils.transformer import *
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import *
@@ -354,9 +354,10 @@ def map_type_to_rust(ty: DyType) -> str:
         bits = ty.get_field(Traits.BitSize)
         return "f" + str(bits)
     elif ty.get_field(Traits.Map):
+        key, value = tuple(ty.get_field(Traits.ValueTypes))
         return "HashMap<{}, {}>".format(
-            map_type_to_rust(ty.get_field(Traits.KeyType)),
-            map_type_to_rust(ty.get_field(Traits.ValueTypes)),
+            map_type_to_rust(key),
+            map_type_to_rust(value)
         )
     elif ty.get_field(Traits.String):
         if ty.get_field(Traits.Reference):

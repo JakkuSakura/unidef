@@ -5,7 +5,7 @@ from enum import Enum
 from beartype import beartype
 
 from unidef.models.input_model import InputDefinition
-from unidef.models.type_model import DyType
+from unidef.languages.common.type_model import DyType
 from unidef.parsers import Parser
 from unidef.utils.loader import load_module
 from unidef.utils.typing import Optional

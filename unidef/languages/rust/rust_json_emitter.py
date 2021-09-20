@@ -2,13 +2,13 @@ from pydantic import BaseModel
 
 from unidef.emitters.registry import Emitter
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import Traits, DyType
+from unidef.languages.common.type_model import Traits, DyType
 from unidef.utils.typing import *
 from unidef.languages.rust.rust_ast import *
 from unidef.utils.transformer import *
 from unidef.utils.visitor import *
 from unidef.utils.formatter import StructuredFormatter
-from unidef.models.ir_model import IrNode, Attributes
+from unidef.languages.common.ir_model import IrNode, Attributes
 
 
 class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
@@ -150,7 +150,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
         if fields:
             lines = []
             lines.append(
-                RustStatementNode(raw=f"let mut node = <{self.object_type}>::new();")
+                RustStatementNode(raw=f"let mut node = <{self.object_type}>::new()")
             )
             for field in fields:
                 comments = field.get_field(Traits.BeforeLineComment)
@@ -168,7 +168,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
             lines.append(RustStatementNode(raw="node"))
             return RustBlockNode(nodes=lines, new_line=False)
         else:
-            return RustStatementNode(raw=f"<{self.object_type}>::new()")
+            return RustRawNode(raw=f"<{self.object_type}>::new()")
 
 
 class IjsonCrate(JsonCrate):

@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
 from unidef.emitters import Emitter
-from unidef.models import config_model, type_model
+from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import Traits, DyType
+from unidef.languages.common.type_model import Traits, DyType
 from unidef.utils.formatter import *
 from unidef.utils.typing import List
 

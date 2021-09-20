@@ -5,8 +5,8 @@ import traceback
 from beartype import beartype
 
 from unidef.models.input_model import SourceInput
-from unidef.models.ir_model import Attribute, Attributes, IrNode, Nodes
-from unidef.models.type_model import Traits, DyType, Types, infer_type_from_example
+from unidef.languages.common.ir_model import Attribute, Attributes, IrNode, Nodes
+from unidef.languages.common.type_model import Traits, DyType, Types, infer_type_from_example
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.name_convert import *
@@ -106,7 +106,7 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
     def transform_static_member_expression(
         self, node: StaticMemberExpression
     ) -> IrNode:
-        n = IrNode.from_attribute(Attributes.MemberExpression)
+        n = IrNode.from_attribute(Attributes.StaticMemberExpression)
         n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
         n.append_field(
             Attributes.MemberExpressionProperty(self.transform(node.property))
@@ -387,7 +387,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
     def transform_computed_member_expression(
         self, node: ComputedMemberExpression
     ) -> IrNode:
-        n = IrNode.from_attribute(Attributes.MemberExpression)
+        n = IrNode.from_attribute(Attributes.ComputedMemberExpression)
         n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
         n.append_field(
             Attributes.MemberExpressionProperty(self.transform(node.property))

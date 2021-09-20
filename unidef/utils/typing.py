@@ -1,3 +1,4 @@
+import logging
 import sys
 from pydantic import BaseModel, validator, root_validator
 from enum import Enum
@@ -28,8 +29,11 @@ if sys.version_info >= (3, 8, 8):
 
     Iterable = collections.abc.Iterable
     Iterator = collections.abc.Iterator
-    Callable = collections.abc.Callable
-
+    if sys.version_info >= (3, 9, 2):
+        Callable = collections.abc.Callable
+    else:
+        Callable = collections.abc.Callable
+        logging.warning("collections.abc.Callable in Python 3.9.1 is broken")
 
 def abstract(cls):
     old_init = cls.__init__

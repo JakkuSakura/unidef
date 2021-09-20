@@ -1,4 +1,4 @@
-from unidef.models.ir_model import *
+from unidef.languages.common.ir_model import *
 from unidef.utils.typing import *
 
 

@@ -2,7 +2,7 @@ from beartype import beartype
 from pydantic import BaseModel, Field
 
 from unidef.models.base_model import MyBaseModel, MyField
-from unidef.models.type_model import Trait, Traits, DyType
+from unidef.languages.common.type_model import Trait, Traits, DyType
 from unidef.utils.safelist import safelist
 from unidef.utils.typing import *
 
@@ -97,8 +97,11 @@ class Attributes:
     OperatorSinglePrefix = Attribute(key="operator_single_prefix")
     OperatorSinglePostfix = Attribute(key="operator_single_postfix")
 
-    MemberExpression = Attribute(
-        key="member_expression", default_present=True, default_absent=False
+    StaticMemberExpression = Attribute(
+        key="static_member_expression", default_present=True, default_absent=False
+    )
+    ComputedMemberExpression = Attribute(
+        key="computed_member_expression", default_present=True, default_absent=False
     )
     MemberExpressionObject = Attribute(key="member_expression_object")
     MemberExpressionProperty = Attribute(key="member_expression_property")

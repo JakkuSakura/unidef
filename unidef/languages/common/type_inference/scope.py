@@ -1,11 +1,11 @@
 import copy
 
-from unidef.models.ir_model import *
+from unidef.languages.common.ir_model import *
 from unidef.utils.transformer import *
 from unidef.languages.common.walk_nodes import walk_nodes
-from unidef.models.type_model import infer_type_from_example
+from unidef.languages.common.type_model import infer_type_from_example
 from unidef.utils.typing import *
-from unidef.models.type_model import *
+from unidef.languages.common.type_model import *
 
 
 class Scope:
@@ -14,7 +14,7 @@ class Scope:
         self.clazz: Optional[ClassEnv] = None
         self.file: Optional[str] = None
 
-    def copy(self):
+    def copy(self) -> __qualname__:
         return copy.copy(self)
 
 
@@ -22,12 +22,14 @@ class GlobalNodePath:
     def __init__(self):
         self.nodes: List[str] = []
 
+    @beartype
     def append_scope(self, scope: Scope):
         if scope.clazz:
             self.nodes.append(scope.clazz.name)
         if scope.function:
             self.nodes.append(scope.function.name)
 
+    @beartype
     def append_path(self, path: str):
         self.nodes.append(path)
 
@@ -37,9 +39,9 @@ class GlobalNodePath:
 
 class AdvancedIrNode:
     @beartype
-    def __init__(self, node: IrNode, path: str):
+    def __init__(self, path: str, node: Optional[IrNode] = None):
         self.node_path: str = path
-        self.node: IrNode = node
+        self.node: Optional[IrNode] = node
 
     def __str__(self):
         return self.node_path
@@ -103,7 +105,8 @@ class Environment:
             if cls.name == clazz_name:
                 return cls
 
-    def find_declaration(self, scope: Scope, node: IrNode) -> AdvancedIrNode:
+    @beartype
+    def find_declaration(self, node: IrNode, scope: Scope) -> Optional[AdvancedIrNode]:
         if node.get_field(Attributes.Identifier):
             id = node.get_field(Attributes.Identifier)
             for n in scope.function.variables:
@@ -114,7 +117,7 @@ class Environment:
                     return n
 
     @beartype
-    def find_global_path(self, scope: Scope, node: IrNode) -> GlobalNodePath:
+    def find_global_path(self, node: IrNode, scope: Scope) -> GlobalNodePath:
         path = GlobalNodePath()
         path.append_scope(scope)
         if node.get_field(Attributes.ThisExpression):
@@ -136,12 +139,11 @@ class Environment:
     @beartype
     def get_advanced_ir_node(self, node: IrNode, scope: Scope) -> AdvancedIrNode:
         if node.get_field(Attributes.Identifier):
-            decl = self.find_declaration(scope, node)
-            node.replace_field(Attributes.GlobalPath(decl.node_path))
+            decl = self.find_declaration(node, scope)
+            assert decl is not None
             return decl
-        path = self.find_global_path(scope, node)
-        node.replace_field(Attributes.GlobalPath(str(path)))
-        return AdvancedIrNode(node, str(path))
+        path = self.find_global_path(node, scope)
+        return AdvancedIrNode(str(path), node)
 
     def __str__(self):
         return "Environment{{classes=[{}]}}".format(

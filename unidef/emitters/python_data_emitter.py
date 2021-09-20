@@ -1,9 +1,9 @@
 import logging
 
 from unidef.emitters import Emitter
-from unidef.models import config_model, type_model
+from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import Traits, DyType
+from unidef.languages.common.type_model import Traits, DyType
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
 from unidef.utils.typing import *
@@ -94,7 +94,7 @@ def map_field_name(name: str) -> str:
 class PythonField(BaseModel):
     name: str
     original_name: str = None
-    value: type_model.DyType
+    value: DyType
 
     def __init__(self, f: DyType = None, **kwargs):
         if f:

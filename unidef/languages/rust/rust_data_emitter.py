@@ -10,7 +10,7 @@ from unidef.emitters import Emitter
 from unidef.emitters.sql_model import emit_schema_from_model
 from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import Traits, DyType, Types, to_second_scale
+from unidef.languages.common.type_model import Traits, DyType, Types, to_second_scale
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import *
 from unidef.utils.typing import List, Optional

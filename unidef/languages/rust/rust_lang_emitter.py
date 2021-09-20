@@ -2,10 +2,10 @@ from pydantic import BaseModel
 
 from unidef.emitters import Emitter
 from unidef.languages.rust.rust_data_emitter import *
-from unidef.models import config_model, type_model
+from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
-from unidef.models.ir_model import Attribute, Attributes, IrNode
-from unidef.models.type_model import Traits, DyType
+from unidef.languages.common.ir_model import Attribute, Attributes, IrNode
+from unidef.languages.common.type_model import Traits, DyType
 from unidef.utils.formatter import *
 from unidef.utils.typing import *
 from unidef.utils.typing import List
@@ -147,7 +147,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         )
 
     @beartype
-    def transform_member_expression(self, node) -> RustAstNode:
+    def transform_static_member_expression(self, node) -> RustAstNode:
         sources = []
         obj = node.get_field(Attributes.MemberExpressionObject)
         prop = node.get_field(Attributes.MemberExpressionProperty)
@@ -156,17 +156,26 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         elif obj == "super":
             obj = "self.base"
         sources.append(self.transform(obj))
-        # FIXME: could not infer properly: o.i vs o[i]
-        id = prop.get_field(Attributes.Identifier)
-        if id and len(id) > 1:
-            sources.append(RustRawNode(raw="."))
-            sources.append(self.transform(prop))
-        else:
-            sources.append(RustRawNode(raw="["))
-            sources.append(self.transform(prop))
-            sources.append(RustRawNode(raw="]"))
+
+        sources.append(RustRawNode(raw="."))
+        sources.append(self.transform(prop))
+
         return RustBulkNode(nodes=sources)
 
+    @beartype
+    def transform_computed_member_expression(self, node) -> RustAstNode:
+        sources = []
+        obj = node.get_field(Attributes.MemberExpressionObject)
+        prop = node.get_field(Attributes.MemberExpressionProperty)
+        if obj == "this":
+            obj = "self"
+        elif obj == "super":
+            obj = "self.base"
+        sources.append(self.transform(obj))
+        sources.append(RustRawNode(raw="["))
+        sources.append(self.transform(prop))
+        sources.append(RustRawNode(raw="]"))
+        return RustBulkNode(nodes=sources)
     @beartype
     def transform_function_call(self, node) -> RustAstNode:
         return RustFuncCallNode(

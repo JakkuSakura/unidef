@@ -1,6 +1,6 @@
 from unidef.emitters import Emitter
 from unidef.models.config_model import ModelDefinition
-from unidef.models.type_model import Traits, DyType
+from unidef.languages.common.type_model import Traits, DyType
 from unidef.utils.name_convert import *
 
 

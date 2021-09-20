@@ -7,7 +7,7 @@ import yaml
 from pydantic import BaseModel, root_validator
 
 from unidef.models.input_model import *
-from unidef.models.type_model import (
+from unidef.languages.common.type_model import (
     GLOBAL_TYPE_REGISTRY,
     Trait,
     Traits,
@@ -17,7 +17,7 @@ from unidef.models.type_model import (
 )
 from unidef.parsers.registry import PARSER_REGISTRY
 from unidef.utils.typing import *
-from unidef.models.ir_model import IrNode
+from unidef.languages.common.ir_model import IrNode
 
 
 class ModelDefinition(BaseModel):

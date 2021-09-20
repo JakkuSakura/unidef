@@ -5,8 +5,8 @@ import traceback
 from beartype import beartype
 
 from unidef.models.input_model import SourceInput
-from unidef.models.ir_model import Attribute, Attributes, IrNode, Nodes
-from unidef.models.type_model import Traits, DyType, Types
+from unidef.languages.common.ir_model import Attribute, Attributes, IrNode, Nodes
+from unidef.languages.common.type_model import Traits, DyType, Types
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.name_convert import *

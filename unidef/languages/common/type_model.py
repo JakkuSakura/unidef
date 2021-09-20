@@ -80,6 +80,7 @@ class Traits:
     )
     FunctionReturn = Trait(key="function_return")
 
+    TypeVariable = Trait(key="type_variable")
 
 class DyType(MyBaseModel):
     """
