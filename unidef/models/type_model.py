@@ -116,9 +116,9 @@ def build_int(name: str) -> DyType:
 def build_float(name: str) -> DyType:
     return (
         DyType.from_trait(name, Traits.Floating)
-        .append_field(Traits.Numeric)
-        .append_field(Traits.BitSize(int(name[1:])))
-        .append_field(Traits.Signed)
+            .append_field(Traits.Numeric)
+            .append_field(Traits.BitSize(int(name[1:])))
+            .append_field(Traits.Signed)
     )
 
 
@@ -150,9 +150,9 @@ class Types:
     AllValue = DyType.from_trait("all_value", Traits.AllValue).freeze()
     Object = (
         DyType.from_trait("object", Traits.Object)
-        .append_field(Traits.Map)
-        .append_field(Traits.ValueTypes([String, AllValue]))
-        .freeze()
+            .append_field(Traits.Map)
+            .append_field(Traits.ValueTypes([String, AllValue]))
+            .freeze()
     )
 
     @staticmethod
@@ -187,9 +187,9 @@ class Types:
     def function(name: str, args: List[DyType], ret: DyType) -> DyType:
         return (
             DyType.from_trait(Traits.Function)
-            .append_field(Traits.FunctionName(name))
-            .append_field(Traits.FunctionArguments(args))
-            .append_field(Traits.FunctionReturn(ret))
+                .append_field(Traits.FunctionName(name))
+                .append_field(Traits.FunctionArguments(args))
+                .append_field(Traits.FunctionReturn(ret))
         )
 
 
@@ -289,7 +289,7 @@ def prefix_join(prefix: str, name: str) -> str:
 
 @beartype
 def infer_type_from_example(
-    obj: Union[str, int, float, dict, list, None], prefix: str = ""
+        obj: Union[str, int, float, dict, list, None], prefix: str = ""
 ) -> DyType:
     def inner(obj, prefix) -> DyType:
         if obj is None:
@@ -319,8 +319,8 @@ def infer_type_from_example(
             if "_ts" in prefix or "time" in prefix or "_at" in prefix:
                 ty = (
                     ty.copy()
-                    .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
-                    .replace_field(Traits.TypeName("timestamp"))
+                        .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
+                        .replace_field(Traits.TypeName("timestamp"))
                 )
 
             return ty
@@ -355,18 +355,16 @@ def infer_type_from_example(
 def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> None:
     if node.get_field(Traits.Struct):
         for field in node.get_field(Traits.StructFields):
-            process(depth, field)
             walk_type(field, process, depth + 1)
-    if node.get_field(Traits.Vector):
+    elif node.get_field(Traits.Vector):
         for ty in node.get_field(Traits.ValueTypes):
-            process(depth, ty)
             walk_type(ty, process, depth + 1)
     else:
         process(depth, node)
 
 
 def walk_type_with_count(
-    node: DyType, process: Callable[[int, int, str, DyType], None]
+        node: DyType, process: Callable[[int, int, str, DyType], None]
 ) -> None:
     counts = {}
 
