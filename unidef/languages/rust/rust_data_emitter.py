@@ -246,7 +246,7 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
     for attr in ["type", "url", "ref", "note"]:
         t = getattr(root, attr)
         if t:
-            comment.append(f"{attr}: {t}")
+            comment.extend(f"{attr}: {t}".splitlines())
     formatter.append_format_node(
         rust_formatter.transform(RustCommentNode(comment, cargo_doc=True))
     )

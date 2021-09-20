@@ -256,7 +256,7 @@ def emit_python_model_definition(root: ModelDefinition) -> SourceNode:
     for attr in ["type", "url", "ref", "note"]:
         t = getattr(root, attr)
         if t:
-            comment.append(f"{attr}: {t}")
+            comment.extend(f"{attr}: {t}".splitlines())
     comment = PythonComment(comment, python_doc=True)
     parsed = root.get_parsed()
     if parsed.get_field(Traits.Struct):
