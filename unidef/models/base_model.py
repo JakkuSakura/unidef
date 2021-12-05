@@ -20,8 +20,10 @@ class MixedModel(BaseModel):
     @beartype
     def append_field(self, field: FieldValue) -> __qualname__:
         assert not self.is_frozen()
-
-        value = self.extended.get(field.key)
+        if hasattr(self, field.key):
+            value = getattr(self, field.key)
+        else:
+            value = self.extended.get(field.key)
         if value is not None:
             value.extend(field.value)
         else:
@@ -32,7 +34,10 @@ class MixedModel(BaseModel):
     @beartype
     def replace_field(self, field: FieldValue) -> __qualname__:
         assert not self.is_frozen()
-        self.extended[field.key] = field.value
+        if hasattr(self, field.key):
+            setattr(self, field.key, field.value)
+        else:
+            self.extended[field.key] = field.value
         return self
 
     @beartype
@@ -43,6 +48,8 @@ class MixedModel(BaseModel):
         return self
 
     def get_field(self, field: TypedField) -> Any:
+        if hasattr(self, field.key):
+            return getattr(self, field.key)
         if field.key in self.extended:
             return self.extended.get(field.key)
         else:

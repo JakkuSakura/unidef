@@ -27,7 +27,7 @@ the data structure can be converted into many endpoint languages.
 ## Future plan
 
 ### Improve inner representation model
-Right now inner model is fixed key-value without validations. The next step should be conversion from and to well-defined python object
+Right now inner model is now mixed key-value with validations. The next step should be conversion from and to well-defined python object
 
 ### Type Inference for transpiling
 

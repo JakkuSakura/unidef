@@ -84,39 +84,45 @@ class DyType(MixedModel):
     Type is the type model used in this program.
     It allows inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
     """
+    name: str
+    kind: str = ''
 
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
-        return cls().append_field(Traits.TypeName(name))
+        return cls(name=name)
 
     @classmethod
     @beartype
     def from_trait(cls, name: str, trait: FieldValue) -> __qualname__:
-        return (
-            cls.from_str(name).append_field(Traits.Kind(trait.key)).append_field(trait)
-        )
+        this = cls(name=name, kind=trait.key).append_field(trait)
+        return this
+
+
+class IntegerType(DyType):
+    kind: str = 'integer'
+    integer: bool = True
+    numeric: bool = True
+    bit_size: int
+    signed: bool
+
 
 def build_int(name: str) -> DyType:
-    ty = DyType.from_trait(name, Traits.Integer(True))
-    ty.append_field(Traits.Numeric(True))
-    ty.append_field(Traits.BitSize(int(name[1:])))
+    bit_size = int(name[1:])
+    signed = name.startswith("i")
+    return IntegerType(name=name, bit_size=bit_size, signed=signed)
 
-    if name.startswith("i"):
-        ty.append_field(Traits.Signed(True))
-    else:
-        ty.append_field(Traits.Signed(False))
 
-    return ty
+class FloatingType(DyType):
+    kind: str = 'floating'
+    integer: bool = True
+    numeric: bool = True
+    bit_size: int
+    signed: bool = True
 
 
 def build_float(name: str) -> DyType:
-    return (
-        DyType.from_trait(name, Traits.Floating(True))
-            .append_field(Traits.Numeric(True))
-            .append_field(Traits.BitSize(int(name[1:])))
-            .append_field(Traits.Signed(True))
-    )
+    return FloatingType(name=name, bit_size=int(name[1:]))
 
 
 class Types:
@@ -135,8 +141,8 @@ class Types:
     U128 = build_int("u128").freeze()
 
     String = DyType.from_trait("string", Traits.String(True)).freeze()
-    Float = build_float("f32").freeze()
 
+    Float = build_float("f32").freeze()
     Double = build_float("f64").freeze()
 
     Vector = DyType.from_trait("vector", Traits.Vector(True)).freeze()
