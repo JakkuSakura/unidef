@@ -269,9 +269,9 @@ class RustStatementNode(RustAstNode):
 
     def __init__(self, **kwargs):
         assert (
-            int(bool(kwargs.get("nodes") is not None))
-            ^ int(bool(kwargs.get("raw") is not None))
-            == 1
+                int(bool(kwargs.get("nodes") is not None))
+                ^ int(bool(kwargs.get("raw") is not None))
+                == 1
         ), "only nodes xor raw can be set"
         super().__init__(**kwargs)
 
@@ -401,7 +401,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_argument_pair_node(
-        self, node: RustArgumentPairNode
+            self, node: RustArgumentPairNode
     ) -> SourceNode:
         sources = []
         if node.mutable:
@@ -540,7 +540,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
         sources.append(TextNode(text=f"{node.access.value}enum {node.name} "))
         in_braces = []
-        for field in self.variants:
+        for field in node.variants:
             name = list(field.get_field(Traits.VariantName))
             mapped = map_field_name(name[0])
             if len(name) > 1 or mapped != name[0]:
@@ -548,9 +548,14 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
                 reversed_names.reverse()
                 in_braces.append(self.transform(Strum(serialize=reversed_names)))
 
-            in_braces.append_line(TextNode(text=mapped + ","))
+            in_braces.append(TextNode(text=mapped + ","))
         sources.append(BracesNode(value=BulkNode(sources=in_braces)))
         return BulkNode(sources=sources)
+
+    @beartype
+    def transform_strum(self, node: Strum) -> SourceNode:
+        return LineNode(
+            content=TextNode(text='#[strum({})]'.format(['serialize = "{}"'.format(x) for x in node.serialize])))
 
     @beartype
     def transform_rust_impl_node(self, node: RustImplNode) -> SourceNode:
@@ -629,7 +634,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_variable_declaration(
-        self, node: RustVariableDeclaration
+            self, node: RustVariableDeclaration
     ) -> SourceNode:
         if node.mutability:
             mutability = " mut"

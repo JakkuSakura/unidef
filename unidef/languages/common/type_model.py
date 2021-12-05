@@ -8,81 +8,78 @@ from unidef.utils.name_convert import *
 from unidef.utils.typing import *
 
 
-class Trait(MyField):
+class Trait(TypedField):
     pass
 
 
 class Traits:
-    Kind = Trait(key="kind", default_present="", default_absent="")
-    TypeName = Trait(key="name")
-    FieldName = Trait(key="field_name")
-    BitSize = Trait(key="bit_size")
-    Signed = Trait(key="signed", default_present=True, default_absent=False)
-    KeyType = Trait(key="key")
-    ValueTypes = Trait(key="value", default_present=[], default_absent=[])
-    Parent = Trait(key="parent")
-    StructFields = Trait(key="field", default_present=[], default_absent=[])
-    Struct = Trait(key="struct", default_present="", default_absent="")
-    Enum = Trait(key="enum", default_present="", default_absent="")
-    TypeRef = Trait(key="type_ref")
-    Variant = Trait(key="variant")
-    VariantName = Trait(key="variant_name")
-    RawValue = Trait(key="raw_value", allow_none=True)
+    Kind = Trait(key="kind", ty=str)
+    TypeName = Trait(key="name", ty=str)
+    FieldName = Trait(key="field_name", ty=str)
+    BitSize = Trait(key="bit_size", ty=int)
+    Signed = Trait(key="signed", ty=bool)
+    KeyType = Trait(key="key", ty=str)
+    ValueTypes = Trait(key="value", ty=list, default=[])
+    Parent = Trait(key="parent", ty=Any)
+    StructFields = Trait(key="field", ty=list)
+    Struct = Trait(key="struct", ty=str)
+    Enum = Trait(key="enum", ty=str)
+    TypeRef = Trait(key="type_ref", ty=str)
+    Variant = Trait(key="variant", ty=Any)
+    VariantName = Trait(key="variant_name", ty=list[str])
+    RawValue = Trait(key="raw_value", ty=Any)
 
     # TODO: distinguish in line or before line comments
-    BeforeLineComment = Trait(
-        key="before_line_comment", default_present=[], default_absent=[]
-    )
-    InLineComment = Trait(key="in_line_comment", default_present=[], default_absent=[])
-    BlockComment = Trait(key="block_comment")
+    BeforeLineComment = Trait(key="before_line_comment", ty=list[str], default=[])
+    InLineComment = Trait(key="in_line_comment", ty=str)
+    BlockComment = Trait(key="block_comment", ty=str)
 
     # Types
-    Bool = Trait(key="bool", default_present=True, default_absent=False)
-    Numeric = Trait(key="numeric", default_present=True, default_absent=False)
-    Floating = Trait(key="floating", default_present=True, default_absent=False)
-    Integer = Trait(key="integer", default_present=True, default_absent=False)
-    String = Trait(key="string", default_present=True, default_absent=False)
-    TupleField = Trait(key="tuple_field", default_present=[], default_absent=[])
-    Tuple = Trait(key="tuple", default_present=True, default_absent=False)
-    Vector = Trait(key="vector", default_present=True, default_absent=False)
-    Map = Trait(key="map", default_present=True, default_absent=False)
-    Unit = Trait(key="unit", default_present=True, default_absent=False)
-    Null = Trait(key="null", default_present=True, default_absent=False)
-    Object = Trait(key="object", default_present=True, default_absent=False)
-    AllValue = Trait(key="all_value", default_present=True, default_absent=False)
+    Bool = Trait(key="bool", ty=bool)
+    Numeric = Trait(key="numeric", ty=bool)
+    Floating = Trait(key="floating", ty=bool)
+    Integer = Trait(key="integer", ty=bool)
+    String = Trait(key="string", ty=bool)
+    TupleField = Trait(key="tuple_field", ty=list)
+    Tuple = Trait(key="tuple", ty=bool)
+    Vector = Trait(key="vector", ty=bool)
+    Map = Trait(key="map", ty=bool)
+    Unit = Trait(key="unit", ty=bool)
+    Null = Trait(key="null", ty=bool)
+    Object = Trait(key="object", ty=bool)
+    AllValue = Trait(key="all_value", ty=bool)
 
     NotInferredType = Trait(
-        key="not_inferred_type", default_present=True, default_absent=False
+        key="not_inferred_type", ty=bool
     )
 
     # Format
-    SimpleEnum = Trait(key="simple_enum", default_present=True, default_absent=False)
+    SimpleEnum = Trait(key="simple_enum", ty=bool)
     StringWrapped = Trait(
-        key="string_wrapped", default_present=True, default_absent=False
+        key="string_wrapped", ty=bool
     )
-    TsUnit = Trait(key="ts_unit")
+    TsUnit = Trait(key="ts_unit", ty=str)
 
     # SQL related
-    Primary = Trait(key="primary", default_present=True, default_absent=False)
-    Nullable = Trait(key="nullable", default_present=True, default_absent=False)
+    Primary = Trait(key="primary", ty=bool)
+    Nullable = Trait(key="nullable", ty=bool)
 
     # Rust related
-    Reference = Trait(key="reference", default_present=True, default_absent=False)
-    Mutable = Trait(key="mutable", default_present=True, default_absent=False)
-    Lifetime = Trait(key="lifetime")
-    Derive = Trait(key="derive", default_present=[], default_absent=[])
+    Reference = Trait(key="reference", ty=bool)
+    Mutable = Trait(key="mutable", ty=bool)
+    Lifetime = Trait(key="lifetime", ty=str)
+    Derive = Trait(key="derive", ty=list[str], default=[])
 
     # Function
-    Function = Trait(key="function", default_present=True, default_absent=False)
-    FunctionName = Trait(key="function_name", default_present="", default_absent="")
-    FunctionArguments = Trait(
-        key="function_arguments", default_present=[], default_absent=[]
-    )
-    FunctionReturn = Trait(key="function_return")
+    Function = Trait(key="function", ty=bool)
+    FunctionName = Trait(key="function_name", ty=str)
+    FunctionArguments = Trait(key="function_arguments", ty=list)
+    FunctionReturn = Trait(key="function_return", ty=Any)
 
-    TypeVariable = Trait(key="type_variable")
+    TypeVariable = Trait(key="type_variable", ty=Any)
 
-class DyType(MyBaseModel):
+
+class DyType(DynamicBaseModel):
     """
     Type is the type model used in this program.
     It allows inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
@@ -95,19 +92,19 @@ class DyType(MyBaseModel):
 
     @classmethod
     @beartype
-    def from_trait(cls, name: str, trait: Trait) -> __qualname__:
+    def from_trait(cls, name: str, trait: FieldValue) -> __qualname__:
         return (
             cls.from_str(name).append_field(Traits.Kind(trait.key)).append_field(trait)
         )
 
 
 def build_int(name: str) -> DyType:
-    ty = DyType.from_trait(name, Traits.Integer)
-    ty.append_field(Traits.Numeric)
+    ty = DyType.from_trait(name, Traits.Integer(True))
+    ty.append_field(Traits.Numeric(True))
     ty.append_field(Traits.BitSize(int(name[1:])))
 
     if name.startswith("i"):
-        ty.append_field(Traits.Signed)
+        ty.append_field(Traits.Signed(True))
     else:
         ty.append_field(Traits.Signed(False))
 
@@ -116,15 +113,15 @@ def build_int(name: str) -> DyType:
 
 def build_float(name: str) -> DyType:
     return (
-        DyType.from_trait(name, Traits.Floating)
-        .append_field(Traits.Numeric)
-        .append_field(Traits.BitSize(int(name[1:])))
-        .append_field(Traits.Signed)
+        DyType.from_trait(name, Traits.Floating(True))
+            .append_field(Traits.Numeric(True))
+            .append_field(Traits.BitSize(int(name[1:])))
+            .append_field(Traits.Signed(True))
     )
 
 
 class Types:
-    Bool = DyType.from_trait("bool", Traits.Bool).freeze()
+    Bool = DyType.from_trait("bool", Traits.Bool(True)).freeze()
 
     I8 = build_int("i8").freeze()
     I16 = build_int("i16").freeze()
@@ -138,22 +135,22 @@ class Types:
     U64 = build_int("u64").freeze()
     U128 = build_int("u128").freeze()
 
-    String = DyType.from_trait("string", Traits.String).freeze()
+    String = DyType.from_trait("string", Traits.String(True)).freeze()
     Float = build_float("f32").freeze()
 
     Double = build_float("f64").freeze()
 
-    Vector = DyType.from_trait("vector", Traits.Vector).freeze()
+    Vector = DyType.from_trait("vector", Traits.Vector(True)).freeze()
 
     NoneType = (
-        DyType.from_trait("none", Traits.Null).append_field(Traits.Nullable).freeze()
+        DyType.from_trait("none", Traits.Null(True)).append_field(Traits.Nullable(True)).freeze()
     )
-    AllValue = DyType.from_trait("all_value", Traits.AllValue).freeze()
+    AllValue = DyType.from_trait("all_value", Traits.AllValue(True)).freeze()
     Object = (
-        DyType.from_trait("object", Traits.Object)
-        .append_field(Traits.Map)
-        .append_field(Traits.ValueTypes([String, AllValue]))
-        .freeze()
+        DyType.from_trait("object", Traits.Object(True))
+            .append_field(Traits.Map(True))
+            .append_field(Traits.ValueTypes([String, AllValue]))
+            .freeze()
     )
 
     @staticmethod
@@ -166,7 +163,7 @@ class Types:
     def variant(name: List[str]) -> DyType:
         ty = DyType.from_str(name[0])
         for n in name:
-            ty.append_field(Traits.VariantName(n))
+            ty.append_field(Traits.VariantName([n]))
         return ty
 
     @staticmethod
@@ -187,10 +184,10 @@ class Types:
     @beartype
     def function(name: str, args: List[DyType], ret: DyType) -> DyType:
         return (
-            DyType.from_trait(Traits.Function)
-            .append_field(Traits.FunctionName(name))
-            .append_field(Traits.FunctionArguments(args))
-            .append_field(Traits.FunctionReturn(ret))
+            DyType.from_trait(Traits.Function(True))
+                .append_field(Traits.FunctionName(name))
+                .append_field(Traits.FunctionArguments(args))
+                .append_field(Traits.FunctionReturn(ret))
         )
 
 
@@ -290,7 +287,7 @@ def prefix_join(prefix: str, name: str) -> str:
 
 @beartype
 def infer_type_from_example(
-    obj: Union[str, int, float, dict, list, None], prefix: str = ""
+        obj: Union[str, int, float, dict, list, None], prefix: str = ""
 ) -> DyType:
     def inner(obj, prefix) -> DyType:
         if obj is None:
@@ -320,8 +317,8 @@ def infer_type_from_example(
             if "_ts" in prefix or "time" in prefix or "_at" in prefix:
                 ty = (
                     ty.copy()
-                    .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
-                    .replace_field(Traits.TypeName("timestamp"))
+                        .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
+                        .replace_field(Traits.TypeName("timestamp"))
                 )
 
             return ty
@@ -365,7 +362,7 @@ def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> 
 
 
 def walk_type_with_count(
-    node: DyType, process: Callable[[int, int, str, DyType], None]
+        node: DyType, process: Callable[[int, int, str, DyType], None]
 ) -> None:
     counts = {}
 

@@ -30,3 +30,6 @@ the data structure can be converted into many endpoint languages.
 Right now inner model is fixed key-value without validations. The next step should be conversion from and to well-defined python object
 
 ### Type Inference for transpiling
+
+
+### Add more tests

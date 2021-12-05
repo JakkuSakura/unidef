@@ -25,3 +25,7 @@ class FieldsInput(BaseModel):
 
 class VariantsInput(BaseModel):
     __root__: List[Dict[str, Any]]
+
+    @property
+    def variants(self):
+        return self.__root__
