@@ -1,14 +1,14 @@
 from beartype import beartype
 from pydantic import BaseModel, Field
 
-from unidef.models.base_model import DynamicBaseModel, FieldValue
+from unidef.models.base_model import MixedModel, FieldValue
 from unidef.languages.common.type_model import Trait, Traits, DyType
 from unidef.utils.safelist import safelist
 from unidef.utils.typing import *
 from unidef.models.typed_field import TypedField
 
 
-class Attribute(TypedField):
+class Attribute(MixedModel):
     pass
 
 
@@ -156,7 +156,7 @@ class Attributes:
     GlobalPath = Attribute(key="global_path", ty=str)
 
 
-class IrNode(DynamicBaseModel):
+class IrNode(MixedModel):
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:

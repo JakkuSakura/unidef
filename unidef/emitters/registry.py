@@ -1,5 +1,5 @@
 import sys
-
+import os
 from beartype import beartype
 
 from unidef.emitters import Emitter
@@ -24,11 +24,14 @@ class EmitterRegistry:
 EMITTER_REGISTRY = EmitterRegistry()
 
 
+
 def add_emitter(name: str, emitter: str):
-    module = load_module(f"unidef.emitters.{name}")
+    module = load_module(name)
     if module:
         EMITTER_REGISTRY.add_emitter(module.__dict__[emitter]())
 
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 add_emitter("python_data_emitter", "PythonDataEmitter")
 add_emitter("rust_emitters", "RustDataEmitter")

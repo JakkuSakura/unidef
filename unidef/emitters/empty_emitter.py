@@ -18,3 +18,4 @@ class EmptyEmitter(Emitter):
 
     def emit_type(self, target: str, ty: DyType) -> str:
         return ""
+

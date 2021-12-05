@@ -79,7 +79,7 @@ class Traits:
     TypeVariable = Trait(key="type_variable", ty=Any)
 
 
-class DyType(DynamicBaseModel):
+class DyType(MixedModel):
     """
     Type is the type model used in this program.
     It allows inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
@@ -96,7 +96,6 @@ class DyType(DynamicBaseModel):
         return (
             cls.from_str(name).append_field(Traits.Kind(trait.key)).append_field(trait)
         )
-
 
 def build_int(name: str) -> DyType:
     ty = DyType.from_trait(name, Traits.Integer(True))

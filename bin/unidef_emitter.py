@@ -3,8 +3,8 @@ import logging
 import os.path
 import sys
 
-logging.basicConfig(stream=sys.stderr)
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from unidef.__main__ import CommandLineConfig, main, parser
 

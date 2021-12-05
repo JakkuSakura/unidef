@@ -9,7 +9,7 @@ from unidef.languages.common.type_model import DyType
 from unidef.parsers import Parser
 from unidef.utils.loader import load_module
 from unidef.utils.typing import Optional
-
+import os
 
 class ParserRegistry:
     def __init__(self):
@@ -28,11 +28,11 @@ PARSER_REGISTRY = ParserRegistry()
 
 
 def add_parser(name: str, emitter: str):
-    module = load_module(f"unidef.parsers.{name}")
+    module = load_module(name)
     if module:
         PARSER_REGISTRY.add_parser(module.__dict__[emitter]())
 
-
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 add_parser("json_parser", "JsonParser")
 add_parser("fields_parser", "FieldsParser")
 add_parser("variants_parser", "VariantsParser")

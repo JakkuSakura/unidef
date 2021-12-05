@@ -1,7 +1,9 @@
-import argparse
-import logging
-import os.path
 import sys
+import logging
+
+
+import argparse
+import os.path
 
 from beartype import beartype
 from pydantic import BaseModel
@@ -41,7 +43,7 @@ class CommandLineConfig(BaseModel):
 def main(
     config: CommandLineConfig, content: str, output: Callable[[str], None] = print
 ):
-    logging.basicConfig(stream=sys.stderr)
+    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
     if config.format or config.lang:
         if config.format:

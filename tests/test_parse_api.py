@@ -1,4 +1,10 @@
+import logging
+import sys
+
 import os
+
+
+sys.path.insert(0, '.')
 from unidef.__main__ import *
 
 
