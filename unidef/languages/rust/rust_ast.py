@@ -595,8 +595,11 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             )
         )
         if isinstance(node.ret, DyType):
-            ty = " -> " + map_type_to_rust(node.ret) + " "
-            sources.append(TextNode(text=ty))
+            if not node.ret.get_field(Traits.Unit):
+                ty = " -> " + map_type_to_rust(node.ret) + " "
+                sources.append(TextNode(text=ty))
+            else:
+                sources.append(TextNode(text=" "))
         elif isinstance(node.ret, RustAstNode):
             sources.append(TextNode(text=" -> "))
             sources.append(self.transform(node.ret))

@@ -150,6 +150,9 @@ class Types:
     NoneType = (
         DyType.from_trait("none", Traits.Null(True)).append_field(Traits.Nullable(True)).freeze()
     )
+
+    Unit = DyType.from_trait("unit", Traits.Unit(True)).freeze()
+    
     AllValue = DyType.from_trait("all_value", Traits.AllValue(True)).freeze()
     Object = (
         DyType.from_trait("object", Traits.Object(True))

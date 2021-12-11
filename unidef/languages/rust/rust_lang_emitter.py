@@ -144,7 +144,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
                 self.transform_argument(arg)
                 for arg in node.get_field(Attributes.Arguments)
             ],
-            ret=RustRawNode(raw=self.get_return_type(node)),
+            ret=node.get_field(Attributes.FunctionReturn) or Types.AllValue,
             content=[
                 self.transform(n)
                 for n in node.get_field(Attributes.FunctionBody).get_field(
