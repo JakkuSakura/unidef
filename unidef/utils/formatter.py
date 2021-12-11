@@ -79,9 +79,10 @@ class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
 
     @beartype
     def format_bulk_node(self, node: BulkNode):
-        self._try_indent()
-        for n in node.sources:
-            self.format_node(n)
+        if len(node.sources) > 0:
+            self._try_indent()
+            for n in node.sources:
+                self.format_node(n)
 
     @beartype
     def format_braces_node(self, node: BracesNode):

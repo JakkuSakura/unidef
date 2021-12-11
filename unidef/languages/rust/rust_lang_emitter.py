@@ -73,6 +73,13 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             return result
 
     @beartype
+    def transform_children(self, node) -> RustAstNode:
+        sources = []
+        for child in node.get_field(Attributes.Children):
+            sources.append(self.transform(child))
+        return RustBulkNode(nodes=sources)
+
+    @beartype
     def transform_others(self, node) -> RustAstNode:
         return RustRawNode(raw=str(node))
 

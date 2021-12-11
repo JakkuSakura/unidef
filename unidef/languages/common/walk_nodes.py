@@ -11,7 +11,7 @@ def walk_nodes(
     stop_cond = foreach(node, *args, **kwargs)
     if not stop_cond:
         for key in node.keys():
-            value = node.get_field(Attribute(key=key))
+            value = node.get_field(Attribute(key=key, ty=Any))
             if isinstance(value, list):
                 for v in value:
                     if isinstance(v, IrNode):

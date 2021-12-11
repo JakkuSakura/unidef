@@ -48,7 +48,7 @@ class Attributes:
     ArgumentType = Attribute(key="argument_type", ty=Any)
     DefaultValue = Attribute(key="default_value", ty=Any)
     Literal = Attribute(key="literal", ty=bool)
-    Async = Attribute(key="async", ty=bool)
+    Async = Attribute(key="async", ty=bool, default=False)
     Return = Attribute(key="return", ty=Optional)
 
     VariableDeclarations = Attribute(
