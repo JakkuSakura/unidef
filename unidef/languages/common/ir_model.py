@@ -8,7 +8,7 @@ from unidef.utils.typing import *
 from unidef.models.typed_field import TypedField
 
 
-class Attribute(MixedModel):
+class Attribute(TypedField):
     pass
 
 
@@ -164,7 +164,7 @@ class IrNode(MixedModel):
 
     @classmethod
     @beartype
-    def from_attribute(cls, attr: Attribute) -> __qualname__:
+    def from_attribute(cls, attr: FieldValue) -> __qualname__:
         return cls.from_str(attr.key).append_field(attr)
 
 
