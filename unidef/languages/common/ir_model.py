@@ -21,7 +21,7 @@ class Attributes:
     ClassDeclaration = Attribute(
         key="class_declaration", ty=bool
     )
-    Fields = Attribute(key="fields", ty=list[DyType])
+    Fields = Attribute(key="fields", ty=List[DyType])
     SuperClasses = Attribute(key="super_class", ty=list)
     Functions = Attribute(key="functions", ty=list)
 
@@ -180,7 +180,7 @@ class Argument(IrNode):
 class FunctionDecl(IrNode):
     kind: str = 'function_decl'
     name: str
-    arguments: list[Argument]
+    arguments: List[Argument]
     function_return: Optional[DyType]
     function_body: IrNode = IrNode.from_attribute(Attributes.Children([]))
     async_field: bool = False
@@ -188,9 +188,9 @@ class FunctionDecl(IrNode):
 class ClassDeclaration(IrNode):
     kind: str = 'class_declaration'
     name: str
-    super_class: list[str] = []
-    fields: list[DyType] = []
-    functions: list[FunctionDecl]
+    super_class: List[str] = []
+    fields: List[DyType] = []
+    functions: List[FunctionDecl]
 
 
 class Nodes:

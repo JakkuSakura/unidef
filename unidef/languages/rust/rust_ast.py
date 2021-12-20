@@ -327,7 +327,7 @@ def map_type_to_rust(ty: DyType) -> str:
         ty = ty.copy()
         ty.remove_field(Traits.Nullable)
         return "Option<{}>".format(map_type_to_rust(ty))
-    if ty.get_field(Traits.Null):
+    if ty.get_field(Traits.Null) and ty.get_field(Traits.FromJson):
         return "String"
     elif ty.get_field(Traits.TsUnit):
         return "TimeStamp" + to_pascal_case(ty.get_field(Traits.TsUnit))
@@ -374,7 +374,7 @@ def map_type_to_rust(ty: DyType) -> str:
         return "()"
     elif ty.get_field(Traits.TypeRef):
         tr: str = ty.get_field(Traits.TypeRef)
-        generics: list[DyType] = ty.get_field(Traits.Generics) or []
+        generics: List[DyType] = ty.get_field(Traits.Generics) or []
         for i, repl in enumerate(generics):
             repl_str = map_type_to_rust(repl)
             # print('before replacement', tr, repl_str)

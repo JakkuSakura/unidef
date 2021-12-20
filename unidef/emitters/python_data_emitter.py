@@ -38,7 +38,7 @@ def map_type_to_peewee_model(ty: DyType, args="") -> str:
             return "DoubleField({})".format(args)
         else:
             raise NotImplementedError()
-    elif ty.get_field(Traits.String) or ty.get_field(Traits.Null):
+    elif ty.get_field(Traits.String) or (ty.get_field(Traits.Null) and ty.get_field(Traits.FromJson)):
         return "TextField()"
     elif ty.get_field(Traits.Enum):
         if ty.get_field(Traits.SimpleEnum):

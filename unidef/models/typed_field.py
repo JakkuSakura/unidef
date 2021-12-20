@@ -70,7 +70,7 @@ def test_check_pep_type():
     assert check_pep_type(1, int)
     assert not check_pep_type(1, float)
     assert check_pep_type([], list)
-    assert check_pep_type([1], list[int])
+    assert check_pep_type([1], List[int])
 
 
 def test_check_field_definition():

@@ -22,16 +22,16 @@ class Traits:
     ValueTypes = Trait(key="value", ty=list, default=[])
     Parent = Trait(key="parent", ty=Any)
     StructFields = Trait(key="fields", ty=list)
-    Struct = Trait(key="struct", ty=str)
+    Struct = Trait(key="struct", ty=bool, default=False)
     Enum = Trait(key="enum", ty=str)
     TypeRef = Trait(key="type_ref", ty=str)
     Variant = Trait(key="variant", ty=Any)
-    VariantName = Trait(key="variant_name", ty=list[str])
+    VariantName = Trait(key="variant_name", ty=List[str])
     RawValue = Trait(key="raw_value", ty=Any)
     Generics = Trait(key="generics", ty=Any)
 
     # TODO: distinguish in line or before line comments
-    BeforeLineComment = Trait(key="before_line_comment", ty=list[str], default=[])
+    BeforeLineComment = Trait(key="before_line_comment", ty=List[str], default=[])
     InLineComment = Trait(key="in_line_comment", ty=str)
     BlockComment = Trait(key="block_comment", ty=str)
 
@@ -54,6 +54,7 @@ class Traits:
         key="not_inferred_type", ty=bool
     )
 
+    FromJson = Trait(key="from_json", ty=bool, default=False)
     # Format
     SimpleEnum = Trait(key="simple_enum", ty=bool)
     StringWrapped = Trait(
@@ -69,7 +70,7 @@ class Traits:
     Reference = Trait(key="reference", ty=bool)
     Mutable = Trait(key="mutable", ty=bool)
     Lifetime = Trait(key="lifetime", ty=str)
-    Derive = Trait(key="derive", ty=list[str], default=[])
+    Derive = Trait(key="derive", ty=List[str], default=[])
 
     # Function
     Function = Trait(key="function", ty=bool)
@@ -128,6 +129,7 @@ def build_float(name: str) -> DyType:
 
 class Struct(DyType):
     kind: str = 'struct'
+    struct: bool = True
     name: str
     fields: List[DyType]
     data_type: bool = True
@@ -159,7 +161,7 @@ class Types:
         DyType.from_trait("none", Traits.Null(True)).append_field(Traits.Nullable(True)).freeze()
     )
 
-    Unit = DyType.from_trait("unit", Traits.Unit(True)).freeze()
+    Unit = DyType.from_trait("unit", Traits.Unit(True)).append_field(Traits.Null(True)).freeze()
 
     AllValue = DyType.from_trait("all_value", Traits.AllValue(True)).freeze()
     Object = (
@@ -361,7 +363,7 @@ def infer_type_from_example(
             return Types.struct("struct_" + str(random.randint(0, 1000)), fields)
         raise Exception(f"Could not infer type from {obj}")
 
-    return inner(obj, prefix).copy().append_field(Traits.RawValue(obj))
+    return inner(obj, prefix).copy().append_field(Traits.FromJson(True)).append_field(Traits.RawValue(obj))
 
 
 def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> None:
