@@ -21,7 +21,9 @@ class Attributes:
     ClassDeclaration = Attribute(
         key="class_declaration", ty=bool
     )
+    Fields = Attribute(key="fields", ty=list[DyType])
     SuperClasses = Attribute(key="super_class", ty=list)
+    Functions = Attribute(key="functions", ty=list)
 
     WhileLoop = Attribute(key="while_loop", ty=Any)
 
@@ -166,6 +168,29 @@ class IrNode(MixedModel):
     @beartype
     def from_attribute(cls, attr: FieldValue) -> __qualname__:
         return cls.from_str(attr.key).append_field(attr)
+
+
+class Argument(IrNode):
+    kind: str = 'argument'
+    argument_name: str
+    argument_type: DyType
+    output: bool
+
+
+class FunctionDecl(IrNode):
+    kind: str = 'function_decl'
+    name: str
+    arguments: list[Argument]
+    function_return: Optional[DyType]
+    function_body: IrNode = IrNode.from_attribute(Attributes.Children([]))
+    async_field: bool = False
+
+class ClassDeclaration(IrNode):
+    kind: str = 'class_declaration'
+    name: str
+    super_class: list[str] = []
+    fields: list[DyType] = []
+    functions: list[FunctionDecl]
 
 
 class Nodes:

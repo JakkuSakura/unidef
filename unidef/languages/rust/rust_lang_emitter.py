@@ -12,7 +12,7 @@ from unidef.utils.typing import List
 from unidef.languages.rust.rust_json_emitter import *
 from unidef.languages.common.walk_nodes import walk_nodes
 from unidef.languages.common.type_inference import TypeInference
-
+from unidef.languages.common.ir_model import ClassDeclaration
 
 class MutabilityHandler(NodeTransformer[IrNode, IrNode]):
     to_modify: Dict[str, IrNode] = {}
@@ -50,14 +50,13 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
     @beartype
     def transform(self, node: IrNode) -> RustAstNode:
         if self.functions is None:
-
             def acceptor(this, name):
                 return this.target_name == name
 
             self.functions = self.get_functions("transform_", acceptor=acceptor)
 
         node_name = node.get_field(Attributes.Kind)
-        assert node_name, f"Name cannot be empty to emit: {node}"
+        assert node_name, f"Node name cannot be empty to emit: {node}"
         node_name = to_snake_case(node_name)
 
         for func in self.functions:
@@ -78,6 +77,10 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         for child in node.get_field(Attributes.Children):
             sources.append(self.transform(child))
         return RustBulkNode(nodes=sources)
+
+    @beartype
+    def transform_raw_code(self, node) -> RustAstNode:
+        return RustRawNode(raw=node.get_field(Attributes.RawCode))
 
     @beartype
     def transform_others(self, node) -> RustAstNode:
@@ -140,10 +143,10 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             is_async=node.get_field(Attributes.Async),
             access=AccessModifier.PUBLIC,
             args=[RustArgumentPairNode(name="&self", type="Self")]
-            + [
-                self.transform_argument(arg)
-                for arg in node.get_field(Attributes.Arguments)
-            ],
+                 + [
+                     self.transform_argument(arg)
+                     for arg in node.get_field(Attributes.Arguments)
+                 ],
             ret=node.get_field(Attributes.FunctionReturn) or Types.AllValue,
             content=[
                 self.transform(n)
@@ -152,6 +155,11 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
                 )
             ],
         )
+
+    @beartype
+    def transform_inferred_type(self, node) -> RustAstNode:
+        ty = node.get_field(Attributes.InferredType)
+        return RustRawNode(raw=self.format_type(ty))
 
     @beartype
     def transform_static_member_expression(self, node) -> RustAstNode:
@@ -183,6 +191,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         sources.append(self.transform(prop))
         sources.append(RustRawNode(raw="]"))
         return RustBulkNode(nodes=sources)
+
     @beartype
     def transform_function_call(self, node) -> RustAstNode:
         return RustFuncCallNode(
@@ -230,8 +239,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         for req in required:
             path = (
                 req.get_field(Attributes.RequirePath)
-                .replace(".", "self")
-                .replace("/", "::")
+                    .replace(".", "self")
+                    .replace("/", "::")
             )
             key = req.get_field(Attributes.RequireKey)
             path = "::".join([path, key])
@@ -279,21 +288,21 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         return RustBulkNode(nodes=sources)
 
     @beartype
-    def transform_class_declaration(self, node) -> RustAstNode:
+    def transform_class_declaration(self, node: ClassDeclaration) -> RustAstNode:
         sources = []
-        fields = []
+        fields = copy.copy(node.get_field(Attributes.Fields))
         for base in node.get_field(Attributes.SuperClasses):
             fields.append(
                 DyType.from_str(base)
-                .append_field(Traits.TypeRef(base))
-                .append_field(Traits.FieldName("base"))
+                    .append_field(Traits.TypeRef(base))
+                    .append_field(Traits.FieldName("base"))
             )
         name = node.get_field(Attributes.Name)
-        rust_struct = RustStructNode(raw=Types.struct(name, fields))
+        rust_struct = RustStructNode(raw=Types.struct(name, fields, is_data_type=False))
         sources.append(rust_struct)
         functions = []
-        for i, child in enumerate(node.get_field(Attributes.Children)):
-            functions.append(self.transform(child))
+        for i, child in enumerate(node.get_field(Attributes.Functions)):
+            functions.append(self.transform_function_decl(child))
 
         sources.append(RustImplNode(name=rust_struct.name, functions=functions))
         return RustBulkNode(nodes=sources)

@@ -52,6 +52,8 @@ class MixedModel(BaseModel):
     def _get_field_raw(self, key: str, default):
         if hasattr(self, key):
             return getattr(self, key)
+        if hasattr(self, key + '_field'):
+            return getattr(self, key + '_field')
         if key in self.extended:
             return self.extended.get(key)
         else:
@@ -110,4 +112,3 @@ def test_mixed_model():
     model = Model(key1=1, key2=2)
     assert set(model.keys()) == {"key1", "key2"}
     assert dict(list(model)) == {"key1": 1, "key2": 2}
-

@@ -21,13 +21,14 @@ class Traits:
     KeyType = Trait(key="key", ty=str)
     ValueTypes = Trait(key="value", ty=list, default=[])
     Parent = Trait(key="parent", ty=Any)
-    StructFields = Trait(key="field", ty=list)
+    StructFields = Trait(key="fields", ty=list)
     Struct = Trait(key="struct", ty=str)
     Enum = Trait(key="enum", ty=str)
     TypeRef = Trait(key="type_ref", ty=str)
     Variant = Trait(key="variant", ty=Any)
     VariantName = Trait(key="variant_name", ty=list[str])
     RawValue = Trait(key="raw_value", ty=Any)
+    Generics = Trait(key="generics", ty=Any)
 
     # TODO: distinguish in line or before line comments
     BeforeLineComment = Trait(key="before_line_comment", ty=list[str], default=[])
@@ -125,6 +126,13 @@ def build_float(name: str) -> DyType:
     return FloatingType(name=name, bit_size=int(name[1:]))
 
 
+class Struct(DyType):
+    kind: str = 'struct'
+    name: str
+    fields: List[DyType]
+    data_type: bool = True
+
+
 class Types:
     Bool = DyType.from_trait("bool", Traits.Bool(True)).freeze()
 
@@ -152,7 +160,7 @@ class Types:
     )
 
     Unit = DyType.from_trait("unit", Traits.Unit(True)).freeze()
-    
+
     AllValue = DyType.from_trait("all_value", Traits.AllValue(True)).freeze()
     Object = (
         DyType.from_trait("object", Traits.Object(True))
@@ -176,10 +184,8 @@ class Types:
 
     @staticmethod
     @beartype
-    def struct(name: str, fields: List[DyType]) -> DyType:
-        ty = DyType.from_trait(name, Traits.Struct(name))
-        ty.append_field(Traits.StructFields(fields))
-        return ty
+    def struct(name: str, fields: List[DyType], is_data_type=True) -> DyType:
+        return Struct(name=name, fields=fields, is_data_type=is_data_type)
 
     @staticmethod
     @beartype

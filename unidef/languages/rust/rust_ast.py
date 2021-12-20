@@ -178,8 +178,13 @@ class RustStructNode(RustAstNode):
 
     def __init__(self, raw: DyType = None, **kwargs):
         if raw:
-            derive = DEFAULT_DERIVE.copy()
-            annotations = [derive]
+            is_data_type = kwargs.get('is_data_type')
+            if is_data_type:
+                derive = DEFAULT_DERIVE.copy()
+                annotations = [derive]
+            else:
+                derive = None
+                annotations = []
 
             kwargs.update(
                 {
@@ -189,7 +194,7 @@ class RustStructNode(RustAstNode):
                         RustFieldNode(f) for f in raw.get_field(Traits.StructFields)
                     ],
                     "annotations": annotations,
-                    "derive": derive,
+                    "derive": derive
                 }
             )
 
@@ -368,7 +373,14 @@ def map_type_to_rust(ty: DyType) -> str:
     elif ty.get_field(Traits.Unit):
         return "()"
     elif ty.get_field(Traits.TypeRef):
-        return ty.get_field(Traits.TypeRef)
+        tr: str = ty.get_field(Traits.TypeRef)
+        generics: list[DyType] = ty.get_field(Traits.Generics) or []
+        for i, repl in enumerate(generics):
+            repl_str = map_type_to_rust(repl)
+            # print('before replacement', tr, repl_str)
+            tr = tr.replace(f"${i + 1}", repl_str)
+            # print('after replacement', tr)
+        return tr
     # elif ty.get_field(Traits.Raw):
     #     return ty.get_field(Traits.Raw)
 
