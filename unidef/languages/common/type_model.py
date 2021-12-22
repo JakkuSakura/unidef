@@ -1,8 +1,5 @@
 import random
 
-from beartype import beartype
-from pydantic import BaseModel, validator
-
 from unidef.models.base_model import *
 from unidef.utils.name_convert import *
 from unidef.utils.typing import *
@@ -41,8 +38,8 @@ class Traits:
     Floating = Trait(key="floating", ty=bool)
     Integer = Trait(key="integer", ty=bool)
     String = Trait(key="string", ty=bool)
-    TupleField = Trait(key="tuple_field", ty=list)
     Tuple = Trait(key="tuple", ty=bool)
+    TupleFields = Trait(key="tuple_fields", ty=list)
     Vector = Trait(key="vector", ty=bool)
     Map = Trait(key="map", ty=bool)
     Unit = Trait(key="unit", ty=bool)
@@ -53,6 +50,8 @@ class Traits:
     NotInferredType = Trait(
         key="not_inferred_type", ty=bool
     )
+
+    Default = Trait(key="default", ty=Any)
 
     FromJson = Trait(key="from_json", ty=bool, default=False)
     # Format
@@ -71,12 +70,6 @@ class Traits:
     Mutable = Trait(key="mutable", ty=bool)
     Lifetime = Trait(key="lifetime", ty=str)
     Derive = Trait(key="derive", ty=List[str], default=[])
-
-    # Function
-    Function = Trait(key="function", ty=bool)
-    FunctionName = Trait(key="function_name", ty=str)
-    FunctionArguments = Trait(key="function_arguments", ty=list)
-    FunctionReturn = Trait(key="function_return", ty=Any)
 
     TypeVariable = Trait(key="type_variable", ty=Any)
 
@@ -101,6 +94,12 @@ class DyType(MixedModel):
         return this
 
 
+class TupleType(DyType):
+    kind: str = 'tuple'
+    tuple: bool = True
+    tuple_fields: List[DyType]
+
+
 class IntegerType(DyType):
     kind: str = 'integer'
     integer: bool = True
@@ -117,7 +116,8 @@ def build_int(name: str) -> DyType:
 
 class FloatingType(DyType):
     kind: str = 'floating'
-    integer: bool = True
+    floating: bool = True
+    integer: bool = False
     numeric: bool = True
     bit_size: int
     signed: bool = True
@@ -196,16 +196,6 @@ class Types:
         ty.append_field(Traits.Variant(variants))
         return ty
 
-    @staticmethod
-    @beartype
-    def function(name: str, args: List[DyType], ret: DyType) -> DyType:
-        return (
-            DyType.from_trait(Traits.Function(True))
-                .append_field(Traits.FunctionName(name))
-                .append_field(Traits.FunctionArguments(args))
-                .append_field(Traits.FunctionReturn(ret))
-        )
-
 
 class TypeRegistry(BaseModel):
     types: Dict[str, DyType] = {}
@@ -239,7 +229,7 @@ class TypeRegistry(BaseModel):
                 return val
 
     @beartype
-    def get_field(self, name: str) -> Optional[Trait]:
+    def get_trait(self, name: str) -> Optional[Trait]:
         return self.traits.get(name)
 
     @beartype
@@ -303,7 +293,7 @@ def prefix_join(prefix: str, name: str) -> str:
 
 @beartype
 def infer_type_from_example(
-        obj: Union[str, int, float, dict, list, None], prefix: str = ""
+        obj0: Union[str, int, float, dict, list, None], prefix0: str = ""
 ) -> DyType:
     def inner(obj, prefix) -> DyType:
         if obj is None:
@@ -363,7 +353,7 @@ def infer_type_from_example(
             return Types.struct("struct_" + str(random.randint(0, 1000)), fields)
         raise Exception(f"Could not infer type from {obj}")
 
-    return inner(obj, prefix).copy().append_field(Traits.FromJson(True)).append_field(Traits.RawValue(obj))
+    return inner(obj0, prefix0).copy().append_field(Traits.FromJson(True)).append_field(Traits.RawValue(obj0))
 
 
 def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> None:
@@ -394,6 +384,11 @@ def walk_type_with_count(
 
 
 def parse_type_definition(ty: str) -> DyType:
+    if ty.startswith("(") and ty.endswith(")"):
+        types = [GLOBAL_TYPE_REGISTRY.get_type(x.strip()) for x in ty[1:-1].split(",")]
+        return TupleType(name=ty, tuple_fields=types)
+    if ty in ["String", "string", "str", "&str"]:
+        return Types.String
     if ty.startswith("timestamp"):
         unit = ty.split("/")[1]
         ty = Types.I64.copy().replace_field(Traits.TsUnit(unit))

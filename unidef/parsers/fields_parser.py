@@ -1,11 +1,7 @@
-import re
-import unicodedata
-
-import pyhocon
-
-from unidef.models.input_model import InputDefinition, FieldsInput
-from unidef.languages.common.type_model import *
 from unidef.parsers import Parser
+
+from unidef.languages.common.type_model import *
+from unidef.models.input_model import InputDefinition, FieldsInput
 from unidef.utils.typing import *
 
 
@@ -25,7 +21,7 @@ class FieldsParser(Parser):
             ty = DyType.from_trait(name, Traits.TypeRef(type_ref))
 
         for key, val in field.items():
-            trait = GLOBAL_TYPE_REGISTRY.get_field(key)
+            trait = GLOBAL_TYPE_REGISTRY.get_trait(key)
             if trait is not None:
                 ty.append_field(trait(val))
             else:

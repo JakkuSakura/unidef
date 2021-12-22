@@ -1,11 +1,3 @@
-import copy
-import typing
-
-from pydantic import BaseConfig, BaseModel
-from pydantic.class_validators import Validator
-from pydantic.error_wrappers import ErrorWrapper
-from pydantic.fields import ModelField
-
 from unidef.utils.typing import *
 from .typed_field import FieldValue, TypedField
 
@@ -66,7 +58,7 @@ class MixedModel(BaseModel):
         return self._get_field_raw(field.key, None)
 
     def exist_field(self, field: TypedField) -> bool:
-        return field.key in self.extended
+        return field.key in self.keys()
 
     def keys(self) -> List[str]:
         keys = set(self.dict().keys())

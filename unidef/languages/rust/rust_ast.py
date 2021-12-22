@@ -340,7 +340,7 @@ def map_type_to_rust(ty: DyType) -> str:
         return RustEnumNode.parse_variant_name(ty.get_field(Traits.TypeRef))
     elif ty.get_field(Traits.Tuple):
         return "({})".format(
-            ", ".join([map_type_to_rust(t) for t in ty.get_field(Traits.TupleField)])
+            ", ".join([map_type_to_rust(t) for t in ty.get_field(Traits.TupleFields)])
         )
     elif ty.get_field(Traits.Vector):
         return "Vec<{}>".format(map_type_to_rust(ty.get_field(Traits.ValueTypes)[0]))

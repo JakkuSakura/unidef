@@ -1,16 +1,15 @@
-import sys
 import os
-from beartype import beartype
+import sys
 
 from unidef.emitters import Emitter
-from unidef.languages.common.type_model import DyType
+
 from unidef.utils.loader import load_module
-from unidef.utils.typing import Optional
+from unidef.utils.typing import Optional, List
 
 
 class EmitterRegistry:
     def __init__(self):
-        self.emitters: List[ApiParser] = []
+        self.emitters: List[Emitter] = []
 
     def add_emitter(self, parser: Emitter):
         self.emitters.append(parser)
@@ -24,7 +23,6 @@ class EmitterRegistry:
 EMITTER_REGISTRY = EmitterRegistry()
 
 
-
 def add_emitter(name: str, emitter: str):
     module = load_module(name)
     if module:
@@ -33,7 +31,8 @@ def add_emitter(name: str, emitter: str):
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-add_emitter("python_data_emitter", "PythonDataEmitter")
+add_emitter("python_emitters", "PythonPydanticEmitter")
+add_emitter("python_emitters", "PythonPeeweeEmitter")
 add_emitter("rust_emitters", "RustDataEmitter")
 add_emitter("rust_emitters", "RustJsonEmitter")
 add_emitter("rust_emitters", "RustLangEmitter")

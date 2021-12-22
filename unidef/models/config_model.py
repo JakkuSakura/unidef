@@ -1,23 +1,14 @@
-import unicodedata
-from enum import Enum
-from io import IOBase
-
-import pyhocon
 import yaml
-from pydantic import BaseModel, root_validator
 
-from unidef.models.input_model import *
+from unidef.languages.common.ir_model import IrNode
 from unidef.languages.common.type_model import (
     GLOBAL_TYPE_REGISTRY,
     Trait,
-    Traits,
     DyType,
-    Types,
-    infer_type_from_example,
 )
+from unidef.models.input_model import *
 from unidef.parsers.registry import PARSER_REGISTRY
 from unidef.utils.typing import *
-from unidef.languages.common.ir_model import IrNode
 
 
 class ModelDefinition(BaseModel):
