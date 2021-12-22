@@ -553,7 +553,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         sources.append(TextNode(text=f"{node.access.value}enum {node.name} "))
         in_braces = []
         for field in node.variants:
-            name = list(field.get_field(Traits.VariantName))
+            name = list(field.get_field(Traits.VariantNames))
             mapped = map_field_name(name[0])
             if len(name) > 1 or mapped != name[0]:
                 reversed_names = name[:]

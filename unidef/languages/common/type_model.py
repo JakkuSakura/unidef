@@ -23,7 +23,7 @@ class Traits:
     Enum = Trait(key="enum", ty=str)
     TypeRef = Trait(key="type_ref", ty=str)
     Variant = Trait(key="variant", ty=Any)
-    VariantName = Trait(key="variant_name", ty=List[str])
+    VariantNames = Trait(key="variant_name", ty=List[str])
     RawValue = Trait(key="raw_value", ty=Any)
     Generics = Trait(key="generics", ty=Any)
 
@@ -181,7 +181,7 @@ class Types:
     def variant(name: List[str]) -> DyType:
         ty = DyType.from_str(name[0])
         for n in name:
-            ty.append_field(Traits.VariantName([n]))
+            ty.append_field(Traits.VariantNames([n]))
         return ty
 
     @staticmethod

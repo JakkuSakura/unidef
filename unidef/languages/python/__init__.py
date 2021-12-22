@@ -66,7 +66,6 @@ def map_type_to_pydantic_model(ty: DyType) -> str:
     else:
         base_name = ty.get_field(Traits.TypeName)
 
-
     if ty.exist_field(Traits.Default):
         return base_name + " = " + ty.get_field(Traits.Default)
     else:
@@ -110,6 +109,7 @@ PYTHON_KEYWORDS = {
 }
 
 
+@beartype
 def map_field_name(name: str) -> str:
     if not name[0].isalpha() and name[0] != "_":
         return "_" + name
@@ -170,7 +170,7 @@ class PythonClass(BaseModel):
     name: str
     fields: List[PythonField]
     comment: PythonComment = None
-    model: str = "BaseModel"
+    model: Optional[str]
 
     @staticmethod
     def parse_name(name):
@@ -191,7 +191,16 @@ class PythonClass(BaseModel):
 
     def transform(self, data_model) -> SourceNode:
         sources = []
-        sources.append(TextNode(text=f"class {self.name}({self.model})"))
+        if self.model:
+            model = self.model
+        elif data_model == 'pydantic':
+            model = "pydantic.BaseModel"
+        elif data_model == 'peewee':
+            # model = "peewee.Model"
+            model = "BaseModel"
+        else:
+            raise Exception("Unrecognized data model: " + data_model)
+        sources.append(TextNode(text=f"class {self.name}({model})"))
         in_indent_block = []
         in_indent_block.append(self.comment.transform())
 
@@ -199,7 +208,7 @@ class PythonClass(BaseModel):
             if data_model == 'pydantic':
                 in_indent_block.append(field.transform_pydantic())
             elif data_model == 'peewee':
-                in_indent_block.append(field.transform_pydantic())
+                in_indent_block.append(field.transform_peewee())
             else:
                 raise Exception("Unrecognized data model: " + data_model)
         sources.append(
@@ -238,13 +247,13 @@ class PythonEnum(BaseModel):
 
         in_indent_block = []
         for field in self.variants:
-            name = field.get_field(Traits.VariantName)
+            name = field.get_field(Traits.VariantNames)
 
             in_indent_block.append(
                 LineNode(
                     content=TextNode(
                         text="{lname} = '{rname}'".format(
-                            lname=map_field_name(name), rname=name
+                            lname=map_field_name(name[0]), rname=name[0]
                         )
                     )
                 )
@@ -329,9 +338,9 @@ class PythonPydanticEmitter(Emitter):
         return s == 'python_pydantic'
 
     def emit_model(self, target: str, model: ModelDefinition) -> str:
-        formatter = StructuredFormatter(nodes=[emit_python_model_definition(model, "peewee")])
+        formatter = StructuredFormatter(nodes=[emit_python_model_definition(model, "pydantic")])
         return formatter.to_string()
 
     def emit_type(self, target: str, ty: DyType) -> str:
-        formatter = StructuredFormatter(nodes=[emit_struct(ty, "peewee")])
+        formatter = StructuredFormatter(nodes=[emit_struct(ty, "pydantic")])
         return formatter.to_string()
