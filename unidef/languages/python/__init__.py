@@ -157,13 +157,13 @@ class PythonComment(BaseModel):
 
     def transform(self) -> SourceNode:
         if self.python_doc:
-            lines = [LineNode(content=TextNode(text=line)) for line in self.content]
-            return BracesNode(value=BulkNode(sources=lines), open='"""', close='"""')
+            lines = [LineNode(TextNode(text=line)) for line in self.content]
+            return BracesNode(value=BulkNode(lines), open='"""', close='"""')
         else:
             lines = [
-                LineNode(content=TextNode(text="# " + line)) for line in self.content
+                LineNode(TextNode(text="# " + line)) for line in self.content
             ]
-            return BulkNode(sources=lines)
+            return BulkNode(lines)
 
 
 class PythonClass(BaseModel):
@@ -204,7 +204,7 @@ class PythonClass(BaseModel):
         in_indent_block = []
         in_indent_block.append(self.comment.transform())
         if len(self.fields) == 0:
-            in_indent_block.append(LineNode(content=TextNode(text="pass")))
+            in_indent_block.append(LineNode(TextNode(text="pass")))
         for field in self.fields:
             if data_model == 'pydantic':
                 in_indent_block.append(field.transform_pydantic())
@@ -213,10 +213,10 @@ class PythonClass(BaseModel):
             else:
                 raise Exception("Unrecognized data model: " + data_model)
         sources.append(
-            BracesNode(value=BulkNode(sources=in_indent_block), open=":", close="")
+            BracesNode(value=BulkNode(in_indent_block), open=":", close="")
         )
 
-        return BulkNode(sources=sources)
+        return BulkNode(sources)
 
 
 class PythonEnum(BaseModel):
@@ -249,7 +249,7 @@ class PythonEnum(BaseModel):
         in_indent_block = []
 
         if len(self.variants) == 0:
-            in_indent_block.append(LineNode(content=TextNode(text="pass")))
+            in_indent_block.append(LineNode(TextNode(text="pass")))
         for field in self.variants:
             name = field.get_field(Traits.VariantNames)
 
@@ -264,10 +264,10 @@ class PythonEnum(BaseModel):
             )
 
         sources.append(
-            BracesNode(value=BulkNode(sources=in_indent_block), open=":", close="")
+            BracesNode(value=BulkNode(in_indent_block), open=":", close="")
         )
 
-        return BulkNode(sources=sources)
+        return BulkNode(sources)
 
 
 class StructRegistry:
@@ -297,7 +297,7 @@ def emit_struct(root: DyType, data_model) -> SourceNode:
     sources = []
     for python_struct in find_all_structs(root):
         sources.append(python_struct.transform(data_model))
-    return BulkNode(sources=sources)
+    return BulkNode(sources)
 
 
 def emit_python_model_definition(root: ModelDefinition, data_model) -> SourceNode:
@@ -321,7 +321,7 @@ def emit_python_model_definition(root: ModelDefinition, data_model) -> SourceNod
     else:
         raise Exception("must be a struct or enum", root)
 
-    return BulkNode(sources=sources)
+    return BulkNode(sources)
 
 
 class PythonPeeweeEmitter(Emitter):

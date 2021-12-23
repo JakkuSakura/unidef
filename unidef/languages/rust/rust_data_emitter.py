@@ -231,7 +231,7 @@ def emit_rust_type_inner(
         )
         traceback.print_exc()
         sources = backup
-    return BulkNode(sources=sources)
+    return BulkNode(sources)
 
 
 def emit_rust_type(struct: DyType, root: Optional[ModelDefinition] = None) -> str:

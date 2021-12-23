@@ -20,9 +20,15 @@ class DedentNode(SourceNode):
 class TextNode(SourceNode):
     text: str
 
+    def __init__(self, text: str, **data: Any):
+        super().__init__(text=text, **data)
+
 
 class BulkNode(SourceNode):
     sources: List[SourceNode] = []
+
+    def __init__(self, sources, **data: Any):
+        super().__init__(sources=sources, **data)
 
 
 class BracesNode(SourceNode):
@@ -35,6 +41,9 @@ class BracesNode(SourceNode):
 
 class LineNode(SourceNode):
     content: SourceNode
+
+    def __init__(self, content, **data: Any):
+        super().__init__(content=content, **data)
 
 
 class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
