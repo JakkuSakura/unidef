@@ -104,6 +104,24 @@ class TupleType(GenericType):
         super().__init__(generics=values, **kwargs)
 
 
+class ResultType(GenericType):
+    kind: str = "str"
+    name: str = "Result"
+    type_ref: str = "Result<$1, $2>"
+
+    def __init__(self, ok, err):
+        super().__init__(generics=[ok, err])
+
+
+class AnyhowResultType(GenericType):
+    kind: str = "str"
+    name: str = "anyhow::Result"
+    type_ref: str = "anyhow::Result<$1>"
+
+    def __init__(self, ok):
+        super().__init__(generics=[ok])
+
+
 class VectorType(GenericType):
     kind: str = "vector"
     vector: bool = True
@@ -185,22 +203,22 @@ class Types:
 
     NoneType = (
         DyType.from_trait("none", Traits.Null(True))
-        .append_field(Traits.Nullable(True))
-        .freeze()
+            .append_field(Traits.Nullable(True))
+            .freeze()
     )
 
     Unit = (
         DyType.from_trait("unit", Traits.Unit(True))
-        .append_field(Traits.Null(True))
-        .freeze()
+            .append_field(Traits.Null(True))
+            .freeze()
     )
 
     AllValue = DyType.from_trait("all_value", Traits.AllValue(True)).freeze()
     Object = (
         DyType.from_trait("object", Traits.Object(True))
-        .append_field(Traits.Map(True))
-        .append_field(Traits.ValueTypes([String, AllValue]))
-        .freeze()
+            .append_field(Traits.Map(True))
+            .append_field(Traits.ValueTypes([String, AllValue]))
+            .freeze()
     )
 
 
@@ -298,7 +316,7 @@ def prefix_join(prefix: str, name: str) -> str:
 
 @beartype
 def infer_type_from_example(
-    obj0: Union[str, int, float, dict, list, None], prefix0: str = ""
+        obj0: Union[str, int, float, dict, list, None], prefix0: str = ""
 ) -> DyType:
     def inner(obj, prefix) -> DyType:
         if obj is None:
@@ -328,8 +346,8 @@ def infer_type_from_example(
             if "_ts" in prefix or "time" in prefix or "_at" in prefix:
                 ty = (
                     ty.copy()
-                    .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
-                    .replace_field(Traits.TypeName("timestamp"))
+                        .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
+                        .replace_field(Traits.TypeName("timestamp"))
                 )
 
             return ty
@@ -364,9 +382,9 @@ def infer_type_from_example(
 
     return (
         inner(obj0, prefix0)
-        .copy()
-        .append_field(Traits.FromJson(True))
-        .append_field(Traits.RawValue(obj0))
+            .copy()
+            .append_field(Traits.FromJson(True))
+            .append_field(Traits.RawValue(obj0))
     )
 
 
@@ -382,7 +400,7 @@ def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> 
 
 
 def walk_type_with_count(
-    node: DyType, process: Callable[[int, int, str, DyType], None]
+        node: DyType, process: Callable[[int, int, str, DyType], None]
 ) -> None:
     counts = {}
 

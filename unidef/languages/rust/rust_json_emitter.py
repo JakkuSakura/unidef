@@ -31,7 +31,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
                 self.functions = self.get_functions("transform_", acceptor=accept)
 
             if node.get_field(Traits.RawValue) == "undefined":
-                return RustRawNode(raw=self.none_type)
+                return RustRawNode(self.none_type)
 
             node_name = node.get_field(Attributes.Kind)
             assert node_name, f"Name cannot be empty to emit: {node}"
@@ -83,9 +83,9 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
                         lines.append(RustCommentNode(comments))
 
                     line = [
-                        RustRawNode(raw="node.push("),
+                        RustRawNode("node.push("),
                         self.transform(field),
-                        RustRawNode(raw=")"),
+                        RustRawNode(")"),
                     ]
                     lines.append(RustStatementNode(nodes=line))
                 lines.append(RustStatementNode(raw="node"))
@@ -94,22 +94,22 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
                 sources.append(RustStatementNode(raw="Vec::new()"))
         else:
             inner = []
-            inner.append(RustRawNode(raw="vec!["))
+            inner.append(RustRawNode("vec!["))
             for i, field in enumerate(node.get_field(Traits.ValueTypes)):
                 if i > 0:
-                    inner.append(RustRawNode(raw=","))
+                    inner.append(RustRawNode(","))
                 inner.append(self.transform(field))
-            sources.append(RustIndentedNode(nodes=inner))
-            sources.append(RustRawNode(raw="]"))
-        return RustBulkNode(nodes=sources)
+            sources.append(RustIndentedNode(inner))
+            sources.append(RustRawNode("]"))
+        return RustBulkNode(sources)
 
     @beartype
     def transform_string(self, node) -> RustAstNode:
-        return RustRawNode(raw='"{}"'.format(node.get_field(Traits.RawValue)))
+        return RustRawNode('"{}"'.format(node.get_field(Traits.RawValue)))
 
     @beartype
     def transform_bool(self, node) -> RustAstNode:
-        return RustRawNode(raw=str(node.get_field(Traits.RawValue)).lower())
+        return RustRawNode(str(node.get_field(Traits.RawValue)).lower())
 
     @beartype
     def transform_field_key(self, node) -> RustAstNode:
@@ -118,7 +118,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
         else:
             field_name = node.get_field(Traits.FieldName)
             if field_name:
-                result = RustRawNode(raw=f'"{field_name}"')
+                result = RustRawNode(f'"{field_name}"')
             else:
                 result = self.transform(node.get_field(Attributes.KeyName))
         return result
@@ -133,11 +133,11 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
 
     @beartype
     def transform_integer(self, node):
-        return RustRawNode(raw="{}".format(node.get_field(Traits.RawValue)))
+        return RustRawNode("{}".format(node.get_field(Traits.RawValue)))
 
     @beartype
     def transform_float(self, node):
-        return RustRawNode(raw="{}".format(node.get_field(Traits.RawValue)))
+        return RustRawNode("{}".format(node.get_field(Traits.RawValue)))
 
     @beartype
     def transform_object_properties(self, node):
@@ -158,18 +158,18 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
                 if comments:
                     lines.append(RustCommentNode(content=comments))
                 inline = [
-                    RustRawNode(raw="node.insert("),
+                    RustRawNode("node.insert("),
                     self.transform_field_key(field),
-                    RustRawNode(raw=".into(), "),
+                    RustRawNode(".into(), "),
                     self.transform_field_value(field),
-                    RustRawNode(raw=".into())"),
+                    RustRawNode(".into())"),
                 ]
                 lines.append(RustStatementNode(nodes=inline))
 
             lines.append(RustStatementNode(raw="node"))
             return RustBlockNode(nodes=lines, new_line=False)
         else:
-            return RustRawNode(raw=f"<{self.object_type}>::new()")
+            return RustRawNode(f"<{self.object_type}>::new()")
 
 
 class IjsonCrate(JsonCrate):
@@ -195,12 +195,12 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
     def transform(self, node):
         if self.only_outlier and self.depth == 0:
             inline = []
-            inline.append(RustRawNode(raw="serde_json::json!("))
+            inline.append(RustRawNode("serde_json::json!("))
             self.depth += 1
             inline.append(super().emit_node(node))
             self.depth -= 1
-            inline.append(RustRawNode(raw=")"))
-            return RustBulkNode(nodes=inline)
+            inline.append(RustRawNode(")"))
+            return RustBulkNode(inline)
         else:
             return super().transform(node)
 
@@ -209,7 +209,7 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
         # FIXME: missing comments due to limitation of esprima
         emit_wrapper = not self.only_outlier
         if emit_wrapper:
-            sources.append(RustRawNode(raw="serde_json::json!("))
+            sources.append(RustRawNode("serde_json::json!("))
         fields = node.get_field(Traits.StructFields)
 
         if fields:
@@ -221,30 +221,30 @@ class SerdeJsonCrate(SerdeJsonNoMacroCrate):
                     lines.append(RustCommentNode(comments))
                 inline = [
                     self.transform_field_key(field),
-                    RustRawNode(raw=": "),
+                    RustRawNode(": "),
                     self.transform_field_value(field),
                 ]
                 if i < len(fields) - 1:
-                    inline.append(RustRawNode(raw=", "))
+                    inline.append(RustRawNode(", "))
                 lines.append(RustStatementNode(nodes=inline))
 
             sources.append(RustBlockNode(nodes=lines, new_line=not emit_wrapper))
 
         else:
-            sources.append(RustRawNode(raw="{}"))
+            sources.append(RustRawNode("{}"))
         if emit_wrapper:
-            sources.append(RustRawNode(raw=")"))
-        return RustBulkNode(nodes=sources)
+            sources.append(RustRawNode(")"))
+        return RustBulkNode(sources)
 
     def transform_vector(self, node) -> RustAstNode:
         sources = []
-        sources.append(RustRawNode(raw="["))
+        sources.append(RustRawNode("["))
         for i, field in enumerate(node.get_field(Traits.ValueTypes)):
             if i > 0:
-                sources.append(RustRawNode(raw=","))
+                sources.append(RustRawNode(","))
             sources.append(self.emit_node(field))
-        sources.append(RustRawNode(raw="]"))
-        return RustBulkNode(nodes=sources)
+        sources.append(RustRawNode("]"))
+        return RustBulkNode(sources)
 
 
 def get_json_crate(target: str) -> JsonCrate:

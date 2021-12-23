@@ -150,7 +150,7 @@ class RustFieldNode(RustAstNode):
                     "original_name": ty.field_name,
                     "value": value.field_type,
                     "val_in_str": value.field_type.get_field(Traits.StringWrapped)
-                    or False,
+                                  or False,
                 }
             )
 
@@ -276,9 +276,9 @@ class RustStatementNode(RustAstNode):
 
     def __init__(self, **kwargs):
         assert (
-            int(bool(kwargs.get("nodes") is not None))
-            ^ int(bool(kwargs.get("raw") is not None))
-            == 1
+                int(bool(kwargs.get("nodes") is not None))
+                ^ int(bool(kwargs.get("raw") is not None))
+                == 1
         ), "only nodes xor raw can be set"
         super().__init__(**kwargs)
 
@@ -287,9 +287,15 @@ class RustRawNode(RustAstNode):
     raw: str
     new_line: bool = False
 
+    def __init__(self, raw, new_line=False, *args, **kwargs):
+        super().__init__(raw=raw, new_line=new_line, *args, **kwargs)
+
 
 class RustBulkNode(RustAstNode):
     nodes: List[RustAstNode]
+
+    def __init__(self, nodes, **kwargs):
+        super().__init__(nodes=nodes)
 
 
 class RustBlockNode(RustAstNode):
@@ -297,8 +303,18 @@ class RustBlockNode(RustAstNode):
     new_line: bool = True
 
 
+class RustLineNode(RustAstNode):
+    node: RustAstNode
+
+    def __init__(self, node, **kwargs):
+        super().__init__(node=node, **kwargs)
+
+
 class RustIndentedNode(RustAstNode):
     nodes: List[RustAstNode]
+
+    def __init__(self, nodes, **kwargs):
+        super().__init__(nodes=nodes, **kwargs)
 
 
 class RustReturnNode(RustAstNode):
@@ -403,16 +419,20 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
     def transform_rust_return_node(self, node: RustReturnNode) -> SourceNode:
         if node.returnee:
             return self.transform_rust_statement_node(
-                RustStatementNode(nodes=[RustRawNode(raw="return "), node.returnee])
+                RustStatementNode(nodes=[RustRawNode("return "), node.returnee])
             )
         else:
             return self.transform_rust_statement_node(
-                RustStatementNode(nodes=[RustRawNode(raw="return")])
+                RustStatementNode(nodes=[RustRawNode("return")])
             )
 
     @beartype
+    def transform_rust_line_node(self, node: RustLineNode) -> SourceNode:
+        return LineNode(self.transform(node.node))
+
+    @beartype
     def transform_rust_argument_pair_node(
-        self, node: RustArgumentPairNode
+            self, node: RustArgumentPairNode
     ) -> SourceNode:
         sources = []
         if node.mutable:
@@ -650,19 +670,19 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_variable_declaration(
-        self, node: RustVariableDeclaration
+            self, node: RustVariableDeclaration
     ) -> SourceNode:
         if node.mutability:
             mutability = " mut"
         else:
             mutability = ""
-        sources = [RustRawNode(raw=f"let{mutability} {node.name}")]
+        sources = [RustRawNode(f"let{mutability} {node.name}")]
         if node.ty:
             sources.extend(
-                [RustRawNode(raw=": "), RustRawNode(raw=map_type_to_rust(node.ty))]
+                [RustRawNode(": "), RustRawNode(map_type_to_rust(node.ty))]
             )
         if node.init:
-            sources.append(RustRawNode(raw=" = "))
+            sources.append(RustRawNode(" = "))
             sources.append(node.init)
 
         return self.transform_rust_statement_node(RustStatementNode(nodes=sources))
