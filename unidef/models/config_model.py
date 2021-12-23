@@ -24,6 +24,18 @@ class ModelDefinition(BaseModel):
     variants: Optional[VariantsInput] = None
     source: Optional[SourceInput] = None
 
+    @validator('fields')
+    def allow_none_fields(cls, v):
+        if v is None:
+            return FieldsInput(__root__=[])
+        return v
+
+    @validator('variants')
+    def allow_none_variants(cls, v):
+        if v is None:
+            return VariantsInput(__root__=[])
+        return v
+
     def get_field(self) -> List[Trait]:
         traits = []
         for t in self.traits:
@@ -50,7 +62,7 @@ class ModelDefinition(BaseModel):
                     raise Exception(f"Could not find parser for {to_parse}")
 
         else:
-            raise Exception(f"No invalid input for {self.name}")
+            raise Exception(f"No invalid input for {self}")
 
         for t in self.get_field():
             parsed.append_field(t)

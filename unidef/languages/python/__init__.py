@@ -203,7 +203,8 @@ class PythonClass(BaseModel):
         sources.append(TextNode(text=f"class {self.name}({model})"))
         in_indent_block = []
         in_indent_block.append(self.comment.transform())
-
+        if len(self.fields) == 0:
+            in_indent_block.append(LineNode(content=TextNode(text="pass")))
         for field in self.fields:
             if data_model == 'pydantic':
                 in_indent_block.append(field.transform_pydantic())
@@ -246,6 +247,9 @@ class PythonEnum(BaseModel):
         sources.append(TextNode(text=f"class {self.name}({self.model})"))
 
         in_indent_block = []
+
+        if len(self.variants) == 0:
+            in_indent_block.append(LineNode(content=TextNode(text="pass")))
         for field in self.variants:
             name = field.get_field(Traits.VariantNames)
 
