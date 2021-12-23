@@ -1,11 +1,8 @@
 import yaml
 
 from unidef.languages.common.ir_model import IrNode
-from unidef.languages.common.type_model import (
-    GLOBAL_TYPE_REGISTRY,
-    Trait,
-    DyType,
-)
+from unidef.languages.common.type_model import (GLOBAL_TYPE_REGISTRY, DyType,
+                                                Trait)
 from unidef.models.input_model import *
 from unidef.parsers.registry import PARSER_REGISTRY
 from unidef.utils.typing import *
@@ -24,13 +21,13 @@ class ModelDefinition(BaseModel):
     variants: Optional[VariantsInput] = None
     source: Optional[SourceInput] = None
 
-    @validator('fields')
+    @validator("fields")
     def allow_none_fields(cls, v):
         if v is None:
             return FieldsInput(__root__=[])
         return v
 
-    @validator('variants')
+    @validator("variants")
     def allow_none_variants(cls, v):
         if v is None:
             return VariantsInput(__root__=[])

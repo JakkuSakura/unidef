@@ -3,11 +3,11 @@ import os
 import sys
 import unicodedata
 
-from unidef.models.input_model import InputDefinition, ExampleInput
+import quickfix
 from unidef.languages.common.type_model import *
+from unidef.models.input_model import ExampleInput, InputDefinition
 from unidef.parsers import Parser
 from unidef.utils.loader import load_module
-import quickfix
 
 
 class FixParserImpl(Parser):

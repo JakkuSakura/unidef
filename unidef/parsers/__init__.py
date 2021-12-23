@@ -2,8 +2,8 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from unidef.models.input_model import InputDefinition
 from unidef.languages.common.type_model import DyType
+from unidef.models.input_model import InputDefinition
 
 
 class Parser:

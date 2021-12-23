@@ -1,6 +1,6 @@
 from unidef.emitters import Emitter
+from unidef.languages.common.type_model import DyType, FieldType, Traits
 from unidef.models.config_model import ModelDefinition
-from unidef.languages.common.type_model import Traits, DyType, FieldType
 from unidef.utils.name_convert import *
 
 
@@ -58,11 +58,7 @@ def map_type_to_ddl(ty: DyType) -> str:
 
 
 def get_field(field: FieldType) -> str:
-    base = (
-            to_snake_case(field.field_name)
-            + " "
-            + map_type_to_ddl(field.field_type)
-    )
+    base = to_snake_case(field.field_name) + " " + map_type_to_ddl(field.field_type)
     if field.get_field(Traits.Primary):
         base += " primary key"
 

@@ -43,8 +43,14 @@ class Function:
 
 
 class Functions:
-    PLUS = Function("plus", [FreeTypeVariable("a"), FreeTypeVariable("a")], FreeTypeVariable("a"))
-    EQUAL = Function("equals", [FreeTypeVariable("a"), FreeTypeVariable("a")], ConcreteType(Types.Bool))
+    PLUS = Function(
+        "plus", [FreeTypeVariable("a"), FreeTypeVariable("a")], FreeTypeVariable("a")
+    )
+    EQUAL = Function(
+        "equals",
+        [FreeTypeVariable("a"), FreeTypeVariable("a")],
+        ConcreteType(Types.Bool),
+    )
 
 
 def test_print_functions():

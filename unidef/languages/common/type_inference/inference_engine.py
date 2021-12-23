@@ -1,4 +1,5 @@
-from unidef.languages.common.type_inference.blackboard import Blackboard, NodeGroup
+from unidef.languages.common.type_inference.blackboard import (Blackboard,
+                                                               NodeGroup)
 from unidef.languages.common.type_model import DyType, Traits
 from unidef.utils.typing import *
 
@@ -17,10 +18,7 @@ class InferenceEngine:
             blackboard.inferred_cache[n1] = blackboard.inferred_cache[n2]
             return True
         elif n1_in and n2_in:
-            if (
-                    blackboard.inferred_cache[n1]
-                    != blackboard.inferred_cache[n2]
-            ):
+            if blackboard.inferred_cache[n1] != blackboard.inferred_cache[n2]:
                 raise Exception(f"Type conflicting: {n1} {n2}")
             else:
                 return True

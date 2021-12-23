@@ -1,7 +1,6 @@
-from unidef.parsers import Parser
-
 from unidef.languages.common.type_model import *
-from unidef.models.input_model import InputDefinition, FieldsInput
+from unidef.models.input_model import FieldsInput, InputDefinition
+from unidef.parsers import Parser
 from unidef.utils.typing import *
 
 

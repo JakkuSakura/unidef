@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
 from unidef.emitters import Emitter
+from unidef.languages.common.type_model import DyType, Traits
 from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
-from unidef.languages.common.type_model import Traits, DyType
 from unidef.utils.formatter import *
 from unidef.utils.typing import List
 
@@ -18,4 +18,3 @@ class EmptyEmitter(Emitter):
 
     def emit_type(self, target: str, ty: DyType) -> str:
         return ""
-

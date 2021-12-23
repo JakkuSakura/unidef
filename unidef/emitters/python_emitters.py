@@ -1,3 +1,4 @@
-from unidef.languages.python import PythonPydanticEmitter, PythonPeeweeEmitter
+from unidef.languages.python import PythonPeeweeEmitter, PythonPydanticEmitter
+
 PythonPydanticEmitter = PythonPydanticEmitter
 PythonPeeweeEmitter = PythonPeeweeEmitter

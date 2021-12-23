@@ -1,23 +1,12 @@
 import logging
 import sys
-from pydantic import BaseModel, validator, root_validator
-from enum import Enum
-from beartype import beartype
 from abc import *
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    Generic,
-    TypeVar,
-)
+from enum import Enum
+from typing import (Any, Callable, Dict, Generic, Iterable, Iterator, List,
+                    Optional, Set, Tuple, TypeVar, Union)
+
+from beartype import beartype
+from pydantic import BaseModel, root_validator, validator
 
 # handle type annotation changes in PEP 3107, 484, 526, 544, 560, 563, 585
 if sys.version_info >= (3, 8, 8):
@@ -34,6 +23,7 @@ if sys.version_info >= (3, 8, 8):
     else:
         Callable = collections.abc.Callable
         logging.warning("collections.abc.Callable in Python 3.9.1 is broken")
+
 
 def abstract(cls):
     old_init = cls.__init__

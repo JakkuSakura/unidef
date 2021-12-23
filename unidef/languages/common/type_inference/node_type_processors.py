@@ -1,17 +1,17 @@
 import copy
 import logging
+
 import networkx
 
 from unidef.languages.common.ir_model import *
-from unidef.utils.transformer import *
-from unidef.languages.common.walk_nodes import walk_nodes
-from unidef.languages.common.type_model import infer_type_from_example
-from unidef.utils.typing import *
-from unidef.languages.common.type_model import *
-
-from unidef.languages.common.type_inference.scope import *
 from unidef.languages.common.type_inference.blackboard import *
 from unidef.languages.common.type_inference.inference_engine import *
+from unidef.languages.common.type_inference.scope import *
+from unidef.languages.common.type_model import *
+from unidef.languages.common.type_model import infer_type_from_example
+from unidef.languages.common.walk_nodes import walk_nodes
+from unidef.utils.transformer import *
+from unidef.utils.typing import *
 
 
 class VariableDeclarationProcessor(NodeTypeProcessor):
@@ -19,19 +19,17 @@ class VariableDeclarationProcessor(NodeTypeProcessor):
         return node.get_field(Attributes.VariableDeclaration)
 
     def prepare_inference(
-            self,
-            node: IrNode,
-            environment: Environment,
-            scope: Scope,
-            builder: TypeRelationBuilder,
+        self,
+        node: IrNode,
+        environment: Environment,
+        scope: Scope,
+        builder: TypeRelationBuilder,
     ) -> None:
         val = node.get_field(Attributes.DefaultValue)
         ns = environment.get_advanced_ir_node(node, scope)
         builder.add_post_inferred_type(ns.node_path, PostAssignTypeInferred(node))
         if val:
-            builder.add_edge(
-                ns, environment.get_advanced_ir_node(val, scope)
-            )
+            builder.add_edge(ns, environment.get_advanced_ir_node(val, scope))
 
 
 class AssignExpressionProcessor(NodeTypeProcessor):
@@ -39,11 +37,11 @@ class AssignExpressionProcessor(NodeTypeProcessor):
         return node.get_field(Attributes.AssignExpression)
 
     def prepare_inference(
-            self,
-            node: IrNode,
-            environment: Environment,
-            scope: Scope,
-            builder: TypeRelationBuilder,
+        self,
+        node: IrNode,
+        environment: Environment,
+        scope: Scope,
+        builder: TypeRelationBuilder,
     ) -> None:
         left = node.get_field(Attributes.AssignExpressionLeft)
         right = node.get_field(Attributes.AssignExpressionRight)
@@ -59,18 +57,16 @@ class ReturnProcessor(NodeTypeProcessor):
         return node.get_field(Attributes.Return)
 
     def prepare_inference(
-            self,
-            node: IrNode,
-            environment: Environment,
-            scope: Scope,
-            builder: TypeRelationBuilder,
+        self,
+        node: IrNode,
+        environment: Environment,
+        scope: Scope,
+        builder: TypeRelationBuilder,
     ) -> None:
         ret = node.get_field(Attributes.Return)
         ns = environment.get_advanced_ir_node(node, scope)
 
-        builder.add_edge(
-            ns, environment.get_advanced_ir_node(ret, scope)
-        )
+        builder.add_edge(ns, environment.get_advanced_ir_node(ret, scope))
 
 
 class MemberExpressionProcessor(NodeTypeProcessor):
@@ -78,11 +74,11 @@ class MemberExpressionProcessor(NodeTypeProcessor):
         return node.get_field(Attributes.StaticMemberExpression)
 
     def prepare_inference(
-            self,
-            node: IrNode,
-            environment: Environment,
-            scope: Scope,
-            builder: TypeRelationBuilder,
+        self,
+        node: IrNode,
+        environment: Environment,
+        scope: Scope,
+        builder: TypeRelationBuilder,
     ) -> None:
         ns = environment.get_advanced_ir_node(node, scope)
         obj = node.get_field(Attributes.MemberExpressionObject)
@@ -98,22 +94,44 @@ class MemberExpressionProcessor(NodeTypeProcessor):
             else:
 
                 builder.add_group(
-                    NodeGroup("member_expression", {"obj": obj_ns.node_path, "prop": f"{scope}.{prop_id}", "member_expr": ns},
-                              self.infer_node))
+                    NodeGroup(
+                        "member_expression",
+                        {
+                            "obj": obj_ns.node_path,
+                            "prop": f"{scope}.{prop_id}",
+                            "member_expr": ns,
+                        },
+                        self.infer_node,
+                    )
+                )
             # TODO builder.add_edge(ns, )
         elif prop.get_field(Attributes.Literal):
             obj_ns = environment.get_advanced_ir_node(obj, scope)
             prop_ns = environment.get_advanced_ir_node(prop, scope)
             builder.add_group(
-                NodeGroup("member_expression", {"obj": obj_ns.node_path, "prop": prop_ns.node_path, "member_expr": ns,
-                                                "prop_literal": prop.get_field(Attributes.RawValue)},
-                          self.infer_node))
+                NodeGroup(
+                    "member_expression",
+                    {
+                        "obj": obj_ns.node_path,
+                        "prop": prop_ns.node_path,
+                        "member_expr": ns,
+                        "prop_literal": prop.get_field(Attributes.RawValue),
+                    },
+                    self.infer_node,
+                )
+            )
 
         else:
             raise Exception(f"Could not process prop: {prop}")
 
-    def infer_node(self, obj: str, prop: str, member_expr: AdvancedIrNode, blackboard: Blackboard,
-                   prop_literal: str = "") -> bool:
+    def infer_node(
+        self,
+        obj: str,
+        prop: str,
+        member_expr: AdvancedIrNode,
+        blackboard: Blackboard,
+        prop_literal: str = "",
+    ) -> bool:
         obj_in = obj in blackboard.inferred_cache
         prop_in = prop in blackboard.inferred_cache
         if obj_in and prop_in:
@@ -146,11 +164,11 @@ class OperatorProcessor(NodeTypeProcessor):
         return node.get_field(Attributes.Operator)
 
     def prepare_inference(
-            self,
-            node: IrNode,
-            environment: Environment,
-            scope: Scope,
-            builder: TypeRelationBuilder,
+        self,
+        node: IrNode,
+        environment: Environment,
+        scope: Scope,
+        builder: TypeRelationBuilder,
     ) -> None:
         ns = environment.get_advanced_ir_node(node, scope)
         left = node.get_field(Attributes.OperatorLeft)
@@ -174,11 +192,11 @@ class FunctionDeclProcessor(NodeTypeProcessor):
         return node.get_field(Attributes.FunctionDecl)
 
     def prepare_inference(
-            self,
-            node: IrNode,
-            environment: Environment,
-            scope: Scope,
-            builder: TypeRelationBuilder,
+        self,
+        node: IrNode,
+        environment: Environment,
+        scope: Scope,
+        builder: TypeRelationBuilder,
     ) -> None:
         ns = environment.get_advanced_ir_node(node, scope)
         body = environment.get_advanced_ir_node(
@@ -219,11 +237,11 @@ class LiteralProcessor(NodeTypeProcessor):
         return node.get_field(Attributes.Literal)
 
     def prepare_inference(
-            self,
-            node: IrNode,
-            environment: Environment,
-            scope: Scope,
-            builder: TypeRelationBuilder,
+        self,
+        node: IrNode,
+        environment: Environment,
+        scope: Scope,
+        builder: TypeRelationBuilder,
     ) -> None:
         if node.get_field(Attributes.InferredType):
             ns = environment.get_advanced_ir_node(node, scope)

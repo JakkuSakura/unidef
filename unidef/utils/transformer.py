@@ -1,6 +1,7 @@
-from unidef.utils.typing import *
-from unidef.utils.name_convert import *
 from pydantic import BaseModel
+
+from unidef.utils.name_convert import *
+from unidef.utils.typing import *
 
 Input = TypeVar("Input")
 Output = TypeVar("Output")

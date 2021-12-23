@@ -21,10 +21,10 @@ def check_raise_exception(obj, annotation):
 
 class FieldValue:
     def __init__(
-            self,
-            key,
-            value,
-            prototype=None,
+        self,
+        key,
+        value,
+        prototype=None,
     ):
         self.key = key
         self.value = value
@@ -40,12 +40,7 @@ class FieldValue:
 
 class TypedField:
     @beartype
-    def __init__(
-            self,
-            key: str,
-            ty,
-            default=None
-    ):
+    def __init__(self, key: str, ty, default=None):
         self.key = key
         self.ty = ty
         self.default = default
@@ -74,11 +69,11 @@ def test_check_pep_type():
 
 
 def test_check_field_definition():
-    field = TypedField(key='test', ty=str)
-    assert field.validate('hello')
-    field = TypedField(key='test', ty=Optional[str])
+    field = TypedField(key="test", ty=str)
+    assert field.validate("hello")
+    field = TypedField(key="test", ty=Optional[str])
     assert field.validate(None)
-    field = TypedField(key='test', ty=str, default='def')
+    field = TypedField(key="test", ty=str, default="def")
     assert field.validate(None)
-    field = TypedField(key='test', ty=Optional[str], default='def')
+    field = TypedField(key="test", ty=Optional[str], default="def")
     assert field.validate(None)

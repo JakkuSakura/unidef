@@ -1,6 +1,5 @@
 from unidef.emitters import Emitter
-
-from unidef.languages.common.type_model import Traits, DyType, FieldType
+from unidef.languages.common.type_model import DyType, FieldType, Traits
 from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
@@ -36,7 +35,9 @@ def map_type_to_peewee_model(ty: DyType, args="") -> str:
             return "DoubleField({})".format(args)
         else:
             raise NotImplementedError()
-    elif ty.get_field(Traits.String) or (ty.get_field(Traits.Null) and ty.get_field(Traits.FromJson)):
+    elif ty.get_field(Traits.String) or (
+        ty.get_field(Traits.Null) and ty.get_field(Traits.FromJson)
+    ):
         return "TextField()"
     elif ty.get_field(Traits.Enum):
         if ty.get_field(Traits.SimpleEnum):
@@ -58,7 +59,9 @@ def map_type_to_pydantic_model(ty: DyType) -> str:
         base_name = "int"
     elif ty.get_field(Traits.Floating):
         base_name = "float"
-    elif ty.get_field(Traits.String) or (ty.get_field(Traits.Null) and ty.get_field(Traits.FromJson)):
+    elif ty.get_field(Traits.String) or (
+        ty.get_field(Traits.Null) and ty.get_field(Traits.FromJson)
+    ):
         base_name = "str"
     elif ty.exist_field(Traits.Tuple):
         fields = ty.get_field(Traits.Generics)
@@ -160,9 +163,7 @@ class PythonComment(BaseModel):
             lines = [LineNode(TextNode(line)) for line in self.content]
             return BracesNode(value=BulkNode(lines), open='"""', close='"""')
         else:
-            lines = [
-                LineNode(TextNode("# " + line)) for line in self.content
-            ]
+            lines = [LineNode(TextNode("# " + line)) for line in self.content]
             return BulkNode(lines)
 
 
@@ -193,9 +194,9 @@ class PythonClass(BaseModel):
         sources = []
         if self.model:
             model = self.model
-        elif data_model == 'pydantic':
+        elif data_model == "pydantic":
             model = "pydantic.BaseModel"
-        elif data_model == 'peewee':
+        elif data_model == "peewee":
             # model = "peewee.Model"
             model = "BaseModel"
         else:
@@ -206,15 +207,13 @@ class PythonClass(BaseModel):
         if len(self.fields) == 0:
             in_indent_block.append(LineNode(TextNode("pass")))
         for field in self.fields:
-            if data_model == 'pydantic':
+            if data_model == "pydantic":
                 in_indent_block.append(field.transform_pydantic())
-            elif data_model == 'peewee':
+            elif data_model == "peewee":
                 in_indent_block.append(field.transform_peewee())
             else:
                 raise Exception("Unrecognized data model: " + data_model)
-        sources.append(
-            BracesNode(value=BulkNode(in_indent_block), open=":", close="")
-        )
+        sources.append(BracesNode(value=BulkNode(in_indent_block), open=":", close=""))
 
         return BulkNode(sources)
 
@@ -263,9 +262,7 @@ class PythonEnum(BaseModel):
                 )
             )
 
-        sources.append(
-            BracesNode(value=BulkNode(in_indent_block), open=":", close="")
-        )
+        sources.append(BracesNode(value=BulkNode(in_indent_block), open=":", close=""))
 
         return BulkNode(sources)
 
@@ -326,10 +323,12 @@ def emit_python_model_definition(root: ModelDefinition, data_model) -> SourceNod
 
 class PythonPeeweeEmitter(Emitter):
     def accept(self, s: str) -> bool:
-        return s == 'python_peewee'
+        return s == "python_peewee"
 
     def emit_model(self, target: str, model: ModelDefinition) -> str:
-        formatter = StructuredFormatter(nodes=[emit_python_model_definition(model, "peewee")])
+        formatter = StructuredFormatter(
+            nodes=[emit_python_model_definition(model, "peewee")]
+        )
         return formatter.to_string()
 
     def emit_type(self, target: str, ty: DyType) -> str:
@@ -339,10 +338,12 @@ class PythonPeeweeEmitter(Emitter):
 
 class PythonPydanticEmitter(Emitter):
     def accept(self, s: str) -> bool:
-        return s == 'python_pydantic'
+        return s == "python_pydantic"
 
     def emit_model(self, target: str, model: ModelDefinition) -> str:
-        formatter = StructuredFormatter(nodes=[emit_python_model_definition(model, "pydantic")])
+        formatter = StructuredFormatter(
+            nodes=[emit_python_model_definition(model, "pydantic")]
+        )
         return formatter.to_string()
 
     def emit_type(self, target: str, ty: DyType) -> str:

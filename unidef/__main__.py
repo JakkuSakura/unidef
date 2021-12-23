@@ -1,9 +1,7 @@
-import sys
-import logging
-
-
 import argparse
+import logging
 import os.path
+import sys
 
 from beartype import beartype
 from pydantic import BaseModel

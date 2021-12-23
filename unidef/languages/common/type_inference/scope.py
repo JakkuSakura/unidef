@@ -1,11 +1,11 @@
 import copy
 
 from unidef.languages.common.ir_model import *
-from unidef.utils.transformer import *
-from unidef.languages.common.walk_nodes import walk_nodes
-from unidef.languages.common.type_model import infer_type_from_example
-from unidef.utils.typing import *
 from unidef.languages.common.type_model import *
+from unidef.languages.common.type_model import infer_type_from_example
+from unidef.languages.common.walk_nodes import walk_nodes
+from unidef.utils.transformer import *
+from unidef.utils.typing import *
 
 
 class Scope:

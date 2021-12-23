@@ -1,9 +1,10 @@
 import logging
-from unidef.utils.typing import *
+
 from unidef.languages.common.type_model import *
-from unidef.utils.transformer import *
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import *
+from unidef.utils.transformer import *
+from unidef.utils.typing import *
 
 RUST_KEYWORDS = {
     "as": "r#as",
@@ -148,7 +149,8 @@ class RustFieldNode(RustAstNode):
                     "name": map_field_name(ty.field_name),
                     "original_name": ty.field_name,
                     "value": value.field_type,
-                    "val_in_str": value.field_type.get_field(Traits.StringWrapped) or False,
+                    "val_in_str": value.field_type.get_field(Traits.StringWrapped)
+                    or False,
                 }
             )
 
@@ -178,7 +180,7 @@ class RustStructNode(RustAstNode):
 
     def __init__(self, raw: DyType = None, **kwargs):
         if raw:
-            is_data_type = kwargs.get('is_data_type')
+            is_data_type = kwargs.get("is_data_type")
             if is_data_type:
                 derive = DEFAULT_DERIVE.copy()
                 annotations = [derive]
@@ -194,7 +196,7 @@ class RustStructNode(RustAstNode):
                         RustFieldNode(f) for f in raw.get_field(Traits.StructFields)
                     ],
                     "annotations": annotations,
-                    "derive": derive
+                    "derive": derive,
                 }
             )
 
@@ -274,9 +276,9 @@ class RustStatementNode(RustAstNode):
 
     def __init__(self, **kwargs):
         assert (
-                int(bool(kwargs.get("nodes") is not None))
-                ^ int(bool(kwargs.get("raw") is not None))
-                == 1
+            int(bool(kwargs.get("nodes") is not None))
+            ^ int(bool(kwargs.get("raw") is not None))
+            == 1
         ), "only nodes xor raw can be set"
         super().__init__(**kwargs)
 
@@ -360,10 +362,7 @@ def map_type_to_rust(ty: DyType) -> str:
         return "f" + str(bits)
     elif ty.get_field(Traits.Map):
         key, value = tuple(ty.get_field(Traits.ValueTypes))
-        return "HashMap<{}, {}>".format(
-            map_type_to_rust(key),
-            map_type_to_rust(value)
-        )
+        return "HashMap<{}, {}>".format(map_type_to_rust(key), map_type_to_rust(value))
     elif ty.get_field(Traits.String):
         if ty.get_field(Traits.Reference):
             lifetime = ty.get_field(Traits.Lifetime)
@@ -413,7 +412,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_argument_pair_node(
-            self, node: RustArgumentPairNode
+        self, node: RustArgumentPairNode
     ) -> SourceNode:
         sources = []
         if node.mutable:
@@ -566,7 +565,12 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
     @beartype
     def transform_strum(self, node: Strum) -> SourceNode:
         return LineNode(
-            TextNode('#[strum({})]'.format(', '.join(['serialize = "{}"'.format(x) for x in node.serialize]))))
+            TextNode(
+                "#[strum({})]".format(
+                    ", ".join(['serialize = "{}"'.format(x) for x in node.serialize])
+                )
+            )
+        )
 
     @beartype
     def transform_rust_impl_node(self, node: RustImplNode) -> SourceNode:
@@ -601,9 +605,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
                 in_braces.append(TextNode(", "))
             in_braces.append(self.transform(arg))
         sources.append(
-            BracesNode(
-                value=BulkNode(in_braces), open="(", close=")", new_line=False
-            )
+            BracesNode(value=BulkNode(in_braces), open="(", close=")", new_line=False)
         )
         if isinstance(node.ret, DyType):
             if not node.ret.get_field(Traits.Unit):
@@ -648,7 +650,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_variable_declaration(
-            self, node: RustVariableDeclaration
+        self, node: RustVariableDeclaration
     ) -> SourceNode:
         if node.mutability:
             mutability = " mut"

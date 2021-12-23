@@ -1,11 +1,11 @@
 from beartype import beartype
 from pydantic import BaseModel, Field
 
-from unidef.models.base_model import MixedModel, FieldValue
-from unidef.languages.common.type_model import Trait, Traits, DyType
+from unidef.languages.common.type_model import DyType, Trait, Traits
+from unidef.models.base_model import FieldValue, MixedModel
+from unidef.models.typed_field import TypedField
 from unidef.utils.safelist import safelist
 from unidef.utils.typing import *
-from unidef.models.typed_field import TypedField
 
 
 class Attribute(TypedField):
@@ -18,9 +18,7 @@ class Attributes:
     VariableDeclarationId = Attribute(key="variable_declaration_id", ty=str)
     Children = Attribute(key="children", ty=list)
     Statement = Attribute(key="statement", ty=Any)
-    ClassDeclaration = Attribute(
-        key="class_declaration", ty=bool
-    )
+    ClassDeclaration = Attribute(key="class_declaration", ty=bool)
     Fields = Attribute(key="fields", ty=List[DyType])
     SuperClasses = Attribute(key="super_class", ty=list)
     Functions = Attribute(key="functions", ty=list)
@@ -33,12 +31,8 @@ class Attributes:
     CForLoopUpdate = Attribute(key="c_for_loop_update", ty=Any)
 
     Expression = Attribute(key="expression", ty=Any)
-    FunctionCall = Attribute(
-        key="function_call", ty=bool
-    )
-    FunctionDecl = Attribute(
-        key="function_decl", ty=bool
-    )
+    FunctionCall = Attribute(key="function_call", ty=bool)
+    FunctionDecl = Attribute(key="function_decl", ty=bool)
     FunctionBody = Attribute(key="function_body", ty=Any)
     FunctionReturn = Attribute(key="function_return", ty=Any)
     RawCode = Attribute(key="raw_code", ty=str)
@@ -53,12 +47,8 @@ class Attributes:
     Async = Attribute(key="async", ty=bool, default=False)
     Return = Attribute(key="return", ty=Optional)
 
-    VariableDeclarations = Attribute(
-        key="variable_declarations", ty=list
-    )
-    VariableDeclaration = Attribute(
-        key="variable_declaration", ty=bool
-    )
+    VariableDeclarations = Attribute(key="variable_declarations", ty=list)
+    VariableDeclaration = Attribute(key="variable_declaration", ty=bool)
 
     Print = Attribute(key="print", ty=bool)
     Requires = Attribute(key="requires", ty=list)
@@ -66,31 +56,19 @@ class Attributes:
     RequirePath = Attribute(key="require_path", ty=str)
     RequireKey = Attribute(key="require_key", ty=str)
     RequireValue = Attribute(key="require_value", ty=str)
-    ObjectProperties = Attribute(
-        key="object_properties", ty=list
-    )
-    ObjectProperty = Attribute(
-        key="object_property", ty=bool
-    )
+    ObjectProperties = Attribute(key="object_properties", ty=list)
+    ObjectProperty = Attribute(key="object_property", ty=bool)
     KeyName = Attribute(key="key", ty=str)
     Value = Attribute(key="value", ty=Any)
-    ArrayElements = Attribute(
-        key="array_elements", ty=list
-    )
+    ArrayElements = Attribute(key="array_elements", ty=list)
 
     TestExpression = Attribute(key="test_expression", ty=Any)
     IfClauses = Attribute(key="if_clauses", ty=bool)
     IfClause = Attribute(key="if_clause", ty=bool)
-    ElseIfClause = Attribute(
-        key="else_if_clause", ty=bool
-    )
-    ElseClause = Attribute(
-        key="else_clause", ty=bool
-    )
+    ElseIfClause = Attribute(key="else_if_clause", ty=bool)
+    ElseClause = Attribute(key="else_clause", ty=bool)
 
-    BlockStatement = Attribute(
-        key="block_statement", ty=bool
-    )
+    BlockStatement = Attribute(key="block_statement", ty=bool)
     Consequence = Attribute(key="consequence", ty=Any)
     Alternative = Attribute(key="alternative", ty=Any)
     Operator = Attribute(key="operator", ty=str)
@@ -100,56 +78,34 @@ class Attributes:
     OperatorSinglePrefix = Attribute(key="operator_single_prefix", ty=Any)
     OperatorSinglePostfix = Attribute(key="operator_single_postfix", ty=Any)
 
-    StaticMemberExpression = Attribute(
-        key="static_member_expression", ty=bool
-    )
-    ComputedMemberExpression = Attribute(
-        key="computed_member_expression", ty=bool
-    )
+    StaticMemberExpression = Attribute(key="static_member_expression", ty=bool)
+    ComputedMemberExpression = Attribute(key="computed_member_expression", ty=bool)
     MemberExpressionObject = Attribute(key="member_expression_object", ty=Any)
     MemberExpressionProperty = Attribute(key="member_expression_property", ty=Any)
 
     Identifier = Attribute(key="identifier", ty=str)
-    ThisExpression = Attribute(
-        key="this_expression", ty=bool
-    )
-    SuperExpression = Attribute(
-        key="super_expression", ty=bool
-    )
+    ThisExpression = Attribute(key="this_expression", ty=bool)
+    SuperExpression = Attribute(key="super_expression", ty=bool)
 
     Directive = Attribute(key="directive", ty=Any)
 
     Program = Attribute(key="program", ty=bool)
 
-    AssignExpression = Attribute(
-        key="assign_expression", ty=bool
-    )
+    AssignExpression = Attribute(key="assign_expression", ty=bool)
     AssignExpressionLeft = Attribute(key="assign_expression_left", ty=Any)
     AssignExpressionRight = Attribute(key="assign_expression_right", ty=Any)
 
     AwaitExpression = Attribute(key="await_expression", ty=Any)
     ThrowStatement = Attribute(key="throw_statement", ty=Any)
-    NewExpression = Attribute(
-        key="new_expression", ty=bool
-    )
-    ConditionalExpression = Attribute(
-        key="conditional_expression", ty=bool
-    )
-    BreakStatement = Attribute(
-        key="break_statement", ty=bool
-    )
-    ContinueStatement = Attribute(
-        key="continue_statement", ty=bool
-    )
+    NewExpression = Attribute(key="new_expression", ty=bool)
+    ConditionalExpression = Attribute(key="conditional_expression", ty=bool)
+    BreakStatement = Attribute(key="break_statement", ty=bool)
+    ContinueStatement = Attribute(key="continue_statement", ty=bool)
 
     TryStatement = Attribute(key="try_statement", ty=list)
     CatchClauses = Attribute(key="catch_clauses", ty=list)
-    CatchClause = Attribute(
-        key="catch_clause", ty=bool
-    )
-    FinallyClause = Attribute(
-        key="finally_statement", ty=list
-    )
+    CatchClause = Attribute(key="catch_clause", ty=bool)
+    FinallyClause = Attribute(key="finally_statement", ty=list)
 
     Mutable = Attribute(key="mutable", ty=bool)
 
@@ -171,22 +127,23 @@ class IrNode(MixedModel):
 
 
 class Argument(IrNode):
-    kind: str = 'argument'
+    kind: str = "argument"
     argument_name: str
     argument_type: DyType
     output: bool
 
 
 class FunctionDecl(IrNode):
-    kind: str = 'function_decl'
+    kind: str = "function_decl"
     name: str
     arguments: List[Argument]
     function_return: Optional[DyType]
     function_body: IrNode = IrNode.from_attribute(Attributes.Children([]))
     async_field: bool = False
 
+
 class ClassDeclaration(IrNode):
-    kind: str = 'class_declaration'
+    kind: str = "class_declaration"
     name: str
     super_class: List[str] = []
     fields: List[DyType] = []

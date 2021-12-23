@@ -1,15 +1,16 @@
 import logging
+import os
 import sys
 from enum import Enum
 
 from beartype import beartype
 
-from unidef.models.input_model import InputDefinition
 from unidef.languages.common.type_model import DyType
+from unidef.models.input_model import InputDefinition
 from unidef.parsers import Parser
 from unidef.utils.loader import load_module
 from unidef.utils.typing import Optional
-import os
+
 
 class ParserRegistry:
     def __init__(self):
@@ -31,6 +32,7 @@ def add_parser(name: str, emitter: str):
     module = load_module(name)
     if module:
         PARSER_REGISTRY.add_parser(module.__dict__[emitter]())
+
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 add_parser("json_parser", "JsonParser")

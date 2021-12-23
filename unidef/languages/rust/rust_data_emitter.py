@@ -8,14 +8,15 @@ from pydantic import BaseModel
 
 from unidef.emitters import Emitter
 from unidef.emitters.sql_model import emit_schema_from_model
+from unidef.languages.common.type_model import (DyType, Traits, Types,
+                                                to_second_scale)
+from unidef.languages.rust.rust_ast import *
 from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
-from unidef.languages.common.type_model import Traits, DyType, Types, to_second_scale
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import *
-from unidef.utils.typing import List, Optional
 from unidef.utils.transformer import *
-from unidef.languages.rust.rust_ast import *
+from unidef.utils.typing import List, Optional
 
 
 def find_all_structs_impl(reg: StructRegistry, s: DyType):
@@ -38,8 +39,8 @@ def sql_model_get_sql_ddl(struct: RustStructNode) -> RustFuncDeclNode:
         name="get_sql_ddl",
         args=[],
         ret=Types.String.copy()
-            .append_field(Traits.Reference(True))
-            .append_field(Traits.Lifetime("static")),
+        .append_field(Traits.Reference(True))
+        .append_field(Traits.Lifetime("static")),
         content=f'r#"{emit_schema_from_model(struct.raw)}"#',
     )
 
@@ -60,9 +61,9 @@ def sql_model_get_value_inner(f: RustFieldNode) -> str:
             f.name, to_second_scale(f.value.get_field(Traits.TsUnit))
         )
     elif (
-            f.value.get_field(Traits.Struct)
-            or f.value.get_field(Traits.Vector)
-            or f.value.get_field(Traits.Tuple)
+        f.value.get_field(Traits.Struct)
+        or f.value.get_field(Traits.Vector)
+        or f.value.get_field(Traits.Tuple)
     ):
         return "serde_json::to_string(&self.{}).unwrap()".format(f.name)
     else:
@@ -82,9 +83,9 @@ def sql_model_field_names_in_format(struct: RustStructNode) -> str:
         if field.value.get_field(Traits.SimpleEnum):
             fields.append("'{%s:?}'" % field.name)
         elif (
-                field.value.get_field(Traits.String)
-                or field.value.get_field(Traits.Enum)
-                or field.value.get_field(Traits.Struct)
+            field.value.get_field(Traits.String)
+            or field.value.get_field(Traits.Enum)
+            or field.value.get_field(Traits.Struct)
         ):
             fields.append("'{%s}'" % field.name)
         elif field.value.get_field(Traits.TsUnit):
@@ -120,8 +121,8 @@ def sql_model_get_field_sql(struct: RustStructNode) -> RustFuncDeclNode:
         name="get_fields_sql",
         args=[RustArgumentPairNode(name="&self", type="Self")],
         ret=Types.String.copy()
-            .append_field(Traits.Reference(True))
-            .append_field(Traits.Lifetime("static")),
+        .append_field(Traits.Reference(True))
+        .append_field(Traits.Lifetime("static")),
         content=f"""r#"{field_names}"#""",
     )
 
@@ -172,14 +173,14 @@ def from_sql_raw_func(struct: RustStructNode) -> RustFuncDeclNode:
 def from_sql_raw_trait(struct: RustStructNode) -> Optional[RustAstNode]:
     for s in struct.fields:
         if (
-                s.value.get_field(Traits.Enum)
-                or s.value.get_field(Traits.Struct)
-                or (
+            s.value.get_field(Traits.Enum)
+            or s.value.get_field(Traits.Struct)
+            or (
                 s.value.get_field(Traits.Integer)
                 and not s.value.get_field(Traits.Signed)
-        )
-                or s.value.get_field(Traits.TsUnit)
-                or s.value.get_field(Traits.Vector)
+            )
+            or s.value.get_field(Traits.TsUnit)
+            or s.value.get_field(Traits.Vector)
         ):
             logging.warning(
                 "Do not support %s %s yet, skipping From<Row>",
@@ -199,14 +200,14 @@ def raw_data_func(raw: str) -> RustFuncDeclNode:
         name="get_raw_data",
         args=[],
         ret=Types.String.copy()
-            .append_field(Traits.Reference(True))
-            .append_field(Traits.Lifetime("static")),
+        .append_field(Traits.Reference(True))
+        .append_field(Traits.Lifetime("static")),
         content=f'r#"{raw}"#',
     )
 
 
 def emit_rust_type_inner(
-        struct: DyType, root: Optional[ModelDefinition] = None
+    struct: DyType, root: Optional[ModelDefinition] = None
 ) -> SourceNode:
     rust_formatter = RustFormatter()
     sources = []

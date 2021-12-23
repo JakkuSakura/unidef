@@ -1,7 +1,7 @@
-from unidef.utils.typing import *
-from unidef.utils.visitor import VisitorPattern
 from unidef.utils.name_convert import *
 from unidef.utils.transformer import *
+from unidef.utils.typing import *
+from unidef.utils.visitor import VisitorPattern
 
 
 @abstract

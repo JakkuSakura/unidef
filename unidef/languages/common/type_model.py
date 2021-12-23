@@ -47,18 +47,14 @@ class Traits:
     Object = Trait(key="object", ty=bool)
     AllValue = Trait(key="all_value", ty=bool)
 
-    NotInferredType = Trait(
-        key="not_inferred_type", ty=bool
-    )
+    NotInferredType = Trait(key="not_inferred_type", ty=bool)
 
     Default = Trait(key="default", ty=Any)
 
     FromJson = Trait(key="from_json", ty=bool, default=False)
     # Format
     SimpleEnum = Trait(key="simple_enum", ty=bool)
-    StringWrapped = Trait(
-        key="string_wrapped", ty=bool
-    )
+    StringWrapped = Trait(key="string_wrapped", ty=bool)
     TsUnit = Trait(key="ts_unit", ty=str)
 
     # SQL related
@@ -79,8 +75,9 @@ class DyType(MixedModel):
     Type is the type model used in this program.
     It allows inheritance and multiple traits, similar to those in Rust and Java, as used in many other languages.
     """
+
     name: str
-    kind: str = ''
+    kind: str = ""
 
     @classmethod
     @beartype
@@ -100,7 +97,7 @@ class GenericType(DyType):
 
 
 class TupleType(GenericType):
-    kind: str = 'tuple'
+    kind: str = "tuple"
     tuple: bool = True
 
     def __init__(self, *values: DyType, **kwargs):
@@ -116,7 +113,7 @@ class VectorType(GenericType):
 
 
 class IntegerType(DyType):
-    kind: str = 'integer'
+    kind: str = "integer"
     integer: bool = True
     numeric: bool = True
     bit_size: int
@@ -130,7 +127,7 @@ def build_int(name: str) -> DyType:
 
 
 class FloatingType(DyType):
-    kind: str = 'floating'
+    kind: str = "floating"
     floating: bool = True
     integer: bool = False
     numeric: bool = True
@@ -148,7 +145,7 @@ class FieldType(MixedModel):
 
 
 class StructType(DyType):
-    kind: str = 'struct'
+    kind: str = "struct"
     struct: bool = True
     name: str
     fields: List[FieldType]
@@ -160,7 +157,7 @@ class VariantType(DyType):
 
 
 class EnumType(DyType):
-    kind: str = 'enum'
+    kind: str = "enum"
     enum: bool = True
     name: str
     variants: List[VariantType]
@@ -187,19 +184,24 @@ class Types:
     Double = build_float("f64").freeze()
 
     NoneType = (
-        DyType.from_trait("none", Traits.Null(True)).append_field(Traits.Nullable(True)).freeze()
+        DyType.from_trait("none", Traits.Null(True))
+        .append_field(Traits.Nullable(True))
+        .freeze()
     )
 
-    Unit = DyType.from_trait("unit", Traits.Unit(True)).append_field(Traits.Null(True)).freeze()
+    Unit = (
+        DyType.from_trait("unit", Traits.Unit(True))
+        .append_field(Traits.Null(True))
+        .freeze()
+    )
 
     AllValue = DyType.from_trait("all_value", Traits.AllValue(True)).freeze()
     Object = (
         DyType.from_trait("object", Traits.Object(True))
-            .append_field(Traits.Map(True))
-            .append_field(Traits.ValueTypes([String, AllValue]))
-            .freeze()
+        .append_field(Traits.Map(True))
+        .append_field(Traits.ValueTypes([String, AllValue]))
+        .freeze()
     )
-
 
 
 class TypeRegistry(BaseModel):
@@ -296,7 +298,7 @@ def prefix_join(prefix: str, name: str) -> str:
 
 @beartype
 def infer_type_from_example(
-        obj0: Union[str, int, float, dict, list, None], prefix0: str = ""
+    obj0: Union[str, int, float, dict, list, None], prefix0: str = ""
 ) -> DyType:
     def inner(obj, prefix) -> DyType:
         if obj is None:
@@ -326,8 +328,8 @@ def infer_type_from_example(
             if "_ts" in prefix or "time" in prefix or "_at" in prefix:
                 ty = (
                     ty.copy()
-                        .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
-                        .replace_field(Traits.TypeName("timestamp"))
+                    .append_field(Traits.TsUnit(detect_timestamp_unit(obj)))
+                    .replace_field(Traits.TypeName("timestamp"))
                 )
 
             return ty
@@ -353,10 +355,19 @@ def infer_type_from_example(
                         val.replace_field(Traits.TypeName(new_name))
 
                 fields.append(FieldType(field_name=key, field_type=value))
-            return StructType(name="struct_" + str(random.randint(0, 1000)), fields=fields, is_data_type=True)
+            return StructType(
+                name="struct_" + str(random.randint(0, 1000)),
+                fields=fields,
+                is_data_type=True,
+            )
         raise Exception(f"Could not infer type from {obj}")
 
-    return inner(obj0, prefix0).copy().append_field(Traits.FromJson(True)).append_field(Traits.RawValue(obj0))
+    return (
+        inner(obj0, prefix0)
+        .copy()
+        .append_field(Traits.FromJson(True))
+        .append_field(Traits.RawValue(obj0))
+    )
 
 
 def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> None:
@@ -371,7 +382,7 @@ def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> 
 
 
 def walk_type_with_count(
-        node: DyType, process: Callable[[int, int, str, DyType], None]
+    node: DyType, process: Callable[[int, int, str, DyType], None]
 ) -> None:
     counts = {}
 

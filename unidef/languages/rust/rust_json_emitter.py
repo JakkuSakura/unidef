@@ -1,14 +1,14 @@
 from pydantic import BaseModel
 
 from unidef.emitters.registry import Emitter
-from unidef.models.config_model import ModelDefinition
-from unidef.languages.common.type_model import Traits, DyType
-from unidef.utils.typing import *
+from unidef.languages.common.ir_model import Attributes, IrNode
+from unidef.languages.common.type_model import DyType, Traits
 from unidef.languages.rust.rust_ast import *
-from unidef.utils.transformer import *
-from unidef.utils.visitor import *
+from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import StructuredFormatter
-from unidef.languages.common.ir_model import IrNode, Attributes
+from unidef.utils.transformer import *
+from unidef.utils.typing import *
+from unidef.utils.visitor import *
 
 
 class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):

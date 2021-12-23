@@ -1,8 +1,9 @@
-from unidef.utils.typing import *
-from unidef.languages.common.type_model import *
-from unidef.languages.common.ir_model import *
 from networkx import DiGraph, Graph
+
+from unidef.languages.common.ir_model import *
 from unidef.languages.common.type_inference.scope import *
+from unidef.languages.common.type_model import *
+from unidef.utils.typing import *
 
 
 @abstract
@@ -55,13 +56,15 @@ class TypeRelationBuilder:
         self.node_mapping[path] = node
 
     def add_edge(
-            self,
-            node1: AdvancedIrNode,
-            node2: AdvancedIrNode,
+        self,
+        node1: AdvancedIrNode,
+        node2: AdvancedIrNode,
     ):
         self.add_node(node1.node_path, node1.node)
         self.add_node(node2.node_path, node2.node)
-        self.add_group(NodeGroup("equals_to", dict(n1=node1.node_path, n2=node2.node_path)))
+        self.add_group(
+            NodeGroup("equals_to", dict(n1=node1.node_path, n2=node2.node_path))
+        )
 
     def add_group(self, group: NodeGroup):
         self.groups.append(group)
@@ -85,11 +88,11 @@ class NodeTypeProcessor:
         raise NotImplementedError()
 
     def prepare_inference(
-            self,
-            node: IrNode,
-            environment: Environment,
-            scope: Scope,
-            builder: TypeRelationBuilder,
+        self,
+        node: IrNode,
+        environment: Environment,
+        scope: Scope,
+        builder: TypeRelationBuilder,
     ) -> None:
         raise NotImplementedError()
 

@@ -3,8 +3,8 @@ import unicodedata
 
 import pyhocon
 
-from unidef.models.input_model import InputDefinition, ExampleInput
 from unidef.languages.common.type_model import *
+from unidef.models.input_model import ExampleInput, InputDefinition
 from unidef.parsers import Parser
 from unidef.utils.typing import *
 

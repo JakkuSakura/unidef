@@ -9,7 +9,7 @@ def to_lower(s: str) -> str:
 
 @beartype
 def to_snake_case(s: str) -> str:
-    if '_' in s:
+    if "_" in s:
         s = s.lower()
     converted = case_conversion.snakecase(s)
     return converted

@@ -1,4 +1,5 @@
 from unidef.utils.typing import *
+
 from .typed_field import FieldValue, TypedField
 
 
@@ -36,7 +37,9 @@ class MixedModel(BaseModel):
     def remove_field(self, field: TypedField) -> __qualname__:
         assert not self.is_frozen()
         if hasattr(self, field.key):
-            raise Exception("Could not remove required field {} in {}".format(field.key, type(self)))
+            raise Exception(
+                "Could not remove required field {} in {}".format(field.key, type(self))
+            )
         if field.key in self.extended:
             self.extended.pop(field.key)
         return self
@@ -44,8 +47,8 @@ class MixedModel(BaseModel):
     def _get_field_raw(self, key: str, default):
         if hasattr(self, key):
             return getattr(self, key)
-        if hasattr(self, key + '_field'):
-            return getattr(self, key + '_field')
+        if hasattr(self, key + "_field"):
+            return getattr(self, key + "_field")
         if key in self.extended:
             return self.extended.get(key)
         else:
@@ -63,7 +66,7 @@ class MixedModel(BaseModel):
     def keys(self) -> List[str]:
         keys = set(self.dict().keys())
         keys.update(self.extended.keys())
-        for x in ['extended', 'frozen']:
+        for x in ["extended", "frozen"]:
             keys.remove(x)
         return list(keys)
 

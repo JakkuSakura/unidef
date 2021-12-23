@@ -2,21 +2,22 @@ import json
 import logging
 import traceback
 
+import esprima
 from beartype import beartype
+from esprima.nodes import Node as EsprimaNode
+from esprima.nodes import *
 
+from unidef.languages.common.ir_model import (Attribute, Attributes, IrNode,
+                                              Nodes)
+from unidef.languages.common.type_model import (DyType, Traits, Types,
+                                                infer_type_from_example)
 from unidef.models.input_model import SourceInput
-from unidef.languages.common.ir_model import Attribute, Attributes, IrNode, Nodes
-from unidef.languages.common.type_model import Traits, DyType, Types, infer_type_from_example
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.name_convert import *
+from unidef.utils.transformer import NodeTransformer
 from unidef.utils.typing import *
 from unidef.utils.visitor import VisitorPattern
-from unidef.utils.transformer import NodeTransformer
-
-import esprima
-from esprima.nodes import *
-from esprima.nodes import Node as EsprimaNode
 
 
 class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):

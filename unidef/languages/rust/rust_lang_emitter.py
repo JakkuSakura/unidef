@@ -3,18 +3,19 @@ import copy
 from pydantic import BaseModel
 
 from unidef.emitters import Emitter
+from unidef.languages.common.ir_model import (Attribute, Attributes,
+                                              ClassDeclaration, IrNode)
+from unidef.languages.common.type_inference import TypeInference
+from unidef.languages.common.type_model import DyType, Traits
+from unidef.languages.common.walk_nodes import walk_nodes
 from unidef.languages.rust.rust_data_emitter import *
+from unidef.languages.rust.rust_json_emitter import *
 from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
-from unidef.languages.common.ir_model import Attribute, Attributes, IrNode
-from unidef.languages.common.type_model import Traits, DyType
 from unidef.utils.formatter import *
 from unidef.utils.typing import *
 from unidef.utils.typing import List
-from unidef.languages.rust.rust_json_emitter import *
-from unidef.languages.common.walk_nodes import walk_nodes
-from unidef.languages.common.type_inference import TypeInference
-from unidef.languages.common.ir_model import ClassDeclaration
+
 
 class MutabilityHandler(NodeTransformer[IrNode, IrNode]):
     to_modify: Dict[str, IrNode] = {}
@@ -52,6 +53,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
     @beartype
     def transform(self, node: IrNode) -> RustAstNode:
         if self.functions is None:
+
             def acceptor(this, name):
                 return this.target_name == name
 
@@ -145,10 +147,10 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             is_async=node.get_field(Attributes.Async),
             access=AccessModifier.PUBLIC,
             args=[RustArgumentPairNode(name="&self", type="Self")]
-                 + [
-                     self.transform_argument(arg)
-                     for arg in node.get_field(Attributes.Arguments)
-                 ],
+            + [
+                self.transform_argument(arg)
+                for arg in node.get_field(Attributes.Arguments)
+            ],
             ret=node.get_field(Attributes.FunctionReturn) or Types.AllValue,
             content=[
                 self.transform(n)
@@ -241,8 +243,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         for req in required:
             path = (
                 req.get_field(Attributes.RequirePath)
-                    .replace(".", "self")
-                    .replace("/", "::")
+                .replace(".", "self")
+                .replace("/", "::")
             )
             key = req.get_field(Attributes.RequireKey)
             path = "::".join([path, key])
@@ -296,11 +298,13 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         for base in node.get_field(Attributes.SuperClasses):
             fields.append(
                 DyType.from_str(base)
-                    .append_field(Traits.TypeRef(base))
-                    .append_field(Traits.FieldName("base"))
+                .append_field(Traits.TypeRef(base))
+                .append_field(Traits.FieldName("base"))
             )
         name = node.get_field(Attributes.Name)
-        rust_struct = RustStructNode(raw=StructType(name=name, fields=fields, is_data_type=False))
+        rust_struct = RustStructNode(
+            raw=StructType(name=name, fields=fields, is_data_type=False)
+        )
         sources.append(rust_struct)
         functions = []
         for i, child in enumerate(node.get_field(Attributes.Functions)):

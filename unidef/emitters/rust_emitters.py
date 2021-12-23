@@ -1,6 +1,6 @@
 from unidef.emitters import Emitter
-from unidef.models.config_model import ModelDefinition
 from unidef.languages.common.type_model import DyType
+from unidef.models.config_model import ModelDefinition
 
 
 class RustDataEmitter(Emitter):
@@ -8,7 +8,8 @@ class RustDataEmitter(Emitter):
         return s == "rust"
 
     def emit_model(self, target: str, model: ModelDefinition) -> str:
-        from unidef.languages.rust.rust_data_emitter import emit_rust_model_definition
+        from unidef.languages.rust.rust_data_emitter import \
+            emit_rust_model_definition
 
         return emit_rust_model_definition(model)
 
@@ -27,10 +28,7 @@ class RustJsonEmitter(Emitter):
 
     def emit_type(self, target: str, ty: DyType) -> str:
         from unidef.languages.rust.rust_json_emitter import (
-            get_json_crate,
-            RustFormatter,
-            StructuredFormatter,
-        )
+            RustFormatter, StructuredFormatter, get_json_crate)
 
         json_crate = get_json_crate(target)
         node = json_crate.transform(ty)
@@ -52,10 +50,7 @@ class RustLangEmitter(Emitter):
 
     def emit_type(self, target: str, ty) -> str:
         from unidef.languages.rust.rust_lang_emitter import (
-            RustEmitterBase,
-            RustFormatter,
-            StructuredFormatter,
-        )
+            RustEmitterBase, RustFormatter, StructuredFormatter)
 
         builder = RustEmitterBase()
         node = builder.transform(ty)
