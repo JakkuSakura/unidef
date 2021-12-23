@@ -138,17 +138,17 @@ class RustFieldNode(RustAstNode):
             value=DyType.from_str(ty_or_name).append_field(Traits.TypeRef(ty_or_name)),
         )
 
-    def __init__(self, ty: DyType = None, **kwargs):
+    def __init__(self, ty: FieldType = None, **kwargs):
         if ty:
             value = ty
 
             assert value is not None, "Is not an valid field " + repr(ty)
             kwargs.update(
                 {
-                    "name": map_field_name(ty.get_field(Traits.FieldName)),
-                    "original_name": ty.get_field(Traits.FieldName),
-                    "value": value,
-                    "val_in_str": value.get_field(Traits.StringWrapped) or False,
+                    "name": map_field_name(ty.field_name),
+                    "original_name": ty.field_name,
+                    "value": value.field_type,
+                    "val_in_str": value.field_type.get_field(Traits.StringWrapped) or False,
                 }
             )
 
@@ -212,7 +212,7 @@ class RustEnumNode(RustAstNode):
     annotations: List[ProcMacro] = []
     access: AccessModifier = AccessModifier.PUBLIC
     name: str
-    variants: List[DyType]
+    variants: List[VariantType]
     raw: DyType = None
 
     @staticmethod
@@ -222,7 +222,7 @@ class RustEnumNode(RustAstNode):
         else:
             return to_pascal_case(name)
 
-    def __init__(self, raw: DyType = None, **kwargs):
+    def __init__(self, raw: EnumType = None, **kwargs):
         if raw:
             annotations = [ENUM_DEFAULT_DERIVE]
 
@@ -230,7 +230,7 @@ class RustEnumNode(RustAstNode):
                 {
                     "raw": raw,
                     "name": RustStructNode.parse_name(raw.get_field(Traits.TypeName)),
-                    "variants": list(raw.get_field(Traits.Variant)),
+                    "variants": list(raw.get_field(Traits.Variants)),
                     "annotations": annotations,
                 }
             )
@@ -340,10 +340,10 @@ def map_type_to_rust(ty: DyType) -> str:
         return RustEnumNode.parse_variant_name(ty.get_field(Traits.TypeRef))
     elif ty.get_field(Traits.Tuple):
         return "({})".format(
-            ", ".join([map_type_to_rust(t) for t in ty.get_field(Traits.TupleFields)])
+            ", ".join([map_type_to_rust(t) for t in ty.get_field(Traits.Generics)])
         )
     elif ty.get_field(Traits.Vector):
-        return "Vec<{}>".format(map_type_to_rust(ty.get_field(Traits.ValueTypes)[0]))
+        return "Vec<{}>".format(map_type_to_rust(ty.get_field(Traits.Generics)[0]))
     elif ty.get_field(Traits.Bool):
         return "bool"
     elif ty.get_field(Traits.AllValue):
@@ -417,13 +417,13 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
     ) -> SourceNode:
         sources = []
         if node.mutable:
-            sources.append(TextNode(text="mut "))
+            sources.append(TextNode("mut "))
 
-        sources.append(TextNode(text=node.name))
+        sources.append(TextNode(node.name))
         if not node.name.startswith("&") and node.type:
-            sources.append(TextNode(text=": "))
+            sources.append(TextNode(": "))
             if isinstance(node.type, str):
-                sources.append(TextNode(text=node.type))
+                sources.append(TextNode(node.type))
             elif isinstance(node.type, RustAstNode):
                 sources.append(node.type)
             elif isinstance(node.type, DyType):
@@ -440,10 +440,10 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             sources = []
             for n in node.nodes:
                 sources.append(self.transform(n))
-            sources.append(TextNode(text="; "))
+            sources.append(TextNode("; "))
             return LineNode(BulkNode(sources))
         if node.raw:
-            return LineNode(TextNode(text=node.raw))
+            return LineNode(TextNode(node.raw))
 
         raise Exception("You must set either nodes or raw")
 
@@ -458,7 +458,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
 
     @beartype
     def transform_rust_raw_node(self, node: RustRawNode) -> SourceNode:
-        text = TextNode(text=node.raw)
+        text = TextNode(node.raw)
         if node.new_line:
             text = LineNode(text)
         return text
@@ -474,13 +474,12 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             pairs.append(f'rename_all = "{node.rename_all}"')
 
         line = "#[serde({})]".format(",".join(pairs))
-        return LineNode(TextNode(text=line))
+        return LineNode(TextNode(line))
 
-    @beartype
     @beartype
     def transform_derive(self, node: Derive) -> SourceNode:
         return LineNode(
-            content=TextNode(text="#[derive({})]".format(", ".join(node.enabled)))
+            content=TextNode("#[derive({})]".format(", ".join(node.enabled)))
         )
 
     @beartype
@@ -490,7 +489,7 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         else:
             content = f'#[serde_as(as = "{node.serde_as}")]'
 
-        return LineNode(TextNode(text=content))
+        return LineNode(TextNode(content))
 
     @beartype
     def transform_rust_field_node(self, node: RustFieldNode) -> SourceNode:
@@ -516,11 +515,11 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         sources = []
         if node.cargo_doc:
             for line in node.content:
-                sources.append(LineNode(TextNode(text="/// " + line)))
-                sources.append(LineNode(TextNode(text="///")))
+                sources.append(LineNode(TextNode("/// " + line)))
+                sources.append(LineNode(TextNode("///")))
         else:
             for line in node.content:
-                sources.append(LineNode(TextNode(text="// " + line)))
+                sources.append(LineNode(TextNode("// " + line)))
         return BulkNode(sources)
 
     @beartype
@@ -529,13 +528,13 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         for anno in node.annotations:
             sources.append(self.transform(anno))
 
-        sources.append(TextNode(text=f"{node.access.value}struct {node.name} "))
+        sources.append(TextNode(f"{node.access.value}struct {node.name} "))
         in_braces = []
         if node.fields:
             line = []
             for i, field in enumerate(node.fields):
                 if i > 0:
-                    line.append(TextNode(text=","))
+                    line.append(TextNode(","))
                     in_braces.append(LineNode(BulkNode(line)))
                     line = []
 
@@ -550,32 +549,32 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         for anno in node.annotations:
             sources.append(self.transform(anno))
 
-        sources.append(TextNode(text=f"{node.access.value}enum {node.name} "))
+        sources.append(TextNode(f"{node.access.value}enum {node.name} "))
         in_braces = []
         for field in node.variants:
-            name = list(field.get_field(Traits.VariantNames))
+            name = list(field.variant_names)
             mapped = map_field_name(name[0])
             if len(name) > 1 or mapped != name[0]:
                 reversed_names = name[:]
                 reversed_names.reverse()
                 in_braces.append(self.transform(Strum(serialize=reversed_names)))
 
-            in_braces.append(TextNode(text=mapped + ","))
+            in_braces.append(TextNode(mapped + ","))
         sources.append(BracesNode(value=BulkNode(in_braces)))
         return BulkNode(sources)
 
     @beartype
     def transform_strum(self, node: Strum) -> SourceNode:
         return LineNode(
-            content=TextNode(text='#[strum({})]'.format(['serialize = "{}"'.format(x) for x in node.serialize])))
+            TextNode('#[strum({})]'.format(', '.join(['serialize = "{}"'.format(x) for x in node.serialize]))))
 
     @beartype
     def transform_rust_impl_node(self, node: RustImplNode) -> SourceNode:
         sources = []
         if node.trait:
-            sources.append(TextNode(text=f"impl {node.trait} for {node.name} "))
+            sources.append(TextNode(f"impl {node.trait} for {node.name} "))
         else:
-            sources.append(TextNode(text=f"impl {node.name} "))
+            sources.append(TextNode(f"impl {node.name} "))
         in_braces = []
         for func in node.functions:
             if node.trait and isinstance(func, RustFuncDeclNode):
@@ -595,11 +594,11 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             async_value = "async "
         else:
             async_value = ""
-        sources.append(TextNode(text=access_value + async_value + "fn " + node.name))
+        sources.append(TextNode(access_value + async_value + "fn " + node.name))
         in_braces = []
         for i, arg in enumerate(node.args):
             if i > 0:
-                in_braces.append(TextNode(text=", "))
+                in_braces.append(TextNode(", "))
             in_braces.append(self.transform(arg))
         sources.append(
             BracesNode(
@@ -609,15 +608,15 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         if isinstance(node.ret, DyType):
             if not node.ret.get_field(Traits.Unit):
                 ty = " -> " + map_type_to_rust(node.ret) + " "
-                sources.append(TextNode(text=ty))
+                sources.append(TextNode(ty))
             else:
-                sources.append(TextNode(text=" "))
+                sources.append(TextNode(" "))
         elif isinstance(node.ret, RustAstNode):
-            sources.append(TextNode(text=" -> "))
+            sources.append(TextNode(" -> "))
             sources.append(self.transform(node.ret))
-            sources.append(TextNode(text=" "))
+            sources.append(TextNode(" "))
         if isinstance(node.content, str):
-            sources.append(BracesNode(value=TextNode(text=node.content)))
+            sources.append(BracesNode(value=TextNode(node.content)))
         elif isinstance(node.content, list):
             in_braces = []
             for c in node.content:
@@ -631,21 +630,21 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
     def transform_rust_func_call_node(self, node: RustFuncCallNode):
         sources = []
         sources.append(self.transform(node.callee))
-        sources.append(TextNode(text="("))
+        sources.append(TextNode("("))
         for i, a in enumerate(node.arguments):
             if i > 0:
-                sources.append(TextNode(text=", "))
+                sources.append(TextNode(", "))
 
             sources.append(self.transform(a))
-        sources.append(TextNode(text=")"))
+        sources.append(TextNode(")"))
         return BulkNode(sources)
 
     @beartype
     def transform_rust_use_node(self, node: RustUseNode) -> SourceNode:
         if node.rename and node.rename != node.path.split("::")[-1]:
-            return LineNode(TextNode(text=f"use {node.path} as {node.rename}"))
+            return LineNode(TextNode(f"use {node.path} as {node.rename}"))
         else:
-            return LineNode(TextNode(text=f"use {node.path};"))
+            return LineNode(TextNode(f"use {node.path};"))
 
     @beartype
     def transform_rust_variable_declaration(

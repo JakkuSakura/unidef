@@ -16,16 +16,17 @@ class Traits:
     BitSize = Trait(key="bit_size", ty=int)
     Signed = Trait(key="signed", ty=bool)
     KeyType = Trait(key="key", ty=str)
+    # deprecated, the same as generics
     ValueTypes = Trait(key="value", ty=list, default=[])
     Parent = Trait(key="parent", ty=Any)
     StructFields = Trait(key="fields", ty=list)
     Struct = Trait(key="struct", ty=bool, default=False)
-    Enum = Trait(key="enum", ty=str)
+    Enum = Trait(key="enum", ty=bool)
     TypeRef = Trait(key="type_ref", ty=str)
-    Variant = Trait(key="variant", ty=Any)
+    Variants = Trait(key="variants", ty=Any)
     VariantNames = Trait(key="variant_name", ty=List[str])
     RawValue = Trait(key="raw_value", ty=Any)
-    Generics = Trait(key="generics", ty=Any)
+    Generics = Trait(key="generics", ty=List["DyType"])
 
     # TODO: distinguish in line or before line comments
     BeforeLineComment = Trait(key="before_line_comment", ty=List[str], default=[])
@@ -39,7 +40,6 @@ class Traits:
     Integer = Trait(key="integer", ty=bool)
     String = Trait(key="string", ty=bool)
     Tuple = Trait(key="tuple", ty=bool)
-    TupleFields = Trait(key="tuple_fields", ty=list)
     Vector = Trait(key="vector", ty=bool)
     Map = Trait(key="map", ty=bool)
     Unit = Trait(key="unit", ty=bool)
@@ -94,10 +94,25 @@ class DyType(MixedModel):
         return this
 
 
-class TupleType(DyType):
+class GenericType(DyType):
+    kind: str = "generic"
+    generics: List[DyType]
+
+
+class TupleType(GenericType):
     kind: str = 'tuple'
     tuple: bool = True
-    tuple_fields: List[DyType]
+
+    def __init__(self, *values: DyType, **kwargs):
+        super().__init__(generics=values, **kwargs)
+
+
+class VectorType(GenericType):
+    kind: str = "vector"
+    vector: bool = True
+
+    def __init__(self, value: DyType, **kwargs):
+        super().__init__(generics=[value], **kwargs)
 
 
 class IntegerType(DyType):
@@ -127,12 +142,28 @@ def build_float(name: str) -> DyType:
     return FloatingType(name=name, bit_size=int(name[1:]))
 
 
-class Struct(DyType):
+class FieldType(MixedModel):
+    field_name: str
+    field_type: DyType
+
+
+class StructType(DyType):
     kind: str = 'struct'
     struct: bool = True
     name: str
-    fields: List[DyType]
+    fields: List[FieldType]
     data_type: bool = True
+
+
+class VariantType(DyType):
+    variant_names: List[str]
+
+
+class EnumType(DyType):
+    kind: str = 'enum'
+    enum: bool = True
+    name: str
+    variants: List[VariantType]
 
 
 class Types:
@@ -155,8 +186,6 @@ class Types:
     Float = build_float("f32").freeze()
     Double = build_float("f64").freeze()
 
-    Vector = DyType.from_trait("vector", Traits.Vector(True)).freeze()
-
     NoneType = (
         DyType.from_trait("none", Traits.Null(True)).append_field(Traits.Nullable(True)).freeze()
     )
@@ -171,30 +200,6 @@ class Types:
             .freeze()
     )
 
-    @staticmethod
-    @beartype
-    def field(name: str, ty: DyType) -> DyType:
-        return ty.append_field(Traits.FieldName(name))
-
-    @staticmethod
-    @beartype
-    def variant(name: List[str]) -> DyType:
-        ty = DyType.from_str(name[0])
-        for n in name:
-            ty.append_field(Traits.VariantNames([n]))
-        return ty
-
-    @staticmethod
-    @beartype
-    def struct(name: str, fields: List[DyType], is_data_type=True) -> DyType:
-        return Struct(name=name, fields=fields, is_data_type=is_data_type)
-
-    @staticmethod
-    @beartype
-    def enum(name: str, variants: List[DyType]) -> DyType:
-        ty = DyType.from_trait(name, Traits.Enum(name))
-        ty.append_field(Traits.Variant(variants))
-        return ty
 
 
 class TypeRegistry(BaseModel):
@@ -234,9 +239,7 @@ class TypeRegistry(BaseModel):
 
     @beartype
     def is_subclass(self, child: DyType, parent: DyType) -> bool:
-        assert isinstance(child, DyType)
-        assert isinstance(parent, DyType)
-        if Traits.Parent(parent) in child.__root__:
+        if Traits.Parent(parent) in child.keys():
             return True
         p = child.get_field(Traits.Parent).value
         return self.is_subclass(p, parent)
@@ -247,7 +250,7 @@ class TypeRegistry(BaseModel):
 
     @beartype
     def list_traits(self) -> List[Trait]:
-        return list(self.__root__.values())
+        return list(self.traits.values())
 
 
 @beartype
@@ -334,7 +337,7 @@ def infer_type_from_example(
             content = Types.AllValue
             if len(obj):
                 content = infer_type_from_example(obj[0], prefix)
-            return Types.Vector.copy().replace_field(Traits.ValueTypes([content]))
+            return VectorType(content)
         elif isinstance(obj, dict):
             fields = []
             for key, value in obj.items():
@@ -349,8 +352,8 @@ def infer_type_from_example(
                             new_name = new_name[:-1]
                         val.replace_field(Traits.TypeName(new_name))
 
-                fields.append(Types.field(key, value))
-            return Types.struct("struct_" + str(random.randint(0, 1000)), fields)
+                fields.append(FieldType(field_name=key, field_type=value))
+            return StructType(name="struct_" + str(random.randint(0, 1000)), fields=fields, is_data_type=True)
         raise Exception(f"Could not infer type from {obj}")
 
     return inner(obj0, prefix0).copy().append_field(Traits.FromJson(True)).append_field(Traits.RawValue(obj0))
@@ -361,7 +364,7 @@ def walk_type(node: DyType, process: Callable[[int, DyType], None], depth=0) -> 
         for field in node.get_field(Traits.StructFields):
             walk_type(field, process, depth + 1)
     elif node.get_field(Traits.Vector):
-        for ty in node.get_field(Traits.ValueTypes):
+        for ty in node.get_field(Traits.Generics):
             walk_type(ty, process, depth + 1)
     else:
         process(depth, node)
@@ -396,12 +399,12 @@ def parse_type_definition(ty: str) -> DyType:
 
     if "enum" in to_snake_case(ty):
         ty_name = ty.split("/")[0]
-        ty = Types.enum(ty_name, [])
+        ty = EnumType(name=ty_name, variants=[])
         ty.append_field(Traits.TypeRef(ty_name))
         return ty
     else:
         ty_name = ty
-        ty = Types.struct(ty_name, [])
+        ty = StructType(name=ty_name, fields=[], is_data_type=True)
         ty.append_field(Traits.TypeRef(ty_name))
         return ty
 

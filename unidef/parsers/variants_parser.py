@@ -17,5 +17,6 @@ class VariantsParser(Parser):
         assert isinstance(fmt, VariantsInput)
         variants = []
         for var in fmt.variants:
-            variants.append(Types.variant(var["name"].split()))
-        return Types.enum(name, variants)
+            names = var["name"].split()
+            variants.append(VariantType(name=names[0], variant_names=names))
+        return EnumType(name=name, variants=variants)

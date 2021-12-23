@@ -1,6 +1,6 @@
 from unidef.emitters import Emitter
 
-from unidef.languages.common.type_model import Traits, DyType
+from unidef.languages.common.type_model import Traits, DyType, FieldType
 from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
@@ -60,8 +60,8 @@ def map_type_to_pydantic_model(ty: DyType) -> str:
         base_name = "float"
     elif ty.get_field(Traits.String) or (ty.get_field(Traits.Null) and ty.get_field(Traits.FromJson)):
         base_name = "str"
-    elif ty.exist_field(Traits.TupleFields):
-        fields = ty.get_field(Traits.TupleFields)
+    elif ty.exist_field(Traits.Tuple):
+        fields = ty.get_field(Traits.Generics)
         base_name = "({})".format(", ".join(map(map_type_to_pydantic_model, fields)))
     else:
         base_name = ty.get_field(Traits.TypeName)
@@ -121,13 +121,13 @@ class PythonField(BaseModel):
     original_name: str = None
     value: DyType
 
-    def __init__(self, f: DyType = None, **kwargs):
+    def __init__(self, f: FieldType = None, **kwargs):
         if f:
             kwargs.update(
                 {
-                    "name": map_field_name(f.get_field(Traits.FieldName)),
-                    "original_name": f.get_field(Traits.TypeName),
-                    "value": f,
+                    "name": map_field_name(f.field_name),
+                    "original_name": f.field_name,
+                    "value": f.field_type,
                 }
             )
 
@@ -157,11 +157,11 @@ class PythonComment(BaseModel):
 
     def transform(self) -> SourceNode:
         if self.python_doc:
-            lines = [LineNode(TextNode(text=line)) for line in self.content]
+            lines = [LineNode(TextNode(line)) for line in self.content]
             return BracesNode(value=BulkNode(lines), open='"""', close='"""')
         else:
             lines = [
-                LineNode(TextNode(text="# " + line)) for line in self.content
+                LineNode(TextNode("# " + line)) for line in self.content
             ]
             return BulkNode(lines)
 
@@ -200,11 +200,11 @@ class PythonClass(BaseModel):
             model = "BaseModel"
         else:
             raise Exception("Unrecognized data model: " + data_model)
-        sources.append(TextNode(text=f"class {self.name}({model})"))
+        sources.append(TextNode(f"class {self.name}({model})"))
         in_indent_block = []
         in_indent_block.append(self.comment.transform())
         if len(self.fields) == 0:
-            in_indent_block.append(LineNode(TextNode(text="pass")))
+            in_indent_block.append(LineNode(TextNode("pass")))
         for field in self.fields:
             if data_model == 'pydantic':
                 in_indent_block.append(field.transform_pydantic())
@@ -236,7 +236,7 @@ class PythonEnum(BaseModel):
                 {
                     "raw": raw,
                     "name": PythonEnum.parse_name(raw.get_field(Traits.TypeName)),
-                    "variants": raw.get_field(Traits.Variant),
+                    "variants": raw.get_field(Traits.Variants),
                 }
             )
 
@@ -244,12 +244,12 @@ class PythonEnum(BaseModel):
 
     def transform(self) -> SourceNode:
         sources = []
-        sources.append(TextNode(text=f"class {self.name}({self.model})"))
+        sources.append(TextNode(f"class {self.name}({self.model})"))
 
         in_indent_block = []
 
         if len(self.variants) == 0:
-            in_indent_block.append(LineNode(TextNode(text="pass")))
+            in_indent_block.append(LineNode(TextNode("pass")))
         for field in self.variants:
             name = field.get_field(Traits.VariantNames)
 

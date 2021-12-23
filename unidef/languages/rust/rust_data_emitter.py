@@ -183,7 +183,7 @@ def from_sql_raw_trait(struct: RustStructNode) -> Optional[RustAstNode]:
         ):
             logging.warning(
                 "Do not support %s %s yet, skipping From<Row>",
-                s.value.get_field(Traits.FieldName),
+                s.name,
                 s.value.get_field(Traits.TypeName),
             )
             return

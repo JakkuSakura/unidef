@@ -94,7 +94,7 @@ class MemberExpressionProcessor(NodeTypeProcessor):
                 return
             prop_id = prop.get_field(Attributes.Identifier)
             if prop_id == "length":
-                builder.add_known(obj_ns.node_path, Types.Vector.copy().append_field(Traits.ValueTypes([Types.AllValue])))
+                builder.add_known(obj_ns.node_path, VectorType(Types.AllValue))
             else:
 
                 builder.add_group(
@@ -121,7 +121,7 @@ class MemberExpressionProcessor(NodeTypeProcessor):
         elif not obj_in and prop_in:
             prop_ty = blackboard.inferred_cache[prop]
             if prop_ty.get_field(Traits.Integer):
-                blackboard.inferred_cache[obj] = Types.Vector.copy().append_field(Traits.ValueTypes([Types.AllValue]))
+                blackboard.inferred_cache[obj] = VectorType(Types.AllValue)
                 return True
             elif prop_ty.get_field(Traits.String):
                 blackboard.inferred_cache[obj] = Types.Object.copy()

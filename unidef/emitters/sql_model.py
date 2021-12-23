@@ -1,6 +1,6 @@
 from unidef.emitters import Emitter
 from unidef.models.config_model import ModelDefinition
-from unidef.languages.common.type_model import Traits, DyType
+from unidef.languages.common.type_model import Traits, DyType, FieldType
 from unidef.utils.name_convert import *
 
 
@@ -57,16 +57,11 @@ def map_type_to_ddl(ty: DyType) -> str:
     raise Exception("Cannot map {} to sql type".format(ty.get_field(Traits.TypeName)))
 
 
-def get_field(field: DyType) -> str:
-    value_types = field.get_field(Traits.ValueTypes)
-    if isinstance(value_types, list) and value_types:
-        value_types = value_types[0]
-    else:
-        value_types = value_types or field
+def get_field(field: FieldType) -> str:
     base = (
-        to_snake_case(field.get_field(Traits.FieldName))
-        + " "
-        + map_type_to_ddl(value_types)
+            to_snake_case(field.field_name)
+            + " "
+            + map_type_to_ddl(field.field_type)
     )
     if field.get_field(Traits.Primary):
         base += " primary key"

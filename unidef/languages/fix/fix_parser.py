@@ -39,5 +39,5 @@ class FixParserImpl(Parser):
                 ty = infer_type_from_example(json.loads(v))
             except:
                 ty = Types.String
-            fields.append(Types.field(nm, ty))
-        return Types.struct(name, fields)
+            fields.append(FieldType(field_name=nm, field_type=ty))
+        return StructType(name=name, fields=fields)

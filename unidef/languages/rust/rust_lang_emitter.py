@@ -1,3 +1,5 @@
+import copy
+
 from pydantic import BaseModel
 
 from unidef.emitters import Emitter
@@ -298,7 +300,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
                     .append_field(Traits.FieldName("base"))
             )
         name = node.get_field(Attributes.Name)
-        rust_struct = RustStructNode(raw=Types.struct(name, fields, is_data_type=False))
+        rust_struct = RustStructNode(raw=StructType(name=name, fields=fields, is_data_type=False))
         sources.append(rust_struct)
         functions = []
         for i, child in enumerate(node.get_field(Attributes.Functions)):

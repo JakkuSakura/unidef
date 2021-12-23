@@ -125,6 +125,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
 
     @beartype
     def transform_field_value(self, node) -> RustAstNode:
+        # TODO: this part is messy
         if node.get_field(Attributes.ObjectProperty):
             return self.transform(node.get_field(Attributes.Value))
         else:
