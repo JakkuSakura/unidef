@@ -124,10 +124,17 @@ class AnyhowResultType(GenericType):
 
 class VectorType(GenericType):
     kind: str = "vector"
+    name: str = "vector"
     vector: bool = True
+    all_types: List[DyType]
 
-    def __init__(self, value: DyType, **kwargs):
-        super().__init__(generics=[value], **kwargs)
+    def __init__(self, value: DyType, alternative_types: List[DyType] = None, **kwargs):
+        if alternative_types is None:
+            all_types = [value]
+        else:
+            all_types = alternative_types + [value]
+
+        super().__init__(generics=[value], all_types=all_types, **kwargs)
 
 
 class IntegerType(DyType):
@@ -168,6 +175,21 @@ class StructType(DyType):
     name: str
     fields: List[FieldType]
     data_type: bool = True
+
+    def get_by_path(self, path: List[str], past_path: List[str] = None) -> Optional[DyType]:
+        if past_path is None:
+            past_path = []
+
+        path, pathx = path[0], path[1:]
+        for field in self.fields:
+            if field.field_name == path:
+                if pathx:
+                    if isinstance(field.field_type, StructType):
+                        return field.field_type.get_by_path(pathx, past_path + [path])
+                    else:
+                        raise Exception(f"{past_path}.{path} is not struct")
+                else:
+                    return field.field_type
 
 
 class VariantType(DyType):
@@ -355,9 +377,11 @@ def infer_type_from_example(
             return Types.Double
         elif isinstance(obj, list):
             content = Types.AllValue
+            others = []
             if len(obj):
                 content = infer_type_from_example(obj[0], prefix)
-            return VectorType(content)
+                others = [infer_type_from_example(o, prefix) for o in obj[1:]]
+            return VectorType(content, others)
         elif isinstance(obj, dict):
             fields = []
             for key, value in obj.items():

@@ -26,7 +26,7 @@ class FieldsParser(Parser):
                 raise Exception("InvalidArgumentException: " + key)
         return FieldType(field_name=name, field_type=ty)
 
-    def parse(self, name: str, fmt: InputDefinition) -> DyType:
+    def parse(self, name: str, fmt: InputDefinition) -> StructType:
         assert isinstance(fmt, FieldsInput)
         fields = []
         for field in fmt.__root__:

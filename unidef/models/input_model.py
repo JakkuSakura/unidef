@@ -17,11 +17,11 @@ class SourceInput(InputDefinition):
     code: str
 
 
-class FieldsInput(BaseModel):
+class FieldsInput(InputDefinition):
     __root__: List[Dict[str, Any]]
 
 
-class VariantsInput(BaseModel):
+class VariantsInput(InputDefinition):
     __root__: List[Dict[str, Any]]
 
     @property
