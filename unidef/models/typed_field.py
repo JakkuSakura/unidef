@@ -32,9 +32,9 @@ class FieldValue:
 
     def __str__(self):
         s = [type(self).__name__, " ", self.key]
-        if self._value is not None:
+        if self.value is not None:
             s.append(" ")
-            s.append(self._value)
+            s.append(self.value)
         return "".join(s)
 
 

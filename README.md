@@ -4,6 +4,15 @@ Unidef stands for _define once, use everywhere_. It aims for define data structu
 **transformers**, and **emitters**. By supporting multiple parsers, it can use multiple data sources. By supporting multiple emitters,
 the data structure can be converted into many endpoint languages.
 
+
+Unidef is similar to JSON Type Definition. When I was writing this program, I'm not aware of the JSON Type Definition.
+Unidef has some advantages over JSON Type Definition:
+
+1. Unidef supports more complex and customized inferring
+2. Unidef gives finer control over types
+3. Unidef can do transpiling and code generation
+4. Unidef supports more input types
+
 ## Supported parsers
 
 - [x] Unidef fields/variants
@@ -13,6 +22,7 @@ the data structure can be converted into many endpoint languages.
 - [ ] [OpenAPI Schema object](https://spec.openapis.org/oas/v3.1.0#schemaObject)
 - [ ] JavaScript
 - [ ] protobuf
+- [ ] JSON Type Definition
 
 ## Supported emitters
 - [x] Python peewee
@@ -25,6 +35,7 @@ the data structure can be converted into many endpoint languages.
 - [ ] JavaScript
 
 ## Future plan
+- [ ] Replace Pydantic with typedmodel
 
 ### Improve inner representation model
 Right now inner model is now mixed key-value with validations. The next step should be conversion from and to well-defined python object
