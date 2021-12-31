@@ -24,7 +24,7 @@ class Traits:
     Enum = Trait(key="enum", ty=bool)
     TypeRef = Trait(key="type_ref", ty=str)
     Variants = Trait(key="variants", ty=Any)
-    VariantNames = Trait(key="variant_name", ty=List[str])
+    VariantNames = Trait(key="variant_names", ty=List[str])
     RawValue = Trait(key="raw_value", ty=Any)
     Generics = Trait(key="generics", ty=List["DyType"])
 
@@ -77,7 +77,7 @@ class DyType(MixedModel):
     """
 
     name: str
-    kind: str = ""
+    kind: str
 
     @classmethod
     @beartype
@@ -193,6 +193,7 @@ class StructType(DyType):
 
 
 class VariantType(DyType):
+    kind: str = 'variant'
     variant_names: List[str]
 
 
