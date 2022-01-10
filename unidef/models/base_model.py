@@ -64,7 +64,7 @@ class MixedModel(BaseModel):
         return field.key in self.keys()
 
     def keys(self) -> List[str]:
-        keys = set(self.dict().keys())
+        keys = set(self._keys())
         keys.update(self.extended.keys())
         for x in ["extended", "frozen"]:
             keys.remove(x)
@@ -93,7 +93,7 @@ class MixedModel(BaseModel):
         return this
 
     def __str__(self):
-        return f"{type(self).__name__}{dict(list(self))}"
+        return f"{type(self).__qualname__}{dict(list(self))}"
 
     def __repr__(self):
         return self.__str__()

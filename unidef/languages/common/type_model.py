@@ -82,7 +82,7 @@ class DyType(MixedModel):
     @classmethod
     @beartype
     def from_str(cls, name: str) -> __qualname__:
-        return cls(name=name)
+        return cls(name=name, kind=name)
 
     @classmethod
     @beartype
@@ -476,4 +476,4 @@ for t in Types.__dict__.values():
 GLOBAL_TYPE_REGISTRY.type_detector.append(parse_type_definition)
 
 if __name__ == "__main__":
-    GLOBAL_TYPE_REGISTRY.list_types()
+    print(GLOBAL_TYPE_REGISTRY.list_types())

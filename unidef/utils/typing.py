@@ -6,8 +6,7 @@ from typing import (Any, Callable, Dict, Generic, Iterable, Iterator, List,
                     Optional, Set, Tuple, TypeVar, Union)
 
 from beartype import beartype
-from pydantic import BaseModel, root_validator, validator
-
+from typedmodel import BaseModel
 # handle type annotation changes in PEP 3107, 484, 526, 544, 560, 563, 585
 if sys.version_info >= (3, 8, 8):
     Dict = dict

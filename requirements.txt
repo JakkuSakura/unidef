@@ -10,3 +10,4 @@ black # python reformatting
 pytest
 networkx
 matplotlib
+typedmodel
