@@ -10,6 +10,7 @@ from unidef.emitters.registry import EMITTER_REGISTRY
 from unidef.models.config_model import ModelDefinition, read_model_definition
 from unidef.models.input_model import *
 from unidef.utils.typing import *
+from pydantic import BaseModel
 
 parser = argparse.ArgumentParser(description="define once, export everywhere")
 parser.add_argument(

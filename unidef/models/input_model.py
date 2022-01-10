@@ -1,4 +1,5 @@
 from unidef.utils.typing import *
+from pydantic import BaseModel
 
 
 class InputDefinition(BaseModel):

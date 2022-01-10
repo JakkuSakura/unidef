@@ -7,6 +7,8 @@ from unidef.models.input_model import *
 from unidef.parsers.registry import PARSER_REGISTRY
 from unidef.utils.typing import *
 
+from pydantic import BaseModel, validator
+
 
 class ModelDefinition(BaseModel):
     type: str = "untyped"

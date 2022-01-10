@@ -1,3 +1,5 @@
+import copy
+
 from unidef.utils.name_convert import *
 from unidef.utils.transformer import *
 from unidef.utils.typing import *
@@ -135,8 +137,7 @@ class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
             return "".join(self.collection)
 
     def copy(self, **kwargs) -> __qualname__:
-        kwargs["deep"] = True
-        return super().copy(**kwargs)
+        return copy.deepcopy(self)
 
     def _try_indent(self):
         if not self.indented:

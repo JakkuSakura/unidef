@@ -8,7 +8,7 @@ class VisitorPattern:
         if acceptor is None:
 
             def acceptor(this, node):
-                return to_snake_case(type(node).__name__) == this.target_name
+                return to_snake_case(type(node).__qualname__) == this.target_name
 
         functions = []
         for key in dir(self):

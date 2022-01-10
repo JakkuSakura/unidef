@@ -1,3 +1,5 @@
+import copy
+
 from unidef.utils.typing import *
 
 from .typed_field import FieldValue, TypedField
@@ -87,8 +89,7 @@ class MixedModel(BaseModel):
         return self
 
     def copy(self, *args, **kwargs) -> __qualname__:
-        kwargs["deep"] = True
-        this = super().copy(*args, **kwargs)
+        this = copy.deepcopy(self)
         this.unfreeze()
         return this
 
