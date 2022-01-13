@@ -37,7 +37,7 @@ Unidef has some advantages over JSON Type Definition:
 ## Future plan
 - [x] Replace Pydantic with typedmodel
 - [ ] Replace RustLineNode, RustBulkNode, etc with jinja2 template engine for advanced indentation control
-
+- [ ] Build a common set of AST nodes
 ### Improve inner representation model
 Right now inner model is now mixed key-value with validations. The next step should be conversion from and to well-defined python object
 

@@ -7,8 +7,6 @@ from beartype import beartype
 from esprima.nodes import Node as EsprimaNode
 from esprima.nodes import *
 
-from unidef.languages.common.ir_model import (Attribute, Attributes, IrNode,
-                                              Nodes)
 from unidef.languages.common.type_model import (DyType, Traits, Types,
                                                 infer_type_from_example)
 from unidef.models.input_model import SourceInput
@@ -18,6 +16,8 @@ from unidef.utils.name_convert import *
 from unidef.utils.transformer import NodeTransformer
 from unidef.utils.typing import *
 from unidef.utils.visitor import VisitorPattern
+from unidef.languages.common.ir_model import *
+from unidef.languages.common.ir_model import ClassDeclaration as MyClassDeclaration
 
 
 class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
@@ -82,8 +82,8 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
                 callee = node.callee
                 obj0 = self.get_name(callee.toDict(), member_expression=True)
                 if (
-                    obj0 == obj
-                    and self.get_name(callee.property, member_expression=True) == method
+                        obj0 == obj
+                        and self.get_name(callee.property, member_expression=True) == method
                 ):
                     return True
             elif len(spt) == 1:
@@ -105,9 +105,9 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
 
     @beartype
     def transform_static_member_expression(
-        self, node: StaticMemberExpression
+            self, node: StaticMemberExpression
     ) -> IrNode:
-        n = IrNode.from_attribute(Attributes.StaticMemberExpression)
+        n = IrNode.from_attribute(Attributes.StaticMemberExpression(True))
         n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
         n.append_field(
             Attributes.MemberExpressionProperty(self.transform(node.property))
@@ -121,10 +121,10 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
     @beartype
     def transform_literal(self, node: Literal) -> IrNode:
         return (
-            IrNode.from_attribute(Attributes.Literal)
-            .append_field(Attributes.RawCode(node.raw))
-            .append_field(Attributes.RawValue(node.value))
-            .append_field(Attributes.InferredType(infer_type_from_example(node.value)))
+            IrNode.from_attribute(Attributes.Literal(True))
+                .append_field(Attributes.RawCode(node.raw))
+                .append_field(Attributes.RawValue(node.value))
+                .append_field(Attributes.InferredType(infer_type_from_example(node.value)))
         )
 
     @beartype
@@ -162,7 +162,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         if len(node.declarations) == 1:
             decl: VariableDeclarator = node.declarations[0]
             if isinstance(decl.init, CallExpression) and self.match_func_call(
-                decl.init, "require"
+                    decl.init, "require"
             ):
                 names = self.get_name(decl.id.toDict())
                 paths = [arg.value for arg in decl.init.arguments]
@@ -192,34 +192,31 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             return self.transform(node.right)
         assign = (
             IrNode.from_attribute(Attributes.AssignExpression)
-            .append_field(Attributes.AssignExpressionLeft(self.transform(node.left)))
-            .append_field(Attributes.AssignExpressionRight(self.transform(node.right)))
+                .append_field(Attributes.AssignExpressionLeft(self.transform(node.left)))
+                .append_field(Attributes.AssignExpressionRight(self.transform(node.right)))
         )
         return IrNode.from_attribute(Attributes.Statement(value=assign))
 
     @beartype
-    def transform_class_expression(self, node: ClassExpression) -> IrNode:
+    def transform_class_expression(self, node: ClassExpression) -> MyClassDeclaration:
         class_name = self.get_name(node.id.toDict())
         super_class = self.get_name(node.superClass.toDict())
 
         body = [self.transform(n) for n in node.body.body]
 
-        n = (
-            IrNode.from_attribute(Attributes.ClassDeclaration)
-            .append_field(Attributes.Name(class_name))
-            .append_field(Attributes.SuperClasses([super_class]))
-            .append_field(Attributes.Children(body))
+        return MyClassDeclaration(
+            name=class_name,
+            super_class=[super_class],
+            functions=body
         )
-
-        return n
 
     @beartype
     def transform_this_expression(self, node: ThisExpression):
-        return IrNode.from_attribute(Attributes.ThisExpression)
+        return IrNode.from_attribute(Attributes.ThisExpression(True))
 
     @beartype
     def transform_super(self, node: Super):
-        return IrNode.from_attribute(Attributes.SuperExpression)
+        return IrNode.from_attribute(Attributes.SuperExpression(True))
 
     @beartype
     def transform_method_definition(self, node: MethodDefinition):
@@ -227,24 +224,15 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         is_async = node.value.toDict()["async"]
         params = [self.transform_assignment_pattern(a) for a in node.value.params]
         children = [self.transform(n) for n in node.value.body.body]
-
-        n = IrNode.from_attribute(Attributes.FunctionDecl)
-        n.append_field(Attributes.Name(name))
-        n.append_field(Attributes.Async(is_async))
-        n.append_field(
-            Attributes.FunctionBody(
-                IrNode.from_attribute(Attributes.BlockStatement).append_field(
-                    Attributes.Children(children)
-                )
-            )
-        )
-        n.append_field(Attributes.Arguments(params))
-
-        return n
+        return FunctionDecl(name=name,
+                            arguments=params,
+                            async_field=is_async,
+                            function_body=Children(children=children)
+                            )
 
     @beartype
     def transform_assignment_pattern(
-        self, node: Union[AssignmentPattern, Any]
+            self, node: Union[AssignmentPattern, Any]
     ) -> IrNode:
         if isinstance(node, AssignmentPattern):
             name = self.get_name(node.left.toDict())
@@ -260,14 +248,11 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         return n
 
     @beartype
-    def transform_call_expression(self, node: CallExpression) -> IrNode:
+    def transform_call_expression(self, node: CallExpression) -> FunctionCall:
         if self.match_func_call(node, "console.log"):
             return Nodes.print(self.transform(node["arguments"]))
-        n = IrNode.from_attribute(Attributes.FunctionCall)
-        n.append_field(Attributes.Callee(self.transform(node.callee)))
-        arguments = [self.transform(n) for n in node.arguments]
-        n.append_field(Attributes.Arguments(arguments))
-        return n
+
+        return FunctionCall(calllee=self.transform(node.callee), arguments=[self.transform(n) for n in node.arguments])
 
     @beartype
     def transform_expression_statement(self, node: ExpressionStatement) -> IrNode:
@@ -287,10 +272,11 @@ class JavascriptVisitor(JavasciprtVisitorBase):
 
     @beartype
     def transform_property(self, node: Property) -> IrNode:
+
         return (
-            IrNode.from_attribute(Attributes.ObjectProperty)
-            .append_field(Attributes.KeyName(self.transform(node.key)))
-            .append_field(Attributes.Value(self.transform(node.value)))
+            IrNode.from_attribute(Attributes.ObjectProperty(True))
+                .append_field(Attributes.KeyName(self.transform(node.key)))
+                .append_field(Attributes.Value(self.transform(node.value)))
             # .append_field(Attributes.InferredType(Types.Object))
         )
 
@@ -386,7 +372,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
 
     @beartype
     def transform_computed_member_expression(
-        self, node: ComputedMemberExpression
+            self, node: ComputedMemberExpression
     ) -> IrNode:
         n = IrNode.from_attribute(Attributes.ComputedMemberExpression)
         n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
@@ -411,8 +397,8 @@ class JavascriptVisitor(JavasciprtVisitorBase):
     def transform_new_expression(self, node: NewExpression) -> IrNode:
         return (
             IrNode.from_attribute(Attributes.NewExpression)
-            .append_field(Attributes.Callee(self.transform(node.callee)))
-            .append_field(
+                .append_field(Attributes.Callee(self.transform(node.callee)))
+                .append_field(
                 Attributes.Arguments([self.transform(a) for a in node.arguments])
             )
         )
@@ -421,9 +407,9 @@ class JavascriptVisitor(JavasciprtVisitorBase):
     def transform_conditional_expression(self, node: ConditionalExpression) -> IrNode:
         return (
             IrNode.from_attribute(Attributes.ConditionalExpression)
-            .append_field(Attributes.TestExpression(self.transform(node.test)))
-            .append_field(Attributes.Consequence(self.transform(node.consequent)))
-            .append_field(Attributes.Alternative(self.transform(node.alternate)))
+                .append_field(Attributes.TestExpression(self.transform(node.test)))
+                .append_field(Attributes.Consequence(self.transform(node.consequent)))
+                .append_field(Attributes.Alternative(self.transform(node.alternate)))
         )
 
     @beartype
@@ -458,8 +444,8 @@ class JavascriptVisitor(JavasciprtVisitorBase):
     def transform_catch_clause(self, node: CatchClause) -> IrNode:
         return (
             IrNode.from_attribute(Attributes.CatchClause)
-            .append_field(Attributes.ArgumentName(self.transform(node.param)))
-            .append_field(
+                .append_field(Attributes.ArgumentName(self.transform(node.param)))
+                .append_field(
                 Attributes.Children([self.transform(n) for n in node.body.body])
             )
         )
@@ -468,9 +454,9 @@ class JavascriptVisitor(JavasciprtVisitorBase):
 class JavascriptParserImpl(Parser):
     def accept(self, fmt: InputDefinition) -> bool:
         return (
-            isinstance(fmt, SourceInput)
-            and fmt.lang == "javascript"
-            and load_module("esprima")
+                isinstance(fmt, SourceInput)
+                and fmt.lang == "javascript"
+                and load_module("esprima")
         )
 
     def parse(self, name: str, fmt: InputDefinition) -> IrNode:

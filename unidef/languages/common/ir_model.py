@@ -1,7 +1,4 @@
-from beartype import beartype
-from pydantic import BaseModel, Field
-
-from unidef.languages.common.type_model import DyType, Trait, Traits
+from unidef.languages.common.type_model import DyType
 from unidef.models.base_model import FieldValue, MixedModel
 from unidef.models.typed_field import TypedField
 from unidef.utils.safelist import safelist
@@ -58,7 +55,7 @@ class Attributes:
     RequireValue = Attribute(key="require_value", ty=str)
     ObjectProperties = Attribute(key="object_properties", ty=list)
     ObjectProperty = Attribute(key="object_property", ty=bool)
-    KeyName = Attribute(key="key", ty=str)
+    KeyName = Attribute(key="key", ty=Any)
     Value = Attribute(key="value", ty=Any)
     ArrayElements = Attribute(key="array_elements", ty=list)
 
@@ -123,7 +120,8 @@ class IrNode(MixedModel):
     @classmethod
     @beartype
     def from_attribute(cls, attr: FieldValue) -> __qualname__:
-        return cls.from_str(attr.key).append_field(attr)
+        this = cls.from_str(attr.key).append_field(attr)
+        return this
 
 
 class Argument(IrNode):
@@ -133,13 +131,24 @@ class Argument(IrNode):
     output: bool
 
 
+class Children(IrNode):
+    kind: str = "children"
+    children: List[IrNode]
+
+
 class FunctionDecl(IrNode):
     kind: str = "function_decl"
     name: str
     arguments: List[Argument]
-    function_return: Optional[DyType]
-    function_body: IrNode = IrNode.from_attribute(Attributes.Children([]))
+    function_return: Optional[DyType] = None
+    function_body: Optional[Children] = None
     async_field: bool = False
+
+
+class FunctionCall(IrNode):
+    kind: str = "function_call"
+    callee: IrNode
+    arguments: IrNode
 
 
 class ClassDeclaration(IrNode):
@@ -153,13 +162,13 @@ class ClassDeclaration(IrNode):
 class Nodes:
     @staticmethod
     def print(content: IrNode) -> IrNode:
-        return IrNode.from_attribute(Attributes.Print).append_field(
+        return IrNode.from_attribute(Attributes.Print(True)).append_field(
             Attributes.Children(content)
         )
 
     @staticmethod
     def require(path, key=None, value=None) -> IrNode:
-        n = IrNode.from_attribute(Attributes.Require)
+        n = IrNode.from_attribute(Attributes.Require(True))
         n.append_field(Attributes.RequirePath(path))
         if key:
             n.append_field(Attributes.RequireKey(key))
