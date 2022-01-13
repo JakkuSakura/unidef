@@ -1,7 +1,8 @@
 import copy
 
-from unidef.utils.typing import *
-
+from unidef.utils.typing_ext import *
+from typedmodel import *
+from typedmodel.compat import *
 from .typed_field import FieldValue, TypedField
 
 

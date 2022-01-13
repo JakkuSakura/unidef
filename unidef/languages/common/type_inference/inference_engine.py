@@ -1,7 +1,7 @@
 from unidef.languages.common.type_inference.blackboard import (Blackboard,
                                                                NodeGroup)
 from unidef.languages.common.type_model import DyType, Traits
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 
 class InferenceEngine:

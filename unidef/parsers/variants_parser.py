@@ -6,7 +6,7 @@ import pyhocon
 from unidef.languages.common.type_model import *
 from unidef.models.input_model import InputDefinition, VariantsInput
 from unidef.parsers import Parser
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 
 class VariantsParser(Parser):

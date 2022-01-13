@@ -3,7 +3,7 @@ from unidef.languages.common.type_model import DyType, FieldType, Traits
 from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import to_pascal_case, to_snake_case
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 
 def map_type_to_peewee_model(ty: DyType, args="") -> str:

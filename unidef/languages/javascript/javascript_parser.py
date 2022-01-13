@@ -1,23 +1,17 @@
-import json
-import logging
 import traceback
 
 import esprima
-from beartype import beartype
-from esprima.nodes import Node as EsprimaNode
 from esprima.nodes import *
+from esprima.nodes import Node as EsprimaNode
 
-from unidef.languages.common.type_model import (DyType, Traits, Types,
-                                                infer_type_from_example)
+from unidef.languages.common.ir_model import *
+from unidef.languages.common.ir_model import ClassDeclaration as MyClassDeclaration
+from unidef.languages.common.type_model import (Traits, infer_type_from_example)
 from unidef.models.input_model import SourceInput
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
-from unidef.utils.name_convert import *
 from unidef.utils.transformer import NodeTransformer
-from unidef.utils.typing import *
 from unidef.utils.visitor import VisitorPattern
-from unidef.languages.common.ir_model import *
-from unidef.languages.common.ir_model import ClassDeclaration as MyClassDeclaration
 
 
 class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
@@ -224,11 +218,13 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         is_async = node.value.toDict()["async"]
         params = [self.transform_assignment_pattern(a) for a in node.value.params]
         children = [self.transform(n) for n in node.value.body.body]
-        return FunctionDecl(name=name,
-                            arguments=params,
-                            async_field=is_async,
-                            function_body=Children(children=children)
-                            )
+        n = FunctionDecl(name=name,
+                         arguments=params,
+                         async_field=is_async,
+                         function_body=Children(children=children)
+                         )
+
+        return n
 
     @beartype
     def transform_assignment_pattern(
@@ -252,7 +248,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         if self.match_func_call(node, "console.log"):
             return Nodes.print(self.transform(node["arguments"]))
 
-        return FunctionCall(calllee=self.transform(node.callee), arguments=[self.transform(n) for n in node.arguments])
+        return FunctionCall(callee=self.transform(node.callee), arguments=[self.transform(n) for n in node.arguments])
 
     @beartype
     def transform_expression_statement(self, node: ExpressionStatement) -> IrNode:

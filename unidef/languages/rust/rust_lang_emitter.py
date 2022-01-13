@@ -13,7 +13,7 @@ from unidef.languages.rust.rust_json_emitter import *
 from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import *
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 from unidef.utils.typing import List
 
 

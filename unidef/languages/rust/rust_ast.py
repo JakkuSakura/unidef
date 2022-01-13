@@ -1,10 +1,8 @@
-import logging
-
 from unidef.languages.common.type_model import *
 from unidef.utils.formatter import *
 from unidef.utils.name_convert import *
 from unidef.utils.transformer import *
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 RUST_KEYWORDS = {
     "as": "r#as",
@@ -402,11 +400,11 @@ def map_type_to_rust(ty: DyType) -> str:
     raise Exception("Cannot map type {} to str".format(ty.get_field(Traits.TypeName)))
 
 
-class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
+class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
     functions: Optional[List[NodeTransformer]] = None
 
     @beartype
-    def transform(self, node: RustAstNode) -> SourceNode:
+    def transform(self, node: RustAstNode) -> Code:
         if self.functions is None:
             self.functions = self.get_functions("transform_")
         for func in self.functions:
@@ -416,74 +414,72 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             raise Exception("Could not format " + type(node).__name__)
 
     @beartype
-    def transform_rust_return_node(self, node: RustReturnNode) -> SourceNode:
+    def transform_rust_return_node(self, node: RustReturnNode) -> Code:
         if node.returnee:
-            return self.transform_rust_statement_node(
-                RustStatementNode(nodes=[RustRawNode("return "), node.returnee])
-            )
+            return Code("return {{ returnee }};", returnee=self.transform(node.returnee))
+
         else:
-            return self.transform_rust_statement_node(
-                RustStatementNode(nodes=[RustRawNode("return")])
-            )
+            return Code("return;")
 
     @beartype
-    def transform_rust_line_node(self, node: RustLineNode) -> SourceNode:
-        return LineNode(self.transform(node.node))
+    def transform_rust_line_node(self, node: RustLineNode) -> Code:
+        return Code("{{ val }}\n", val=self.transform(node.node))
 
     @beartype
     def transform_rust_argument_pair_node(
             self, node: RustArgumentPairNode
-    ) -> SourceNode:
-        sources = []
+    ) -> Code:
         if node.mutable:
-            sources.append(TextNode("mut "))
-
-        sources.append(TextNode(node.name))
+            mut = "mut "
+        else:
+            mut = ""
+        sources = []
         if not node.name.startswith("&") and node.type:
-            sources.append(TextNode(": "))
+            sources.append(": ")
             if isinstance(node.type, str):
-                sources.append(TextNode(node.type))
-            elif isinstance(node.type, RustAstNode):
                 sources.append(node.type)
+            elif isinstance(node.type, RustAstNode):
+                sources.append(self.transform(node.type))
             elif isinstance(node.type, DyType):
                 sources.append(map_type_to_rust(node.type))
             else:
                 raise Exception(
                     "Could not process type for " + type(node.type).__name__
                 )
-        return BulkNode(sources)
+        return Code("""\
+{{ mut }}{{ name }}{{ others }}
+""", mut=mut, name=node.name, others="".join(map(str, sources)))
 
     @beartype
-    def transform_rust_statement_node(self, node: RustStatementNode) -> SourceNode:
+    def transform_rust_statement_node(self, node: RustStatementNode) -> Code:
         if node.nodes:
             sources = []
             for n in node.nodes:
                 sources.append(self.transform(n))
-            sources.append(TextNode("; "))
-            return LineNode(BulkNode(sources))
+            sources.append("; ")
+
+            return Code("{{ sources }}", sources=''.join(map(str, sources)))
         if node.raw:
-            return LineNode(TextNode(node.raw))
+            return Code("{{ raw }}", raw=node.raw)
 
         raise Exception("You must set either nodes or raw")
 
     @beartype
-    def transform_rust_block_node(self, node: RustBlockNode) -> SourceNode:
+    def transform_rust_block_node(self, node: RustBlockNode) -> Code:
         lines = [self.transform(n) for n in node.nodes]
-        return BracesNode(value=BulkNode(lines), post_new_line=node.new_line)
+        return Code(r"""{{ "\n".join(lines) }{{ new_line }}""", lines=lines, new_line='\n' if node.new_line else '')
 
     @beartype
-    def transform_rust_bulk_node(self, node: RustBulkNode) -> SourceNode:
-        return BulkNode([self.transform(n) for n in node.nodes])
+    def transform_rust_bulk_node(self, node: RustBulkNode) -> Code:
+        lines = [self.transform(n) for n in node.nodes]
+        return Code(r"""{{ "\n".join(lines) }}""", lines=lines)
 
     @beartype
-    def transform_rust_raw_node(self, node: RustRawNode) -> SourceNode:
-        text = TextNode(node.raw)
-        if node.new_line:
-            text = LineNode(text)
-        return text
+    def transform_rust_raw_node(self, node: RustRawNode) -> Code:
+        return Code(r"""{{ text }}{{ new_line }}""", text=node.raw, new_line='\n' if node.new_line else '')
 
     @beartype
-    def transform_serde(self, node: Serde) -> SourceNode:
+    def transform_serde(self, node: Serde) -> Code:
         pairs = []
         if node.tag:
             pairs.append(f'tag = "{node.tag}"')
@@ -492,26 +488,23 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
         if node.rename_all:
             pairs.append(f'rename_all = "{node.rename_all}"')
 
-        line = "#[serde({})]".format(",".join(pairs))
-        return LineNode(TextNode(line))
+        return Code("""#[serde({{ pairs }})]\n""", pairs=", ".join(pairs))
 
     @beartype
-    def transform_derive(self, node: Derive) -> SourceNode:
-        return LineNode(
-            content=TextNode("#[derive({})]".format(", ".join(node.enabled)))
-        )
+    def transform_derive(self, node: Derive) -> Code:
+        return Code("""#[derive({{ enabled }})]\n""", enabled=", ".join(node.enabled))
 
     @beartype
-    def transform_serde_as(self, node: SerdeAs) -> SourceNode:
+    def transform_serde_as(self, node: SerdeAs) -> Code:
         if not node.serde_as:
             content = "#[serde_with::serde_as]"
         else:
             content = f'#[serde_as(as = "{node.serde_as}")]'
 
-        return LineNode(TextNode(content))
+        return Code(content)
 
     @beartype
-    def transform_rust_field_node(self, node: RustFieldNode) -> SourceNode:
+    def transform_rust_field_node(self, node: RustFieldNode) -> Code:
         sources = []
         if node.val_in_str:
             sources.append(self.transform(SERDE_AS_DISPLAY_FROM_STR))
@@ -523,52 +516,58 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             )
 
         sources.append(
-            TextNode(
-                text=f"{node.access.value}{node.name}: {map_type_to_rust(node.value)}"
-            )
+            f"{node.access.value}{node.name}: {map_type_to_rust(node.value)}"
         )
-        return BulkNode(sources)
+        return Code("{{ sources }}", sources=", ".join(sources))
 
     @beartype
-    def transform_rust_comment_node(self, node: RustCommentNode) -> SourceNode:
+    def transform_rust_comment_node(self, node: RustCommentNode) -> Code:
         sources = []
         if node.cargo_doc:
             for line in node.content:
-                sources.append(LineNode(TextNode("/// " + line)))
-                sources.append(LineNode(TextNode("///")))
+                sources.append("/// " + line)
+                sources.append("///")
         else:
             for line in node.content:
-                sources.append(LineNode(TextNode("// " + line)))
-        return BulkNode(sources)
+                sources.append("// " + line)
+        sources.append('')
+        code = Code("{{ sources }}", sources='\n'.join(sources))
+        return code
 
     @beartype
-    def transform_rust_struct_node(self, node: RustStructNode):
+    def transform_rust_struct_node(self, node: RustStructNode) -> Code:
         sources = []
         for anno in node.annotations:
             sources.append(self.transform(anno))
 
-        sources.append(TextNode(f"{node.access.value}struct {node.name} "))
+        sources.append(f"{node.access.value}struct {node.name} ")
         in_braces = []
         if node.fields:
             line = []
             for i, field in enumerate(node.fields):
                 if i > 0:
-                    line.append(TextNode(","))
-                    in_braces.append(LineNode(BulkNode(line)))
+                    line.append(", ")
+                    in_braces.append(Code("{{ line }}\n", line=''.join(map(str, line))))
                     line = []
 
                 line.append(self.transform(field))
-            in_braces.append(LineNode(BulkNode(line)))
-        sources.append(BracesNode(value=BulkNode(in_braces)))
-        return BulkNode(sources)
+            in_braces.append(Code("{{ line }}\n", line=''.join(map(str, line))))
+        sources.append(Code("""\
+{
+    {{ in_braces }}
+}
+
+
+""", in_braces='\n'.join(map(str, in_braces))))
+        return Code("""{{ sources }}""", sources='\n'.join(map(str, sources)))
 
     @beartype
-    def transform_rust_enum_node(self, node: RustEnumNode) -> SourceNode:
+    def transform_rust_enum_node(self, node: RustEnumNode) -> Code:
         sources = []
         for anno in node.annotations:
             sources.append(self.transform(anno))
 
-        sources.append(TextNode(f"{node.access.value}enum {node.name} "))
+        sources.append(f"{node.access.value}enum {node.name} ")
         in_braces = []
         for field in node.variants:
             name = list(field.variant_names)
@@ -578,38 +577,43 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
                 reversed_names.reverse()
                 in_braces.append(self.transform(Strum(serialize=reversed_names)))
 
-            in_braces.append(TextNode(mapped + ","))
-        sources.append(BracesNode(value=BulkNode(in_braces)))
-        return BulkNode(sources)
+            in_braces.append(mapped + ", ")
+        return Code("""\
+{{ sources }}{
+    {{ in_braces }}
+}
+""", sources="".join(map(str, sources)), in_braces=''.join(map(str, in_braces)))
 
     @beartype
-    def transform_strum(self, node: Strum) -> SourceNode:
-        return LineNode(
-            TextNode(
-                "#[strum({})]".format(
-                    ", ".join(['serialize = "{}"'.format(x) for x in node.serialize])
-                )
-            )
+    def transform_strum(self, node: Strum) -> Code:
+        return Code(
+            """#[strum({{ val }})]""",
+            val=", ".join(['serialize = "{}"'.format(x) for x in node.serialize])
+
         )
 
     @beartype
-    def transform_rust_impl_node(self, node: RustImplNode) -> SourceNode:
-        sources = []
+    def transform_rust_impl_node(self, node: RustImplNode) -> Code:
+
         if node.trait:
-            sources.append(TextNode(f"impl {node.trait} for {node.name} "))
+            head = f"impl {node.trait} for {node.name}"
         else:
-            sources.append(TextNode(f"impl {node.name} "))
+            head = f"impl {node.name}"
         in_braces = []
         for func in node.functions:
             if node.trait and isinstance(func, RustFuncDeclNode):
                 func.access = AccessModifier.PRIVATE
             in_braces.append(self.transform(func))
-        sources.append(BracesNode(value=BulkNode(in_braces)))
-        return BulkNode(sources)
+        return Code("""\
+{{ head }} {
+    {{ value }}
+}
+
+
+""", head=head, value='\n'.join(map(str, in_braces)))
 
     @beartype
-    def transform_rust_func_decl_node(self, node: RustFuncDeclNode) -> SourceNode:
-        sources = []
+    def transform_rust_func_decl_node(self, node: RustFuncDeclNode) -> Code:
         if node.access == AccessModifier.PUBLIC:
             access_value = "pub "
         else:
@@ -618,79 +622,86 @@ class RustFormatter(NodeTransformer[RustAstNode, SourceNode], VisitorPattern):
             async_value = "async "
         else:
             async_value = ""
-        sources.append(TextNode(access_value + async_value + "fn " + node.name))
+
         in_braces = []
         for i, arg in enumerate(node.args):
             if i > 0:
-                in_braces.append(TextNode(", "))
+                in_braces.append(", ")
             in_braces.append(self.transform(arg))
-        sources.append(
-            BracesNode(value=BulkNode(in_braces), open="(", close=")", new_line=False)
-        )
+
         if isinstance(node.ret, DyType):
             if not node.ret.get_field(Traits.Unit):
-                ty = " -> " + map_type_to_rust(node.ret) + " "
-                sources.append(TextNode(ty))
+                ret_type = " -> " + map_type_to_rust(node.ret)
             else:
-                sources.append(TextNode(" "))
+                ret_type = ''
         elif isinstance(node.ret, RustAstNode):
-            sources.append(TextNode(" -> "))
-            sources.append(self.transform(node.ret))
-            sources.append(TextNode(" "))
+            ret_type = ''.join([" -> ", self.transform(node.ret)])
+        else:
+            ret_type = ''
         if isinstance(node.content, str):
-            sources.append(BracesNode(value=TextNode(node.content)))
+            content = [node.content]
         elif isinstance(node.content, list):
             in_braces = []
             for c in node.content:
                 in_braces.append(self.transform(c))
-            sources.append(BracesNode(value=BulkNode(in_braces)))
+            content = in_braces
         else:
             raise NotImplementedError(str(type(node.content)))
-        return BulkNode(sources)
+        return Code("""\
+{{ access }}{{ async_value }}fn {{name}}({{ args }}){{ ret_type }} {
+    {{ content }}
+}
+
+""",
+                    access=access_value,
+                    async_value=async_value,
+                    name=node.name,
+                    args=''.join(map(str, in_braces)),
+                    ret_type=ret_type,
+                    content=''.join(map(str, content)))
 
     @beartype
-    def transform_rust_func_call_node(self, node: RustFuncCallNode):
-        sources = []
-        sources.append(self.transform(node.callee))
-        sources.append(TextNode("("))
+    def transform_rust_func_call_node(self, node: RustFuncCallNode) -> Code:
+        args = []
         for i, a in enumerate(node.arguments):
             if i > 0:
-                sources.append(TextNode(", "))
+                args.append(", ")
 
-            sources.append(self.transform(a))
-        sources.append(TextNode(")"))
-        return BulkNode(sources)
+            args.append(self.transform(a))
+
+        return Code("""\
+{{ callee }}({{ args }});
+""", callee=self.transform(node.callee), args=args)
 
     @beartype
-    def transform_rust_use_node(self, node: RustUseNode) -> SourceNode:
+    def transform_rust_use_node(self, node: RustUseNode) -> Code:
         if node.rename and node.rename != node.path.split("::")[-1]:
-            return LineNode(TextNode(f"use {node.path} as {node.rename}"))
+            return Code(f"use {node.path} as {node.rename}")
         else:
-            return LineNode(TextNode(f"use {node.path};"))
+            return Code(f"use {node.path};")
 
     @beartype
     def transform_rust_variable_declaration(
             self, node: RustVariableDeclaration
-    ) -> SourceNode:
+    ) -> Code:
+
         if node.mutability:
             mutability = " mut"
         else:
             mutability = ""
-        sources = [RustRawNode(f"let{mutability} {node.name}")]
+        sources = [f"let{mutability} {node.name}"]
         if node.ty:
             sources.extend(
-                [RustRawNode(": "), RustRawNode(map_type_to_rust(node.ty))]
+                [": ", map_type_to_rust(node.ty)]
             )
         if node.init:
-            sources.append(RustRawNode(" = "))
-            sources.append(node.init)
+            sources.extend([" = ", node.init, ";"])
 
-        return self.transform_rust_statement_node(RustStatementNode(nodes=sources))
+        return Code("{{ val }}", val=''.join(sources))
 
 
 def try_rustfmt(s: str) -> str:
     import subprocess
-    import sys
 
     try:
         rustfmt = subprocess.Popen(

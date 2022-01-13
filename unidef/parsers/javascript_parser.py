@@ -12,7 +12,7 @@ from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.name_convert import *
 from unidef.utils.transformer import NodeTransformer
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 from unidef.utils.visitor import VisitorPattern
 
 

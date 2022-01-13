@@ -1,9 +1,9 @@
 import os
-import sys
 
 from unidef.emitters import Emitter
+
 from unidef.utils.loader import load_module
-from unidef.utils.typing import List, Optional
+from unidef.utils.typing_ext import *
 
 
 class EmitterRegistry:

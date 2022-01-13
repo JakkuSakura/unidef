@@ -1,21 +1,29 @@
-from pydantic import BaseModel
+from unidef.languages.common.ir_model import IrNode
 
-from unidef.emitters.registry import Emitter
-from unidef.languages.common.ir_model import Attributes, IrNode
-from unidef.languages.common.type_model import DyType, Traits
-from unidef.languages.rust.rust_ast import *
-from unidef.models.config_model import ModelDefinition
-from unidef.utils.formatter import StructuredFormatter
-from unidef.utils.transformer import *
-from unidef.utils.typing_ext import *
-from unidef.utils.visitor import *
+from unidef.utils.transformer import Input, NodeTransformer
+
+from unidef.utils.visitor import VisitorPattern
+from utils.typing import *
 
 
-class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
+class JsonValue(IrNode):
+    pass
+
+class JsonProperty(IrNode):
+    key: IrNode
+    value: IrNode
+
+class JsonObject(IrNode):
+    properties: List[JsonProperty]
+
+class JsonRawValue(IrNode):
+    val: Union[str, int, float]
+
+class JsonCrate(VisitorPattern):
+    functions: List[NodeTransformer] = None
+
     def accept(self, node: Input) -> bool:
         return True
-
-    functions: List[NodeTransformer] = None
 
     def transform_others(self, node):
         raise NotImplementedError()
@@ -24,7 +32,6 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
 
         if isinstance(node, IrNode) or isinstance(node, DyType):
             if self.functions is None:
-
                 def accept(this, name):
                     return name == this.target_name
 
@@ -170,92 +177,3 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
             return RustBlockNode(nodes=lines, new_line=False)
         else:
             return RustRawNode(f"<{self.object_type}>::new()")
-
-
-class IjsonCrate(JsonCrate):
-    object_type = "ijson::IObject"
-    array_type = "ijson::IArray"
-    none_type = "Option::<ijson::IValue>::None"
-    value_type = "ijson::IValue"
-
-
-class SerdeJsonNoMacroCrate(JsonCrate):
-    object_type = "serde_json::Map<String, serde_json::Value>"
-    array_type = "Vec<serde_json::Value>"
-    none_type = "serde_json::json!(null)"
-    value_type = "serde_json::Value"
-    no_macro = True
-
-
-class SerdeJsonCrate(SerdeJsonNoMacroCrate):
-    only_outlier = False
-    depth = 0
-    no_macro = False
-
-    def transform(self, node):
-        if self.only_outlier and self.depth == 0:
-            inline = []
-            inline.append(RustRawNode("serde_json::json!("))
-            self.depth += 1
-            inline.append(super().emit_node(node))
-            self.depth -= 1
-            inline.append(RustRawNode(")"))
-            return RustBulkNode(inline)
-        else:
-            return super().transform(node)
-
-    def transform_struct(self, node) -> RustAstNode:
-        sources = []
-        # FIXME: missing comments due to limitation of esprima
-        emit_wrapper = not self.only_outlier
-        if emit_wrapper:
-            sources.append(RustRawNode("serde_json::json!("))
-        fields = node.get_field(Traits.StructFields)
-
-        if fields:
-            lines = []
-            fields = node.get_field(Traits.StructFields)
-            for i, field in enumerate(fields):
-                comments = field.get_field(Traits.BeforeLineComment)
-                if comments:
-                    lines.append(RustCommentNode(comments))
-                inline = [
-                    self.transform_field_key(field),
-                    RustRawNode(": "),
-                    self.transform_field_value(field),
-                ]
-                if i < len(fields) - 1:
-                    inline.append(RustRawNode(", "))
-                lines.append(RustStatementNode(nodes=inline))
-
-            sources.append(RustBlockNode(nodes=lines, new_line=not emit_wrapper))
-
-        else:
-            sources.append(RustRawNode("{}"))
-        if emit_wrapper:
-            sources.append(RustRawNode(")"))
-        return RustBulkNode(sources)
-
-    def transform_vector(self, node) -> RustAstNode:
-        sources = []
-        sources.append(RustRawNode("["))
-        for i, field in enumerate(node.get_field(Traits.ValueTypes)):
-            if i > 0:
-                sources.append(RustRawNode(","))
-            sources.append(self.emit_node(field))
-        sources.append(RustRawNode("]"))
-        return RustBulkNode(sources)
-
-
-def get_json_crate(target: str) -> JsonCrate:
-    if "ijson" in target:
-        result = IjsonCrate()
-    elif "serde_json_no_macro" in target:
-        result = SerdeJsonNoMacroCrate()
-    elif "serde_json" in target:
-        result = SerdeJsonCrate()
-    else:
-        raise Exception(f"Could not find json crate for {target}")
-    if "no_macro" in target:
-        result.no_macro = True
-    return result

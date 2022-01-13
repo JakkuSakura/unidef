@@ -1,5 +1,5 @@
 from unidef.languages.common.ir_model import *
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 
 def walk_nodes(

@@ -5,7 +5,7 @@ from unidef.languages.common.type_model import (GLOBAL_TYPE_REGISTRY, DyType,
                                                 Trait)
 from unidef.models.input_model import *
 from unidef.parsers.registry import PARSER_REGISTRY
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 from pydantic import BaseModel, validator
 

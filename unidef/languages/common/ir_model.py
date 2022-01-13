@@ -2,7 +2,7 @@ from unidef.languages.common.type_model import DyType
 from unidef.models.base_model import FieldValue, MixedModel
 from unidef.models.typed_field import TypedField
 from unidef.utils.safelist import safelist
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 
 class Attribute(TypedField):
@@ -148,7 +148,7 @@ class FunctionDecl(IrNode):
 class FunctionCall(IrNode):
     kind: str = "function_call"
     callee: IrNode
-    arguments: IrNode
+    arguments: List[IrNode]
 
 
 class ClassDeclaration(IrNode):
@@ -158,6 +158,8 @@ class ClassDeclaration(IrNode):
     fields: List[DyType] = []
     functions: List[FunctionDecl]
 
+class RawNode(IrNode):
+    raw: Any
 
 class Nodes:
     @staticmethod

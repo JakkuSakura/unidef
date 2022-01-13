@@ -1,7 +1,6 @@
-from pydantic import BaseModel
+from typedmodel import BaseModel
 
-from unidef.utils.name_convert import *
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 Input = TypeVar("Input")
 Output = TypeVar("Output")
@@ -9,11 +8,11 @@ Output = TypeVar("Output")
 
 @abstract
 class NodeTransformer(BaseModel, Generic[Input, Output]):
-    @beartype
+
     def accept(self, node: Input) -> bool:
         raise NotImplementedError()
 
-    @beartype
+
     def transform(self, node: Input) -> Output:
         raise NotImplementedError()
 

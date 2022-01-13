@@ -1,10 +1,10 @@
 import copy
 
-from unidef.utils.name_convert import *
 from unidef.utils.transformer import *
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 from unidef.utils.visitor import VisitorPattern
-
+from utils.template import Code
+from typedmodel import BaseModel
 
 @abstract
 class SourceNode(BaseModel):
@@ -46,6 +46,10 @@ class LineNode(SourceNode):
 
     def __init__(self, content, **data: Any):
         super().__init__(content=content, **data)
+
+
+class CodeNode(SourceNode):
+    code: Code
 
 
 class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
@@ -115,6 +119,10 @@ class StructuredFormatter(NodeTransformer[SourceNode, str], VisitorPattern):
                 self._line_break()
         else:
             self.collection.append(node.close)
+
+    @beartype
+    def format_code_node(self, node: CodeNode):
+        self.collection.append(node.code.render())
 
     @beartype
     def format_node(self, node: SourceNode):

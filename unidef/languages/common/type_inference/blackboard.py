@@ -3,7 +3,7 @@ from networkx import DiGraph, Graph
 from unidef.languages.common.ir_model import *
 from unidef.languages.common.type_inference.scope import *
 from unidef.languages.common.type_model import *
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 
 @abstract

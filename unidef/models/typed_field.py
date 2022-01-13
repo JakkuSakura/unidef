@@ -1,7 +1,8 @@
 import copy
 
-from unidef.utils.typing import *
-
+from unidef.utils.typing_ext import *
+from typedmodel.compat import *
+from beartype import beartype
 
 def check_pep_type(obj, annotation) -> bool:
     try:

@@ -1,6 +1,6 @@
 from unidef.utils.name_convert import *
 from unidef.utils.transformer import FuncNodeTransformer, NodeTransformer
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 
 
 class VisitorPattern:

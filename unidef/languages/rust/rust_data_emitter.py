@@ -1,22 +1,10 @@
-import logging
-import sys
 import traceback
-from enum import Enum
 
-from beartype import beartype
-from pydantic import BaseModel
-
-from unidef.emitters import Emitter
 from unidef.emitters.sql_model import emit_schema_from_model
-from unidef.languages.common.type_model import (DyType, Traits, Types,
-                                                to_second_scale)
 from unidef.languages.rust.rust_ast import *
-from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import *
-from unidef.utils.name_convert import *
 from unidef.utils.transformer import *
-from unidef.utils.typing import List, Optional
 
 
 def find_all_structs_impl(reg: StructRegistry, s: DyType):
@@ -39,8 +27,8 @@ def sql_model_get_sql_ddl(struct: RustStructNode) -> RustFuncDeclNode:
         name="get_sql_ddl",
         args=[],
         ret=Types.String.copy()
-        .append_field(Traits.Reference(True))
-        .append_field(Traits.Lifetime("static")),
+            .append_field(Traits.Reference(True))
+            .append_field(Traits.Lifetime("static")),
         content=f'r#"{emit_schema_from_model(struct.raw)}"#',
     )
 
@@ -61,9 +49,9 @@ def sql_model_get_value_inner(f: RustFieldNode) -> str:
             f.name, to_second_scale(f.value.get_field(Traits.TsUnit))
         )
     elif (
-        f.value.get_field(Traits.Struct)
-        or f.value.get_field(Traits.Vector)
-        or f.value.get_field(Traits.Tuple)
+            f.value.get_field(Traits.Struct)
+            or f.value.get_field(Traits.Vector)
+            or f.value.get_field(Traits.Tuple)
     ):
         return "serde_json::to_string(&self.{}).unwrap()".format(f.name)
     else:
@@ -83,9 +71,9 @@ def sql_model_field_names_in_format(struct: RustStructNode) -> str:
         if field.value.get_field(Traits.SimpleEnum):
             fields.append("'{%s:?}'" % field.name)
         elif (
-            field.value.get_field(Traits.String)
-            or field.value.get_field(Traits.Enum)
-            or field.value.get_field(Traits.Struct)
+                field.value.get_field(Traits.String)
+                or field.value.get_field(Traits.Enum)
+                or field.value.get_field(Traits.Struct)
         ):
             fields.append("'{%s}'" % field.name)
         elif field.value.get_field(Traits.TsUnit):
@@ -100,7 +88,7 @@ def sql_model_get_insert_into_sql(struct: RustStructNode) -> RustFuncDeclNode:
 
     field_names = ",".join([field.name for field in struct.fields])
     field_names_in_format = sql_model_field_names_in_format(struct)
-    arguments = ",".join(
+    arguments = ",\n".join(
         ["%s = %s" % (r_field.name, v) for (r_field, v) in zip(struct.fields, values)]
     )
     return RustFuncDeclNode(
@@ -121,8 +109,8 @@ def sql_model_get_field_sql(struct: RustStructNode) -> RustFuncDeclNode:
         name="get_fields_sql",
         args=[RustArgumentPairNode(name="&self", type="Self")],
         ret=Types.String.copy()
-        .append_field(Traits.Reference(True))
-        .append_field(Traits.Lifetime("static")),
+            .append_field(Traits.Reference(True))
+            .append_field(Traits.Lifetime("static")),
         content=f"""r#"{field_names}"#""",
     )
 
@@ -131,13 +119,14 @@ def sql_model_get_values_sql(struct: RustStructNode) -> RustFuncDeclNode:
     values = sql_model_get_values_inner(struct)
 
     field_names_in_format = sql_model_field_names_in_format(struct)
+    lined = ',\n'.join(['%s = %s' % (r_field.name, v) for (r_field, v) in
+                        zip(struct.fields, values)])
     return RustFuncDeclNode(
         name="get_values_sql",
         args=[RustArgumentPairNode(name="&self", type="Self")],
         ret=Types.String,
         content=f"""format!(r#"{field_names_in_format}"#, 
-                   {','.join(['%s = %s' % (r_field.name, v) for (r_field, v) in
-                              zip(struct.fields, values)])})""",
+                   {lined})""",
     )
 
 
@@ -173,14 +162,14 @@ def from_sql_raw_func(struct: RustStructNode) -> RustFuncDeclNode:
 def from_sql_raw_trait(struct: RustStructNode) -> Optional[RustAstNode]:
     for s in struct.fields:
         if (
-            s.value.get_field(Traits.Enum)
-            or s.value.get_field(Traits.Struct)
-            or (
+                s.value.get_field(Traits.Enum)
+                or s.value.get_field(Traits.Struct)
+                or (
                 s.value.get_field(Traits.Integer)
                 and not s.value.get_field(Traits.Signed)
-            )
-            or s.value.get_field(Traits.TsUnit)
-            or s.value.get_field(Traits.Vector)
+        )
+                or s.value.get_field(Traits.TsUnit)
+                or s.value.get_field(Traits.Vector)
         ):
             logging.warning(
                 "Do not support %s %s yet, skipping From<Row>",
@@ -200,15 +189,16 @@ def raw_data_func(raw: str) -> RustFuncDeclNode:
         name="get_raw_data",
         args=[],
         ret=Types.String.copy()
-        .append_field(Traits.Reference(True))
-        .append_field(Traits.Lifetime("static")),
+            .append_field(Traits.Reference(True))
+            .append_field(Traits.Lifetime("static")),
         content=f'r#"{raw}"#',
     )
 
 
+@beartype
 def emit_rust_type_inner(
-    struct: DyType, root: Optional[ModelDefinition] = None
-) -> SourceNode:
+        struct: DyType, root: Optional[ModelDefinition] = None
+) -> Code:
     rust_formatter = RustFormatter()
     sources = []
     rust_struct = RustStructNode(struct)
@@ -232,7 +222,7 @@ def emit_rust_type_inner(
         )
         traceback.print_exc()
         sources = backup
-    return BulkNode(sources)
+    return Code("""{{ sources | join("") }}""", sources=sources)
 
 
 def emit_rust_type(struct: DyType, root: Optional[ModelDefinition] = None) -> str:
@@ -249,18 +239,18 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
         if t:
             comment.extend(f"{attr}: {t}".splitlines())
     formatter.append_format_node(
-        rust_formatter.transform(RustCommentNode(comment, cargo_doc=True))
+        TextNode(str(rust_formatter.transform(RustCommentNode(comment, cargo_doc=True))))
     )
     parsed = root.get_parsed()
     if parsed.get_field(Traits.Struct):
         for struct in find_all_structs(parsed):
             if struct.get_field(Traits.TypeRef):
                 continue
-            formatter.append_format_node(emit_rust_type_inner(struct, root))
+            formatter.append_format_node(TextNode(str(emit_rust_type_inner(struct, root))))
 
     elif parsed.get_field(Traits.Enum):
         rust_enum = RustEnumNode(parsed)
-        formatter.append_format_node(rust_formatter.transform(rust_enum))
+        formatter.append_format_node(TextNode(str(rust_formatter.transform(rust_enum))))
     else:
         raise Exception("must be a struct or enum", root)
 

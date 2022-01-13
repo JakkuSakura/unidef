@@ -1,4 +1,4 @@
-from unidef.utils.typing import *
+from unidef.utils.typing_ext import *
 from pydantic import BaseModel
 
 
