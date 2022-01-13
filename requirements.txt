@@ -11,3 +11,4 @@ pytest
 networkx
 matplotlib
 typedmodel
+Jinja2
