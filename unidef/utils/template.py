@@ -10,30 +10,32 @@ import re
 class Code(BaseModel):
     code: str
     values: Dict[str, Any]
+    cache: str
 
     def __init__(self, code: str, **kwargs):
-        super().__init__(code=code, values=kwargs)
-        # check
-        self.__str__()
+        super().__init__(code=code, cache='', values=kwargs)
+        self.cache = self.render()
 
-    def __str__(self) -> str:
-        value_strings = copy.copy(self.values)
-        for key, val in self.values.items():
-            string_list = [int, str, float, Code]
-            if type(val) in string_list:
-                value_strings[key] = str(val)
-
+    def render(self) -> str:
+        string_cache = {}
         lines = self.code.splitlines()
         count = 0
-        new_values = copy.copy(value_strings)
+        new_values = copy.copy(self.values)
 
         def sub_func(match):
             nonlocal count
-            count += 1
-            ret = match.group(1) + '_' + str(count)
-            indent = match.start()
-            new_values[ret] = do_indent(value_strings[match.group(1)], indent)
-            return '{{ ' + ret + ' }}'
+
+            key = match.group(1)
+            if isinstance(self.values[key], Code):
+                count += 1
+                ret = key + '_' + str(count)
+                indent = match.start()
+                if key not in string_cache:
+                    string_cache[key] = str(self.values[key])
+                new_values[ret] = do_indent(string_cache[key], indent)
+                return '{{ ' + ret + ' }}'
+            else:
+                return match.group(0)
 
         for i in range(len(lines)):
             lines[i] = re.sub(r'{{\s*([a-zA-Z_0-9]+)\s*}}', sub_func, lines[i])
@@ -41,11 +43,14 @@ class Code(BaseModel):
         rendered = Template('\n'.join(lines), undefined=StrictUndefined).render(**new_values)
         return rendered
 
+    def __str__(self):
+        return self.cache
+
 
 def test_basic_indentation():
     code1 = Code("""\
 println!("{:?}", {{ val }});
-""", val="vec![\n1,\n2\n]")
+""", val=Code("vec![\n  1,\n  2\n]"))
     print()
 
     code2 = Code("""\
