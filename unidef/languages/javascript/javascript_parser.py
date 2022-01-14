@@ -213,7 +213,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         return IrNode.from_attribute(Attributes.SuperExpression(True))
 
     @beartype
-    def transform_method_definition(self, node: MethodDefinition):
+    def transform_method_definition(self, node: MethodDefinition) -> FunctionDecl:
         name = self.get_name(node.key.toDict())
         is_async = node.value.toDict()["async"]
         params = [self.transform_assignment_pattern(a) for a in node.value.params]

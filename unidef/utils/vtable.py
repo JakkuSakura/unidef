@@ -31,20 +31,21 @@ class VTable(metaclass=VTableMeta):
         else:
             return self.default(value, *args, **kwargs)
 
-    def default(self, *args, **kwargs):
+    def default(self, value, *args, **kwargs):
         raise NotImplementedError()
 
 
 def test_vtable():
     class Foo(VTable):
+        def default(self, value, *args, **kwargs):
+            return 'why is node default'
+
         def foo(self, node: int):
             return 'node is int'
 
         def bar(self, node: str):
             return 'node is str'
 
-        def default(self, node):
-            return 'why is node default'
 
     foo = Foo()
     assert foo(1) == 'node is int'

@@ -100,6 +100,16 @@ class MixedModel(BaseModel):
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if type(self) != type(other):
+            return False
+        for key in self.keys():
+            if self._get_field_raw(key, default=None) != other._get_field_raw(key, default=None):
+                return False
+        return True
+
 
 def test_mixed_model():
     class Model(MixedModel):
