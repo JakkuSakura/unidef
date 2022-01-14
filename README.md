@@ -12,7 +12,11 @@ Unidef has some advantages over JSON Type Definition:
 2. Unidef gives finer control over types
 3. Unidef can do transpiling and code generation
 4. Unidef supports more input types
-
+## How to use
+```shell
+# add a soft link to unidef
+pip install -e .
+```
 ## Supported parsers
 
 - [x] Unidef fields/variants
