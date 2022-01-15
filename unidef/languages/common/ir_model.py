@@ -136,6 +136,18 @@ class Children(IrNode):
     children: List[IrNode]
 
 
+class BlockStatementNode(IrNode):
+    children: List[IrNode]
+
+
+class ThisExpressionNode(IrNode):
+    this: str
+
+
+class SuperExpressionNode(IrNode):
+    super: str
+
+
 class FunctionDecl(IrNode):
     kind: str = "function_decl"
     name: str
@@ -158,8 +170,10 @@ class ClassDeclaration(IrNode):
     fields: List[DyType] = []
     functions: List[FunctionDecl]
 
+
 class RawNode(IrNode):
     raw: Any
+
 
 class Nodes:
     @staticmethod

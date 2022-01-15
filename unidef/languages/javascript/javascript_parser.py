@@ -169,7 +169,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         for decl in node.declarations:
             decl: VariableDeclarator = decl
             id = self.get_name(decl.id.toDict())
-            nd = IrNode.from_attribute(Attributes.VariableDeclaration).append_field(
+            nd = IrNode.from_attribute(Attributes.VariableDeclaration(True)).append_field(
                 Attributes.VariableDeclarationId(id)
             )
             if decl.init:
@@ -205,12 +205,12 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         )
 
     @beartype
-    def transform_this_expression(self, node: ThisExpression):
-        return IrNode.from_attribute(Attributes.ThisExpression(True))
+    def transform_this_expression(self, node: ThisExpression) -> ThisExpressionNode:
+        return ThisExpressionNode(this='this')
 
     @beartype
-    def transform_super(self, node: Super):
-        return IrNode.from_attribute(Attributes.SuperExpression(True))
+    def transform_super(self, node: Super) -> SuperExpressionNode:
+        return SuperExpressionNode(super='super')
 
     @beartype
     def transform_method_definition(self, node: MethodDefinition) -> FunctionDecl:
@@ -236,7 +236,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         else:
             name = self.get_name(node.toDict())
             default = None
-        n = IrNode.from_attribute(Attributes.Argument).append_field(
+        n = IrNode.from_attribute(Attributes.Argument(True)).append_field(
             Attributes.ArgumentName(name)
         )
         if default:
@@ -348,10 +348,8 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         )
 
     @beartype
-    def transform_block_statement(self, node: BlockStatement) -> IrNode:
-        return IrNode.from_attribute(Attributes.BlockStatement).append_field(
-            Attributes.Children([self.transform(n) for n in node.body])
-        )
+    def transform_block_statement(self, node: BlockStatement) -> BlockStatementNode:
+        return BlockStatementNode(children=[self.transform(n) for n in node.body])
 
     @beartype
     def transform_for_statement(self, node: ForStatement) -> IrNode:
@@ -370,7 +368,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
     def transform_computed_member_expression(
             self, node: ComputedMemberExpression
     ) -> IrNode:
-        n = IrNode.from_attribute(Attributes.ComputedMemberExpression)
+        n = IrNode.from_attribute(Attributes.ComputedMemberExpression(True))
         n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
         n.append_field(
             Attributes.MemberExpressionProperty(self.transform(node.property))

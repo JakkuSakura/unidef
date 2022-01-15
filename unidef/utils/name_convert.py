@@ -18,3 +18,7 @@ def to_snake_case(s: str) -> str:
 @beartype
 def to_pascal_case(s: str) -> str:
     return case_conversion.pascalcase(s)
+
+@beartype
+def to_camel_case(s: str) -> str:
+    return case_conversion.camelcase(s)
