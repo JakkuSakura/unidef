@@ -47,12 +47,14 @@ class MutabilityHandler(NodeTransformer[IrNode, IrNode]):
 
 
 class RustEmitterBase(VTable):
-    functions: Optional[List[NodeTransformer]] = None
 
-    def transform(self, node: IrNode) -> RustAstNode:
-        ret = self(node)
-        if not isinstance(ret, RustAstNode):
+    def transform(self, node):
+        if node is None:
             pass
+        assert node is not None
+
+        ret = self(node)
+
         return ret
 
     def transform_children(self, node: Children) -> RustAstNode:
@@ -86,16 +88,16 @@ class RustEmitterBase(VTable):
         return RustArgumentPairNode(
             mutable=node.get_field_opt(Attributes.Mutable),
             name=node.argument_name,
-            type=self.format_type(
+            type=self._format_type(
                 node.argument_type or Types.AllValue
             ),
         )
 
-    def format_type(self, ty: DyType) -> str:
+    def _format_type(self, ty: DyType) -> str:
         return map_type_to_rust(ty)
 
-    def get_return_type(self, node: IrNode) -> str:
-        return self.format_type(
+    def _get_return_type(self, node: FunctionDecl) -> str:
+        return self._format_type(
             node.get_field(Attributes.FunctionReturn) or Types.AllValue
         )
 
@@ -189,19 +191,18 @@ class RustEmitterBase(VTable):
             raw=repr(node.raw_value).replace("'", '"')
         )
 
-    def transform_requires(self, node) -> RustAstNode:
-        # FIXME
-        required = node.get_field(Attributes.Requires)
+    def transform_requires(self, node: RequiresNode) -> RustAstNode:
+        required = node.requires
         sources = []
         for req in required:
             path = (
-                req.get_field(Attributes.RequirePath)
+                req.path
                     .replace(".", "self")
                     .replace("/", "::")
             )
-            key = req.get_field(Attributes.RequireKey)
+            key = req.key
             path = "::".join([path, key])
-            value = req.get_field(Attributes.RequireValue)
+            value = req.value
             sources.append(RustUseNode(path=path, rename=value))
 
         return RustBulkNode(sources)
@@ -248,9 +249,12 @@ class RustEmitterBase(VTable):
         fields = copy.copy(node.fields)
         for base in node.get_field(Attributes.SuperClasses):
             fields.append(
+                FieldType(field_name="base", field_type=
                 DyType.from_str(base)
-                    .append_field(Traits.TypeRef(base))
-                    .append_field(Traits.FieldName("base"))
+                          .append_field(Traits.TypeRef(base))
+
+                          )
+
             )
         name = node.get_field(Attributes.Name)
         rust_struct = RustStructNode(
@@ -265,15 +269,14 @@ class RustEmitterBase(VTable):
         return RustBulkNode(sources)
 
     def transform_object_properties(self, node: JsonObject) -> RustAstNode:
-        return RustRawNode("todo!(\"json objects\")")
-        # FIXME
         class MyJsonCrate(SerdeJsonNoMacroCrate):
-            this: Any
+            def __init__(self, this: RustEmitterBase):
+                super().__init__()
+                self.this = this
+            def default(self, value, *args, **kwargs):
+                return self.this.transform(value, *args, **kwargs)
 
-            def transform_others(self, nd):
-                return self.this.transform(nd)
-
-        json_crate = MyJsonCrate(this=self)
+        json_crate = MyJsonCrate(self)
         return json_crate.transform(node)
 
     def transform_array_elements(self, node: ArrayExpressionNode) -> RustAstNode:
@@ -314,6 +317,7 @@ class RustEmitterBase(VTable):
                 sources.append(RustBlockNode(nodes=[self.transform(node.alternative)], new_line=True))
 
             return RustBulkNode(sources)
+
     def transform_operator(self, node: OperatorNode):
         op = node.operator
         if op == "===":
@@ -371,10 +375,9 @@ class RustEmitterBase(VTable):
             raise NotImplementedError()
 
     def transform_c_for_loop(self, node: ClassicalLoopNode) -> RustAstNode:
-        init = node.get_field(Attributes.CForLoopInit)
         for d in node.init.decls:
-            d.append_field(Attributes.Mutable)
-        init = self.transform(init)
+            d.mutable = True
+        init = self.transform_variable_declarations(node.init)
         test = self.transform(node.test)
         update = self.transform(node.update)
         sources = [
@@ -436,4 +439,3 @@ class RustEmitterBase(VTable):
                 self.transform(node.value),
             ]
         )
-

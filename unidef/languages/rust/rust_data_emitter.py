@@ -239,7 +239,7 @@ def emit_rust_model_definition(root: ModelDefinition) -> str:
         if t:
             comment.extend(f"{attr}: {t}".splitlines())
     formatter.append_format_node(
-        TextNode(str(rust_formatter.transform(RustCommentNode(comment, cargo_doc=True))))
+        TextNode(str(rust_formatter.transform_rust_comment_node(RustCommentNode(comment, cargo_doc=True))))
     )
     parsed = root.get_parsed()
     if parsed.get_field(Traits.Struct):

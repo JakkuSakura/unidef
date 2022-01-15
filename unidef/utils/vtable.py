@@ -26,10 +26,11 @@ class VTableMeta(type):
                     args = value.__code__.co_varnames
                     if len(args) >= 2:
                         ty = value.__annotations__.get(args[1])
+                        # For performance
                         if type(ty) == type:
                             mapping[ty] = my_beartype(value)
-                        else:
-                            additional.append((TypeAcceptor(ty), my_beartype(value)))
+                        # Support sub classes & annotations
+                        additional.append((TypeAcceptor(ty), my_beartype(value)))
                 attr[key] = reannotate(value)
 
         attr['__mapping__'] = mapping

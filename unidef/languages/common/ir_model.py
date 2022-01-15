@@ -149,6 +149,8 @@ class Children(IrNode):
     kind: str = "children"
     children: List[IrNode]
 
+    def __init__(self, children):
+        self.children = children
 
 class BlockStatementNode(IrNode):
     children: List[IrNode]
@@ -284,6 +286,36 @@ class ClassicalLoopNode(IrNode):
     update: IrNode
     body: IrNode
 
+class RequireNode(IrNode):
+    path: str
+    key: str
+    value: str
+
+class RequiresNode(IrNode):
+    requires: List[RequireNode]
+
+    @staticmethod
+    def requires(import_paths, import_name) -> __qualname__:
+        if isinstance(import_name, list):
+            if isinstance(import_paths, list):
+                requires_result = [
+                    RequireNode(path=path, key=kv.get(0), value=kv.get(1))
+                    for kv, path in zip(map(safelist, import_name), import_paths)
+                ]
+            else:
+                requires_result = [
+                    RequireNode(path=import_paths, key=kv.get(0), value=kv.get(1))
+                    for kv in map(safelist, import_name)
+                ]
+        elif isinstance(import_name, tuple):
+            requires_result = [
+                RequireNode(
+                    path=import_paths, key=import_name[0], value=import_name[1]
+                )
+            ]
+        else:
+            requires_result = [RequireNode(path=import_paths, key=import_name, value='')]
+        return RequiresNode(requires=requires_result)
 class Nodes:
     @staticmethod
     def print(content: IrNode) -> IrNode:
@@ -291,35 +323,3 @@ class Nodes:
             Attributes.Children(content)
         )
 
-    @staticmethod
-    def require(path, key=None, value=None) -> IrNode:
-        n = IrNode.from_attribute(Attributes.Require(True))
-        n.append_field(Attributes.RequirePath(path))
-        if key:
-            n.append_field(Attributes.RequireKey(key))
-        if value:
-            n.append_field(Attributes.RequireValue(value))
-        return n
-
-    @staticmethod
-    def requires(import_paths, import_name) -> IrNode:
-        if isinstance(import_name, list):
-            if isinstance(import_paths, list):
-                requires_result = [
-                    Nodes.require(path=path, key=kv.get(0), value=kv.get(1))
-                    for kv, path in zip(map(safelist, import_name), import_paths)
-                ]
-            else:
-                requires_result = [
-                    Nodes.require(path=import_paths, key=kv.get(0), value=kv.get(1))
-                    for kv in map(safelist, import_name)
-                ]
-        elif isinstance(import_name, tuple):
-            requires_result = [
-                Nodes.require(
-                    path=import_paths, key=import_name[0], value=import_name[1]
-                )
-            ]
-        else:
-            requires_result = [Nodes.require(path=import_paths, key=import_name)]
-        return IrNode.from_attribute(Attributes.Requires(requires_result))

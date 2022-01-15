@@ -91,7 +91,9 @@ class JavasciprtVisitorBase(VTable):
         return False
 
     def transform_script(self, node: Script) -> ProgramNode:
-        body = [self.transform(n) for n in node.body]
+        body = []
+        for n in node.body:
+            body.append(self.transform(n))
         return ProgramNode(body=Children(body))
 
     def transform_static_member_expression(
@@ -101,7 +103,7 @@ class JavasciprtVisitorBase(VTable):
                                     static=True)
 
     def transform_directive(self, node: Directive) -> DirectiveNode:
-        return DirectiveNode(node.directive)
+        return DirectiveNode(directive=node.directive)
 
     def transform_literal(self, node: Literal) -> LiteralNode:
         return LiteralNode(raw_value=node.value, raw_code=node.raw)
@@ -114,7 +116,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
     def transform(self, node):
         return self(node)
 
-    def transform_variable_declaration(self, node: VariableDeclaration) -> VariableDeclarationsNode:
+    def transform_variable_declaration(self, node: VariableDeclaration) -> Union[VariableDeclarationsNode, RequiresNode]:
         if len(node.declarations) == 1:
             decl: VariableDeclarator = node.declarations[0]
             if isinstance(decl.init, CallExpression) and self.match_func_call(
@@ -125,7 +127,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
                 assert len(paths) == 1
                 paths = paths[0]
 
-                req = Nodes.requires(paths, names)
+                req = RequiresNode.requires(paths, names)
                 return req
         decls = []
         for decl in node.declarations:
@@ -136,7 +138,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             decls.append(nd)
         return VariableDeclarationsNode(decls=decls)
 
-    def transform_assignment_expression(self, node: AssignmentExpression) -> StatementNode:
+    def transform_assignment_expression(self, node: AssignmentExpression) -> Union[StatementNode, ClassDeclNode]:
         name = self.get_name(node.left.toDict(), member_expression=True, warn=False)
         if name == "module.exports":
             return self.transform(node.right)
@@ -250,7 +252,6 @@ class JavascriptVisitor(JavasciprtVisitorBase):
 
     def transform_for_statement(self, node: ForStatement) -> ClassicalLoopNode:
         body = Children(children=[self.transform(n) for n in node.body.body])
-        n.append_field(Attributes.Children(body))
         return ClassicalLoopNode(
             init=self.transform(node.init),
             test=self.transform(node.test),

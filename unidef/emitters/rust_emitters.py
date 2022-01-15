@@ -50,11 +50,11 @@ class RustLangEmitter(Emitter):
 
     def emit_type(self, target: str, ty) -> str:
         from unidef.languages.rust.rust_lang_emitter import (
-            RustEmitterBase, RustFormatter, StructuredFormatter)
+            RustEmitterBase, RustFormatter, StructuredFormatter, try_rustfmt)
 
         builder = RustEmitterBase()
         node = builder.transform(ty)
         formatter = RustFormatter()
         node = formatter.transform(node)
-        formatter = StructuredFormatter(nodes=[node])
-        return formatter.to_string()
+        node = try_rustfmt(str(node))
+        return node

@@ -12,7 +12,7 @@ class Trait(TypedField):
 class Traits:
     Kind = Trait(key="kind", ty=str)
     TypeName = Trait(key="name", ty=str)
-    FieldName = Trait(key="field_name", ty=str)
+
     BitSize = Trait(key="bit_size", ty=int)
     Signed = Trait(key="signed", ty=bool)
     KeyType = Trait(key="key", ty=str)
@@ -174,7 +174,7 @@ class StructType(DyType):
     struct: bool = True
     name: str
     fields: List[FieldType]
-    data_type: bool = True
+    is_data_type: bool = True
 
     def get_by_path(self, path: List[str], past_path: List[str] = None) -> Optional[DyType]:
         if past_path is None:

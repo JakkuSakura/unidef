@@ -402,7 +402,7 @@ def map_type_to_rust(ty: DyType) -> str:
 
 
 class RustFormatter(VTable):
-    def transform(self, node: RustAstNode) -> Code:
+    def transform(self, node) -> Code:
         return self(node)
 
 
@@ -459,7 +459,7 @@ class RustFormatter(VTable):
 
     def transform_rust_block_node(self, node: RustBlockNode) -> Code:
         lines = [self.transform(n) for n in node.nodes]
-        return Code(r"""{{ lines }{{ new_line }}""", lines='\n'.join(map(str, lines)), new_line='\n' if node.new_line else '')
+        return Code(r"""{{ lines }}{{ new_line }}""", lines='\n'.join(map(str, lines)), new_line='\n' if node.new_line else '')
 
 
     def transform_rust_bulk_node(self, node: RustBulkNode) -> Code:
