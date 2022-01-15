@@ -23,16 +23,25 @@ class VTableMeta(type):
 @abstract
 class VTable(metaclass=VTableMeta):
     __mapping__: Dict[type, FunctionType]
+    @classmethod
+    def __get_func(cls, ty: type):
+        func = cls.__mapping__.get(ty)
+        if func:
+            return func
+        elif issubclass(cls.__base__, VTable):
+            return cls.__base__.__get_func(ty)
+
 
     def __call__(self, value, *args, **kwargs):
-        func = self.__mapping__.get(type(value))
+        cls = type(self)
+        func = cls.__get_func(type(value))
         if func:
             return func(self, value, *args, **kwargs)
         else:
             return self.default(value, *args, **kwargs)
 
     def default(self, value, *args, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError("Not implemented for type {}".format(type(value)))
 
 
 def test_vtable():
@@ -46,6 +55,18 @@ def test_vtable():
         def bar(self, node: str):
             return 'node is str'
 
-
     foo = Foo()
     assert foo(1) == 'node is int'
+
+
+def test_vtable_inheritence():
+    class Foo(VTable):
+        def default(self, value, *args, **kwargs):
+            return 'foo'
+
+    class Bar(Foo):
+        def default(self, value, *args, **kwargs):
+            return 'bar'
+
+    assert Foo()(1) == 'foo'
+    assert Bar()(2) == 'bar'

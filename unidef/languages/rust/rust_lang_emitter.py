@@ -3,8 +3,7 @@ import copy
 from pydantic import BaseModel
 
 from unidef.emitters import Emitter
-from unidef.languages.common.ir_model import (Attribute, Attributes,
-                                              ClassDeclaration, IrNode)
+from unidef.languages.common.ir_model import *
 from unidef.languages.common.type_inference import TypeInference
 from unidef.languages.common.type_model import DyType, Traits
 from unidef.languages.common.walk_nodes import walk_nodes
@@ -15,6 +14,7 @@ from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import *
 from unidef.utils.typing_ext import *
 from unidef.utils.typing import List
+from unidef.utils.vtable import VTable
 
 
 class MutabilityHandler(NodeTransformer[IrNode, IrNode]):
@@ -47,204 +47,152 @@ class MutabilityHandler(NodeTransformer[IrNode, IrNode]):
             self.to_modify[key] = node
 
 
-class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
+class RustEmitterBase(VTable):
     functions: Optional[List[NodeTransformer]] = None
 
-    @beartype
     def transform(self, node: IrNode) -> RustAstNode:
-        if self.functions is None:
+        return self(node)
 
-            def acceptor(this, name):
-                return this.target_name == name
-
-            self.functions = self.get_functions("transform_", acceptor=acceptor)
-
-        node_name = node.get_field(Attributes.Kind)
-        assert node_name, f"Node name cannot be empty to emit: {node}"
-        node_name = to_snake_case(node_name)
-
-        for func in self.functions:
-            if func.accept(node_name):
-                result = func.transform(node)
-                break
-        else:
-            result = NotImplemented
-
-        if result is NotImplemented:
-            return self.transform_others(node)
-        else:
-            return result
-
-    @beartype
-    def transform_children(self, node) -> RustAstNode:
+    def transform_children(self, node: Children) -> RustAstNode:
         sources = []
-        for child in node.get_field(Attributes.Children):
+        for child in node.children:
             sources.append(self.transform(child))
         return RustBulkNode(sources)
 
-    @beartype
-    def transform_raw_code(self, node) -> RustAstNode:
-        return RustRawNode(node.get_field(Attributes.RawCode))
+    def transform_raw_code(self, node: RawCodeNode) -> RustAstNode:
+        return RustRawNode(node.code)
 
-    @beartype
-    def transform_others(self, node) -> RustAstNode:
-        return RustRawNode(str(node))
+    def transform_program(self, node: ProgramNode) -> RustAstNode:
+        # node = TypeInference().transform(node)
+        return self.transform_children(node.body)
 
-    @beartype
-    def transform_program(self, node) -> RustAstNode:
-        node = TypeInference().transform(node)
+    # def transform_expression_statement(self, node) -> RustAstNode:
+    #     expr = node.get_field(Attributes.Expression)
+    #     # if expr.get_field(Attributes.Kind) == "literal":
+    #     #     raw_code = expr.get_field(Attributes.RawCode)
+    #     #     return RustCommentNode(content=str(raw_code).splitlines())
+    #     # else:
+    #     return self.transform(expr)
 
-        sources = []
-        for child in node.get_field(Attributes.Children):
-            sources.append(self.transform(child))
-        return RustBulkNode(sources)
+    def transform_directive(self, node: DirectiveNode) -> RustCommentNode:
+        return RustCommentNode([node.directive])
 
-    @beartype
-    def transform_expression_statement(self, node) -> RustAstNode:
-        expr = node.get_field(Attributes.Expression)
-        # if expr.get_field(Attributes.Kind) == "literal":
-        #     raw_code = expr.get_field(Attributes.RawCode)
-        #     return RustCommentNode(content=str(raw_code).splitlines())
-        # else:
-        return self.transform(expr)
+    def transform_return(self, node: ReturnNode) -> RustReturnNode:
+        return RustReturnNode(returnee=node.returnee and self.transform(node.returnee))
 
-    @beartype
-    def transform_directive(self, node: IrNode) -> RustAstNode:
-        return RustCommentNode([node.get_field(Attributes.Directive)])
-
-    @beartype
-    def transform_return(self, node) -> RustAstNode:
-        returnee = node.get_field(Attributes.Return)
-        if returnee:
-            returnee = self.transform(returnee)
-        return RustReturnNode(returnee=returnee)
-
-    @beartype
-    def transform_argument(self, node: IrNode) -> RustArgumentPairNode:
+    def transform_argument(self, node: ArgumentNode) -> RustArgumentPairNode:
         return RustArgumentPairNode(
             mutable=node.get_field_opt(Attributes.Mutable),
-            name=node.get_field(Attributes.ArgumentName),
+            name=node.argument_name,
             type=self.format_type(
-                node.get_field(Attributes.ArgumentType) or Types.AllValue
+                node.argument_type or Types.AllValue
             ),
         )
 
-    @beartype
     def format_type(self, ty: DyType) -> str:
         return map_type_to_rust(ty)
 
-    @beartype
     def get_return_type(self, node: IrNode) -> str:
         return self.format_type(
             node.get_field(Attributes.FunctionReturn) or Types.AllValue
         )
 
-    @beartype
-    def transform_function_decl(self, node: IrNode) -> RustFuncDeclNode:
+    def transform_function_decl(self, node: FunctionDecl) -> RustFuncDeclNode:
         node = MutabilityHandler().transform(node)
+        assert isinstance(node, FunctionDecl)
         return RustFuncDeclNode(
-            name=map_func_name(node.get_field(Attributes.Name)),
-            is_async=node.get_field(Attributes.Async),
-            access=AccessModifier.PUBLIC,
+            name=map_func_name(node.name),
+            is_async=node.is_async,
+            access=node.accessibility or AccessModifier.PUBLIC,
             args=[RustArgumentPairNode(name="&self", type="Self")]
-            + [
-                self.transform_argument(arg)
-                for arg in node.get_field(Attributes.Arguments)
-            ],
-            ret=node.get_field(Attributes.FunctionReturn) or Types.AllValue,
+                 + [
+                     self.transform_argument(arg)
+                     for arg in node.arguments
+                 ],
+            ret=node.function_return or Types.AllValue,
             content=[
                 self.transform(n)
-                for n in node.get_field(Attributes.FunctionBody).get_field(
-                    Attributes.Children
-                )
+                for n in node.function_body.children
             ],
         )
 
-    @beartype
-    def transform_inferred_type(self, node) -> RustAstNode:
-        ty = node.get_field(Attributes.InferredType)
-        return RustRawNode(self.format_type(ty))
+    # def transform_inferred_type(self, node) -> RustAstNode:
+    #     ty = node.get_field(Attributes.InferredType)
+    #     return RustRawNode(self.format_type(ty))
 
-    @beartype
-    def transform_static_member_expression(self, node) -> RustAstNode:
-        sources = []
-        obj = node.get_field(Attributes.MemberExpressionObject)
-        prop = node.get_field(Attributes.MemberExpressionProperty)
-        if obj == "this":
-            obj = "self"
-        elif obj == "super":
-            obj = "self.base"
-        sources.append(self.transform(obj))
+    def transform_static_member_expression(self, node: MemberExpressionNode) -> RustBulkNode:
+        if node.static:
+            sources = []
+            obj = node.obj
+            prop = node.property
+            if obj == "this":
+                obj = "self"
+            elif obj == "super":
+                obj = "self.base"
+            sources.append(self.transform(obj))
 
-        sources.append(RustRawNode("."))
-        sources.append(self.transform(prop))
+            sources.append(RustRawNode("."))
+            sources.append(self.transform(prop))
 
-        return RustBulkNode(sources)
+            return RustBulkNode(sources)
 
-    @beartype
-    def transform_computed_member_expression(self, node) -> RustAstNode:
-        sources = []
-        obj = node.get_field(Attributes.MemberExpressionObject)
-        prop = node.get_field(Attributes.MemberExpressionProperty)
-        if obj == "this":
-            obj = "self"
-        elif obj == "super":
-            obj = "self.base"
-        sources.append(self.transform(obj))
-        sources.append(RustRawNode("["))
-        sources.append(self.transform(prop))
-        sources.append(RustRawNode("]"))
-        return RustBulkNode(sources)
+        else:
+            sources = []
+            obj = node.obj
+            prop = node.property
+            if obj == "this":
+                obj = "self"
+            elif obj == "super":
+                obj = "self.base"
+            sources.append(self.transform(obj))
+            sources.append(RustRawNode("["))
+            sources.append(self.transform(prop))
+            sources.append(RustRawNode("]"))
+            return RustBulkNode(sources)
 
-    @beartype
-    def transform_function_call(self, node) -> RustAstNode:
+    def transform_function_call(self, node: FunctionCallNode) -> RustAstNode:
         return RustFuncCallNode(
-            callee=self.transform(node.get_field(Attributes.Callee)),
-            arguments=[self.transform(n) for n in node.get_field(Attributes.Arguments)],
+            callee=self.transform(node.callee),
+            arguments=[self.transform_argument(n) for n in node.arguments],
         )
 
-    @beartype
-    def transform_identifier(self, node) -> RustAstNode:
+    def transform_identifier(self, node: IdentifierNode) -> RustAstNode:
         return RustRawNode(node.get_field(Attributes.Identifier))
 
-    @beartype
-    def transform_this_expression(self, node):
+    def transform_this_expression(self, node: ThisExpressionNode):
         return RustRawNode("self")
 
-    @beartype
-    def transform_super_expression(self, node):
+    def transform_super_expression(self, node: SuperExpressionNode):
         return RustRawNode("self.base")
 
-    @beartype
-    def transform_new_expression(self, node: IrNode):
+    def transform_new_expression(self, node: NewExpressionNode):
         return RustBulkNode(
             nodes=[
-                self.transform(node.get_field(Attributes.Callee)),
+                self.transform(node.type),
                 RustRawNode("::new("),
                 RustBulkNode(
                     nodes=[
-                        self.transform(n) for n in node.get_field(Attributes.Arguments)
+                        self.transform(n) for n in node.arguments
                     ]
                 ),
                 RustRawNode(")"),
             ]
         )
 
-    @beartype
-    def transform_literal(self, node):
+    def transform_literal(self, node: LiteralNode):
         return RustRawNode(
-            raw=repr(node.get_field(Attributes.RawValue)).replace("'", '"')
+            raw=repr(node.raw_value).replace("'", '"')
         )
 
-    @beartype
     def transform_requires(self, node) -> RustAstNode:
+        # FIXME
         required = node.get_field(Attributes.Requires)
         sources = []
         for req in required:
             path = (
                 req.get_field(Attributes.RequirePath)
-                .replace(".", "self")
-                .replace("/", "::")
+                    .replace(".", "self")
+                    .replace("/", "::")
             )
             key = req.get_field(Attributes.RequireKey)
             path = "::".join([path, key])
@@ -253,9 +201,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
 
         return RustBulkNode(sources)
 
-    @beartype
-    def transform_throw_statement(self, node: IrNode) -> RustAstNode:
-        arg = node.get_field(Attributes.ThrowStatement)
+    def transform_throw_statement(self, node: ThrowStatementNode) -> RustAstNode:
+        arg = node.content
         return RustStatementNode(
             nodes=[
                 RustRawNode("return Error("),
@@ -264,9 +211,8 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             ]
         )
 
-    @beartype
-    def transform_statement(self, node) -> RustAstNode:
-        transferred_node = self.transform(node.get_field(Attributes.Statement))
+    def transform_statement(self, node: StatementNode) -> RustAstNode:
+        transferred_node = self.transform(node.value)
         if isinstance(transferred_node, RustBlockNode):
             return transferred_node
         elif isinstance(transferred_node, RustStatementNode):
@@ -274,32 +220,28 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         else:
             return RustStatementNode(nodes=[transferred_node])
 
-    @beartype
-    def transform_variable_declarations(self, node) -> RustAstNode:
+    def transform_variable_declarations(self, node: VariableDeclarationsNode) -> RustAstNode:
         sources = []
-        for decl in node.get_field(Attributes.VariableDeclarations):
-            assert isinstance(decl, IrNode), f"decl should be node, got {type(decl)}"
-            name = decl.get_field(Attributes.VariableDeclarationId)
-            init = decl.get_field(Attributes.DefaultValue)
-            if init:
-                init = self.transform(init)
-            ty = decl.get_field(Attributes.InferredType)
-            mut = decl.get_field(Attributes.Mutable)
+        for decl in node.decls:
             sources.append(
-                RustVariableDeclaration(name=name, init=init, ty=ty, mutability=mut)
+                RustVariableDeclaration(
+                    name=decl.id,
+                    init=decl.init and self.transform(init),
+                    ty=(decl.ty),
+                    mutability=decl.get_field(Attributes.Mutable)
+                )
             )
 
         return RustBulkNode(sources)
 
-    @beartype
-    def transform_class_declaration(self, node: ClassDeclaration) -> RustAstNode:
+    def transform_class_declaration(self, node: ClassDeclNode) -> RustAstNode:
         sources = []
-        fields = copy.copy(node.get_field(Attributes.Fields))
+        fields = copy.copy(node.fields)
         for base in node.get_field(Attributes.SuperClasses):
             fields.append(
                 DyType.from_str(base)
-                .append_field(Traits.TypeRef(base))
-                .append_field(Traits.FieldName("base"))
+                    .append_field(Traits.TypeRef(base))
+                    .append_field(Traits.FieldName("base"))
             )
         name = node.get_field(Attributes.Name)
         rust_struct = RustStructNode(
@@ -307,81 +249,69 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         )
         sources.append(rust_struct)
         functions = []
-        for i, child in enumerate(node.get_field(Attributes.Functions)):
+        for i, child in enumerate(node.functions):
             functions.append(self.transform_function_decl(child))
 
         sources.append(RustImplNode(name=rust_struct.name, functions=functions))
         return RustBulkNode(sources)
 
-    @beartype
-    def transform_object_properties(self, node) -> RustAstNode:
-        class MyJsonCrate(SerdeJsonNoMacroCrate):
-            this: Any
+    # def transform_object_properties(self, node) -> RustAstNode:
+    #     class MyJsonCrate(SerdeJsonNoMacroCrate):
+    #         this: Any
+    #
+    #         def transform_others(self, nd):
+    #             return self.this.transform(nd)
+    #
+    #     json_crate = MyJsonCrate(this=self)
+    #     return json_crate.transform(node)
 
-            @beartype
-            def transform_others(self, nd):
-                return self.this.transform(nd)
+    # def transform_array_elements(self, node) -> RustAstNode:
+    #     return self.transform_object_properties(node)
 
-        json_crate = MyJsonCrate(this=self)
-        return json_crate.transform(node)
+    def transform_block_statement(self, node: BlockStatementNode) -> RustBlockNode:
+        return RustBlockNode(nodes=[self.transform(n) for n in node.children])
 
-    @beartype
-    def transform_array_elements(self, node) -> RustAstNode:
-        return self.transform_object_properties(node)
-
-    @beartype
-    def transform_block_statement(self, node) -> RustBlockNode:
-        children = node.get_field(Attributes.Children)
-        return RustBlockNode(nodes=[self.transform(n) for n in children])
-
-    @beartype
-    def transform_if_clauses(self, node) -> RustAstNode:
-        sources = []
-        clauses = node.get_field(Attributes.Children)
-        for i, clause in enumerate(clauses):
-            if clause.get_field(Attributes.IfClause):
-                sources.append(RustRawNode("if "))
-                sources.append(
-                    self.transform(clause.get_field(Attributes.TestExpression))
-                )
-                sources.append(RustRawNode(" "))
-            elif clause.get_field(Attributes.ElseIfClause):
-                sources.append(RustRawNode("else if "))
-                sources.append(
-                    self.transform(clause.get_field(Attributes.TestExpression))
-                )
-                sources.append(RustRawNode(" "))
-            elif clause.get_field(Attributes.ElseClause):
-                sources.append(RustRawNode("else "))
-            else:
-                raise NotImplementedError("unreachable")
-            consequence = clause.get_field(Attributes.Consequence).get_field(
-                Attributes.Children
+    def transform_if_clauses(self, node: IfExpressionNode) -> RustAstNode:
+        if node.conditional_op:
+            return RustBulkNode(
+                nodes=[
+                    RustRawNode("if "),
+                    self.transform(node.test),
+                    RustRawNode(" { "),
+                    self.transform(node.consequent),
+                    RustRawNode(" } else { "),
+                    self.transform(node.alternative),
+                    RustRawNode(" }"),
+                ]
             )
-            consequence = [self.transform(n) for n in consequence]
-            if i == len(clauses) - 1:
-                sources.append(RustBlockNode(nodes=consequence, new_line=True))
-            else:
-                sources.append(RustBlockNode(nodes=consequence, new_line=False))
-                sources.append(RustRawNode(" "))
+        else:
+            sources = []
+            sources.append(RustRawNode("if "))
+            sources.append(
+                self.transform(node.test)
+            )
+            sources.append(RustRawNode(" "))
+            sources.append(RustBlockNode(nodes=[self.transform(node.consequent)], new_line=True))
 
-        return RustBulkNode(sources)
+            if node.alternative:
+                sources.append(RustRawNode("else "))
+                sources.append(RustBlockNode(nodes=[self.transform(node.alternative)], new_line=True))
 
-    @beartype
-    def transform_operator(self, node):
-        op = node.get_field(Attributes.Operator)
+            return RustBulkNode(sources=sources)
+    def transform_operator(self, node: OperatorNode):
+        op = node.operator
         if op == "===":
             op = "=="
         elif op == "!==":
             op = "!="
 
-        left = node.get_field(Attributes.OperatorLeft)
-        middle = node.get_field(Attributes.OperatorMiddle)
-        right = node.get_field(Attributes.OperatorRight)
-        prefix = node.get_field(Attributes.OperatorSinglePrefix)
-        postfix = node.get_field(Attributes.OperatorSinglePostfix)
+        left = node.left
+        middle = node.value
+        right = node.right
+        prefix = node.value
+        postfix = node.value
 
-        if left and right:
+        if node.kind == 'middle':
             sources = []
             sources.append(RustRawNode("("))
             sources.append(self.transform(left))
@@ -390,7 +320,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             sources.append(RustRawNode(")"))
             return RustBulkNode(sources)
 
-        elif prefix:
+        elif node.kind == 'prefix':
             if op in ["++", "--"]:
                 inline = [self.transform(prefix), RustRawNode(f" {op[0]}= 1")]
                 return RustStatementNode(nodes=inline)
@@ -398,7 +328,7 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
                 inline = [RustRawNode(op), self.transform(prefix)]
                 return RustBulkNode(inline)
 
-        elif postfix:
+        elif node.kind == 'postfix':
             if op in ["++", "--"]:
                 in_block = [
                     RustStatementNode(
@@ -424,39 +354,31 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
         else:
             raise NotImplementedError()
 
-    @beartype
-    def transform_all_value(self, node) -> RustAstNode:
-        return RustRawNode("serde_json::Value")
-
-    @beartype
-    def transform_c_for_loop(self, node) -> RustAstNode:
+    def transform_c_for_loop(self, node: ClassicalLoopNode) -> RustAstNode:
         init = node.get_field(Attributes.CForLoopInit)
-        for d in init.get_field(Attributes.VariableDeclarations):
+        for d in node.init.decls:
             d.append_field(Attributes.Mutable)
         init = self.transform(init)
-        test = self.transform(node.get_field(Attributes.CForLoopTest))
-        update = self.transform(node.get_field(Attributes.CForLoopUpdate))
-        children = node.get_field(Attributes.Children)
+        test = self.transform(node.test)
+        update = self.transform(node.update)
         sources = [
             init,
             RustRawNode("while "),
             test,
             RustRawNode(" "),
-            RustBlockNode(nodes=[self.transform(c) for c in children] + [update]),
+            RustBlockNode(nodes=[self.transform(node.body), update]),
         ]
         return RustBulkNode(sources)
 
-    @beartype
-    def transform_await_expression(self, node: IrNode) -> RustAstNode:
+    def transform_await_expression(self, node: AwaitExpressionNode) -> RustAstNode:
         return RustBulkNode(
             nodes=[
-                self.transform(node.get_field(Attributes.AwaitExpression)),
+                self.transform(node.value),
                 RustRawNode(".await"),
             ]
         )
 
-    @beartype
-    def transform_try_statement(self, node: IrNode) -> RustAstNode:
+    def transform_try_statement(self, node: TryStatementNode) -> RustAstNode:
         """
         let _try = || {
             // try block
@@ -466,18 +388,17 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             // catch block
         }
         """
-        try_ = node.get_field(Attributes.TryStatement)
-        catches = node.get_field(Attributes.CatchClauses)
+        catches = node.catch_clauses
         assert len(catches) == 1, "only supports one catch clause here"
         catch = catches[0]
-        catch_name = catch.get_field(Attributes.ArgumentName)
+        catch_name = catch.argument_name
         sources = [
             RustStatementNode(
                 nodes=[
                     RustRawNode("let _try = || "),
                     RustBlockNode(
                         nodes=[
-                            RustBulkNode([self.transform(n) for n in try_]),
+                            RustBulkNode([self.transform(n) for n in (node.try_body)]),
                             RustRawNode("Ok::<_, anyhow::Error>(())"),
                         ],
                         new_line=False,
@@ -487,37 +408,16 @@ class RustEmitterBase(NodeTransformer[IrNode, RustAstNode], VisitorPattern):
             RustRawNode("if let Err("),
             self.transform(catch_name),
             RustRawNode(") = _try()"),
-            RustBlockNode(
-                nodes=[self.transform(n) for n in catch.get_field(Attributes.Children)]
-            ),
+            self.transform_children(catch.body)
         ]
         return RustBulkNode(sources)
 
-    @beartype
-    def transform_assign_expression(self, node: IrNode) -> RustAstNode:
-        left = node.get_field(Attributes.AssignExpressionLeft)
-        right = node.get_field(Attributes.AssignExpressionRight)
+    def transform_assign_expression(self, node: AssignmentExpressionNode) -> RustAstNode:
         return RustBulkNode(
             nodes=[
-                self.transform(left),
+                self.transform(node.assignee),
                 RustRawNode(" = "),
-                self.transform(right),
+                self.transform(node.value),
             ]
         )
 
-    @beartype
-    def transform_conditional_expression(self, node: IrNode) -> RustAstNode:
-        test = node.get_field(Attributes.TestExpression)
-        consequence = node.get_field(Attributes.Consequence)
-        alternative = node.get_field(Attributes.Alternative)
-        return RustBulkNode(
-            nodes=[
-                RustRawNode("if "),
-                self.transform(test),
-                RustRawNode(" { "),
-                self.transform(consequence),
-                RustRawNode(" } else { "),
-                self.transform(alternative),
-                RustRawNode(" }"),
-            ]
-        )

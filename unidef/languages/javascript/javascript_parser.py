@@ -5,17 +5,15 @@ from esprima.nodes import *
 from esprima.nodes import Node as EsprimaNode
 
 from unidef.languages.common.ir_model import *
-from unidef.languages.common.ir_model import ClassDeclaration as MyClassDeclaration
+from unidef.languages.common.ir_model import ClassDeclNode as MyClassDeclaration
 from unidef.languages.common.type_model import (Traits, infer_type_from_example)
 from unidef.models.input_model import SourceInput
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
-from unidef.utils.transformer import NodeTransformer
-from unidef.utils.visitor import VisitorPattern
+from unidef.utils.vtable import VTable
 
 
-class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
-    functions: Any = None
+class JavasciprtVisitorBase(VTable):
 
     def get_recursive(self, obj: Dict, path: str) -> Any:
         for to_visit in path.split("."):
@@ -24,7 +22,6 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
                 return None
         return obj
 
-    @beartype
     def get_name(self, node: Dict[str, Any], member_expression=False, warn=True) -> Any:
         if node is None:
             return
@@ -33,8 +30,9 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
             first = self.get_name(
                 node.get("object"), warn=warn, member_expression=member_expression
             )
-            second = self.get_name(
-                node.get("property"), warn=warn, member_expression=member_expression
+            property = node.get('property')
+            second = property.get('value') or self.get_name(
+                property, warn=warn, member_expression=member_expression
             )
             return ".".join([x for x in [first, second] if x])
         elif ty == "ThisExpression":
@@ -62,12 +60,13 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
             return names
         elif node.get("name"):
             return node.get("name")
+        elif node.get("elements"):
+            return DecomposePatternNode(names=[x['name'] for x in node.get("elements")])
         else:
             if warn:
                 logging.warning("could not get name from %s", node)
             return
 
-    @beartype
     def match_func_call(self, node: CallExpression, name: str) -> bool:
         spt = tuple(name.split("."))
         try:
@@ -90,69 +89,31 @@ class JavasciprtVisitorBase(NodeTransformer[Any, DyType], VisitorPattern):
 
         return False
 
-    @beartype
     def transform_script(self, node: Script) -> IrNode:
-        program = IrNode.from_attribute(Attributes.Program)
         body = [self.transform(n) for n in node.body]
-        program.append_field(Attributes.Children(body))
-        return program
+        return ProgramNode(body=Children(body))
 
-    @beartype
     def transform_static_member_expression(
             self, node: StaticMemberExpression
-    ) -> IrNode:
-        n = IrNode.from_attribute(Attributes.StaticMemberExpression(True))
-        n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
-        n.append_field(
-            Attributes.MemberExpressionProperty(self.transform(node.property))
-        )
-        return n
+    ) -> MemberExpressionNode:
+        return MemberExpressionNode(obj=self.transform(node.object), property=self.transform(node.property),
+                                    static=True)
 
-    @beartype
     def transform_directive(self, node: Directive) -> IrNode:
-        return IrNode.from_attribute(Attributes.Directive(node.directive))
+        return DirectiveNode(node.directive)
 
-    @beartype
-    def transform_literal(self, node: Literal) -> IrNode:
-        return (
-            IrNode.from_attribute(Attributes.Literal(True))
-                .append_field(Attributes.RawCode(node.raw))
-                .append_field(Attributes.RawValue(node.value))
-                .append_field(Attributes.InferredType(infer_type_from_example(node.value)))
-        )
+    def transform_literal(self, node: Literal) -> LiteralNode:
+        return LiteralNode(raw_value=node.value, raw_code=node.raw)
 
-    @beartype
-    def transform_identifier(self, node: Identifier) -> IrNode:
-        return IrNode.from_attribute(Attributes.Identifier(node.name))
-
-    @beartype
-    def transform(self, node: EsprimaNode) -> Union[IrNode, List[IrNode]]:
-        if self.functions is None:
-            self.functions = self.get_functions("transform_")
-        for func in self.functions:
-            if func.accept(node):
-                result = func.transform(node)
-                if result is not NotImplemented:
-                    break
-        else:
-            result = NotImplemented
-
-        if result is NotImplemented:
-            raise Exception(f"Still got NotImplemented for {type(node)}")
-        else:
-            comments = getattr(node, "comments")
-            if result and comments:
-                comments = []
-                for comment in comments:
-                    # TODO: check comment['type']
-                    comments.append(comment.value)
-                result.append_field(Traits.BeforeLineComment(comments))
-            return result
+    def transform_identifier(self, node: Identifier) -> IdentifierNode:
+        return IdentifierNode(identifier=node.name)
 
 
 class JavascriptVisitor(JavasciprtVisitorBase):
-    @beartype
-    def transform_variable_declaration(self, node: VariableDeclaration) -> IrNode:
+    def transform(self, node):
+        return self(node)
+
+    def transform_variable_declaration(self, node: VariableDeclaration) -> VariableDeclarationsNode:
         if len(node.declarations) == 1:
             decl: VariableDeclarator = node.declarations[0]
             if isinstance(decl.init, CallExpression) and self.match_func_call(
@@ -169,29 +130,19 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         for decl in node.declarations:
             decl: VariableDeclarator = decl
             id = self.get_name(decl.id.toDict())
-            nd = IrNode.from_attribute(Attributes.VariableDeclaration(True)).append_field(
-                Attributes.VariableDeclarationId(id)
-            )
-            if decl.init:
-                init = self.transform(decl.init)
-                nd.append_field(Attributes.DefaultValue(init))
+            nd = VariableDeclarationNode(id=id, init=decl.init and self.transform(decl.init), ty=None)
 
             decls.append(nd)
-        return IrNode.from_attribute(Attributes.VariableDeclarations(decls))
+        return VariableDeclarationsNode(decls=decls)
 
-    @beartype
     def transform_assignment_expression(self, node: AssignmentExpression) -> IrNode:
         name = self.get_name(node.left.toDict(), member_expression=True, warn=False)
         if name == "module.exports":
             return self.transform(node.right)
-        assign = (
-            IrNode.from_attribute(Attributes.AssignExpression)
-                .append_field(Attributes.AssignExpressionLeft(self.transform(node.left)))
-                .append_field(Attributes.AssignExpressionRight(self.transform(node.right)))
-        )
-        return IrNode.from_attribute(Attributes.Statement(value=assign))
+        value = AssignmentExpressionNode(assignee=self.transform(node.left), value=self.transform(node.right))
 
-    @beartype
+        return StatementNode(value=value)
+
     def transform_class_expression(self, node: ClassExpression) -> MyClassDeclaration:
         class_name = self.get_name(node.id.toDict())
         super_class = self.get_name(node.superClass.toDict())
@@ -204,19 +155,16 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             functions=body
         )
 
-    @beartype
     def transform_this_expression(self, node: ThisExpression) -> ThisExpressionNode:
         return ThisExpressionNode(this='this')
 
-    @beartype
     def transform_super(self, node: Super) -> SuperExpressionNode:
         return SuperExpressionNode(super='super')
 
-    @beartype
     def transform_method_definition(self, node: MethodDefinition) -> FunctionDecl:
         name = self.get_name(node.key.toDict())
         is_async = node.value.toDict()["async"]
-        params = [self.transform_assignment_pattern(a) for a in node.value.params]
+        params = [self.transform_assignment_pattern_or_value(a) for a in node.value.params]
         children = [self.transform(n) for n in node.value.body.body]
         n = FunctionDecl(name=name,
                          arguments=params,
@@ -226,38 +174,31 @@ class JavascriptVisitor(JavasciprtVisitorBase):
 
         return n
 
-    @beartype
-    def transform_assignment_pattern(
+    def transform_assignment_pattern_or_value(
             self, node: Union[AssignmentPattern, Any]
-    ) -> IrNode:
+    ) -> ArgumentNode:
         if isinstance(node, AssignmentPattern):
             name = self.get_name(node.left.toDict())
             default = self.transform(node.right)
         else:
             name = self.get_name(node.toDict())
             default = None
-        n = IrNode.from_attribute(Attributes.Argument(True)).append_field(
-            Attributes.ArgumentName(name)
-        )
-        if default:
-            n.append_field(Attributes.DefaultValue(default))
+        n = ArgumentNode(argument_name=name, argument_type=None, default=default)
+
         return n
 
-    @beartype
-    def transform_call_expression(self, node: CallExpression) -> FunctionCall:
+    def transform_call_expression(self, node: CallExpression) -> FunctionCallNode:
         if self.match_func_call(node, "console.log"):
             return Nodes.print(self.transform(node["arguments"]))
 
-        return FunctionCall(callee=self.transform(node.callee), arguments=[self.transform(n) for n in node.arguments])
+        return FunctionCallNode(callee=self.transform(node.callee), arguments=[self.transform(n) for n in node.arguments])
 
-    @beartype
     def transform_expression_statement(self, node: ExpressionStatement) -> IrNode:
         t = self.transform(node.expression)
         if t.get_field(Attributes.ClassDeclaration):
             return t
         return IrNode.from_attribute(Attributes.Statement(t))
 
-    @beartype
     def transform_return_statement(self, node: ReturnStatement) -> IrNode:
         arg = node.argument
         if arg:
@@ -266,7 +207,6 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             returnee = None
         return IrNode.from_attribute(Attributes.Return(returnee))
 
-    @beartype
     def transform_property(self, node: Property) -> IrNode:
 
         return (
@@ -276,12 +216,10 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             # .append_field(Attributes.InferredType(Types.Object))
         )
 
-    @beartype
     def transform_object_expression(self, node: ObjectExpression) -> IrNode:
         properties = [self.transform(p) for p in node.properties]
         return IrNode.from_attribute(Attributes.ObjectProperties(properties))
 
-    @beartype
     def transform_array_expression(self, node: ArrayExpression) -> IrNode:
         return IrNode.from_attribute(
             Attributes.ArrayElements([self.transform(n) for n in node.elements])
@@ -290,159 +228,104 @@ class JavascriptVisitor(JavasciprtVisitorBase):
     def transform_logical_expression(self, node) -> IrNode:
         return self.transform_operator(node)
 
-    def transform_binary_expression(self, node) -> IrNode:
-        return self.transform_operator(node)
+    def transform_binary_expression(self, node: BinaryExpression) -> OperatorNode:
+        return OperatorNode(operator=node.operator, kind='middle',
+                            left=self.transform(node.left),
+                            right=self.transform(node.right),
+                            )
 
-    def transform_unary_expression(self, node) -> IrNode:
-        return self.transform_operator(node)
+    def transform_unary_expression(self, node: UnaryExpression) -> OperatorNode:
+        kind = 'postfix'
+        if node.prefix:
+            kind = 'prefix'
+        return OperatorNode(operator=node.operator, kind=kind, value=self.transform(node.argument))
 
-    def transform_update_expression(self, node) -> IrNode:
-        return IrNode.from_attribute(
-            Attributes.Statement(self.transform_operator(node))
-        )
+    def transform_update_expression(self, node: UpdateExpression) -> IrNode:
+        kind = 'postfix'
+        if node.prefix:
+            kind = 'prefix'
+        return OperatorNode(operator=node.operator, kind=kind, value=self.transform(node.argument))
 
-    def transform_operator(self, node) -> IrNode:
 
-        operator = IrNode.from_attribute(Attributes.Operator(node.operator))
-        positions = [
-            ("left", "left", Attributes.OperatorLeft),
-            ("right", "right", Attributes.OperatorRight),
-            ("prefix", "argument", Attributes.OperatorSinglePrefix),
-            ("postfix", "argument", Attributes.OperatorSinglePostfix),
-        ]
-        for key, value_key, attr in positions:
-            if getattr(node, key):
-                operator.append_field(attr(self.transform(getattr(node, value_key))))
-        if getattr(node, "prefix") is False:
-            operator.append_field(
-                Attributes.OperatorSinglePostfix(self.transform(node.argument))
-            )
-        return operator
+def transform_if_statement(self, node: IfStatement) -> IfExpressionNode:
+    return IfExpressionNode(test=self.transform(node.test),
+                            consequent=node.consequent and self.transform(node.consequent),
+                            alternative=node.alternate and self.transform(node.alternate))
 
-    def transform_if_statement(self, node) -> IrNode:
-        if_clauses = []
-        while node:
-            if isinstance(node, BlockStatement):
-                attr = Attributes.ElseClause
-                test = None
-                body = self.transform(node)
-            elif isinstance(node, IfStatement):
-                if if_clauses:
-                    attr = Attributes.ElseIfClause
-                else:
-                    attr = Attributes.IfClause
-                body = self.transform(node.consequent)
-                test = self.transform(node.test)
-            else:
-                raise Exception("Could not process in if statement" + str(node))
 
-            n = IrNode.from_attribute(attr).append_field(Attributes.Consequence(body))
-            if test is not None:
-                n.append_field(Attributes.TestExpression(test))
-
-            if_clauses.append(n)
-            node = getattr(node, "alternate")
-
-        return IrNode.from_attribute(Attributes.IfClauses).append_field(
-            Attributes.Children(if_clauses)
-        )
-
-    @beartype
-    def transform_block_statement(self, node: BlockStatement) -> BlockStatementNode:
+def transform_block_statement(self, node: BlockStatement) -> BlockStatementNode:
+    try:
         return BlockStatementNode(children=[self.transform(n) for n in node.body])
+    except Exception as e:
+        raise e
 
-    @beartype
-    def transform_for_statement(self, node: ForStatement) -> IrNode:
-        n = IrNode.from_attribute(Attributes.CForLoop)
-        init = self.transform(node.init)
-        n.append_field(Attributes.CForLoopInit(init))
-        test = self.transform(node.test)
-        n.append_field(Attributes.CForLoopTest(test))
-        update = self.transform(node.update)
-        n.append_field(Attributes.CForLoopUpdate(update))
-        body = [self.transform(n) for n in node.body.body]
-        n.append_field(Attributes.Children(body))
-        return n
 
-    @beartype
-    def transform_computed_member_expression(
-            self, node: ComputedMemberExpression
-    ) -> IrNode:
-        n = IrNode.from_attribute(Attributes.ComputedMemberExpression(True))
-        n.append_field(Attributes.MemberExpressionObject(self.transform(node.object)))
-        n.append_field(
-            Attributes.MemberExpressionProperty(self.transform(node.property))
-        )
-        return n
+def transform_for_statement(self, node: ForStatement) -> IrNode:
+    n = IrNode.from_attribute(Attributes.CForLoop)
+    init = self.transform(node.init)
+    n.append_field(Attributes.CForLoopInit(init))
+    test = self.transform(node.test)
+    n.append_field(Attributes.CForLoopTest(test))
+    update = self.transform(node.update)
+    n.append_field(Attributes.CForLoopUpdate(update))
+    body = [self.transform(n) for n in node.body.body]
+    n.append_field(Attributes.Children(body))
+    return n
 
-    @beartype
-    def transform_await_expression(self, node: AwaitExpression) -> IrNode:
-        return IrNode.from_attribute(
-            Attributes.AwaitExpression(self.transform(node.argument))
-        )
 
-    @beartype
-    def transform_throw_statement(self, node: ThrowStatement) -> IrNode:
-        return IrNode.from_attribute(
-            Attributes.ThrowStatement(self.transform(node.argument))
-        )
+def transform_computed_member_expression(
+        self, node: ComputedMemberExpression
+) -> MemberExpressionNode:
+    return MemberExpressionNode(static=False, obj=self.transform(node.object),
+                                property=self.transform(node.property))
 
-    @beartype
-    def transform_new_expression(self, node: NewExpression) -> IrNode:
-        return (
-            IrNode.from_attribute(Attributes.NewExpression)
-                .append_field(Attributes.Callee(self.transform(node.callee)))
-                .append_field(
-                Attributes.Arguments([self.transform(a) for a in node.arguments])
-            )
-        )
 
-    @beartype
-    def transform_conditional_expression(self, node: ConditionalExpression) -> IrNode:
-        return (
-            IrNode.from_attribute(Attributes.ConditionalExpression)
-                .append_field(Attributes.TestExpression(self.transform(node.test)))
-                .append_field(Attributes.Consequence(self.transform(node.consequent)))
-                .append_field(Attributes.Alternative(self.transform(node.alternate)))
-        )
+def transform_await_expression(self, node: AwaitExpression) -> AwaitExpressionNode:
+    return AwaitExpressionNode(value=self.transform(node.argument))
 
-    @beartype
-    def transform_try_statement(self, node: TryStatement) -> IrNode:
-        return IrNode.from_attribute(Attributes.TryStatement)
 
-    @beartype
-    def transform_break_statement(self, node: BreakStatement) -> IrNode:
-        return IrNode.from_attribute(Attributes.BreakStatement)
+def transform_throw_statement(self, node: ThrowStatement) -> IrNode:
+    return ThrowStatementNode(content=self.transform(node.argument))
 
-    @beartype
-    def transform_continue_statement(self, node: ContinueStatement) -> IrNode:
-        return IrNode.from_attribute(Attributes.ContinueStatement)
 
-    @beartype
-    def transform_try_statement(self, node: TryStatement) -> IrNode:
-        n = IrNode.from_attribute(
-            Attributes.TryStatement([self.transform(n) for n in node.block.body])
-        )
-        if node.handler:
-            n.append_field(Attributes.CatchClauses([self.transform(node.handler)]))
-        if node.finalizer:
-            n.append_field(
-                Attributes.FinallyClause(
-                    self.transform(n) for n in node.finalizer.body.body
-                )
-            )
+def transform_new_expression(self, node: NewExpression) -> IrNode:
+    return NewExpressionNode(
+        type=self.transform(node.callee),
+        arguments=[self.transform(a) for a in node.arguments]
 
-        return n
+    )
 
-    @beartype
-    def transform_catch_clause(self, node: CatchClause) -> IrNode:
-        return (
-            IrNode.from_attribute(Attributes.CatchClause)
-                .append_field(Attributes.ArgumentName(self.transform(node.param)))
-                .append_field(
-                Attributes.Children([self.transform(n) for n in node.body.body])
-            )
-        )
+
+def transform_conditional_expression(self, node: ConditionalExpression) -> IfExpressionNode:
+    return IfExpressionNode(
+        test=self.transform(node.test),
+        consequent=self.transform(node.consequent),
+        alternative=self.transform(node.alternate),
+        conditional=True
+    )
+
+
+def transform_break_statement(self, node: BreakStatement) -> BreakStatementNode:
+    return BreakStatementNode()
+
+
+def transform_continue_statement(self, node: ContinueStatement) -> IrNode:
+    return ContinueStatementNode()
+
+
+def transform_try_statement(self, node: TryStatement) -> TryStatementNode:
+    return TryStatementNode(
+        try_body=[self.transform(n) for n in node.block.body],
+        catch_clauses=node.handler and [self.transform_catch_clause(node.handler)],
+        finally_clause=node.finalizer and self.transform(node.finalizer.body.body)
+    )
+
+
+def transform_catch_clause(self, node: CatchClause) -> CatchClauseNode:
+    return CatchClauseNode(
+        argument_name=self.transform(node.param),
+        body=Children([self.transform(n) for n in node.body.body])
+    )
 
 
 class JavascriptParserImpl(Parser):

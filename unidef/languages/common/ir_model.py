@@ -12,7 +12,7 @@ class Attribute(TypedField):
 class Attributes:
     Kind = Attribute(key="kind", ty=str)
     Name = Attribute(key="name", ty=str)
-    VariableDeclarationId = Attribute(key="variable_declaration_id", ty=str)
+    VariableDeclarationId = Attribute(key="variable_declaration_id", ty=Union[str, Any])
     Children = Attribute(key="children", ty=list)
     Statement = Attribute(key="statement", ty=Any)
     ClassDeclaration = Attribute(key="class_declaration", ty=bool)
@@ -124,11 +124,25 @@ class IrNode(MixedModel):
         return this
 
 
-class Argument(IrNode):
+class ArgumentNode(IrNode):
     kind: str = "argument"
     argument_name: str
-    argument_type: DyType
-    output: bool
+    argument_type: Optional[DyType]
+    default: Optional[IrNode]
+    # Attributes.Mutable
+    mutable: Optional[bool] = None
+    # used in SQL
+    output: Optional[bool] = None
+
+
+class AssignmentExpressionNode(IrNode):
+    kind: str = 'assignment_expression'
+    assignee: IrNode
+    value: IrNode
+
+
+class StatementNode(IrNode):
+    value: IrNode
 
 
 class Children(IrNode):
@@ -148,22 +162,65 @@ class SuperExpressionNode(IrNode):
     super: str
 
 
+class IfExpressionNode(IrNode):
+    test: IrNode
+    consequent: Optional[IrNode]
+    alternative: Optional[IrNode]
+    conditional_op: bool = False
+
+
+class BreakStatementNode(IrNode):
+    content: Optional[IrNode] = None
+    target: str = ''
+
+
+class ContinueStatementNode(IrNode):
+    target: str = ''
+
+
+class CatchClauseNode(IrNode):
+    argument_name: IrNode
+    var_id: Optional[str] = None
+    body: Children
+
+class TryStatementNode(IrNode):
+    try_body: List[IrNode]
+    catch_clauses: List[CatchClauseNode]
+    finally_clause: Optional[IrNode] = None
+
+
+# let {a, b} = c;
+class DecomposePatternNode(IrNode):
+    names: List[str]
+
+
+class VariableDeclarationNode(IrNode):
+    id: Union[str, DecomposePatternNode]
+    ty: Optional[DyType]
+    init: Optional[IrNode]
+    mutable: Optional[bool] = None
+
+class VariableDeclarationsNode(IrNode):
+    decls: List[VariableDeclarationNode]
+
+
 class FunctionDecl(IrNode):
     kind: str = "function_decl"
     name: str
-    arguments: List[Argument]
+    accessibility: Optional[str] = None
+    arguments: List[ArgumentNode]
     function_return: Optional[DyType] = None
     function_body: Optional[Children] = None
-    async_field: bool = False
+    is_async: bool = False
 
 
-class FunctionCall(IrNode):
+class FunctionCallNode(IrNode):
     kind: str = "function_call"
     callee: IrNode
-    arguments: List[IrNode]
+    arguments: List[ArgumentNode]
 
 
-class ClassDeclaration(IrNode):
+class ClassDeclNode(IrNode):
     kind: str = "class_declaration"
     name: str
     super_class: List[str] = []
@@ -171,9 +228,61 @@ class ClassDeclaration(IrNode):
     functions: List[FunctionDecl]
 
 
-class RawNode(IrNode):
-    raw: Any
+class ProgramNode(IrNode):
+    body: Children
 
+
+class RawCodeNode(IrNode):
+    code: Any
+
+
+class MemberExpressionNode(IrNode):
+    static: bool
+    obj: IrNode
+    property: IrNode
+
+
+class LiteralNode(IrNode):
+    raw_value: Any
+    raw_code: str
+
+
+class IdentifierNode(IrNode):
+    identifier: str
+
+
+class DirectiveNode(IrNode):
+    directive: str
+
+class ReturnNode(IrNode):
+    returnee: Optional[IrNode]
+
+class OperatorNode(IrNode):
+    operator: str
+    kind: str  # prefix, postfix, binary, trinary
+    left: Optional[IrNode] = None
+    right: Optional[IrNode] = None
+    value: Optional[IrNode] = None
+
+
+class AwaitExpressionNode(IrNode):
+    value: IrNode
+
+
+class ThrowStatementNode(IrNode):
+    content: IrNode
+
+
+class NewExpressionNode(IrNode):
+    type: IrNode
+    arguments: List[IrNode]
+
+
+class ClassicalLoopNode(IrNode):
+    init: VariableDeclarationsNode
+    test: IrNode
+    update: IrNode
+    body: IrNode
 
 class Nodes:
     @staticmethod
