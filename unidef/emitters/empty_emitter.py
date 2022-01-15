@@ -5,7 +5,7 @@ from unidef.languages.common.type_model import DyType, Traits
 from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import *
-from unidef.utils.typing import List
+from unidef.utils.typing_ext import List
 
 
 class EmptyEmitter(Emitter):

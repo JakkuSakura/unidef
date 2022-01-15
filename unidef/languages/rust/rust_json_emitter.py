@@ -9,7 +9,7 @@ from unidef.utils.formatter import StructuredFormatter
 from unidef.utils.transformer import *
 from unidef.utils.typing_ext import *
 from unidef.utils.visitor import *
-
+from ..javascript.jsonify import *
 
 class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
     def accept(self, node: Input) -> bool:
@@ -22,7 +22,7 @@ class JsonCrate(NodeTransformer[Any, RustAstNode], VisitorPattern):
 
     def transform(self, node) -> RustAstNode:
 
-        if isinstance(node, IrNode) or isinstance(node, DyType):
+        if isinstance(node, JsonValue) or isinstance(node, DyType):
             if self.functions is None:
 
                 def accept(this, name):

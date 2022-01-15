@@ -3,6 +3,7 @@ from unidef.utils.formatter import *
 from unidef.utils.name_convert import *
 from unidef.utils.transformer import *
 from unidef.utils.typing_ext import *
+from unidef.utils.vtable import VTable
 
 RUST_KEYWORDS = {
     "as": "r#as",
@@ -400,20 +401,11 @@ def map_type_to_rust(ty: DyType) -> str:
     raise Exception("Cannot map type {} to str".format(ty.get_field(Traits.TypeName)))
 
 
-class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
-    functions: Optional[List[NodeTransformer]] = None
-
-    @beartype
+class RustFormatter(VTable):
     def transform(self, node: RustAstNode) -> Code:
-        if self.functions is None:
-            self.functions = self.get_functions("transform_")
-        for func in self.functions:
-            if func.accept(node):
-                return func.transform(node)
-        else:
-            raise Exception("Could not format " + type(node).__name__)
+        return self(node)
 
-    @beartype
+
     def transform_rust_return_node(self, node: RustReturnNode) -> Code:
         if node.returnee:
             return Code("return {{ returnee }};", returnee=self.transform(node.returnee))
@@ -421,11 +413,11 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
         else:
             return Code("return;")
 
-    @beartype
+
     def transform_rust_line_node(self, node: RustLineNode) -> Code:
         return Code("{{ val }}\n", val=self.transform(node.node))
 
-    @beartype
+
     def transform_rust_argument_pair_node(
             self, node: RustArgumentPairNode
     ) -> Code:
@@ -450,7 +442,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
 {{ mut }}{{ name }}{{ others }}
 """, mut=mut, name=node.name, others="".join(map(str, sources)))
 
-    @beartype
+
     def transform_rust_statement_node(self, node: RustStatementNode) -> Code:
         if node.nodes:
             sources = []
@@ -464,21 +456,21 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
 
         raise Exception("You must set either nodes or raw")
 
-    @beartype
+
     def transform_rust_block_node(self, node: RustBlockNode) -> Code:
         lines = [self.transform(n) for n in node.nodes]
-        return Code(r"""{{ "\n".join(lines) }{{ new_line }}""", lines=lines, new_line='\n' if node.new_line else '')
+        return Code(r"""{{ lines }{{ new_line }}""", lines='\n'.join(map(str, lines)), new_line='\n' if node.new_line else '')
 
-    @beartype
+
     def transform_rust_bulk_node(self, node: RustBulkNode) -> Code:
         lines = [self.transform(n) for n in node.nodes]
-        return Code(r"""{{ "\n".join(lines) }}""", lines=lines)
+        return Code(r"""{{ lines }}""", lines=''.join(map(str, lines)))
 
-    @beartype
+
     def transform_rust_raw_node(self, node: RustRawNode) -> Code:
         return Code(r"""{{ text }}{{ new_line }}""", text=node.raw, new_line='\n' if node.new_line else '')
 
-    @beartype
+
     def transform_serde(self, node: Serde) -> Code:
         pairs = []
         if node.tag:
@@ -490,11 +482,11 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
 
         return Code("""#[serde({{ pairs }})]\n""", pairs=", ".join(pairs))
 
-    @beartype
+
     def transform_derive(self, node: Derive) -> Code:
         return Code("""#[derive({{ enabled }})]\n""", enabled=", ".join(node.enabled))
 
-    @beartype
+
     def transform_serde_as(self, node: SerdeAs) -> Code:
         if not node.serde_as:
             content = "#[serde_with::serde_as]"
@@ -503,7 +495,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
 
         return Code(content)
 
-    @beartype
+
     def transform_rust_field_node(self, node: RustFieldNode) -> Code:
         sources = []
         if node.val_in_str:
@@ -520,7 +512,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
         )
         return Code("{{ sources }}", sources=", ".join(sources))
 
-    @beartype
+
     def transform_rust_comment_node(self, node: RustCommentNode) -> Code:
         sources = []
         if node.cargo_doc:
@@ -534,7 +526,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
         code = Code("{{ sources }}", sources='\n'.join(sources))
         return code
 
-    @beartype
+
     def transform_rust_struct_node(self, node: RustStructNode) -> Code:
         sources = []
         for anno in node.annotations:
@@ -561,7 +553,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
 """, in_braces='\n'.join(map(str, in_braces))))
         return Code("""{{ sources }}""", sources='\n'.join(map(str, sources)))
 
-    @beartype
+
     def transform_rust_enum_node(self, node: RustEnumNode) -> Code:
         sources = []
         for anno in node.annotations:
@@ -584,7 +576,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
 }
 """, sources="".join(map(str, sources)), in_braces=''.join(map(str, in_braces)))
 
-    @beartype
+
     def transform_strum(self, node: Strum) -> Code:
         return Code(
             """#[strum({{ val }})]""",
@@ -592,7 +584,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
 
         )
 
-    @beartype
+
     def transform_rust_impl_node(self, node: RustImplNode) -> Code:
 
         if node.trait:
@@ -612,7 +604,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
 
 """, head=head, value='\n'.join(map(str, in_braces)))
 
-    @beartype
+
     def transform_rust_func_decl_node(self, node: RustFuncDeclNode) -> Code:
         if node.access == AccessModifier.PUBLIC:
             access_value = "pub "
@@ -641,10 +633,9 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
         if isinstance(node.content, str):
             content = [node.content]
         elif isinstance(node.content, list):
-            in_braces = []
+            content = []
             for c in node.content:
-                in_braces.append(self.transform(c))
-            content = in_braces
+                content.append(self.transform(c))
         else:
             raise NotImplementedError(str(type(node.content)))
         return Code("""\
@@ -660,7 +651,7 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
                     ret_type=ret_type,
                     content=''.join(map(str, content)))
 
-    @beartype
+
     def transform_rust_func_call_node(self, node: RustFuncCallNode) -> Code:
         args = []
         for i, a in enumerate(node.arguments):
@@ -670,17 +661,17 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
             args.append(self.transform(a))
 
         return Code("""\
-{{ callee }}({{ args }});
-""", callee=self.transform(node.callee), args=args)
+{{ callee }}({{ args }})
+""", callee=self.transform(node.callee), args=''.join(map(str, args)))
 
-    @beartype
+
     def transform_rust_use_node(self, node: RustUseNode) -> Code:
         if node.rename and node.rename != node.path.split("::")[-1]:
             return Code(f"use {node.path} as {node.rename}")
         else:
             return Code(f"use {node.path};")
 
-    @beartype
+
     def transform_rust_variable_declaration(
             self, node: RustVariableDeclaration
     ) -> Code:
@@ -695,9 +686,9 @@ class RustFormatter(NodeTransformer[RustAstNode, Code], VisitorPattern):
                 [": ", map_type_to_rust(node.ty)]
             )
         if node.init:
-            sources.extend([" = ", node.init, ";"])
+            sources.extend([" = ", self.transform(node.init), ";"])
 
-        return Code("{{ val }}", val=''.join(sources))
+        return Code("{{ val }}", val=''.join(list(map(str, sources))))
 
 
 def try_rustfmt(s: str) -> str:

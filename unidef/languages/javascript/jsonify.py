@@ -33,7 +33,8 @@ class JsonRawValue(IrNode):
     def __init__(self, val):
         super().__init__(val=val)
 
-
+class ArrayExpressionNode(IrNode):
+    elements: List[IrNode]
 class Jsonify(VTable):
     def default(self, value, *args, **kwargs):
         raise NotImplementedError()

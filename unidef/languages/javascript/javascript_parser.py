@@ -5,12 +5,13 @@ from esprima.nodes import *
 from esprima.nodes import Node as EsprimaNode
 
 from unidef.languages.common.ir_model import *
-from unidef.languages.common.ir_model import ClassDeclNode as MyClassDeclaration
+from unidef.languages.common.ir_model import ClassDeclNode
 from unidef.languages.common.type_model import (Traits, infer_type_from_example)
 from unidef.models.input_model import SourceInput
 from unidef.parsers import InputDefinition, Parser
 from unidef.utils.loader import load_module
 from unidef.utils.vtable import VTable
+from .jsonify import *
 
 
 class JavasciprtVisitorBase(VTable):
@@ -89,7 +90,7 @@ class JavasciprtVisitorBase(VTable):
 
         return False
 
-    def transform_script(self, node: Script) -> IrNode:
+    def transform_script(self, node: Script) -> ProgramNode:
         body = [self.transform(n) for n in node.body]
         return ProgramNode(body=Children(body))
 
@@ -99,7 +100,7 @@ class JavasciprtVisitorBase(VTable):
         return MemberExpressionNode(obj=self.transform(node.object), property=self.transform(node.property),
                                     static=True)
 
-    def transform_directive(self, node: Directive) -> IrNode:
+    def transform_directive(self, node: Directive) -> DirectiveNode:
         return DirectiveNode(node.directive)
 
     def transform_literal(self, node: Literal) -> LiteralNode:
@@ -135,7 +136,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             decls.append(nd)
         return VariableDeclarationsNode(decls=decls)
 
-    def transform_assignment_expression(self, node: AssignmentExpression) -> IrNode:
+    def transform_assignment_expression(self, node: AssignmentExpression) -> StatementNode:
         name = self.get_name(node.left.toDict(), member_expression=True, warn=False)
         if name == "module.exports":
             return self.transform(node.right)
@@ -143,13 +144,13 @@ class JavascriptVisitor(JavasciprtVisitorBase):
 
         return StatementNode(value=value)
 
-    def transform_class_expression(self, node: ClassExpression) -> MyClassDeclaration:
+    def transform_class_expression(self, node: ClassExpression) -> ClassDeclNode:
         class_name = self.get_name(node.id.toDict())
         super_class = self.get_name(node.superClass.toDict())
 
         body = [self.transform(n) for n in node.body.body]
 
-        return MyClassDeclaration(
+        return ClassDeclNode(
             name=class_name,
             super_class=[super_class],
             functions=body
@@ -168,7 +169,7 @@ class JavascriptVisitor(JavasciprtVisitorBase):
         children = [self.transform(n) for n in node.value.body.body]
         n = FunctionDecl(name=name,
                          arguments=params,
-                         async_field=is_async,
+                         is_async=is_async,
                          function_body=Children(children=children)
                          )
 
@@ -176,57 +177,50 @@ class JavascriptVisitor(JavasciprtVisitorBase):
 
     def transform_assignment_pattern_or_value(
             self, node: Union[AssignmentPattern, Any]
-    ) -> ArgumentNode:
+    ) -> ParameterNode:
         if isinstance(node, AssignmentPattern):
             name = self.get_name(node.left.toDict())
             default = self.transform(node.right)
         else:
             name = self.get_name(node.toDict())
             default = None
-        n = ArgumentNode(argument_name=name, argument_type=None, default=default)
+        n = ParameterNode(argument_name=name, argument_type=None, default=default)
 
         return n
 
     def transform_call_expression(self, node: CallExpression) -> FunctionCallNode:
         if self.match_func_call(node, "console.log"):
             return Nodes.print(self.transform(node["arguments"]))
+        arguments = []
+        for arg in node.arguments:
+            arguments.append(self.transform(arg))
+        return FunctionCallNode(callee=self.transform(node.callee), arguments=arguments)
 
-        return FunctionCallNode(callee=self.transform(node.callee), arguments=[self.transform(n) for n in node.arguments])
-
-    def transform_expression_statement(self, node: ExpressionStatement) -> IrNode:
+    def transform_expression_statement(self, node: ExpressionStatement) -> Union[ClassDeclNode, StatementNode]:
         t = self.transform(node.expression)
-        if t.get_field(Attributes.ClassDeclaration):
+        if isinstance(t, ClassDeclNode):
             return t
-        return IrNode.from_attribute(Attributes.Statement(t))
+        return StatementNode(value=t)
 
-    def transform_return_statement(self, node: ReturnStatement) -> IrNode:
-        arg = node.argument
-        if arg:
-            returnee = self.transform(arg)
-        else:
-            returnee = None
-        return IrNode.from_attribute(Attributes.Return(returnee))
+    def transform_return_statement(self, node: ReturnStatement) -> ReturnNode:
+        return ReturnNode(returnee=node.argument and self.transform(node.argument))
 
-    def transform_property(self, node: Property) -> IrNode:
+    def transform_property(self, node: Property) -> JsonProperty:
 
-        return (
-            IrNode.from_attribute(Attributes.ObjectProperty(True))
-                .append_field(Attributes.KeyName(self.transform(node.key)))
-                .append_field(Attributes.Value(self.transform(node.value)))
+        return JsonProperty(
+            self.transform(node.key),
+            self.transform(node.value)
             # .append_field(Attributes.InferredType(Types.Object))
         )
 
-    def transform_object_expression(self, node: ObjectExpression) -> IrNode:
-        properties = [self.transform(p) for p in node.properties]
-        return IrNode.from_attribute(Attributes.ObjectProperties(properties))
+    def transform_object_expression(self, node: ObjectExpression) -> JsonObject:
+        properties = [self.transform_property(p) for p in node.properties]
+        return JsonObject(properties=properties)
 
-    def transform_array_expression(self, node: ArrayExpression) -> IrNode:
-        return IrNode.from_attribute(
-            Attributes.ArrayElements([self.transform(n) for n in node.elements])
+    def transform_array_expression(self, node: ArrayExpression) -> ArrayExpressionNode:
+        return ArrayExpressionNode(
+            elements=[self.transform(n) for n in node.elements]
         )
-
-    def transform_logical_expression(self, node) -> IrNode:
-        return self.transform_operator(node)
 
     def transform_binary_expression(self, node: BinaryExpression) -> OperatorNode:
         return OperatorNode(operator=node.operator, kind='middle',
@@ -246,86 +240,69 @@ class JavascriptVisitor(JavasciprtVisitorBase):
             kind = 'prefix'
         return OperatorNode(operator=node.operator, kind=kind, value=self.transform(node.argument))
 
+    def transform_if_statement(self, node: IfStatement) -> IfExpressionNode:
+        return IfExpressionNode(test=self.transform(node.test),
+                                consequent=node.consequent and self.transform(node.consequent),
+                                alternative=node.alternate and self.transform(node.alternate))
 
-def transform_if_statement(self, node: IfStatement) -> IfExpressionNode:
-    return IfExpressionNode(test=self.transform(node.test),
-                            consequent=node.consequent and self.transform(node.consequent),
-                            alternative=node.alternate and self.transform(node.alternate))
-
-
-def transform_block_statement(self, node: BlockStatement) -> BlockStatementNode:
-    try:
+    def transform_block_statement(self, node: BlockStatement) -> BlockStatementNode:
         return BlockStatementNode(children=[self.transform(n) for n in node.body])
-    except Exception as e:
-        raise e
 
+    def transform_for_statement(self, node: ForStatement) -> ClassicalLoopNode:
+        body = Children(children=[self.transform(n) for n in node.body.body])
+        n.append_field(Attributes.Children(body))
+        return ClassicalLoopNode(
+            init=self.transform(node.init),
+            test=self.transform(node.test),
+            update=self.transform(node.update),
+            body=body
+        )
 
-def transform_for_statement(self, node: ForStatement) -> IrNode:
-    n = IrNode.from_attribute(Attributes.CForLoop)
-    init = self.transform(node.init)
-    n.append_field(Attributes.CForLoopInit(init))
-    test = self.transform(node.test)
-    n.append_field(Attributes.CForLoopTest(test))
-    update = self.transform(node.update)
-    n.append_field(Attributes.CForLoopUpdate(update))
-    body = [self.transform(n) for n in node.body.body]
-    n.append_field(Attributes.Children(body))
-    return n
+    def transform_computed_member_expression(
+            self, node: ComputedMemberExpression
+    ) -> MemberExpressionNode:
+        return MemberExpressionNode(static=False, obj=self.transform(node.object),
+                                    property=self.transform(node.property))
 
+    def transform_await_expression(self, node: AwaitExpression) -> AwaitExpressionNode:
+        return AwaitExpressionNode(value=self.transform(node.argument))
 
-def transform_computed_member_expression(
-        self, node: ComputedMemberExpression
-) -> MemberExpressionNode:
-    return MemberExpressionNode(static=False, obj=self.transform(node.object),
-                                property=self.transform(node.property))
+    def transform_throw_statement(self, node: ThrowStatement) -> IrNode:
+        return ThrowStatementNode(content=self.transform(node.argument))
 
+    def transform_new_expression(self, node: NewExpression) -> IrNode:
+        return NewExpressionNode(
+            type=self.transform(node.callee),
+            arguments=[self.transform(a) for a in node.arguments]
 
-def transform_await_expression(self, node: AwaitExpression) -> AwaitExpressionNode:
-    return AwaitExpressionNode(value=self.transform(node.argument))
+        )
 
+    def transform_conditional_expression(self, node: ConditionalExpression) -> IfExpressionNode:
+        return IfExpressionNode(
+            test=self.transform(node.test),
+            consequent=self.transform(node.consequent),
+            alternative=self.transform(node.alternate),
+            conditional_op=True
+        )
 
-def transform_throw_statement(self, node: ThrowStatement) -> IrNode:
-    return ThrowStatementNode(content=self.transform(node.argument))
+    def transform_break_statement(self, node: BreakStatement) -> BreakStatementNode:
+        return BreakStatementNode()
 
+    def transform_continue_statement(self, node: ContinueStatement) -> ContinueStatementNode:
+        return ContinueStatementNode()
 
-def transform_new_expression(self, node: NewExpression) -> IrNode:
-    return NewExpressionNode(
-        type=self.transform(node.callee),
-        arguments=[self.transform(a) for a in node.arguments]
+    def transform_try_statement(self, node: TryStatement) -> TryStatementNode:
+        return TryStatementNode(
+            try_body=[self.transform(n) for n in node.block.body],
+            catch_clauses=node.handler and [self.transform_catch_clause(node.handler)],
+            finally_clause=node.finalizer and self.transform(node.finalizer.body.body)
+        )
 
-    )
-
-
-def transform_conditional_expression(self, node: ConditionalExpression) -> IfExpressionNode:
-    return IfExpressionNode(
-        test=self.transform(node.test),
-        consequent=self.transform(node.consequent),
-        alternative=self.transform(node.alternate),
-        conditional=True
-    )
-
-
-def transform_break_statement(self, node: BreakStatement) -> BreakStatementNode:
-    return BreakStatementNode()
-
-
-def transform_continue_statement(self, node: ContinueStatement) -> IrNode:
-    return ContinueStatementNode()
-
-
-def transform_try_statement(self, node: TryStatement) -> TryStatementNode:
-    return TryStatementNode(
-        try_body=[self.transform(n) for n in node.block.body],
-        catch_clauses=node.handler and [self.transform_catch_clause(node.handler)],
-        finally_clause=node.finalizer and self.transform(node.finalizer.body.body)
-    )
-
-
-def transform_catch_clause(self, node: CatchClause) -> CatchClauseNode:
-    return CatchClauseNode(
-        argument_name=self.transform(node.param),
-        body=Children([self.transform(n) for n in node.body.body])
-    )
+    def transform_catch_clause(self, node: CatchClause) -> CatchClauseNode:
+        return CatchClauseNode(
+            argument_name=self.transform(node.param),
+            body=Children([self.transform(n) for n in node.body.body])
+        )
 
 
 class JavascriptParserImpl(Parser):

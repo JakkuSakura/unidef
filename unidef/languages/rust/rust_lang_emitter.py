@@ -13,7 +13,6 @@ from unidef.models import config_model
 from unidef.models.config_model import ModelDefinition
 from unidef.utils.formatter import *
 from unidef.utils.typing_ext import *
-from unidef.utils.typing import List
 from unidef.utils.vtable import VTable
 
 
@@ -51,7 +50,10 @@ class RustEmitterBase(VTable):
     functions: Optional[List[NodeTransformer]] = None
 
     def transform(self, node: IrNode) -> RustAstNode:
-        return self(node)
+        ret = self(node)
+        if not isinstance(ret, RustAstNode):
+            pass
+        return ret
 
     def transform_children(self, node: Children) -> RustAstNode:
         sources = []
@@ -80,7 +82,7 @@ class RustEmitterBase(VTable):
     def transform_return(self, node: ReturnNode) -> RustReturnNode:
         return RustReturnNode(returnee=node.returnee and self.transform(node.returnee))
 
-    def transform_argument(self, node: ArgumentNode) -> RustArgumentPairNode:
+    def transform_argument(self, node: ParameterNode) -> RustArgumentPairNode:
         return RustArgumentPairNode(
             mutable=node.get_field_opt(Attributes.Mutable),
             name=node.argument_name,
@@ -151,10 +153,13 @@ class RustEmitterBase(VTable):
             return RustBulkNode(sources)
 
     def transform_function_call(self, node: FunctionCallNode) -> RustAstNode:
-        return RustFuncCallNode(
-            callee=self.transform(node.callee),
-            arguments=[self.transform_argument(n) for n in node.arguments],
-        )
+        try:
+            return RustFuncCallNode(
+                callee=self.transform(node.callee),
+                arguments=[self.transform(n) for n in node.arguments],
+            )
+        except Exception as e:
+            pass
 
     def transform_identifier(self, node: IdentifierNode) -> RustAstNode:
         return RustRawNode(node.get_field(Attributes.Identifier))
@@ -223,11 +228,15 @@ class RustEmitterBase(VTable):
     def transform_variable_declarations(self, node: VariableDeclarationsNode) -> RustAstNode:
         sources = []
         for decl in node.decls:
+            if isinstance(decl.id, DecomposePatternNode):
+                id = "{" + ', '.join(decl.id.names) + ' }'
+            else:
+                id = decl.id
             sources.append(
                 RustVariableDeclaration(
-                    name=decl.id,
-                    init=decl.init and self.transform(init),
-                    ty=(decl.ty),
+                    name=id,
+                    init=decl.init and self.transform(decl.init),
+                    ty=decl.ty,
                     mutability=decl.get_field(Attributes.Mutable)
                 )
             )
@@ -255,18 +264,25 @@ class RustEmitterBase(VTable):
         sources.append(RustImplNode(name=rust_struct.name, functions=functions))
         return RustBulkNode(sources)
 
-    # def transform_object_properties(self, node) -> RustAstNode:
-    #     class MyJsonCrate(SerdeJsonNoMacroCrate):
-    #         this: Any
-    #
-    #         def transform_others(self, nd):
-    #             return self.this.transform(nd)
-    #
-    #     json_crate = MyJsonCrate(this=self)
-    #     return json_crate.transform(node)
+    def transform_object_properties(self, node: JsonObject) -> RustAstNode:
+        return RustRawNode("todo!(\"json objects\")")
+        # FIXME
+        class MyJsonCrate(SerdeJsonNoMacroCrate):
+            this: Any
 
-    # def transform_array_elements(self, node) -> RustAstNode:
-    #     return self.transform_object_properties(node)
+            def transform_others(self, nd):
+                return self.this.transform(nd)
+
+        json_crate = MyJsonCrate(this=self)
+        return json_crate.transform(node)
+
+    def transform_array_elements(self, node: ArrayExpressionNode) -> RustAstNode:
+        sources = [
+            RustRawNode("vec!["),
+            *[self.transform(n) for n in node.elements],
+            RustRawNode("[")
+        ]
+        return RustBulkNode(sources)
 
     def transform_block_statement(self, node: BlockStatementNode) -> RustBlockNode:
         return RustBlockNode(nodes=[self.transform(n) for n in node.children])
@@ -297,7 +313,7 @@ class RustEmitterBase(VTable):
                 sources.append(RustRawNode("else "))
                 sources.append(RustBlockNode(nodes=[self.transform(node.alternative)], new_line=True))
 
-            return RustBulkNode(sources=sources)
+            return RustBulkNode(sources)
     def transform_operator(self, node: OperatorNode):
         op = node.operator
         if op == "===":

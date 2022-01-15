@@ -21,7 +21,7 @@ class PostAssignTypeInferred(PostAssignType):
 
 
 class PostAssignTypeFunc(PostAssignType):
-    def __init__(self, f: Callable[[DyType, Dict[str, Any]]]):
+    def __init__(self, f: Callable[[DyType, Dict[str, Any]], None]):
         self.func = f
 
     def post_assign_type(self, ty: DyType, **kwargs):

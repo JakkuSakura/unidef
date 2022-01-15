@@ -124,7 +124,7 @@ class IrNode(MixedModel):
         return this
 
 
-class ArgumentNode(IrNode):
+class ParameterNode(IrNode):
     kind: str = "argument"
     argument_name: str
     argument_type: Optional[DyType]
@@ -192,7 +192,7 @@ class TryStatementNode(IrNode):
 # let {a, b} = c;
 class DecomposePatternNode(IrNode):
     names: List[str]
-
+    object: bool = True
 
 class VariableDeclarationNode(IrNode):
     id: Union[str, DecomposePatternNode]
@@ -208,7 +208,7 @@ class FunctionDecl(IrNode):
     kind: str = "function_decl"
     name: str
     accessibility: Optional[str] = None
-    arguments: List[ArgumentNode]
+    arguments: List[ParameterNode]
     function_return: Optional[DyType] = None
     function_body: Optional[Children] = None
     is_async: bool = False
@@ -217,7 +217,7 @@ class FunctionDecl(IrNode):
 class FunctionCallNode(IrNode):
     kind: str = "function_call"
     callee: IrNode
-    arguments: List[ArgumentNode]
+    arguments: List[IrNode]
 
 
 class ClassDeclNode(IrNode):
