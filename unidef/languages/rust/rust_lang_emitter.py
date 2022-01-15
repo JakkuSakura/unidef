@@ -310,11 +310,17 @@ class RustEmitterBase(VTable):
                 self.transform(node.test)
             )
             sources.append(RustRawNode(" "))
-            sources.append(RustBlockNode(nodes=[self.transform(node.consequent)], new_line=True))
+            if isinstance(node.consequent, BlockStatementNode):
+                sources.append(self.transform_block_statement(node.consequent))
+            else:
+                sources.append(RustBlockNode(nodes=[self.transform(node.consequent)], new_line=True))
 
             if node.alternative:
                 sources.append(RustRawNode("else "))
-                sources.append(RustBlockNode(nodes=[self.transform(node.alternative)], new_line=True))
+                if isinstance(node.alternative, BlockStatementNode):
+                    sources.append(self.transform_block_statement(node.alternative))
+                else:
+                    sources.append(RustBlockNode(nodes=[self.transform(node.alternative)], new_line=True))
 
             return RustBulkNode(sources)
 
