@@ -95,7 +95,7 @@ class JsonCrate(VTable):
         if fields:
             lines = []
             lines.append(
-                RustStatementNode(raw=f"let mut node = <{self.object_type}>::new()")
+                RustStatementNode(raw=f"let mut node = <{self.object_type}>::new();")
             )
             for field in fields:
                 comments = field.get_field(Traits.BeforeLineComment)

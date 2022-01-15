@@ -1,7 +1,7 @@
 import copy
 
 from typedmodel import *
-from typing import Dict, Any
+from .typing_ext import Dict, Any, List, Union
 from jinja2 import Template, StrictUndefined
 from jinja2.filters import do_indent
 import re
@@ -26,13 +26,25 @@ class Code(BaseModel):
             nonlocal count
 
             key = match.group(1)
-            if isinstance(self.values[key], Code):
+            val = self.values[key]
+
+            if isinstance(val, Code):
                 count += 1
                 ret = key + '_' + str(count)
                 indent = match.start()
                 if key not in string_cache:
-                    string_cache[key] = str(self.values[key])
+                    string_cache[key] = str(val)
                 new_values[ret] = do_indent(string_cache[key], indent)
+                return '{{ ' + ret + ' }}'
+            elif isinstance(val, JoinCode):
+                count += 1
+                ret = key + '_' + str(count)
+                indent = match.start()
+                if key not in string_cache:
+                    string_cache[key] = val.sep.join([str(code) for code in val.codes])
+
+                new_values[ret] = do_indent(string_cache[key], indent)
+
                 return '{{ ' + ret + ' }}'
             else:
                 return match.group(0)
@@ -45,6 +57,14 @@ class Code(BaseModel):
 
     def __str__(self):
         return self.cache
+
+
+class JoinCode(BaseModel):
+    sep: str = '\n'
+    codes: List[Union[Code, str]]
+
+    def __init__(self, codes, **kwargs):
+        super(JoinCode, self).__init__(codes=codes, **kwargs)
 
 
 def test_basic_indentation():
@@ -70,3 +90,12 @@ for i in 0..{{ val }} {
     print(Code("""\
 {{ "\n".join(values) }}
 """, values=["hello", "world"]))
+
+
+def test_list_indentation():
+    code1 = Code("""\
+{
+    {{ val }}
+}
+""", val=JoinCode([Code("1"), Code("2")]))
+    print(code1)

@@ -4,6 +4,7 @@ from unidef.utils.name_convert import *
 from unidef.utils.transformer import *
 from unidef.utils.typing_ext import *
 from unidef.utils.vtable import VTable
+from unidef.utils.template import Code, JoinCode
 
 RUST_KEYWORDS = {
     "as": "r#as",
@@ -440,7 +441,7 @@ class RustFormatter(VTable):
                 )
         return Code("""\
 {{ mut }}{{ name }}{{ others }}
-""", mut=mut, name=node.name, others="".join(map(str, sources)))
+""", mut=mut, name=node.name, others=JoinCode(sources, sep=''))
 
 
     def transform_rust_statement_node(self, node: RustStatementNode) -> Code:
@@ -450,7 +451,7 @@ class RustFormatter(VTable):
                 sources.append(self.transform(n))
             sources.append("; ")
 
-            return Code("{{ sources }}", sources=''.join(map(str, sources)))
+            return Code("{{ sources }}", sources=JoinCode(sources, sep=''))
         if node.raw:
             return Code("{{ raw }}", raw=node.raw)
 
@@ -459,12 +460,17 @@ class RustFormatter(VTable):
 
     def transform_rust_block_node(self, node: RustBlockNode) -> Code:
         lines = [self.transform(n) for n in node.nodes]
-        return Code(r"""{{ lines }}{{ new_line }}""", lines='\n'.join(map(str, lines)), new_line='\n' if node.new_line else '')
+        return Code("""\
+{
+    {{ lines }}
+}
+{{ new_line }}
+""", lines='\n'.join(map(str, lines)), new_line='\n' if node.new_line else '')
 
 
     def transform_rust_bulk_node(self, node: RustBulkNode) -> Code:
         lines = [self.transform(n) for n in node.nodes]
-        return Code(r"""{{ lines }}""", lines=''.join(map(str, lines)))
+        return Code(r"""{{ lines }}""", lines=JoinCode(lines))
 
 
     def transform_rust_raw_node(self, node: RustRawNode) -> Code:
@@ -539,19 +545,19 @@ class RustFormatter(VTable):
             for i, field in enumerate(node.fields):
                 if i > 0:
                     line.append(", ")
-                    in_braces.append(Code("{{ line }}\n", line=''.join(map(str, line))))
+                    in_braces.append(Code("{{ line }}\n", line=JoinCode(line, sep='')))
                     line = []
 
                 line.append(self.transform(field))
-            in_braces.append(Code("{{ line }}\n", line=''.join(map(str, line))))
+            in_braces.append(Code("{{ line }}\n", line=JoinCode(line, sep='')))
         sources.append(Code("""\
 {
     {{ in_braces }}
 }
 
 
-""", in_braces='\n'.join(map(str, in_braces))))
-        return Code("""{{ sources }}""", sources='\n'.join(map(str, sources)))
+""", in_braces=JoinCode(in_braces)))
+        return Code("""{{ sources }}""", sources=JoinCode(sources))
 
 
     def transform_rust_enum_node(self, node: RustEnumNode) -> Code:
@@ -574,7 +580,7 @@ class RustFormatter(VTable):
 {{ sources }}{
     {{ in_braces }}
 }
-""", sources="".join(map(str, sources)), in_braces=''.join(map(str, in_braces)))
+""", sources=JoinCode(sources, sep=''), in_braces=JoinCode(in_braces, sep=''))
 
 
     def transform_strum(self, node: Strum) -> Code:
@@ -647,9 +653,9 @@ class RustFormatter(VTable):
                     access=access_value,
                     async_value=async_value,
                     name=node.name,
-                    args=''.join(map(str, in_braces)),
+                    args=JoinCode(in_braces, sep=''),
                     ret_type=ret_type,
-                    content=''.join(map(str, content)))
+                    content=JoinCode(content, sep=''))
 
 
     def transform_rust_func_call_node(self, node: RustFuncCallNode) -> Code:
@@ -662,7 +668,7 @@ class RustFormatter(VTable):
 
         return Code("""\
 {{ callee }}({{ args }})
-""", callee=self.transform(node.callee), args=''.join(map(str, args)))
+""", callee=self.transform(node.callee), args=JoinCode(args, sep=''))
 
 
     def transform_rust_use_node(self, node: RustUseNode) -> Code:
