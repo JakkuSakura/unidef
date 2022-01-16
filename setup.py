@@ -2,12 +2,13 @@ import setuptools
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
+extra_requirements = ["quickfix"]
 with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = []
     for line in fh.readlines():
         line = line.strip()
         req = line.split("#")[0]
-        if req:
+        if req and req not in extra_requirements:
             requirements.append(req)
 setuptools.setup(
     name="unidef",
@@ -29,5 +30,8 @@ setuptools.setup(
     packages=["unidef"],
     include_package_data=True,
     install_requires=requirements,
+    extras_require={
+        'full': extra_requirements
+    },
     python_requires=">=3.6",
 )
