@@ -7,7 +7,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = []
     for line in fh.readlines():
         line = line.strip()
-        req = line.split("#")[0]
+        req = line.split("#")[0].strip()
         if req and req not in extra_requirements:
             requirements.append(req)
 setuptools.setup(
