@@ -2,10 +2,16 @@ import setuptools
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
-
+with open("requirements.txt", "r", encoding="utf-8") as fh:
+    requirements = []
+    for line in fh.readlines():
+        line = line.strip()
+        req = line.split("#")[0]
+        if req:
+            requirements.append(req)
 setuptools.setup(
     name="unidef",
-    version="0.2.0",
+    version="0.2.1",
     author="Jiangkun QIU",
     author_email="qjk2001@gmail.com",
     description="Define once, run everywhere",
@@ -20,7 +26,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "unidef"},
-    packages=setuptools.find_packages(where="unidef"),
+    packages=["unidef"],
+    include_package_data=True,
+    install_requires=requirements,
     python_requires=">=3.6",
 )
