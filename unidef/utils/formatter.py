@@ -3,7 +3,7 @@ import copy
 from unidef.utils.transformer import *
 from unidef.utils.typing_ext import *
 from unidef.utils.visitor import VisitorPattern
-from utils.template import Code
+from unidef.utils.template import Code
 from typedmodel import BaseModel
 
 @abstract

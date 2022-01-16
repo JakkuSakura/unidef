@@ -13,7 +13,7 @@ class JsonParser(Parser):
     def accept(self, fmt: InputDefinition) -> bool:
         return isinstance(fmt, ExampleInput) and fmt.format.lower() == "json"
 
-    def parse_comment(self, content: str) -> Dict[(int, str), str]:
+    def parse_comment(self, content: str) -> Dict[Tuple[int, str], str]:
         occurrences = {}
         result = {}
         key_re = re.compile(r'"([\w\-]+)"\s*:')

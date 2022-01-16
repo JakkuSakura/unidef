@@ -41,7 +41,7 @@ class VTableMeta(type):
 @abstract
 class VTable(metaclass=VTableMeta):
     __mapping__: Dict[type, FunctionType]
-    __additional__: List[(TypeAcceptor, FunctionType)]
+    __additional__: List[Tuple[TypeAcceptor, FunctionType]]
 
     @classmethod
     def __get_func(cls, ty: type):
