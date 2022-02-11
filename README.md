@@ -49,3 +49,13 @@ Right now inner model is now mixed key-value with validations. The next step sho
 
 
 ### Add more tests
+
+
+### Reimplementation
+
+I decided to rewrite it with scala 3. Because
+
+1. Python is too slow
+2. Python is not expressive with pattern matching
+3. Has GC, and no need to care about machine level details compared with Rust
+
