@@ -1,4 +1,5 @@
 from unidef.emitters import Emitter
+
 from unidef.languages.common.type_model import DyType
 from unidef.models.config_model import ModelDefinition
 
@@ -34,9 +35,8 @@ class RustJsonEmitter(Emitter):
         node = json_crate.transform(ty)
         formatter = RustFormatter()
         node = formatter.transform(node)
-        formatter = StructuredFormatter(nodes=[node])
 
-        return formatter.to_string(strip_left=True)
+        return node.render()
 
 
 class RustLangEmitter(Emitter):
@@ -50,7 +50,7 @@ class RustLangEmitter(Emitter):
 
     def emit_type(self, target: str, ty) -> str:
         from unidef.languages.rust.rust_lang_emitter import (
-            RustEmitterBase, RustFormatter, StructuredFormatter, try_rustfmt)
+            RustEmitterBase, RustFormatter, try_rustfmt)
 
         builder = RustEmitterBase()
         node = builder.transform(ty)
