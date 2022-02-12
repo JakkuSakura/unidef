@@ -20,8 +20,8 @@ object CodeGen:
     val VELOCITY: VelocityEngine = VelocityEngine()
 
     VELOCITY.setProperty(RuntimeConstants.RESOURCE_LOADERS, "string")
-    VELOCITY.addProperty("string.resource.loader.class", classOf[StringResourceLoader].getName)
-    VELOCITY.addProperty("string.resource.loader.modificationCheckInterval", "1")
+    VELOCITY.addProperty("resource.loader.string.class", classOf[StringResourceLoader].getName)
+    VELOCITY.addProperty("resource.loader.string.modificationCheckInterval", "1")
     VELOCITY.addProperty("runtime.references.strict", true)
     VELOCITY.init()
 
