@@ -1,12 +1,11 @@
 package com.jeekrs.unidef
 package languages.yaml
 
-import languages.common.FieldType.{AutoIncr, PrimaryKey}
 import languages.common.*
+import languages.sql.FieldType.{AutoIncr, PrimaryKey}
 import utils.Extendable
 import utils.JsonUtils.{getBool, getJson, getObject, getString}
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.IntType
 import io.circe.parser.decode
 import io.circe.syntax.*
 import io.circe.yaml.parser

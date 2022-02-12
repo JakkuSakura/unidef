@@ -14,16 +14,22 @@ import scala.concurrent.duration.TimeUnit
  */
 class TyNode extends Extendable
 
+// scala: Type[A, B, ..]
 class GenericType(generics: List[TyNode]) extends TyNode
 
+// scala: (A, B)
 case class TupleType(values: List[TyNode]) extends GenericType(values)
 
+// scala: Option[A]
 case class OptionalType(value: TyNode) extends GenericType(List(value))
 
+// scala: Either[A, B] rust: Result<Ok, Err>
 case class ResultType(ok: TyNode, err: TyNode) extends GenericType(List(ok, err))
 
+// rust: Vec<T>
 case class VectorType(value: TyNode) extends GenericType(List(value))
 
+// scala: A -> B
 case class MappingType(key: TyNode, value: TyNode) extends GenericType(List(key, value))
 
 enum BitSize(bits: Int):
@@ -42,45 +48,34 @@ case class IntegerType(bitSize: BitSize, signed: Boolean = true) extends TyNode
 
 class RealType extends TyNode
 
+// sql: decimal(p, s)
 case class DecimalType(precision: Int, scale: Int) extends RealType
 
+// scala: f32, f64
 case class FloatType(bitSize: BitSize) extends RealType
 
+// rust: enum with multiple names
 case class VariantType(names: List[String]) extends TyNode
 
 case class EnumType(variants: List[VariantType]) extends TyNode
 
 case class FieldType(name: String, value: TyNode) extends TyNode
 
-object FieldType:
-    object PrimaryKey extends ExtKey :
-        override type V = Boolean
-
-    object AutoIncr extends ExtKey :
-        override type V = Boolean
-
 case class StructType(name: String, fields: List[FieldType], dataType: Boolean = false) extends TyNode
 
 case class DictType(key: TyNode, value: TyNode) extends GenericType(List(key, value))
 
-object StringType extends TyNode :
-    override def toString: String = "String"
+case object StringType extends TyNode
 
-object AnyType extends TyNode :
-    override def toString: String = "Any"
+case object AnyType extends TyNode
 
-object UnitType extends TyNode :
-    override def toString: String = "Unit"
+case object UnitType extends TyNode
 
-object NullType extends TyNode :
-    override def toString: String = "Null"
+case object NullType extends TyNode
 
-object UnknownType extends TyNode :
-    override def toString: String = "Unknown"
+case object UnknownType extends TyNode
 
-object UndefinedType extends TyNode :
-    override def toString: String = "Undefined"
-
+case object UndefinedType extends TyNode
 
 case class TimeStampType(timeUnit: TimeUnit) extends TyNode
 
@@ -90,23 +85,14 @@ case class ReferenceType(referee: TyNode) extends TyNode
 
 case class NamedType(name: String) extends TyNode
 
-object ReferenceType:
-    sealed trait LifeTime
 
-    object LifeTime extends ExtKey :
-        override type V = LifeTime
-
-        class StaticLifeTime extends LifeTime
-
-        class NamedLifeTime(name: String) extends LifeTime
-
-object Mutability extends ExtKey :
+case object Mutability extends ExtKey :
     override type V = Boolean
 
-object Derive extends ExtKey :
+case object Derive extends ExtKey :
     override type V = List[String]
 
-object Attributes extends ExtKey :
+case object Attributes extends ExtKey :
     override type V = List[FunctionApplyNode]
 
 object TypeParser:

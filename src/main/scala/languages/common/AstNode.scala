@@ -1,7 +1,7 @@
 package com.jeekrs.unidef
 package languages.common
 
-import utils.Extendable
+import utils.{ExtKey, Extendable}
 
 /**
  * The following AST nodes describes a general language that tries to be compatible with other languages
@@ -9,7 +9,7 @@ import utils.Extendable
  * Rules: everything is an expression
  */
 
-class AstNode extends Extendable:
+class AstNode extends Extendable :
     def inferType: TyNode = UnknownType
 
 
@@ -68,22 +68,26 @@ enum AccessModifier:
     case Limited(path: String)
 
 case class FunctionDeclNode(
-                        name: AstNode,
-                        arguments: List[ArgumentNode],
-                        returnType: AstNode,
-                        access: AccessModifier,
-                        isAsync: Boolean = false,
-                        body: AstNode
-                      ) extends AstNode
+                             name: AstNode,
+                             arguments: List[ArgumentNode],
+                             returnType: AstNode,
+                             access: AccessModifier,
+                             isAsync: Boolean = false,
+                             body: AstNode
+                           ) extends AstNode
 
 case class ClassIdent(name: String) extends AstNode
 
 case class ClassDeclNode(
-                     name: AstNode,
-                     derived: List[ClassIdent],
-                     fields: List[AstNode], // TODO: types
-                     methods: List[AstNode]
-                   ) extends AstNode
+                          name: AstNode,
+                          derived: List[ClassIdent],
+                          fields: List[FieldType],
+                          methods: List[AstNode],
+                        ) extends AstNode
+
+object ClassDeclNode:
+    case object DataClass extends ExtKey :
+        override type V = Boolean
 
 case class IdentifierNode(id: String) extends AstNode
 
@@ -103,12 +107,13 @@ case class BinaryOperatorNode(left: AstNode, right: AstNode, op: BinaryOperator)
 case class FunctionIdentNode(name: String) extends AstNode
 
 case class FunctionApplyNode(
-                         func: FunctionIdentNode,
-                         args: List[AstNode],
-                         kwArgs: Map[String, AstNode],
-                         applyArgs: List[AstNode] = List(),
-                         applyKwArgs: List[AstNode] = List()
-                       ) extends AstNode
+                              func: FunctionIdentNode,
+                              args: List[AstNode],
+                              kwArgs: Map[String, AstNode],
+                              applyArgs: List[AstNode] = List(),
+                              applyKwArgs: List[AstNode] = List()
+                            ) extends AstNode
 
 case class AwaitNode(value: AstNode) extends AstNode
+
 case class RawCodeNode(raw: String) extends AstNode
