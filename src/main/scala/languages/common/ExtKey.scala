@@ -7,7 +7,4 @@ class TypedValue(val key: ExtKey, val value: Any)
 trait ExtKey:
     type V
     def apply(v: V): TypedValue = TypedValue(this, v)
-
-object Name extends ExtKey:
-    type V = String
-
+    

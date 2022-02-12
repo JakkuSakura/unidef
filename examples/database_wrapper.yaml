@@ -1,0 +1,13 @@
+type: model
+name: user
+fields:
+  - name: id
+    type: int
+    primary: true
+    auto_incr: true
+
+  - name: name
+    type: str
+
+
+

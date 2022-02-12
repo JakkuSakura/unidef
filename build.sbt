@@ -10,7 +10,10 @@ lazy val root = (project in file("."))
     idePackagePrefix := Some("com.jeekrs.unidef")
 
     )
+val circeVersion = "0.14.1"
 
-libraryDependencies += "io.circe" %% "circe-yaml" % "0.14.1"
+libraryDependencies += "io.circe" %% "circe-yaml" % circeVersion
+libraryDependencies += "io.circe" %% "circe-parser" % circeVersion
+libraryDependencies += "io.circe" %% "circe-generic" % circeVersion
 
 

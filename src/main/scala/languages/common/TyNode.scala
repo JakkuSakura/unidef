@@ -1,6 +1,9 @@
 package com.jeekrs.unidef
 package languages.common
 
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.IntType
+import io.circe.ParsingFailure
+
 import java.util.TimeZone
 import scala.concurrent.duration.TimeUnit
 
@@ -11,15 +14,15 @@ class TyNode extends IrNode
 
 class GenericType(generics: List[TyNode]) extends TyNode
 
-class TupleType(values: List[TyNode]) extends GenericType(values)
+case class TupleType(values: List[TyNode]) extends GenericType(values)
 
-class OptionalType(value: TyNode) extends GenericType(List(value))
+case class OptionalType(value: TyNode) extends GenericType(List(value))
 
-class ResultType(ok: TyNode, err: TyNode) extends GenericType(List(ok, err))
+case class ResultType(ok: TyNode, err: TyNode) extends GenericType(List(ok, err))
 
-class VectorType(value: TyNode) extends GenericType(List(value))
+case class VectorType(value: TyNode) extends GenericType(List(value))
 
-class MappingType(key: TyNode, value: TyNode) extends GenericType(List(key, value))
+case class MappingType(key: TyNode, value: TyNode) extends GenericType(List(key, value))
 
 enum BitSize(bits: Int):
     case B256 extends BitSize(256)
@@ -30,46 +33,60 @@ enum BitSize(bits: Int):
     case B4 extends BitSize(4)
     case B2 extends BitSize(2)
     case B1 extends BitSize(1)
+    case Unknown extends BitSize(0)
+    case BigInt extends BitSize(-1)
 
-class IntegerType(bitSize: BitSize, signed: Boolean = true) extends TyNode
+case class IntegerType(bitSize: BitSize, signed: Boolean = true) extends TyNode
 
 class RealType extends TyNode
 
-class DecimalType(precision: Int, scale: Int) extends RealType
+case class DecimalType(precision: Int, scale: Int) extends RealType
 
-class FloatType(bitSize: BitSize) extends RealType
+case class FloatType(bitSize: BitSize) extends RealType
 
-class VariantType(names: List[String]) extends TyNode
+case class VariantType(names: List[String]) extends TyNode
 
-class EnumType(variants: List[VariantType]) extends TyNode
+case class EnumType(variants: List[VariantType]) extends TyNode
 
-class FieldType(name: String, value: TyNode) extends TyNode
+case class FieldType(name: String, value: TyNode) extends TyNode
 
 object FieldType:
     object PrimaryKey extends ExtKey :
         override type V = Boolean
 
+    object AutoIncr extends ExtKey :
+        override type V = Boolean
 
-class StructType(name: String, fields: List[FieldType], dataType: Boolean = false) extends TyNode
+case class StructType(name: String, fields: List[FieldType], dataType: Boolean = false) extends TyNode
 
-class DictType(key: TyNode, value: TyNode) extends GenericType(List(key, value))
+case class DictType(key: TyNode, value: TyNode) extends GenericType(List(key, value))
 
-object AnyType extends TyNode
+object StringType extends TyNode :
+    override def toString: String = "String"
 
-object UnitType extends TyNode
+object AnyType extends TyNode :
+    override def toString: String = "Any"
 
-object NullType extends TyNode
+object UnitType extends TyNode :
+    override def toString: String = "Unit"
 
-object UnknownType extends TyNode
+object NullType extends TyNode :
+    override def toString: String = "Null"
+
+object UnknownType extends TyNode :
+    override def toString: String = "Unknown"
+
+object UndefinedType extends TyNode :
+    override def toString: String = "Undefined"
 
 
-class TimeStampType(timeUnit: TimeUnit) extends TyNode
+case class TimeStampType(timeUnit: TimeUnit) extends TyNode
 
-class DateTimeType(timezone: Option[TimeZone]) extends TyNode
+case class DateTimeType(timezone: Option[TimeZone]) extends TyNode
 
-class ReferenceType(referee: TyNode) extends TyNode
+case class ReferenceType(referee: TyNode) extends TyNode
 
-class NamedType(name: String) extends TyNode
+case class NamedType(name: String) extends TyNode
 
 object ReferenceType:
     sealed trait LifeTime
@@ -89,3 +106,10 @@ object Derive extends ExtKey :
 
 object Attributes extends ExtKey :
     override type V = List[FunctionApplyNode]
+
+object TypeParser:
+    def parse(ty: String): Either[ParsingFailure, TyNode] =
+        ty match
+            case "int" => Right(IntegerType(BitSize.B32))
+            case "str" | "string" => Right(StringType)
+            case _ => Left(ParsingFailure("Unknown type " + ty, null))
