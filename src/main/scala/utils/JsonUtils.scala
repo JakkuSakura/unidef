@@ -1,8 +1,7 @@
 package com.jeekrs.unidef
-package languages.common
+package utils
 
 import io.circe.{Json, JsonObject, ParsingFailure}
-
 
 object JsonUtils:
     def getJson(obj: JsonObject, name: String): Either[ParsingFailure, Json] = obj(name).toRight(ParsingFailure(name + " does not exist", null))

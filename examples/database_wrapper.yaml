@@ -9,5 +9,20 @@ fields:
   - name: name
     type: str
 
+---
+type: function
+name: create_user
+lanugage: plpgsql
+arguments:
+  - name: user_name
+    type: str
+# default return unit
+#return:
+#  fields:
+#    - name:
+#      type:
+#
+body: INSERT INTO user(id, name) VALUES(NULL, user_name);
+
 
 

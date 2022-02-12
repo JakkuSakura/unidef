@@ -1,6 +1,8 @@
 package com.jeekrs.unidef
 package languages.common
 
+import utils.{ExtKey, Extendable}
+
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.IntType
 import io.circe.ParsingFailure
 
@@ -10,7 +12,7 @@ import scala.concurrent.duration.TimeUnit
 /**
  * This is a very generic type model
  */
-class TyNode extends IrNode
+class TyNode extends Extendable
 
 class GenericType(generics: List[TyNode]) extends TyNode
 

@@ -2,8 +2,9 @@ package com.jeekrs.unidef
 package languages.yaml
 
 import languages.common.FieldType.{AutoIncr, PrimaryKey}
-import languages.common.{FieldType, IrNode, StructType, TyNode, TypeParser}
-import languages.common.JsonUtils.{getBool, getJson, getObject, getString}
+import languages.common.*
+import utils.Extendable
+import utils.JsonUtils.{getBool, getJson, getObject, getString}
 
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.IntType
 import io.circe.parser.decode
@@ -15,32 +16,40 @@ import jdk.internal.org.objectweb.asm.tree.FieldNode
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-enum YamlType(ident: String):
-    case Model extends YamlType("model")
-    case Enum extends YamlType("enum")
+enum YamlType:
+    case Model
+    case Enum
+    case Function
 
 object YamlType:
     def parse(name: String): Option[YamlType] = name match
         case "model" => Some(YamlType.Model)
         case "enum" => Some(YamlType.Enum)
+        case "function" => Some(YamlType.Function)
         case _ => None
 
 class YamlParser:
     @throws[ParsingFailure]
-    def parseFile(content: String): List[IrNode] =
-        val agg = mutable.ArrayBuffer[IrNode]()
+    def parseFile(content: String): List[Extendable] =
+        val agg = mutable.ArrayBuffer[Extendable]()
         for (v <- parser.parseDocuments(content))
             agg += parseIrNode(v.toTry.get.asObject.toRight(ParsingFailure("is not object", null)).toTry.get)
 
         agg.toList
 
     @throws[ParsingFailure]
-    def parseIrNode(content: JsonObject): IrNode =
+    def parseIrNode(content: JsonObject): Extendable =
         val ty1 = getString(content, "type")
-        val ty = YamlType.parse(ty1).toRight(ParsingFailure("`type` is not one of YamlType", null)).toTry.get
+        val ty = YamlType.parse(ty1).toRight(ParsingFailure("`type` is not one of YamlType: " + ty1, null)).toTry.get
         ty match
             case YamlType.Model => parseIrNodeModel(content)
-            case YamlType.Enum => ???
+            case YamlType.Function => parseIrNodeFunction(content)
+            //case YamlType.Enum => ???
+            case _ => throw ParsingFailure("Could not handle type " + ty, null)
+
+    @throws[ParsingFailure]
+    def parseIrNodeFunction(content: JsonObject): FunctionDeclNode =
+        ???
 
     @throws[ParsingFailure]
     def parseIrNodeModel(content: JsonObject): StructType =

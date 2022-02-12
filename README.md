@@ -59,3 +59,9 @@ I decided to rewrite it with scala 3. Because
 2. Python is not expressive with pattern matching
 3. Has GC, and no need to care about machine level details compared with Rust
 
+Some reasoning:
+
+TyNode is an independent concept that cannot exist on its own
+AstNode is a standalone concept, the minimal element to represent everything
+
+
