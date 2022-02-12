@@ -25,8 +25,8 @@ object CodeGen:
     VELOCITY.addProperty("runtime.references.strict", true)
     VELOCITY.init()
 
-    val repo: StringResourceRepository = StringResourceLoader.getRepository()
-    repo.putStringResource("macro",
+    val REPO: StringResourceRepository = StringResourceLoader.getRepository()
+    REPO.putStringResource("macro",
                            """
                              |#macro(block $code)
                              |#foreach($line in $code.split("\n"))
@@ -36,13 +36,19 @@ object CodeGen:
                              |""".stripMargin
                            )
 
-    val macroLibraries: java.util.List[Template] = java.util.ArrayList()
-    macroLibraries.add(VELOCITY.getTemplate("macro"))
+    val MACRO_LIBRARIES: java.util.List[Template] = java.util.ArrayList()
+    MACRO_LIBRARIES.add(VELOCITY.getTemplate("macro"))
 
 
-    def render(template: String, context: VelocityContext): String =
-        val w = StringWriter()
+    def render(templateSource: String, context: VelocityContext): String =
         if context.getMacroLibraries == null then
-            context.setMacroLibraries(macroLibraries)
-        VELOCITY.evaluate(context, w, getClass.getSimpleName, template)
+            context.setMacroLibraries(MACRO_LIBRARIES)
+        val id = System.identityHashCode(templateSource).toString
+        if VELOCITY.getTemplate(id) == null then
+            REPO.putStringResource(id, templateSource)
+
+        val template = VELOCITY.getTemplate(id)
+        val w = StringWriter()
+        template.merge(context, w)
+
         w.toString
