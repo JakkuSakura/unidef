@@ -19,11 +19,12 @@ case class PythonField(name: String, ty: String)
 object PythonSqlCodeGen {
   def convertToPythonField(node: FieldType): PythonField =
     PythonField(node.name, convertType(node.value))
+  //#foreach($ann in $annotations)
+  //@$ann
+  //#end
+
   private val TEMPLATE_GENERATE_FUNCTION_WRAPPER =
     """
-      |#foreach($ann in $annotations)
-      |@$ann
-      |#end
       |async def $name(
       |#foreach($arg in $args)
       |    $arg.name(): $arg.ty(),

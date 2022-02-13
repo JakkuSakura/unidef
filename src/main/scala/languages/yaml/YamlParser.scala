@@ -112,13 +112,17 @@ case object YamlParser {
       AccessModifier.Public,
       RawCodeNode(body, Some(language))
     )
-    if (content("annotations").isDefined)
-      node.setValue(
-        Annotations(
-          getAs[List[String]](content, "annotations")
-            .map(code => Annotation(RawCodeNode(code)))
+    content("annotations") match {
+      case Some(_) =>
+        node.setValue(
+          Annotations(
+            getAs[List[String]](content, "annotations")
+              .map(code => Annotation(RawCodeNode(code)))
+          )
         )
-      )
+      case None =>
+    }
+
     node
   }
 

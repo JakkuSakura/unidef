@@ -19,7 +19,7 @@ object CodeGen {
     classOf[StringResourceLoader].getName
   )
   VELOCITY.addProperty("resource.loader.string.modificationCheckInterval", "1")
-  VELOCITY.addProperty("runtime.references.strict", true)
+  VELOCITY.addProperty("runtime.strict_mode.enable", true)
   VELOCITY.init()
 
   val REPO: StringResourceRepository = StringResourceLoader.getRepository()
@@ -39,15 +39,13 @@ object CodeGen {
     if (context.getMacroLibraries == null)
       context.setMacroLibraries(MACRO_LIBRARIES)
     val id = System.identityHashCode(templateSource).toString
-    try {
+    val template = try {
       VELOCITY.getTemplate(id)
     } catch {
       case e: ResourceNotFoundException =>
         REPO.putStringResource(id, templateSource)
         VELOCITY.getTemplate(id)
     }
-
-    val template = VELOCITY.getTemplate(id)
     val w = new StringWriter()
     template.merge(context, w)
 

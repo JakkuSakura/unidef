@@ -1,12 +1,23 @@
 ThisBuild / scalaVersion := "2.13.8"
 ThisBuild / organization := "com.jeekrs"
 ThisBuild / version := "0.1.0-SNAPSHOT"
-
+idePackagePrefix := Some("com.jeekrs.unidef")
 // scala 2 has better tooling and IDE support, especially inlay hints
 
 lazy val root = (project in file("."))
   .enablePlugins(NativeImagePlugin)
-  .settings(name := "unidef", idePackagePrefix := Some("com.jeekrs.unidef"))
+  .settings(name := "unidef")
+
+nativeImageOptions ++= List(
+  s"-H:ConfigurationFileDirectories=${target.value / "native-image-configs"}",
+  s"-H:ReflectionConfigurationFiles=${target.value / "native-image-configs" / "reflect-config.json"}",
+  s"-H:ResourceConfigurationFiles=${target.value / "native-image-configs" / "resource-config.json"}",
+  "-H:+JNI",
+  "--no-fallback",
+  "--allow-incomplete-classpath",
+  "--no-server"
+)
+
 val circeVersion = "0.14.1"
 
 libraryDependencies += "io.circe" %% "circe-yaml" % circeVersion
