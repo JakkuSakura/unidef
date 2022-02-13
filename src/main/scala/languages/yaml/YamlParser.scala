@@ -64,7 +64,7 @@ case object YamlParser {
     val name = getString(content, "name")
     val language = getString(content, "language")
     val body = getString(content, "body")
-    val arguments = getList(content, "arguments")
+    val parameters = getList(content, "parameters")
       .map(_.asObject.toRight(ParsingFailure("is not Object", null)).toTry.get)
       .map(parseFieldType)
     val ret = content("return")
@@ -95,7 +95,7 @@ case object YamlParser {
 
     FunctionDeclNode(
       LiteralString(name),
-      arguments.toList,
+      parameters.toList,
       ret,
       AccessModifier.Public,
       RawCodeNode(body, Some(language))

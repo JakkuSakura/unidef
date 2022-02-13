@@ -13,7 +13,7 @@ fields:
 type: function
 name: create_user
 language: SQL
-arguments:
+parameters:
   - name: user_name
     type: str
 # default return unit
