@@ -43,15 +43,16 @@ case object SqlCodeGen {
     case x           => s"integer($x)"
   }
   def convertType(ty: TyNode): String = ty match {
-    case t: RealType             => convertReal(t)
-    case t: IntegerType          => convertInt(t)
-    case TimeStampType(_, true)  => "timestamp"
-    case TimeStampType(_, false) => "timestamp without time zone"
+    case t: RealType            => convertReal(t)
+    case t: IntegerType         => convertInt(t)
+    case TimeStampType(_, true) => "timestamp with time zone"
+    //case TimeStampType(_, false) => "timestamp without time zone"
+    case TimeStampType(_, false) => "timestamp"
     case StringType              => "text"
     case StructType(_, _, _)     => "jsonb"
     case EnumType(_, true)       => "text"
     case EnumType(_, false)      => "jsonb"
-
+    case JsonObjectType          => "jsonb"
   }
   def convertToSqlField(node: FieldType): SqlField = {
     val attributes = new StringBuilder()

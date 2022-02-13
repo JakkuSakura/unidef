@@ -14,6 +14,8 @@ object PythonCommon {
       case DictType(k, v)                     => s"Dict[${convertType(k)}, ${convertType(v)}]"
       case ListType(v)                        => s"List[${convertType(v)}]"
       case SetType(v)                         => s"Set[${convertType(v)}]"
+      case JsonObjectType                     => "Any"
+      case TimeStampType(timeUnit, timezone)  => "datetime.datetime"
       case t                                  => s"'$t'"
     }
 }

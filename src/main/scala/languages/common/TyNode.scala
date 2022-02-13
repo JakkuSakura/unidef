@@ -6,6 +6,7 @@ import utils.{ExtKey, Extendable}
 import io.circe.ParsingFailure
 
 import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.TimeUnit
 
 /**
@@ -77,6 +78,8 @@ case class DictType(key: TyNode, value: TyNode)
 case class ListType(value: TyNode) extends GenericType(List(value))
 case class SetType(value: TyNode) extends GenericType(List(value))
 
+case object JsonObjectType extends TyNode
+
 case object StringType extends TyNode
 case object CharType extends TyNode
 
@@ -115,15 +118,20 @@ case object Attributes extends ExtKey {
 
 object TypeParser {
   def parse(ty: String): Either[ParsingFailure, TyNode] =
-    ty match {
-      case "int" | "i32"    => Right(IntegerType(BitSize.B32))
-      case "uint" | "u32"   => Right(IntegerType(BitSize.B32, signed = false))
-      case "long" | "i64"   => Right(IntegerType(BitSize.B64))
-      case "ulong" | "u64"  => Right(IntegerType(BitSize.B64, signed = false))
-      case "float"          => Right(FloatType(BitSize.B32))
-      case "double"         => Right(FloatType(BitSize.B64))
-      case "str" | "string" => Right(StringType)
-      case _                => Left(ParsingFailure("Unknown type " + ty, null))
+    ty.toLowerCase match {
+      case "int" | "i32"                         => Right(IntegerType(BitSize.B32))
+      case "uint" | "u32"                        => Right(IntegerType(BitSize.B32, signed = false))
+      case "long" | "i64"                        => Right(IntegerType(BitSize.B64))
+      case "ulong" | "u64"                       => Right(IntegerType(BitSize.B64, signed = false))
+      case "float"                               => Right(FloatType(BitSize.B32))
+      case "double"                              => Right(FloatType(BitSize.B64))
+      case "str" | "string" | "varchar" | "text" => Right(StringType)
+      case "json" | "jsonb"                      => Right(JsonObjectType)
+      case "timestamp" =>
+        Right(TimeStampType(TimeUnit.MILLISECONDS, timezone = false))
+      case "timestamptz" =>
+        Right(TimeStampType(TimeUnit.MILLISECONDS, timezone = true))
+      case _ => Left(ParsingFailure("Unknown type " + ty, null))
 
     }
 
