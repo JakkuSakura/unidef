@@ -137,3 +137,9 @@ case class FunctionApplyNode(func: FunctionIdentNode,
 case class AwaitNode(value: AstNode) extends AstNode
 
 case class RawCodeNode(raw: String, lang: Option[String] = None) extends AstNode
+
+case class Annotation(value: AstNode) extends AstNode
+
+case object Annotations extends ExtKey {
+  override type V = List[Annotation]
+}

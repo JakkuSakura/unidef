@@ -12,6 +12,8 @@ fields:
 ---
 type: function
 name: create_user
+annotations:
+  - require_auth
 language: SQL
 parameters:
   - name: user_name

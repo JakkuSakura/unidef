@@ -3,7 +3,7 @@ package languages.yaml
 
 import languages.common._
 import languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
-import utils.JsonUtils.{getBool, getList, getString}
+import utils.JsonUtils.{getAs, getBool, getList, getString}
 
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
@@ -76,6 +76,7 @@ case object YamlParser {
     val parameters = getList(content, "parameters")
       .map(_.asObject.toRight(ParsingFailure("is not Object", null)).toTry.get)
       .map(parseFieldType)
+
     val ret = content("return")
       .map(x => {
         x.foldWith(new Json.Folder[AstNode] {
@@ -104,13 +105,21 @@ case object YamlParser {
       })
       .getOrElse(UnitNode)
 
-    FunctionDeclNode(
+    val node = FunctionDeclNode(
       LiteralString(name),
       parameters.toList,
       ret,
       AccessModifier.Public,
       RawCodeNode(body, Some(language))
     )
+    if (content("annotations").isDefined)
+      node.setValue(
+        Annotations(
+          getAs[List[String]](content, "annotations")
+            .map(code => Annotation(RawCodeNode(code)))
+        )
+      )
+    node
   }
 
   @throws[ParsingFailure]
@@ -146,6 +155,7 @@ case object YamlParser {
           field.setValue(AutoIncr(getBool(content, "auto_incr")))
         case "nullable" =>
           field.setValue(Nullable(getBool(content, "nullable")))
+
         case _ =>
       }
     }
