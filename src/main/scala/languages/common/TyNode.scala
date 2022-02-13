@@ -61,7 +61,8 @@ case class FloatType(bitSize: BitSize) extends RealType
 // rust: enum with multiple names
 case class VariantType(names: List[String]) extends TyNode
 
-case class EnumType(variants: List[VariantType]) extends TyNode
+case class EnumType(variants: List[VariantType], simple_enum: Boolean = true)
+    extends TyNode
 
 case class FieldType(name: String, value: TyNode) extends TyNode
 
@@ -85,7 +86,8 @@ case object UnknownType extends TyNode
 
 case object UndefinedType extends TyNode
 
-case class TimeStampType(timeUnit: TimeUnit) extends TyNode
+case class TimeStampType(timeUnit: TimeUnit, timezone: Boolean = false)
+    extends TyNode
 
 case class DateTimeType(timezone: Option[TimeZone]) extends TyNode
 
