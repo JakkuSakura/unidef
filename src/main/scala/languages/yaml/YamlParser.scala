@@ -75,10 +75,12 @@ case object YamlParser {
             TypedNode(TypeParser.parse(value).toTry.get)
 
           override def onArray(value: Vector[Json]): AstNode = {
-            val obj = JsonObject()
-            obj.add("name", Json.fromString("unnamed"))
-            obj.add("fields", Json.fromValues(value))
-            parseStruct(obj)
+            parseStruct(
+              JsonObject(
+                ("name", Json.fromString("unnamed")),
+                ("fields", Json.fromValues(value))
+              )
+            )
           }
 
           override def onObject(value: JsonObject): AstNode =
