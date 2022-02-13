@@ -75,6 +75,7 @@ case class DictType(key: TyNode, value: TyNode)
     extends GenericType(List(key, value))
 
 case object StringType extends TyNode
+case object CharType extends TyNode
 
 case object AnyType extends TyNode
 

@@ -2,12 +2,12 @@ package com.jeekrs.unidef
 package languages.sql
 
 import languages.common._
-
-import com.jeekrs.unidef.languages.sql.FieldType.{Nullable, PrimaryKey}
+import languages.sql.FieldType.{Nullable, PrimaryKey}
+import scala.jdk.CollectionConverters._
 import org.apache.velocity.VelocityContext
 
 case class SqlField(name: String, ty: String, attributes: String)
-class SqlCodeGen {
+case object SqlCodeGen {
 
   def generateCode(node: AstNode): String = {
     node match {
@@ -18,11 +18,12 @@ class SqlCodeGen {
 
   def generateTableDdl(node: ClassDeclNode): String = {
     val context = new VelocityContext()
-    context.put("fields", node.fields.map(convertToSqlField))
+    context.put("name", node.name.asInstanceOf[LiteralString].value)
+    context.put("fields", node.fields.map(convertToSqlField).asJava)
     CodeGen.render("""
         |CREATE TABLE IF NOT EXIST $name (
         |#foreach($field in $fields)
-        |   $field.name $field.ty$field.attributes, 
+        |   $field.name() $field.ty()$field.attributes(), 
         |#end
         |);
         |""".stripMargin, context)
@@ -36,16 +37,17 @@ class SqlCodeGen {
     case BitSize.B16 => "smallint"
     case BitSize.B32 => "integer"
     case BitSize.B64 => "bigint"
+    case x           => s"integer($x)"
   }
   def convertType(ty: TyNode): String = ty match {
-    case t: RealType            => convertReal(t)
-    case t: IntegerType         => convertInt(t)
-    case TimeStampType(_, true) => "timestamp"
-    case TimeStampType(_, true) => "timestamp without time zone"
-    case StringType             => "text"
-    case StructType(_, _, _)    => "jsonb"
-    case EnumType(_, true)      => "text"
-    case EnumType(_, false)     => "jsonb"
+    case t: RealType             => convertReal(t)
+    case t: IntegerType          => convertInt(t)
+    case TimeStampType(_, true)  => "timestamp"
+    case TimeStampType(_, false) => "timestamp without time zone"
+    case StringType              => "text"
+    case StructType(_, _, _)     => "jsonb"
+    case EnumType(_, true)       => "text"
+    case EnumType(_, false)      => "jsonb"
 
   }
   def convertToSqlField(node: FieldType): SqlField = {
@@ -57,5 +59,48 @@ class SqlCodeGen {
     // TODO auto incr
     SqlField(node.name, convertType(node.value), attributes.toString)
   }
-  def generateFunctionDdl(n: FunctionDeclNode): String = ???
+  def generateFunctionDdl(node: FunctionDeclNode): String = {
+    val context = new VelocityContext()
+    context.put("name", node.name.asInstanceOf[LiteralString].value)
+    context.put("args", node.arguments.map(convertToSqlField).asJava)
+    context.put("language", node.body.asInstanceOf[RawCodeNode].lang.get)
+    context.put("body", node.body.asInstanceOf[RawCodeNode].raw)
+
+    node.returnType match {
+      case UnitNode => CodeGen.render("""
+          |CREATE OR REPLACE FUNCTION $name (
+          |#foreach($arg in $args)
+          |  $arg.name(): $arg.ty(), 
+          |#end
+          |)
+          |RETURNS void
+          |LANGUAGE $language
+          |AS $$
+          |$body
+          |$$;
+          |""".stripMargin, context)
+      case ClassDeclNode(_, fields, _, _) =>
+        context.put(
+          "return_table",
+          node.arguments.map(convertToSqlField).asJava
+        )
+        CodeGen.render("""
+                 |CREATE OR REPLACE FUNCTION $name (
+                 |#foreach($arg in $args)
+                 |  $arg.name(): $arg.ty(), 
+                 |#end
+                 |)
+                 |RETURNS (
+                 |#foreach($arg in $return_table)
+                 |  $arg.name(): $arg.ty(), 
+                 |#end
+                 |)
+                 |LANGUAGE $language
+                 |AS $$
+                 |$body
+                 |$$;
+                 |""".stripMargin, context)
+    }
+
+  }
 }

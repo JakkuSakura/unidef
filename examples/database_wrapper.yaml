@@ -12,15 +12,14 @@ fields:
 ---
 type: function
 name: create_user
-lanugage: plpgsql
+language: SQL
 arguments:
   - name: user_name
     type: str
 # default return unit
 #return:
-#  fields:
-#    - name:
-#      type:
+# - name:
+#   type:
 #
 body: INSERT INTO user(id, name) VALUES(NULL, user_name);
 

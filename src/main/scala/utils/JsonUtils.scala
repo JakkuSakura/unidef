@@ -24,6 +24,12 @@ object JsonUtils {
       .get
 
   @throws[ParsingFailure]
+  def getList(obj: JsonObject, name: String): Vector[Json] =
+    getJson(obj, name)
+      .flatMap(_.asArray.toRight(ParsingFailure(name + " is not string", null)))
+      .toTry
+      .get
+  @throws[ParsingFailure]
   def getObject(obj: JsonObject, name: String): JsonObject =
     getJson(obj, name)
       .flatMap(

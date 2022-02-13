@@ -2,6 +2,7 @@ package com.jeekrs.unidef
 package languages.common
 
 import org.apache.velocity.app.VelocityEngine
+import org.apache.velocity.exception.ResourceNotFoundException
 import org.apache.velocity.runtime.RuntimeConstants
 import org.apache.velocity.runtime.resource.loader.StringResourceLoader
 import org.apache.velocity.runtime.resource.util.StringResourceRepository
@@ -38,8 +39,13 @@ object CodeGen {
     if (context.getMacroLibraries == null)
       context.setMacroLibraries(MACRO_LIBRARIES)
     val id = System.identityHashCode(templateSource).toString
-    if (VELOCITY.getTemplate(id) == null)
-      REPO.putStringResource(id, templateSource)
+    try {
+      VELOCITY.getTemplate(id)
+    } catch {
+      case e: ResourceNotFoundException =>
+        REPO.putStringResource(id, templateSource)
+        VELOCITY.getTemplate(id)
+    }
 
     val template = VELOCITY.getTemplate(id)
     val w = new StringWriter()

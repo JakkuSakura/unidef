@@ -2,12 +2,12 @@ package com.jeekrs.unidef
 package languages.yaml
 
 import languages.common._
-import languages.sql.FieldType.{AutoIncr, PrimaryKey}
+import languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
 import utils.Extendable
-import utils.JsonUtils.{getBool, getString}
+import utils.JsonUtils.{getBool, getList, getObject, getString}
 
 import io.circe.yaml.parser
-import io.circe.{JsonObject, ParsingFailure}
+import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
 
 import scala.collection.mutable
 
@@ -26,10 +26,10 @@ object YamlType {
   }
 }
 
-class YamlParser {
+case object YamlParser {
   @throws[ParsingFailure]
-  def parseFile(content: String): List[Extendable] = {
-    val agg = mutable.ArrayBuffer[Extendable]()
+  def parseFile(content: String): List[AstNode] = {
+    val agg = mutable.ArrayBuffer[AstNode]()
     for (v <- parser.parseDocuments(content))
       agg += parseDecl(
         v.toTry.get.asObject
@@ -52,7 +52,7 @@ class YamlParser {
       .get
     ty match {
       case YamlType.Model    => parseStruct(content)
-      case YamlType.Function => parseIrNodeFunction(content)
+      case YamlType.Function => parseFunction(content)
       //case YamlType.Enum => ???
       case _ => throw ParsingFailure("Could not handle type " + ty, null)
 
@@ -61,19 +61,51 @@ class YamlParser {
   }
 
   @throws[ParsingFailure]
-  def parseIrNodeFunction(content: JsonObject): FunctionDeclNode =
-    ???
+  def parseFunction(content: JsonObject): FunctionDeclNode = {
+    val name = getString(content, "name")
+    val language = getString(content, "language")
+    val body = getString(content, "body")
+    val arguments = getList(content, "arguments")
+      .map(_.asObject.toRight(ParsingFailure("is not Object", null)).toTry.get)
+      .map(parseFieldType)
+    val ret = content("return")
+      .map(x => {
+        x.foldWith(new Json.Folder[AstNode] {
+
+          override def onString(value: String): AstNode =
+            TypedNode(TypeParser.parse(value).toTry.get)
+
+          override def onArray(value: Vector[Json]): AstNode = {
+            val obj = JsonObject()
+            obj.add("name", Json.fromString("unnamed"))
+            obj.add("fields", Json.fromValues(value))
+            parseStruct(obj)
+          }
+
+          override def onObject(value: JsonObject): AstNode =
+            parseStruct(value)
+
+          override def onNull: AstNode = ???
+
+          override def onBoolean(value: Boolean): AstNode = ???
+
+          override def onNumber(value: JsonNumber): AstNode = ???
+        })
+      })
+      .getOrElse(UnitNode)
+
+    FunctionDeclNode(
+      LiteralString(name),
+      arguments.toList,
+      ret,
+      AccessModifier.Public,
+      RawCodeNode(body, Some(language))
+    )
+  }
 
   @throws[ParsingFailure]
   def parseStruct(content: JsonObject): ClassDeclNode = {
-    val fields = content("fields")
-      .toRight(ParsingFailure("Missing `fields`", null))
-      .toTry
-      .get
-    val fields_arr = fields.asArray
-      .toRight(ParsingFailure("`fields` is not array", null))
-      .toTry
-      .get
+    val fields_arr = getList(content, "fields")
     val name = getString(content, "name")
 
     ClassDeclNode(
@@ -95,7 +127,6 @@ class YamlParser {
     val field = FieldType(name, ty)
 
     for (key <- content.keys) {
-
       key match {
         case "name" =>
         case "type" =>
@@ -103,6 +134,8 @@ class YamlParser {
           field.setValue(PrimaryKey(getBool(content, "primary")))
         case "auto_incr" =>
           field.setValue(AutoIncr(getBool(content, "auto_incr")))
+        case "nullable" =>
+          field.setValue(Nullable(getBool(content, "nullable")))
         case _ =>
       }
     }

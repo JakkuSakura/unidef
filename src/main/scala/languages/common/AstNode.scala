@@ -12,15 +12,20 @@ class AstNode extends Extendable {
   def inferType: TyNode = UnknownType
 
 }
+class StaticTypeNode(ty: TyNode) extends AstNode {
+  override def inferType: TyNode = ty
+}
 
 // Unit is the bottom type
-class UnitNode extends AstNode
+case object UnitNode extends StaticTypeNode(UnitType)
 
 // Null is a null reference/pointer
-class NoneNode extends AstNode
+case object NullNode extends StaticTypeNode(NullType)
 
 // Undefined
-class UndefinedNode extends AstNode
+case object UndefinedNode extends StaticTypeNode(UndefinedType)
+
+case class TypedNode(ty: TyNode) extends StaticTypeNode(ty)
 
 case class BlockNode(nodes: List[AstNode], flatten: Boolean = false)
     extends AstNode
@@ -42,13 +47,21 @@ case class FlowControlNode(flow: FlowControl, value: AstNode) extends AstNode
 
 class LiteralNode extends AstNode
 
-case class LiteralString(value: String) extends LiteralNode
+case class LiteralString(value: String) extends LiteralNode {
+  override def inferType: TyNode = StringType
+}
 
-case class LiteralChar(value: Char) extends LiteralNode
+case class LiteralChar(value: Char) extends LiteralNode {
+  override def inferType: TyNode = CharType
+}
 
-case class LiteralInteger(value: Int) extends LiteralNode
+case class LiteralInteger(value: Int) extends LiteralNode {
+  override def inferType: TyNode = IntegerType(BitSize.B32)
+}
 
-case class LiteralFloat(value: Double) extends LiteralNode
+case class LiteralFloat(value: Double) extends LiteralNode {
+  override def inferType: TyNode = FloatType(BitSize.B64)
+}
 
 // difference is from https://github.com/ron-rs/ron
 case class LiteralDict(values: List[(AstNode, AstNode)]) extends LiteralNode
@@ -57,20 +70,20 @@ case class LiteralStruct(values: List[(AstNode, AstNode)]) extends LiteralNode
 
 case class LiteralOptional(value: Option[AstNode]) extends LiteralNode
 
-case class ArgumentNode(name: String, value: AstNode) extends AstNode
-
 sealed trait AccessModifier
-case object Public extends AccessModifier
-case object Private extends AccessModifier
-case object Protected extends AccessModifier
-case object Package extends AccessModifier
-case class Limited(path: String) extends AccessModifier
+object AccessModifier {
+  case object Public extends AccessModifier
+  case object Private extends AccessModifier
+  case object Protected extends AccessModifier
+  case object Package extends AccessModifier
+  case class Limited(path: String) extends AccessModifier
+
+}
 
 case class FunctionDeclNode(name: AstNode,
-                            arguments: List[ArgumentNode],
+                            arguments: List[FieldType],
                             returnType: AstNode,
                             access: AccessModifier,
-                            isAsync: Boolean = false,
                             body: AstNode)
     extends AstNode
 
@@ -82,7 +95,8 @@ case class ClassDeclNode(name: AstNode,
                          derived: List[ClassIdent] = List(),
 ) extends AstNode {
 
-  override def inferType: StructType = ???
+  override def inferType: StructType =
+    StructType(name.asInstanceOf[LiteralString].value, fields)
 }
 
 object ClassDeclNode {
@@ -122,4 +136,4 @@ case class FunctionApplyNode(func: FunctionIdentNode,
 
 case class AwaitNode(value: AstNode) extends AstNode
 
-case class RawCodeNode(raw: String) extends AstNode
+case class RawCodeNode(raw: String, lang: Option[String] = None) extends AstNode
