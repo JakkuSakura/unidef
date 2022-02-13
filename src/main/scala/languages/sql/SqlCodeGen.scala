@@ -80,10 +80,7 @@ case object SqlCodeGen {
           |$$;
           |""".stripMargin, context)
       case ClassDeclNode(_, fields, _, _) =>
-        context.put(
-          "return_table",
-          node.arguments.map(convertToSqlField).asJava
-        )
+        context.put("return_table", fields.map(convertToSqlField).asJava)
         CodeGen.render("""
                  |CREATE OR REPLACE FUNCTION $name (
                  |#foreach($arg in $args)
