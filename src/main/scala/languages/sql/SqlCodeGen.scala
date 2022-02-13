@@ -3,7 +3,7 @@ package languages.sql
 
 import languages.common._
 import languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
-import utils.{ExtKey, GetExtKeys}
+import utils.ExtKey
 
 import org.apache.velocity.VelocityContext
 
@@ -11,7 +11,7 @@ import scala.jdk.CollectionConverters._
 
 case class SqlField(name: String, ty: String, attributes: String)
 case object SqlCodeGen extends GetExtKeys {
-  override def getExtKeys: List[ExtKey] = List(PrimaryKey, AutoIncr, Nullable)
+  override def keysOnField: List[ExtKey] = List(PrimaryKey, AutoIncr, Nullable)
 
   def generateCode(node: AstNode): String = {
     node match {

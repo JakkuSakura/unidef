@@ -30,10 +30,6 @@ trait ExtKeyInt extends ExtKey {
   override def decoder: Option[Decoder[V]] = Some(Decoder.decodeInt)
 }
 
-trait GetExtKeys {
-  def getExtKeys: List[ExtKey]
-}
-
 class Extendable(params: mutable.Map[ExtKey, Any] = mutable.HashMap()) {
   def getValue[EK <: ExtKey](key: EK): Option[key.V] =
     params.get(key).asInstanceOf[Option[key.V]]

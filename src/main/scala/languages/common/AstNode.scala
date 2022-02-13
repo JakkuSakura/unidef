@@ -3,7 +3,8 @@ package languages.common
 
 import utils.{ExtKey, ExtKeyBoolean, Extendable}
 
-import io.circe.Decoder
+import io.circe.Decoder.Result
+import io.circe.{Decoder, HCursor}
 import io.circe.generic.JsonCodec
 import io.circe.generic.codec.DerivedAsObjectCodec.deriveCodec
 import io.circe.generic.semiauto._
@@ -144,4 +145,8 @@ case class Annotation(value: AstNode) extends AstNode
 
 case object Annotations extends ExtKey {
   override type V = List[Annotation]
+  private val lsDecoder =
+    deriveDecoder[List[String]].map(x => x.map(y => Annotation(RawCodeNode(y))))
+  override def decoder: Option[Decoder[List[Annotation]]] =
+    Some(lsDecoder)
 }

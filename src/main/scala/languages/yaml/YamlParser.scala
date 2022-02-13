@@ -2,8 +2,7 @@ package com.jeekrs.unidef
 package languages.yaml
 
 import languages.common._
-import languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
-import utils.{ExtKey, GetExtKeys}
+import utils.{ExtKey, TypedValue}
 import utils.JsonUtils.{getAs, getList, getString}
 
 import io.circe.yaml.parser
@@ -113,16 +112,8 @@ object YamlParser {
       AccessModifier.Public,
       RawCodeNode(body, Some(language))
     )
-    content("annotations") match {
-      case Some(_) =>
-        node.setValue(
-          Annotations(
-            getAs[List[String]](content, "annotations")
-              .map(code => Annotation(RawCodeNode(code)))
-          )
-        )
-      case None =>
-    }
+
+    collectExtKeys(content, extKeysForDecl.toList).foreach(node.setValue)
 
     node
   }
@@ -143,11 +134,13 @@ object YamlParser {
     )
 
   }
-  private val extKeysForField: mutable.ArrayBuffer[ExtKey] =
-    mutable.ArrayBuffer[ExtKey]()
+  private val extKeysForField = mutable.ArrayBuffer[ExtKey]()
+  private val extKeysForDecl = mutable.ArrayBuffer[ExtKey]()
 
-  def prepareForExtKeys(obj: GetExtKeys): Unit =
-    extKeysForField ++= obj.getExtKeys
+  def prepareForExtKeys(obj: GetExtKeys): Unit = {
+    extKeysForField ++= obj.keysOnField
+    extKeysForDecl ++= obj.keysOnDecl
+  }
 
   @throws[ParsingFailure]
   def parseFieldType(content: JsonObject): FieldType = {
@@ -155,30 +148,37 @@ object YamlParser {
     val ty = TypeParser.parse(getString(content, "type")).toTry.get
     val field = FieldType(name, ty)
 
-    for (key <- content.keys) {
-      key match {
-        case "name" =>
-        case "type" =>
-        case key =>
-          for (k <- extKeysForField if key == k.name) {
-            val value = getAs[k.V](content, key)(
+    collectExtKeys(content, extKeysForField.toList).foreach(field.setValue)
+
+    field
+  }
+  def collectExtKeys(content: JsonObject,
+                     keys: List[ExtKey]): List[TypedValue] = {
+    val result = mutable.ArrayBuffer[TypedValue]()
+    for (k <- extKeysForField) {
+      content(k.name) match {
+        case Some(value) =>
+          val v = value
+            .as[k.V](
               k.decoder
                 .toRight(
                   ParsingFailure(
-                    s"$key should not be used as key for field",
+                    s"${k.name} should not be used as key for field",
                     null
                   )
                 )
                 .toTry
                 .get
             )
-            field.setValue(k(value))
-          }
+            .toTry
+            .get
+          result += k(v)
 
+        case None =>
       }
-    }
-    field
 
+    }
+    result.toList
   }
 
 }
