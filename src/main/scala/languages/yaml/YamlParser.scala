@@ -3,8 +3,7 @@ package languages.yaml
 
 import languages.common._
 import languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
-import utils.Extendable
-import utils.JsonUtils.{getBool, getList, getObject, getString}
+import utils.JsonUtils.{getBool, getList, getString}
 
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}

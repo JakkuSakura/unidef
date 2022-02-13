@@ -74,6 +74,9 @@ case class StructType(name: String,
 case class DictType(key: TyNode, value: TyNode)
     extends GenericType(List(key, value))
 
+case class ListType(value: TyNode) extends GenericType(List(value))
+case class SetType(value: TyNode) extends GenericType(List(value))
+
 case object StringType extends TyNode
 case object CharType extends TyNode
 

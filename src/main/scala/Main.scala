@@ -1,5 +1,7 @@
 package com.jeekrs.unidef
 
+import languages.common.FunctionDeclNode
+import languages.python.PythonSqlCodeGen
 import languages.sql.SqlCodeGen
 import languages.yaml.YamlParser
 
@@ -16,6 +18,13 @@ object Main {
     for (ty <- parsed) {
       val code = SqlCodeGen.generateCode(ty)
       println(code)
+      ty match {
+        case func: FunctionDeclNode =>
+          val code2 = PythonSqlCodeGen.generateFuncWrapper(func)
+          println(code2)
+        case _ =>
+      }
+
     }
   }
 }
