@@ -1,7 +1,12 @@
 package com.jeekrs.unidef
 package languages.common
 
-import utils.{ExtKey, Extendable}
+import utils.{ExtKey, ExtKeyBoolean, Extendable}
+
+import io.circe.Decoder
+import io.circe.generic.JsonCodec
+import io.circe.generic.codec.DerivedAsObjectCodec.deriveCodec
+import io.circe.generic.semiauto._
 
 /**
   * The following AST nodes describes a general language that tries to be compatible with other languages
@@ -100,10 +105,7 @@ case class ClassDeclNode(name: AstNode,
 }
 
 object ClassDeclNode {
-
-  case object DataClass extends ExtKey {
-    override type V = Boolean
-  }
+  case object DataClass extends ExtKeyBoolean
 }
 
 case class IdentifierNode(id: String) extends AstNode

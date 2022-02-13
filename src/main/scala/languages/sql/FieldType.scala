@@ -1,19 +1,10 @@
 package com.jeekrs.unidef
 package languages.sql
 
-import utils.ExtKey
+import utils.ExtKeyBoolean
 
 object FieldType {
-
-  object PrimaryKey extends ExtKey {
-    override type V = Boolean
-  }
-
-  object AutoIncr extends ExtKey {
-    override type V = Boolean
-
-  }
-  object Nullable extends ExtKey {
-    override type V = Boolean
-  }
+  object PrimaryKey extends ExtKeyBoolean
+  object AutoIncr extends ExtKeyBoolean
+  object Nullable extends ExtKeyBoolean
 }

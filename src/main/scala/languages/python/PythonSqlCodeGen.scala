@@ -1,28 +1,16 @@
 package com.jeekrs.unidef
 package languages.python
 
-import languages.common.{
-  Annotations,
-  ClassDeclNode,
-  CodeGen,
-  FieldType,
-  FunctionDeclNode,
-  ListType,
-  LiteralString,
-  RawCodeNode,
-  SetType,
-  TypedNode,
-  UnitNode
-}
+import languages.common._
 import languages.python.PythonCommon.convertType
 
 import org.apache.velocity.VelocityContext
 
 import scala.jdk.CollectionConverters._
 
-case class PythonField(name: String, ty: String)
+private case class PythonField(name: String, ty: String)
 object PythonSqlCodeGen {
-  def convertToPythonField(node: FieldType): PythonField =
+  private def convertToPythonField(node: FieldType): PythonField =
     PythonField(node.name, convertType(node.value))
   //#foreach($ann in $annotations)
   //@$ann

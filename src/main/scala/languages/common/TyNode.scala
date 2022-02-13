@@ -1,9 +1,11 @@
 package com.jeekrs.unidef
 package languages.common
 
-import utils.{ExtKey, Extendable}
+import utils.{ExtKey, ExtKeyBoolean, Extendable}
 
-import io.circe.ParsingFailure
+import io.circe.generic.semiauto
+import io.circe.generic.semiauto.deriveDecoder
+import io.circe.{Decoder, ParsingFailure}
 
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
@@ -102,18 +104,17 @@ case class ReferenceType(referee: TyNode) extends TyNode
 
 case class NamedType(name: String) extends TyNode
 
-case object Mutability extends ExtKey {
-  override type V = Boolean
-}
+case object Mutability extends ExtKeyBoolean
 
 case object Derive extends ExtKey {
   override type V = List[String]
+
+  override def decoder: Option[Decoder[List[String]]] = Some(deriveDecoder)
 
 }
 
 case object Attributes extends ExtKey {
   override type V = List[FunctionApplyNode]
-
 }
 
 object TypeParser {

@@ -3,7 +3,8 @@ package languages.yaml
 
 import languages.common._
 import languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
-import utils.JsonUtils.{getAs, getBool, getList, getString}
+import utils.{ExtKey, GetExtKeys}
+import utils.JsonUtils.{getAs, getList, getString}
 
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
@@ -25,7 +26,7 @@ object YamlType {
   }
 }
 
-case object YamlParser {
+object YamlParser {
   @throws[ParsingFailure]
   def parseFile(content: String): List[AstNode] = {
     val agg = mutable.ArrayBuffer[AstNode]()
@@ -142,6 +143,11 @@ case object YamlParser {
     )
 
   }
+  private val extKeysForField: mutable.ArrayBuffer[ExtKey] =
+    mutable.ArrayBuffer[ExtKey]()
+
+  def prepareForExtKeys(obj: GetExtKeys): Unit =
+    extKeysForField ++= obj.getExtKeys
 
   @throws[ParsingFailure]
   def parseFieldType(content: JsonObject): FieldType = {
@@ -153,14 +159,22 @@ case object YamlParser {
       key match {
         case "name" =>
         case "type" =>
-        case "primary" =>
-          field.setValue(PrimaryKey(getBool(content, "primary")))
-        case "auto_incr" =>
-          field.setValue(AutoIncr(getBool(content, "auto_incr")))
-        case "nullable" =>
-          field.setValue(Nullable(getBool(content, "nullable")))
+        case key =>
+          for (k <- extKeysForField if key == k.name) {
+            val value = getAs[k.V](content, key)(
+              k.decoder
+                .toRight(
+                  ParsingFailure(
+                    s"$key should not be used as key for field",
+                    null
+                  )
+                )
+                .toTry
+                .get
+            )
+            field.setValue(k(value))
+          }
 
-        case _ =>
       }
     }
     field
