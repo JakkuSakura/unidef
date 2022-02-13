@@ -82,7 +82,7 @@ case object SqlCodeGen {
                             |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
                             |#end
                             |)
-                            |RETURNS (
+                            |RETURNS TABLE (
                             |#foreach($arg in $return_table)
                             |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
                             |#end
