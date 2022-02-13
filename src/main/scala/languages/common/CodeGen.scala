@@ -18,8 +18,7 @@ object CodeGen {
     "resource.loader.string.class",
     classOf[StringResourceLoader].getName
   )
-  VELOCITY.addProperty("resource.loader.string.modificationCheckInterval", "1")
-  VELOCITY.addProperty("runtime.strict_mode.enable", true)
+  VELOCITY.addProperty(RuntimeConstants.RUNTIME_REFERENCES_STRICT, true)
   VELOCITY.init()
 
   val REPO: StringResourceRepository = StringResourceLoader.getRepository()
