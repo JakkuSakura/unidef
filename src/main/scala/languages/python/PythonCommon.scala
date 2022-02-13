@@ -16,7 +16,7 @@ object PythonCommon {
       case ListType(v)                             => s"List[${convertType(v)}]"
       case SetType(v)                              => s"Set[${convertType(v)}]"
       case JsonObjectType                          => "Any"
-      case UnitType                                => "()"
+      case UnitType                                => "NoneType"
       case TimeStampType(timeUnit, timezone)       => "datetime.datetime"
       case t                                       => s"'$t'"
     }
