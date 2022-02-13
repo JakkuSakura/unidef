@@ -11,7 +11,7 @@ object Main {
   def main(args: Array[String]): Unit = {
     val filename = args(0)
     val source = Source.fromFile(filename)
-    val fileContents = source.getLines.mkString("\n")
+    val fileContents = source.mkString
     source.close
     val parsed = YamlParser.parseFile(fileContents)
     println(parsed)

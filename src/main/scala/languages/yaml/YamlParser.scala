@@ -29,13 +29,22 @@ case object YamlParser {
   @throws[ParsingFailure]
   def parseFile(content: String): List[AstNode] = {
     val agg = mutable.ArrayBuffer[AstNode]()
-    for (v <- parser.parseDocuments(content))
-      agg += parseDecl(
-        v.toTry.get.asObject
-          .toRight(ParsingFailure("is not object", null))
-          .toTry
-          .get
-      )
+    for (v <- parser.parseDocuments(content)) {
+      val content = v.toTry.get
+      content.foldWith(new Json.Folder[Unit] {
+        override def onObject(value: JsonObject): Unit = agg += parseDecl(value)
+
+        override def onNull: Unit = {}
+
+        override def onBoolean(value: Boolean): Unit = {}
+
+        override def onNumber(value: JsonNumber): Unit = {}
+
+        override def onString(value: String): Unit = {}
+
+        override def onArray(value: Vector[Json]): Unit = {}
+      })
+    }
 
     agg.toList
 
