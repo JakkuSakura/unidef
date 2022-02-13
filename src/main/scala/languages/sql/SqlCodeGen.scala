@@ -70,29 +70,20 @@ case object SqlCodeGen {
                            |  $arg.name() $arg.ty()#if($foreach.hasNext),#end 
                            |#end
                            |)
+                           |#if($return_table)
+                           |RETURNS TABLE (
+                           |#foreach($arg in $return_table)
+                           |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
+                           |#end
+                           |)
+                           |#else
                            |RETURNS void
+                           |#end
                            |LANGUAGE $language
                            |AS $$
                            |$body
                            |$$;
                            |""".stripMargin
-  private val TEMPLATE_GENERATE_FUNCTION_DDL_WITH_RETURN =
-    """
-                            |CREATE OR REPLACE FUNCTION $name (
-                            |#foreach($arg in $args)
-                            |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
-                            |#end
-                            |)
-                            |RETURNS TABLE (
-                            |#foreach($arg in $return_table)
-                            |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
-                            |#end
-                            |)
-                            |LANGUAGE $language
-                            |AS $$
-                            |$body
-                            |$$;
-                            |""".stripMargin
   def generateFunctionDdl(node: FunctionDeclNode): String = {
     val context = new VelocityContext()
     context.put("name", node.name.asInstanceOf[LiteralString].value)
@@ -101,11 +92,11 @@ case object SqlCodeGen {
     context.put("body", node.body.asInstanceOf[RawCodeNode].raw)
 
     node.returnType match {
-      case UnitNode => CodeGen.render(TEMPLATE_GENERATE_FUNCTION_DDL, context)
       case ClassDeclNode(_, fields, _, _) =>
         context.put("return_table", fields.map(convertToSqlField).asJava)
-        CodeGen.render(TEMPLATE_GENERATE_FUNCTION_DDL_WITH_RETURN, context)
+      case _ =>
     }
 
+    CodeGen.render(TEMPLATE_GENERATE_FUNCTION_DDL, context)
   }
 }
