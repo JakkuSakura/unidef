@@ -20,13 +20,16 @@ case object SqlCodeGen {
     val context = new VelocityContext()
     context.put("name", node.name.asInstanceOf[LiteralString].value)
     context.put("fields", node.fields.map(convertToSqlField).asJava)
-    CodeGen.render("""
+    CodeGen.render(
+      """
         |CREATE TABLE IF NOT EXIST $name (
         |#foreach($field in $fields)
-        |   $field.name() $field.ty()$field.attributes(), 
+        |   $field.name() $field.ty()$field.attributes()#if($foreach.hasNext),#end
         |#end
         |);
-        |""".stripMargin, context)
+        |""".stripMargin,
+      context
+    )
   }
   def convertReal(ty: RealType): String = ty match {
     case DecimalType(precision, scale) => s"decimal($precision, $scale)"
@@ -63,7 +66,7 @@ case object SqlCodeGen {
     """
                            |CREATE OR REPLACE FUNCTION $name (
                            |#foreach($arg in $args)
-                           |  $arg.name(): $arg.ty(), 
+                           |  $arg.name() $arg.ty()#if($foreach.hasNext),#end 
                            |#end
                            |)
                            |RETURNS void
@@ -76,12 +79,12 @@ case object SqlCodeGen {
     """
                             |CREATE OR REPLACE FUNCTION $name (
                             |#foreach($arg in $args)
-                            |  $arg.name(): $arg.ty(), 
+                            |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
                             |#end
                             |)
                             |RETURNS (
                             |#foreach($arg in $return_table)
-                            |  $arg.name(): $arg.ty(), 
+                            |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
                             |#end
                             |)
                             |LANGUAGE $language
