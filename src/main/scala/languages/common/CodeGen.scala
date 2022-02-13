@@ -1,54 +1,51 @@
 package com.jeekrs.unidef
 package languages.common
 
-import java.io.StringWriter
-import org.apache.velocity.{Template, VelocityContext}
-import org.apache.velocity.app.{Velocity, VelocityEngine}
+import org.apache.velocity.app.VelocityEngine
 import org.apache.velocity.runtime.RuntimeConstants
 import org.apache.velocity.runtime.resource.loader.StringResourceLoader
-import org.apache.velocity.runtime.resource.util.{StringResourceRepository, StringResourceRepositoryImpl}
-import org.apache.velocity.Template
-import org.apache.velocity.VelocityContext
-import org.apache.velocity.app.Velocity
-import org.apache.velocity.app.VelocityEngine
-import org.apache.velocity.runtime.RuntimeSingleton
-import org.apache.velocity.runtime.resource.loader.StringResourceLoader
 import org.apache.velocity.runtime.resource.util.StringResourceRepository
-import org.apache.velocity.runtime.resource.util.StringResourceRepositoryImpl
+import org.apache.velocity.{Template, VelocityContext}
 
-object CodeGen:
-    val VELOCITY: VelocityEngine = VelocityEngine()
+import java.io.StringWriter
 
-    VELOCITY.setProperty(RuntimeConstants.RESOURCE_LOADERS, "string")
-    VELOCITY.addProperty("resource.loader.string.class", classOf[StringResourceLoader].getName)
-    VELOCITY.addProperty("resource.loader.string.modificationCheckInterval", "1")
-    VELOCITY.addProperty("runtime.references.strict", true)
-    VELOCITY.init()
+object CodeGen {
+  val VELOCITY: VelocityEngine = new VelocityEngine()
 
-    val REPO: StringResourceRepository = StringResourceLoader.getRepository()
-    REPO.putStringResource("macro",
-                           """
-                             |#macro(block $code)
-                             |#foreach($line in $code.split("\n"))
-                             |    $line
-                             |#end
-                             |#end
-                             |""".stripMargin
-                           )
+  VELOCITY.setProperty(RuntimeConstants.RESOURCE_LOADERS, "string")
+  VELOCITY.addProperty(
+    "resource.loader.string.class",
+    classOf[StringResourceLoader].getName
+  )
+  VELOCITY.addProperty("resource.loader.string.modificationCheckInterval", "1")
+  VELOCITY.addProperty("runtime.references.strict", true)
+  VELOCITY.init()
 
-    val MACRO_LIBRARIES: java.util.List[Template] = java.util.ArrayList()
-    MACRO_LIBRARIES.add(VELOCITY.getTemplate("macro"))
+  val REPO: StringResourceRepository = StringResourceLoader.getRepository()
+  REPO.putStringResource("macro", """
+                           |#macro(block $code)
+                           |#foreach($line in $code.split("\n"))
+                           |    $line
+                           |#end
+                           |#end
+                           |""".stripMargin)
 
+  val MACRO_LIBRARIES: java.util.List[Template] = new java.util.ArrayList()
+  MACRO_LIBRARIES.add(VELOCITY.getTemplate("macro"))
 
-    def render(templateSource: String, context: VelocityContext): String =
-        if context.getMacroLibraries == null then
-            context.setMacroLibraries(MACRO_LIBRARIES)
-        val id = System.identityHashCode(templateSource).toString
-        if VELOCITY.getTemplate(id) == null then
-            REPO.putStringResource(id, templateSource)
+  def render(templateSource: String, context: VelocityContext): String = {
 
-        val template = VELOCITY.getTemplate(id)
-        val w = StringWriter()
-        template.merge(context, w)
+    if (context.getMacroLibraries == null)
+      context.setMacroLibraries(MACRO_LIBRARIES)
+    val id = System.identityHashCode(templateSource).toString
+    if (VELOCITY.getTemplate(id) == null)
+      REPO.putStringResource(id, templateSource)
 
-        w.toString
+    val template = VELOCITY.getTemplate(id)
+    val w = new StringWriter()
+    template.merge(context, w)
+
+    w.toString
+  }
+
+}
