@@ -8,7 +8,7 @@ import org.apache.velocity.runtime.resource.loader.StringResourceLoader
 import org.apache.velocity.runtime.resource.util.StringResourceRepository
 import org.apache.velocity.{Template, VelocityContext}
 
-import java.io.StringWriter
+import java.io.{StringWriter, Writer}
 
 object CodeGen {
   val VELOCITY: VelocityEngine = new VelocityEngine()
@@ -34,7 +34,9 @@ object CodeGen {
   val MACRO_LIBRARIES: java.util.List[Template] = new java.util.ArrayList()
   MACRO_LIBRARIES.add(VELOCITY.getTemplate("macro"))
 
-  def render(templateSource: String, context: VelocityContext): String = {
+  def renderTo(templateSource: String,
+               context: VelocityContext,
+               writer: Writer): Unit = {
 
     if (context.getMacroLibraries == null)
       context.setMacroLibraries(MACRO_LIBRARIES)
@@ -46,10 +48,13 @@ object CodeGen {
         REPO.putStringResource(id, templateSource)
         VELOCITY.getTemplate(id)
     }
-    val w = new StringWriter()
-    template.merge(context, w)
+    template.merge(context, writer)
 
-    w.toString
+  }
+  def render(templateSource: String, context: VelocityContext): String = {
+    val writer = new StringWriter()
+    renderTo(templateSource, context, writer)
+    writer.toString
   }
 
 }

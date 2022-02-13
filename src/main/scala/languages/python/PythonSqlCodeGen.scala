@@ -3,11 +3,16 @@ package languages.python
 
 import languages.common.{
   Annotations,
+  ClassDeclNode,
   CodeGen,
   FieldType,
   FunctionDeclNode,
+  ListType,
   LiteralString,
-  RawCodeNode
+  RawCodeNode,
+  SetType,
+  TypedNode,
+  UnitNode
 }
 import languages.python.PythonCommon.convertType
 
@@ -29,18 +34,32 @@ object PythonSqlCodeGen {
       |#foreach($arg in $args)
       |    $arg.name(): $arg.ty(),
       |#end
-      |):
-      |    return await database.void("$db_func_name",
+      |) -> $return:
+      |    result = await database.$method("$db_func_name",
       |    #foreach($arg in $args)
       |        $arg.name()=$arg.name(),
       |    #end
-      |    ) 
+      |    )
+      |    if result.error is None:
+      |       raise Exception("Failed to execute database method")
+      |    return result.data$post_op
       |""".stripMargin
   def generateFuncWrapper(func: FunctionDeclNode): String = {
     val context = new VelocityContext()
     context.put("name", func.name.asInstanceOf[LiteralString].value)
     context.put("args", func.arguments.map(convertToPythonField).asJava)
     context.put("db_func_name", func.name.asInstanceOf[LiteralString].value)
+    context.put("return", convertType(func.returnType.inferType))
+    context.put("method", func.returnType match {
+      case UnitNode               => "void"
+      case _: ClassDeclNode       => "data_table"
+      case TypedNode(ListType(_)) => "record_list"
+      case TypedNode(SetType(_))  => "record_set"
+    })
+    context.put("post_op", func.returnType match {
+      case _: ClassDeclNode => ".to_dict()"
+      case _                => ""
+    })
     //context.put(
     //  "annotations",
     //  func
