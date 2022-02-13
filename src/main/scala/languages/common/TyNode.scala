@@ -116,7 +116,12 @@ case object Attributes extends ExtKey {
 object TypeParser {
   def parse(ty: String): Either[ParsingFailure, TyNode] =
     ty match {
-      case "int"            => Right(IntegerType(BitSize.B32))
+      case "int" | "i32"    => Right(IntegerType(BitSize.B32))
+      case "uint" | "u32"   => Right(IntegerType(BitSize.B32, signed = false))
+      case "long" | "i64"   => Right(IntegerType(BitSize.B64))
+      case "ulong" | "u64"  => Right(IntegerType(BitSize.B64, signed = false))
+      case "float"          => Right(FloatType(BitSize.B32))
+      case "double"         => Right(FloatType(BitSize.B64))
       case "str" | "string" => Right(StringType)
       case _                => Left(ParsingFailure("Unknown type " + ty, null))
 
