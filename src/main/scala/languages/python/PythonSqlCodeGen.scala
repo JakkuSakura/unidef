@@ -11,7 +11,7 @@ import org.apache.velocity.VelocityContext
 import scala.jdk.CollectionConverters._
 
 private case class PythonField(name: String, ty: String)
-case object PythonSqlCodeGen extends GetExtKeys {
+case object PythonSqlCodeGen extends ExtKeyProvider {
   override def keysOnFuncDecl: List[ExtKey] = List(Records, Schema)
   private def convertToPythonField(node: FieldType): PythonField =
     PythonField(node.name, convertType(node.value))

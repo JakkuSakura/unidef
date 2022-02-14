@@ -115,7 +115,7 @@ object YamlParser {
       RawCodeNode(body, Some(language))
     )
 
-    collectExtKeys(content, extKeysForDecl.toList).foreach(node.setValue)
+    collectExtKeys(content, extKeysForFuncDecl.toList).foreach(node.setValue)
 
     node
   }
@@ -125,7 +125,7 @@ object YamlParser {
     val fields_arr = getList(content, "fields")
     val name = getString(content, "name")
 
-    ClassDeclNode(
+    val node = ClassDeclNode(
       LiteralString(name),
       fields_arr
         .map(
@@ -135,13 +135,18 @@ object YamlParser {
         .toList
     )
 
+    collectExtKeys(content, extKeysForClassDecl.toList).foreach(node.setValue)
+
+    node
   }
   private val extKeysForField = mutable.HashSet[ExtKey]()
-  private val extKeysForDecl = mutable.HashSet[ExtKey]()
+  private val extKeysForFuncDecl = mutable.HashSet[ExtKey]()
+  private val extKeysForClassDecl = mutable.HashSet[ExtKey]()
 
-  def prepareForExtKeys(obj: GetExtKeys): Unit = {
+  def prepareForExtKeys(obj: ExtKeyProvider): Unit = {
     extKeysForField ++= obj.keysOnField
-    extKeysForDecl ++= obj.keysOnFuncDecl
+    extKeysForFuncDecl ++= obj.keysOnFuncDecl
+    extKeysForClassDecl ++= obj.keysOnClassDecl
   }
 
   @throws[ParsingFailure]

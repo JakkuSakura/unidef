@@ -11,7 +11,7 @@ import org.apache.velocity.VelocityContext
 import scala.jdk.CollectionConverters._
 
 case class SqlField(name: String, ty: String, attributes: String)
-case object SqlCodeGen extends GetExtKeys {
+case object SqlCodeGen extends ExtKeyProvider {
   override def keysOnFuncDecl: List[ExtKey] = List(Records, Schema)
   override def keysOnField: List[ExtKey] = List(PrimaryKey, AutoIncr, Nullable)
 
