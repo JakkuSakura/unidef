@@ -49,10 +49,11 @@ case object PythonSqlCodeGen extends GetExtKeys {
     }
 
     context.put("method", func.returnType match {
-      case UnitNode               => "void"
-      case _: ClassDeclNode       => "data_table"
-      case TypedNode(ListType(_)) => "record_list"
-      case TypedNode(SetType(_))  => "record_set"
+      case UnitNode                                   => "void"
+      case TypedNode(ListType(_))                     => "record_list"
+      case _ if func.getValue(Records).contains(true) => "record_list"
+      case _: ClassDeclNode                           => "data_table"
+      case TypedNode(SetType(_))                      => "record_set"
     })
     context.put("post_op", func.returnType match {
       case _: ClassDeclNode => ".to_dict()"
