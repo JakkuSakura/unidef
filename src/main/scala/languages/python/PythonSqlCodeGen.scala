@@ -31,7 +31,7 @@ case object PythonSqlCodeGen extends GetExtKeys {
       |        $param.name()=$param.name(),
       |    #end
       |    )
-      |    if result.error is None:
+      |    if result.error is not None:
       |       raise Exception("Failed to execute database method")
       |    return result.data$post_op
       |""".stripMargin
