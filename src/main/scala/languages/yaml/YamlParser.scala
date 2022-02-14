@@ -146,9 +146,20 @@ object YamlParser {
 
   @throws[ParsingFailure]
   def parseFieldType(content: JsonObject): FieldType = {
-    val name = getString(content, "name")
-    val ty = TypeParser.parse(getString(content, "type")).toTry.get
-    val field = FieldType(name, ty)
+    val field = if (content("name").isDefined && content("type").isDefined) {
+      val name = getString(content, "name")
+      val ty = TypeParser.parse(getString(content, "type")).toTry.get
+      FieldType(name, ty)
+    } else if (content.size == 1) {
+      val name = content.keys.head
+      val ty = TypeParser.parse(getString(content, name)).toTry.get
+      FieldType(name, ty)
+    } else {
+      throw new ParsingFailure(
+        "FieldType must be either: has fields `name` and `type`, has the form of `name: type`",
+        null
+      )
+    }
 
     collectExtKeys(content, extKeysForField.toList).foreach(field.setValue)
 

@@ -19,10 +19,10 @@ case object SqlCodeGen extends GetExtKeys {
     val context = new VelocityContext()
     context.put("name", node.literalName.get)
     context.put("fields", node.fields.map(convertToSqlField).asJava)
-    schema.foreach(x => context.put("schema", s"$x."))
+    context.put("schema", schema.fold("")(x => s"$x."))
     CodeGen.render(
       """
-        |CREATE TABLE IF NOT EXIST $!schema$name (
+        |CREATE TABLE IF NOT EXIST $schema$name (
         |#foreach($field in $fields)
         |   $field.name() $field.ty()$field.attributes()#if($foreach.hasNext),#end
         |#end
@@ -33,7 +33,7 @@ case object SqlCodeGen extends GetExtKeys {
   }
   private val TEMPLATE_GENERATE_FUNCTION_DDL =
     """
-                           |CREATE OR REPLACE FUNCTION $!schema$name (
+                           |CREATE OR REPLACE FUNCTION $schema$name (
                            |#foreach($arg in $args)
                            |  $arg.name() $arg.ty()#if($foreach.hasNext),#end 
                            |#end
@@ -61,7 +61,7 @@ case object SqlCodeGen extends GetExtKeys {
     context.put("args", node.parameters.map(convertToSqlField).asJava)
     context.put("language", node.body.asInstanceOf[RawCodeNode].lang.get)
     context.put("body", node.body.asInstanceOf[RawCodeNode].raw)
-    schema.foreach(x => context.put("schema", s"$x."))
+    context.put("schema", schema.fold("")(x => s"$x."))
 
     node.getValue(Records) match {
       case Some(true) => context.put("records", true)
