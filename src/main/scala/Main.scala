@@ -1,8 +1,9 @@
 package com.jeekrs.unidef
 
-import languages.common.FunctionDeclNode
+import languages.common.{ClassDeclNode, FunctionDeclNode}
 import languages.python.PythonSqlCodeGen
 import languages.sql.SqlCodeGen
+import languages.sql.SqlCodeGen.{generateFunctionDdl, generateTableDdl}
 import languages.yaml.YamlParser
 
 import scala.io.Source
@@ -18,7 +19,10 @@ object Main {
     val parsed = YamlParser.parseFile(fileContents)
     println(parsed)
     for (ty <- parsed) {
-      val code = SqlCodeGen.generateCode(ty)
+      val code = ty match {
+        case n: ClassDeclNode    => generateTableDdl(n, None)
+        case n: FunctionDeclNode => generateFunctionDdl(n, None)
+      }
       println(code)
       ty match {
         case func: FunctionDeclNode =>

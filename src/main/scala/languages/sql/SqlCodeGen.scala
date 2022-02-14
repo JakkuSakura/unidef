@@ -15,20 +15,14 @@ case object SqlCodeGen extends GetExtKeys {
   override def keysOnDecl: List[ExtKey] = List(Records)
   override def keysOnField: List[ExtKey] = List(PrimaryKey, AutoIncr, Nullable)
 
-  def generateCode(node: AstNode): String = {
-    node match {
-      case n: ClassDeclNode    => generateTableDdl(n)
-      case n: FunctionDeclNode => generateFunctionDdl(n)
-    }
-  }
-
-  def generateTableDdl(node: ClassDeclNode): String = {
+  def generateTableDdl(node: ClassDeclNode, schema: Option[String]): String = {
     val context = new VelocityContext()
     context.put("name", node.literalName.get)
     context.put("fields", node.fields.map(convertToSqlField).asJava)
+    schema.foreach(x => context.put("schema", s"$x."))
     CodeGen.render(
       """
-        |CREATE TABLE IF NOT EXIST $name (
+        |CREATE TABLE IF NOT EXIST $!schema$name (
         |#foreach($field in $fields)
         |   $field.name() $field.ty()$field.attributes()#if($foreach.hasNext),#end
         |#end
@@ -39,7 +33,7 @@ case object SqlCodeGen extends GetExtKeys {
   }
   private val TEMPLATE_GENERATE_FUNCTION_DDL =
     """
-                           |CREATE OR REPLACE FUNCTION $name (
+                           |CREATE OR REPLACE FUNCTION $!schema$name (
                            |#foreach($arg in $args)
                            |  $arg.name() $arg.ty()#if($foreach.hasNext),#end 
                            |#end
@@ -60,12 +54,15 @@ case object SqlCodeGen extends GetExtKeys {
                            |$body
                            |$$;
                            |""".stripMargin
-  def generateFunctionDdl(node: FunctionDeclNode): String = {
+  def generateFunctionDdl(node: FunctionDeclNode,
+                          schema: Option[String]): String = {
     val context = new VelocityContext()
     context.put("name", node.literalName.get)
     context.put("args", node.parameters.map(convertToSqlField).asJava)
     context.put("language", node.body.asInstanceOf[RawCodeNode].lang.get)
     context.put("body", node.body.asInstanceOf[RawCodeNode].raw)
+    schema.foreach(x => context.put("schema", s"$x."))
+
     node.getValue(Records) match {
       case Some(true) => context.put("records", true)
       case _ =>
