@@ -11,7 +11,7 @@ case class TypedValue(key: ExtKey, value: Any)
 trait ExtKey {
   type V
   def apply(v: V): TypedValue = TypedValue(this, v)
-  def name: String = getClass.getSimpleName.toLowerCase
+  def name: String = getClass.getSimpleName.stripSuffix("$").toLowerCase
   def decoder: Option[Decoder[V]] = None
 }
 
