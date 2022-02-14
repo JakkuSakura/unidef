@@ -15,9 +15,6 @@ case object PythonSqlCodeGen extends GetExtKeys {
   override def keysOnDecl: List[ExtKey] = List(Records)
   private def convertToPythonField(node: FieldType): PythonField =
     PythonField(node.name, convertType(node.value))
-  //#foreach($ann in $annotations)
-  //@$ann
-  //#end
 
   private val TEMPLATE_GENERATE_FUNCTION_WRAPPER =
     """
@@ -54,19 +51,12 @@ case object PythonSqlCodeGen extends GetExtKeys {
       case _ if func.getValue(Records).contains(true) => "record_list"
       case _: ClassDeclNode                           => "data_table"
       case TypedNode(SetType(_))                      => "record_set"
+      case TypedNode(_)                               => "void"
     })
     context.put("post_op", func.returnType match {
       case _: ClassDeclNode => ".to_dict()"
       case _                => ""
     })
-    //context.put(
-    //  "annotations",
-    //  func
-    //    .getValue(Annotations)
-    //    .getOrElse(List())
-    //    .map(_.value.asInstanceOf[RawCodeNode].raw)
-    //    .asJava
-    //)
 
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_WRAPPER.stripMargin, context)
   }
