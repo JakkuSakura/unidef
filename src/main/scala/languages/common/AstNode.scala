@@ -1,7 +1,7 @@
 package com.jeekrs.unidef
 package languages.common
 
-import utils.{ExtKey, ExtKeyBoolean, Extendable}
+import utils.{ExtKey, ExtKeyBoolean, ExtKeyString, Extendable}
 
 import io.circe.Decoder.Result
 import io.circe.{Decoder, HCursor}
@@ -150,3 +150,5 @@ case object Annotations extends ExtKey {
   override def decoder: Option[Decoder[List[Annotation]]] =
     Some(lsDecoder)
 }
+
+case object Comment extends ExtKeyString
