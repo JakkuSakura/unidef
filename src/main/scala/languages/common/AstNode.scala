@@ -87,7 +87,7 @@ object AccessModifier {
 }
 
 case class FunctionDeclNode(name: AstNode,
-                            arguments: List[FieldType],
+                            parameters: List[FieldType],
                             returnType: AstNode,
                             access: AccessModifier,
                             body: AstNode)

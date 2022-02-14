@@ -91,7 +91,7 @@ case object SqlCodeGen extends GetExtKeys {
   def generateFunctionDdl(node: FunctionDeclNode): String = {
     val context = new VelocityContext()
     context.put("name", node.name.asInstanceOf[LiteralString].value)
-    context.put("args", node.arguments.map(convertToSqlField).asJava)
+    context.put("args", node.parameters.map(convertToSqlField).asJava)
     context.put("language", node.body.asInstanceOf[RawCodeNode].lang.get)
     context.put("body", node.body.asInstanceOf[RawCodeNode].raw)
 

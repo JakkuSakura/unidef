@@ -19,13 +19,13 @@ object PythonSqlCodeGen {
   private val TEMPLATE_GENERATE_FUNCTION_WRAPPER =
     """
       |async def $name(
-      |#foreach($arg in $args)
-      |    $arg.name(): $arg.ty(),
+      |#foreach($param in $params)
+      |    $param.name(): $param.ty(),
       |#end
       |) -> $return:
       |    result = await database.$method("$db_func_name",
-      |    #foreach($arg in $args)
-      |        $arg.name()=$arg.name(),
+      |    #foreach($param in $params)
+      |        $param.name()=$param.name(),
       |    #end
       |    )
       |    if result.error is None:
@@ -35,7 +35,7 @@ object PythonSqlCodeGen {
   def generateFuncWrapper(func: FunctionDeclNode): String = {
     val context = new VelocityContext()
     context.put("name", func.name.asInstanceOf[LiteralString].value)
-    context.put("args", func.arguments.map(convertToPythonField).asJava)
+    context.put("params", func.parameters.map(convertToPythonField).asJava)
     context.put("db_func_name", func.name.asInstanceOf[LiteralString].value)
     context.put("return", convertType(func.returnType.inferType))
     context.put("method", func.returnType match {
