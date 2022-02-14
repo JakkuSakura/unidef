@@ -5,7 +5,7 @@ import utils.ExtKey
 
 sealed trait LifeTime
 
-object LifeTime extends ExtKey {
+case object LifeTime extends ExtKey {
   override type V = LifeTime
 
   case object StaticLifeTime extends LifeTime

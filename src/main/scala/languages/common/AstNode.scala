@@ -91,7 +91,13 @@ case class FunctionDeclNode(name: AstNode,
                             returnType: AstNode,
                             access: AccessModifier,
                             body: AstNode)
-    extends AstNode
+    extends AstNode {
+  def literalName: Option[String] = name match {
+    case LiteralString(value) => Some(value)
+    case _                    => None
+
+  }
+}
 
 case class ClassIdent(name: String) extends AstNode
 
@@ -100,9 +106,12 @@ case class ClassDeclNode(name: AstNode,
                          methods: List[AstNode] = List(),
                          derived: List[ClassIdent] = List(),
 ) extends AstNode {
-
+  def literalName: Option[String] = name match {
+    case LiteralString(value) => Some(value)
+    case _                    => None
+  }
   override def inferType: StructType =
-    StructType(name.asInstanceOf[LiteralString].value, fields)
+    StructType(literalName.get, fields)
 }
 
 object ClassDeclNode {

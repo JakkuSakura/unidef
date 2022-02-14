@@ -3,13 +3,16 @@ package languages.python
 
 import languages.common._
 import languages.python.PythonCommon.convertType
+import languages.sql.SqlCommon.Records
+import utils.ExtKey
 
 import org.apache.velocity.VelocityContext
 
 import scala.jdk.CollectionConverters._
 
 private case class PythonField(name: String, ty: String)
-object PythonSqlCodeGen {
+case object PythonSqlCodeGen extends GetExtKeys {
+  override def keysOnDecl: List[ExtKey] = List(Records)
   private def convertToPythonField(node: FieldType): PythonField =
     PythonField(node.name, convertType(node.value))
   //#foreach($ann in $annotations)
@@ -34,10 +37,17 @@ object PythonSqlCodeGen {
       |""".stripMargin
   def generateFuncWrapper(func: FunctionDeclNode): String = {
     val context = new VelocityContext()
-    context.put("name", func.name.asInstanceOf[LiteralString].value)
+    context.put("name", func.literalName.get)
     context.put("params", func.parameters.map(convertToPythonField).asJava)
-    context.put("db_func_name", func.name.asInstanceOf[LiteralString].value)
-    context.put("return", convertType(func.returnType.inferType))
+    context.put("db_func_name", func.literalName.get)
+    val returnType = func.returnType.inferType
+
+    if (func.getValue(Records).contains(true)) {
+      context.put("return", convertType(ListType(returnType)))
+    } else {
+      context.put("return", convertType(returnType))
+    }
+
     context.put("method", func.returnType match {
       case UnitNode               => "void"
       case _: ClassDeclNode       => "data_table"

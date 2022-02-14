@@ -4,7 +4,7 @@ package languages.sql
 import utils.ExtKeyBoolean
 
 object FieldType {
-  object PrimaryKey extends ExtKeyBoolean
-  object AutoIncr extends ExtKeyBoolean
-  object Nullable extends ExtKeyBoolean
+  case object PrimaryKey extends ExtKeyBoolean
+  case object AutoIncr extends ExtKeyBoolean
+  case object Nullable extends ExtKeyBoolean
 }

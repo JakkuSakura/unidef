@@ -13,6 +13,7 @@ object Main {
     val source = Source.fromFile(filename)
     val fileContents = source.mkString
     source.close
+    YamlParser.prepareForExtKeys(PythonSqlCodeGen)
     YamlParser.prepareForExtKeys(SqlCodeGen)
     val parsed = YamlParser.parseFile(fileContents)
     println(parsed)

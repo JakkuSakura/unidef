@@ -26,4 +26,17 @@ parameters:
 body: INSERT INTO user(id, name) VALUES(NULL, user_name);
 
 
+---
+type: function
+name: get_all_users
+language: SQL
+parameters: []
+records: true
+#return:
+# - name:
+#   type:
+#
+body: SELECT * FROM user;
+
+
 

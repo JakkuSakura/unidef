@@ -2,8 +2,8 @@ package com.jeekrs.unidef
 package languages.yaml
 
 import languages.common._
+import utils.JsonUtils.{getList, getString}
 import utils.{ExtKey, TypedValue}
-import utils.JsonUtils.{getAs, getList, getString}
 
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
@@ -73,7 +73,9 @@ object YamlParser {
     val name = getString(content, "name")
     val language = getString(content, "language")
     val body = getString(content, "body")
-    val parameters = getList(content, "parameters")
+    val parameters = content("parameters")
+      .map(_ => getList(content, "parameters"))
+      .getOrElse(Vector())
       .map(_.asObject.toRight(ParsingFailure("is not Object", null)).toTry.get)
       .map(parseFieldType)
 
@@ -134,8 +136,8 @@ object YamlParser {
     )
 
   }
-  private val extKeysForField = mutable.ArrayBuffer[ExtKey]()
-  private val extKeysForDecl = mutable.ArrayBuffer[ExtKey]()
+  private val extKeysForField = mutable.HashSet[ExtKey]()
+  private val extKeysForDecl = mutable.HashSet[ExtKey]()
 
   def prepareForExtKeys(obj: GetExtKeys): Unit = {
     extKeysForField ++= obj.keysOnField
@@ -155,7 +157,7 @@ object YamlParser {
   def collectExtKeys(content: JsonObject,
                      keys: List[ExtKey]): List[TypedValue] = {
     val result = mutable.ArrayBuffer[TypedValue]()
-    for (k <- extKeysForField) {
+    for (k <- keys) {
       content(k.name) match {
         case Some(value) =>
           val v = value
