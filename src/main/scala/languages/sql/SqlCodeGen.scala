@@ -3,7 +3,7 @@ package languages.sql
 
 import languages.common._
 import languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
-import languages.sql.SqlCommon.{Records, convertToSqlField}
+import languages.sql.SqlCommon.{Records, Schema, convertToSqlField}
 import utils.ExtKey
 
 import org.apache.velocity.VelocityContext
@@ -12,14 +12,14 @@ import scala.jdk.CollectionConverters._
 
 case class SqlField(name: String, ty: String, attributes: String)
 case object SqlCodeGen extends GetExtKeys {
-  override def keysOnDecl: List[ExtKey] = List(Records)
+  override def keysOnFuncDecl: List[ExtKey] = List(Records, Schema)
   override def keysOnField: List[ExtKey] = List(PrimaryKey, AutoIncr, Nullable)
 
-  def generateTableDdl(node: ClassDeclNode, schema: Option[String]): String = {
+  def generateTableDdl(node: ClassDeclNode): String = {
     val context = new VelocityContext()
     context.put("name", node.literalName.get)
     context.put("fields", node.fields.map(convertToSqlField).asJava)
-    context.put("schema", schema.fold("")(x => s"$x."))
+    context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
     CodeGen.render(
       """
         |CREATE TABLE IF NOT EXIST $schema$name (
@@ -54,14 +54,13 @@ case object SqlCodeGen extends GetExtKeys {
                            |$body
                            |$$;
                            |""".stripMargin
-  def generateFunctionDdl(node: FunctionDeclNode,
-                          schema: Option[String]): String = {
+  def generateFunctionDdl(node: FunctionDeclNode): String = {
     val context = new VelocityContext()
     context.put("name", node.literalName.get)
     context.put("args", node.parameters.map(convertToSqlField).asJava)
     context.put("language", node.body.asInstanceOf[RawCodeNode].lang.get)
     context.put("body", node.body.asInstanceOf[RawCodeNode].raw)
-    context.put("schema", schema.fold("")(x => s"$x."))
+    context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
 
     node.getValue(Records) match {
       case Some(true) => context.put("records", true)

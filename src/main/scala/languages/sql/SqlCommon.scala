@@ -16,11 +16,11 @@ import languages.common.{
   TyNode
 }
 import languages.sql.FieldType.{Nullable, PrimaryKey}
-import utils.ExtKeyBoolean
+import utils.{ExtKeyBoolean, ExtKeyString}
 
 case object SqlCommon {
   case object Records extends ExtKeyBoolean
-
+  case object Schema extends ExtKeyString
   def convertReal(ty: RealType): String = ty match {
     case DecimalType(precision, scale) => s"decimal($precision, $scale)"
     case FloatType(BitSize.B32)        => "real"

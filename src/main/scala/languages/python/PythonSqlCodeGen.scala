@@ -3,7 +3,7 @@ package languages.python
 
 import languages.common._
 import languages.python.PythonCommon.convertType
-import languages.sql.SqlCommon.Records
+import languages.sql.SqlCommon.{Records, Schema}
 import utils.ExtKey
 
 import org.apache.velocity.VelocityContext
@@ -12,7 +12,7 @@ import scala.jdk.CollectionConverters._
 
 private case class PythonField(name: String, ty: String)
 case object PythonSqlCodeGen extends GetExtKeys {
-  override def keysOnDecl: List[ExtKey] = List(Records)
+  override def keysOnFuncDecl: List[ExtKey] = List(Records, Schema)
   private def convertToPythonField(node: FieldType): PythonField =
     PythonField(node.name, convertType(node.value))
 
@@ -23,7 +23,7 @@ case object PythonSqlCodeGen extends GetExtKeys {
       |    $param.name(): $param.ty(),
       |#end
       |) -> $return:
-      |    result = await database.$method("$db_func_name",
+      |    result = await database.$method("$schema$db_func_name",
       |    #foreach($param in $params)
       |        $param.name()=$param.name(),
       |    #end
@@ -57,6 +57,7 @@ case object PythonSqlCodeGen extends GetExtKeys {
       case _: ClassDeclNode => ".to_dict()"
       case _                => ""
     })
+    context.put("schema", func.getValue(Schema).fold("")(x => s"$x."))
 
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_WRAPPER.stripMargin, context)
   }

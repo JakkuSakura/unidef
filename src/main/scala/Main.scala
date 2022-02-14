@@ -20,8 +20,8 @@ object Main {
     println(parsed)
     for (ty <- parsed) {
       val code = ty match {
-        case n: ClassDeclNode    => generateTableDdl(n, None)
-        case n: FunctionDeclNode => generateFunctionDdl(n, None)
+        case n: ClassDeclNode    => generateTableDdl(n)
+        case n: FunctionDeclNode => generateFunctionDdl(n)
       }
       println(code)
       ty match {

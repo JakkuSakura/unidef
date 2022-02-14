@@ -141,7 +141,7 @@ object YamlParser {
 
   def prepareForExtKeys(obj: GetExtKeys): Unit = {
     extKeysForField ++= obj.keysOnField
-    extKeysForDecl ++= obj.keysOnDecl
+    extKeysForDecl ++= obj.keysOnFuncDecl
   }
 
   @throws[ParsingFailure]
