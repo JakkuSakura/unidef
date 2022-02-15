@@ -11,8 +11,8 @@ case object Required extends ExtKeyBoolean
 case object AdditionalProperties extends ExtKeyBoolean
 
 case object JsonSchemaCodeGen {
-  def generateFuncDecl(func: FunctionDeclNode): String = {
-    val struct = StructType("unnamed", func.parameters)
+  def generateFuncDecl(func: AstFunctionDecl): String = {
+    val struct = TyStruct("unnamed", func.parameters)
     struct.setValue(Required, true)
     struct.setValue(AdditionalProperties, false)
 
@@ -27,19 +27,19 @@ case object JsonSchemaCodeGen {
 
   def generateType(ty: TyNode): JsonObject =
     ty match {
-      case StringType => JsonObject("type" -> Json.fromString("string"))
-      case _: IntegerType =>
+      case TyString => JsonObject("type" -> Json.fromString("string"))
+      case _: TyInteger =>
         JsonObject("type" -> Json.fromString("integer"))
-      case _: FloatType =>
+      case _: TyFloat =>
         JsonObject("type" -> Json.fromString("float"))
-      case _: NumericType =>
+      case _: TyNumeric =>
         JsonObject("type" -> Json.fromString("numeric"))
-      case VectorType(ty) =>
+      case TyVector(ty) =>
         JsonObject(
           "type" -> Json.fromString("array"),
           "items" -> Json.fromJsonObject(generateType(ty))
         )
-      case struct: StructType =>
+      case struct: TyStruct =>
         JsonObject(
           "type" -> Json.fromString("object"),
           "properties" -> Json.fromJsonObject(

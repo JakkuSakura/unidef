@@ -15,7 +15,7 @@ case object SqlCodeGen extends ExtKeyProvider {
   override def keysOnFuncDecl: List[ExtKey] = List(Records, Schema)
   override def keysOnField: List[ExtKey] = List(PrimaryKey, AutoIncr, Nullable)
 
-  def generateTableDdl(node: ClassDeclNode): String = {
+  def generateTableDdl(node: AstClassDecl): String = {
     val context = new VelocityContext()
     context.put("name", node.literalName.get)
     context.put("fields", node.fields.map(convertToSqlField).asJava)
@@ -54,19 +54,19 @@ case object SqlCodeGen extends ExtKeyProvider {
                            |$body
                            |$$;
                            |""".stripMargin
-  def generateFunctionDdl(node: FunctionDeclNode): String = {
+  def generateFunctionDdl(node: AstFunctionDecl): String = {
     val context = new VelocityContext()
     context.put("name", node.literalName.get)
     context.put("args", node.parameters.map(convertToSqlField).asJava)
-    context.put("language", node.body.asInstanceOf[RawCodeNode].lang.get)
-    context.put("body", node.body.asInstanceOf[RawCodeNode].raw)
+    context.put("language", node.body.asInstanceOf[AstRawCode].lang.get)
+    context.put("body", node.body.asInstanceOf[AstRawCode].raw)
     context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
 
     node.getValue(Records) match {
       case Some(true) => context.put("records", true)
       case _ =>
         node.returnType match {
-          case ClassDeclNode(_, fields, _, _) =>
+          case AstClassDecl(_, fields, _, _) =>
             context.put("return_table", fields.map(convertToSqlField).asJava)
           case _ =>
         }

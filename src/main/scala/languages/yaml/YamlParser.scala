@@ -69,7 +69,7 @@ object YamlParser {
   }
 
   @throws[ParsingFailure]
-  def parseFunction(content: JsonObject): FunctionDeclNode = {
+  def parseFunction(content: JsonObject): AstFunctionDecl = {
     val name = getString(content, "name")
     val language = getString(content, "language")
     val body = getString(content, "body")
@@ -84,7 +84,7 @@ object YamlParser {
         x.foldWith(new Json.Folder[AstNode] {
 
           override def onString(value: String): AstNode =
-            TypedNode(TypeParser.parse(value).toTry.get)
+            AstTyped(TypeParser.parse(value).toTry.get)
 
           override def onArray(value: Vector[Json]): AstNode = {
             parseStruct(
@@ -105,14 +105,14 @@ object YamlParser {
           override def onNumber(value: JsonNumber): AstNode = ???
         })
       })
-      .getOrElse(UnitNode)
+      .getOrElse(AstUnit)
 
-    val node = FunctionDeclNode(
-      LiteralString(name),
+    val node = AstFunctionDecl(
+      AstLiteralString(name),
       parameters.toList,
       ret,
       AccessModifier.Public,
-      RawCodeNode(body, Some(language))
+      AstRawCode(body, Some(language))
     )
 
     collectExtKeys(content, extKeysForFuncDecl.toList)
@@ -122,12 +122,12 @@ object YamlParser {
   }
 
   @throws[ParsingFailure]
-  def parseStruct(content: JsonObject): ClassDeclNode = {
+  def parseStruct(content: JsonObject): AstClassDecl = {
     val fields_arr = getList(content, "fields")
     val name = getString(content, "name")
 
-    val node = ClassDeclNode(
-      LiteralString(name),
+    val node = AstClassDecl(
+      AstLiteralString(name),
       fields_arr
         .map(
           _.asObject.toRight(ParsingFailure("is not Object", null)).toTry.get
@@ -151,15 +151,15 @@ object YamlParser {
   }
 
   @throws[ParsingFailure]
-  def parseFieldType(content: JsonObject): FieldType = {
+  def parseFieldType(content: JsonObject): TyField = {
     val field = if (content("name").isDefined && content("type").isDefined) {
       val name = getString(content, "name")
       val ty = TypeParser.parse(getString(content, "type")).toTry.get
-      FieldType(name, ty)
+      TyField(name, ty)
     } else if (content.size == 1) {
       val name = content.keys.head
       val ty = TypeParser.parse(getString(content, name)).toTry.get
-      FieldType(name, ty)
+      TyField(name, ty)
     } else {
       throw new ParsingFailure(
         "FieldType must be either: has fields `name` and `type`, has the form of `name: type`",

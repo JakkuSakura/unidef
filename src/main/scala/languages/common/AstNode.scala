@@ -3,10 +3,7 @@ package languages.common
 
 import utils.{ExtKey, ExtKeyBoolean, ExtKeyString, Extendable}
 
-import io.circe.Decoder.Result
-import io.circe.{Decoder, HCursor}
-import io.circe.generic.JsonCodec
-import io.circe.generic.codec.DerivedAsObjectCodec.deriveCodec
+import io.circe.Decoder
 import io.circe.generic.semiauto._
 
 /**
@@ -15,30 +12,30 @@ import io.circe.generic.semiauto._
   * Rules: everything is an expression
   */
 class AstNode extends Extendable {
-  def inferType: TyNode = UnknownType
+  def inferType: TyNode = TyUnknown
 
 }
-class StaticTypeNode(ty: TyNode) extends AstNode {
+class AstStaticType(ty: TyNode) extends AstNode {
   override def inferType: TyNode = ty
 }
 
 // Unit is the bottom type
-case object UnitNode extends StaticTypeNode(UnitType)
+case object AstUnit extends AstStaticType(TyUnit)
 
 // Null is a null reference/pointer
-case object NullNode extends StaticTypeNode(NullType)
+case object AstNull extends AstStaticType(TyNull)
 
 // Undefined
-case object UndefinedNode extends StaticTypeNode(UndefinedType)
+case object AstUndefined extends AstStaticType(TyUndefined)
 
-case class TypedNode(ty: TyNode) extends StaticTypeNode(ty)
+case class AstTyped(ty: TyNode) extends AstStaticType(ty)
 
-case class BlockNode(nodes: List[AstNode], flatten: Boolean = false)
+case class AstBlock(nodes: List[AstNode], flatten: Boolean = false)
     extends AstNode
 
-case class StatementNode(node: AstNode) extends AstNode
+case class AstStatement(node: AstNode) extends AstNode
 
-case class ExpressionNode(node: AstNode) extends AstNode
+case class AstExpression(node: AstNode) extends AstNode
 
 case class ConditionalNode(test: AstNode, success: AstNode, failure: AstNode)
     extends AstNode
@@ -49,32 +46,32 @@ case object Continue extends FlowControl
 case object Break extends FlowControl
 case object Return extends FlowControl
 
-case class FlowControlNode(flow: FlowControl, value: AstNode) extends AstNode
+case class AstFlowControl(flow: FlowControl, value: AstNode) extends AstNode
 
-class LiteralNode extends AstNode
+class AstLiteral extends AstNode
 
-case class LiteralString(value: String) extends LiteralNode {
-  override def inferType: TyNode = StringType
+case class AstLiteralString(value: String) extends AstLiteral {
+  override def inferType: TyNode = TyString
 }
 
-case class LiteralChar(value: Char) extends LiteralNode {
-  override def inferType: TyNode = CharType
+case class AstLiteralChar(value: Char) extends AstLiteral {
+  override def inferType: TyNode = TyChar
 }
 
-case class LiteralInteger(value: Int) extends LiteralNode {
-  override def inferType: TyNode = IntegerType(BitSize.B32)
+case class AstLiteralInteger(value: Int) extends AstLiteral {
+  override def inferType: TyNode = TyInteger(BitSize.B32)
 }
 
-case class LiteralFloat(value: Double) extends LiteralNode {
-  override def inferType: TyNode = FloatType(BitSize.B64)
+case class AstLiteralFloat(value: Double) extends AstLiteral {
+  override def inferType: TyNode = TyFloat(BitSize.B64)
 }
 
 // difference is from https://github.com/ron-rs/ron
-case class LiteralDict(values: List[(AstNode, AstNode)]) extends LiteralNode
+case class AstLiteralDict(values: List[(AstNode, AstNode)]) extends AstLiteral
 
-case class LiteralStruct(values: List[(AstNode, AstNode)]) extends LiteralNode
+case class AstLiteralStruct(values: List[(AstNode, AstNode)]) extends AstLiteral
 
-case class LiteralOptional(value: Option[AstNode]) extends LiteralNode
+case class AstLiteralOptional(value: Option[AstNode]) extends AstLiteral
 
 sealed trait AccessModifier
 object AccessModifier {
@@ -86,41 +83,41 @@ object AccessModifier {
 
 }
 
-case class FunctionDeclNode(name: AstNode,
-                            parameters: List[FieldType],
-                            returnType: AstNode,
-                            access: AccessModifier,
-                            body: AstNode)
+case class AstFunctionDecl(name: AstNode,
+                           parameters: List[TyField],
+                           returnType: AstNode,
+                           access: AccessModifier,
+                           body: AstNode)
     extends AstNode {
   def literalName: Option[String] = name match {
-    case LiteralString(value) => Some(value)
-    case _                    => None
+    case AstLiteralString(value) => Some(value)
+    case _                       => None
 
   }
 }
 
-case class ClassIdent(name: String) extends AstNode
+case class AstClassIdent(name: String) extends AstNode
 
-case class ClassDeclNode(name: AstNode,
-                         fields: List[FieldType],
-                         methods: List[AstNode] = List(),
-                         derived: List[ClassIdent] = List(),
+case class AstClassDecl(name: AstNode,
+                        fields: List[TyField],
+                        methods: List[AstNode] = List(),
+                        derived: List[AstClassIdent] = List(),
 ) extends AstNode {
   def literalName: Option[String] = name match {
-    case LiteralString(value) => Some(value)
-    case _                    => None
+    case AstLiteralString(value) => Some(value)
+    case _                       => None
   }
-  override def inferType: StructType =
-    StructType(literalName.get, fields)
+  override def inferType: TyStruct =
+    TyStruct(literalName.get, fields)
 }
 
-object ClassDeclNode {
+object AstClassDecl {
   case object DataClass extends ExtKeyBoolean
 }
 
-case class IdentifierNode(id: String) extends AstNode
+case class AstIdentifier(id: String) extends AstNode
 
-case class DirectiveNode(directive: String) extends AstNode
+case class AstDirective(directive: String) extends AstNode
 
 sealed trait BinaryOperator
 object BinaryOperator {
@@ -130,34 +127,39 @@ object BinaryOperator {
   case object Divide extends BinaryOperator
 }
 
-case class BinaryOperatorNode(left: AstNode, right: AstNode, op: BinaryOperator)
+case class AstBinaryOperator(left: AstNode, right: AstNode, op: BinaryOperator)
     extends AstNode {
-  def toFunctionApply: FunctionApplyNode =
-    FunctionApplyNode(FunctionIdentNode(op.toString), List(left, right), Map())
+  def toFunctionApply: AstFunctionApply =
+    AstFunctionApply(AstFunctionIdent(op.toString), List(left, right), Map())
 
 }
 
-case class FunctionIdentNode(name: String) extends AstNode
+case class AstFunctionIdent(name: String) extends AstNode
 
-case class FunctionApplyNode(func: FunctionIdentNode,
-                             args: List[AstNode],
-                             kwArgs: Map[String, AstNode],
-                             applyArgs: List[AstNode] = List(),
-                             applyKwArgs: List[AstNode] = List())
+case class AstFunctionApply(func: AstFunctionIdent,
+                            args: List[AstNode],
+                            kwArgs: Map[String, AstNode],
+                            applyArgs: List[AstNode] = List(),
+                            applyKwArgs: List[AstNode] = List())
     extends AstNode
 
-case class AwaitNode(value: AstNode) extends AstNode
+case class AstAwait(value: AstNode) extends AstNode
 
-case class RawCodeNode(raw: String, lang: Option[String] = None) extends AstNode
+case class AstRawCode(raw: String, lang: Option[String] = None) extends AstNode
 
-case class Annotation(value: AstNode) extends AstNode
+case class AstAnnotation(value: AstNode) extends AstNode
 
-case object Annotations extends ExtKey {
-  override type V = List[Annotation]
+case object AstAnnotations extends AstNode with ExtKey {
+  override type V = List[AstAnnotation]
+
+  override def name: String = "annotations"
   private val lsDecoder =
-    deriveDecoder[List[String]].map(x => x.map(y => Annotation(RawCodeNode(y))))
-  override def decoder: Option[Decoder[List[Annotation]]] =
+    deriveDecoder[List[String]]
+      .map(x => x.map(y => AstAnnotation(AstRawCode(y))))
+  override def decoder: Option[Decoder[List[AstAnnotation]]] =
     Some(lsDecoder)
 }
 
-case object Comment extends ExtKeyString
+case object AstComment extends AstNode with ExtKeyString {
+  override def name: String = "comment"
+}

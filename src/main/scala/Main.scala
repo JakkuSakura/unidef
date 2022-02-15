@@ -1,6 +1,6 @@
 package com.jeekrs.unidef
 
-import languages.common.{ClassDeclNode, FunctionDeclNode}
+import languages.common.{AstClassDecl, AstFunctionDecl}
 import languages.python.PythonSqlCodeGen
 import languages.sql.SqlCodeGen
 import languages.sql.SqlCodeGen.{generateFunctionDdl, generateTableDdl}
@@ -22,12 +22,12 @@ object Main {
     println(parsed)
     for (ty <- parsed) {
       val code = ty match {
-        case n: ClassDeclNode    => generateTableDdl(n)
-        case n: FunctionDeclNode => generateFunctionDdl(n)
+        case n: AstClassDecl    => generateTableDdl(n)
+        case n: AstFunctionDecl => generateFunctionDdl(n)
       }
       println(code)
       ty match {
-        case func: FunctionDeclNode =>
+        case func: AstFunctionDecl =>
           val code2 = PythonSqlCodeGen.generateFuncWrapper(func)
           println(code2)
           val code3 = JsonSchemaCodeGen.generateFuncDecl(func)

@@ -3,13 +3,11 @@ package languages.common
 
 import utils.{ExtKey, ExtKeyBoolean, Extendable}
 
-import io.circe.generic.semiauto
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{Decoder, ParsingFailure}
 
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.TimeUnit
 
 /**
   * This is a very generic type model
@@ -17,24 +15,23 @@ import scala.concurrent.duration.TimeUnit
 class TyNode extends Extendable
 
 // scala: Type[A, B, ..]
-class GenericType(val generics: List[TyNode]) extends TyNode
+class TyGeneric(val generics: List[TyNode]) extends TyNode
 
 // scala: (A, B)
-case class TupleType(values: List[TyNode]) extends GenericType(values)
+case class TyTuple(values: List[TyNode]) extends TyGeneric(values)
 
 // scala: Option[A]
-case class OptionalType(value: TyNode) extends GenericType(List(value))
+case class TyOptional(value: TyNode) extends TyGeneric(List(value))
 
 // scala: Either[A, B] rust: Result<Ok, Err>
-case class ResultType(ok: TyNode, err: TyNode)
-    extends GenericType(List(ok, err))
+case class TyResult(ok: TyNode, err: TyNode) extends TyGeneric(List(ok, err))
 
 // rust: Vec<T>
-case class VectorType(value: TyNode) extends GenericType(List(value))
+case class TyVector(value: TyNode) extends TyGeneric(List(value))
 
 // scala: A -> B
-case class MappingType(key: TyNode, value: TyNode)
-    extends GenericType(List(key, value))
+case class TyMapping(key: TyNode, value: TyNode)
+    extends TyGeneric(List(key, value))
 
 sealed class BitSize(val bits: Int)
 
@@ -51,60 +48,59 @@ object BitSize {
   case object BigInt extends BitSize(-1)
 }
 
-class NumericType extends TyNode
-case class IntegerType(bitSize: BitSize, signed: Boolean = true)
-    extends NumericType
+class TyNumeric extends TyNode
+case class TyInteger(bitSize: BitSize, signed: Boolean = true) extends TyNumeric
 
-class RealType extends NumericType
+class TyReal extends TyNumeric
 
 // sql: decimal(p, s)
-case class DecimalType(precision: Int, scale: Int) extends RealType
+case class TyDecimal(precision: Int, scale: Int) extends TyReal
 
 // scala: f32, f64
-case class FloatType(bitSize: BitSize) extends RealType
+case class TyFloat(bitSize: BitSize) extends TyReal
 
 // rust: enum with multiple names
-case class VariantType(names: List[String]) extends TyNode
+case class TyVariant(names: List[String]) extends TyNode
 
-case class EnumType(variants: List[VariantType], simple_enum: Boolean = true)
+case class TyEnum(variants: List[TyVariant], simple_enum: Boolean = true)
     extends TyNode
 
-case class FieldType(name: String, value: TyNode) extends TyNode
+case class TyField(name: String, value: TyNode) extends TyNode
 
-case class StructType(name: String,
-                      fields: List[FieldType],
-                      dataType: Boolean = false)
+case class TyStruct(name: String,
+                    fields: List[TyField],
+                    dataType: Boolean = false)
     extends TyNode
 
-case class DictType(key: TyNode, value: TyNode)
-    extends GenericType(List(key, value))
+case class TyDict(key: TyNode, value: TyNode)
+    extends TyGeneric(List(key, value))
 
-case class ListType(value: TyNode) extends GenericType(List(value))
-case class SetType(value: TyNode) extends GenericType(List(value))
+case class TyList(value: TyNode) extends TyGeneric(List(value))
+case class TySet(value: TyNode) extends TyGeneric(List(value))
 
-case object JsonObjectType extends TyNode
+case object TyJsonObject extends TyNode
 
-case object StringType extends TyNode
-case object CharType extends TyNode
+case object TyString extends TyNode
+case object TyChar extends TyNode
 
-case object AnyType extends TyNode
+case object TyAny extends TyNode
 
-case object UnitType extends TyNode
+case object TyUnit extends TyNode
 
-case object NullType extends TyNode
+case object TyNull extends TyNode
 
-case object UnknownType extends TyNode
+case object TyUnknown extends TyNode
 
-case object UndefinedType extends TyNode
+case object TyUndefined extends TyNode
 
-case class TimeStampType(timeUnit: TimeUnit, timezone: Boolean = false)
+case class TyTimeStamp(timeUnit: TimeUnit, timezone: Boolean = false)
     extends TyNode
 
-case class DateTimeType(timezone: Option[TimeZone]) extends TyNode
+case class TyDateTime(timezone: Option[TimeZone]) extends TyNode
 
-case class ReferenceType(referee: TyNode) extends TyNode
+case class TyReference(referee: TyNode) extends TyNode
 
-case class NamedType(name: String) extends TyNode
+case class TyNamed(name: String) extends TyNode
 
 case object Mutability extends ExtKeyBoolean
 
@@ -116,24 +112,24 @@ case object Derive extends ExtKey {
 }
 
 case object Attributes extends ExtKey {
-  override type V = List[FunctionApplyNode]
+  override type V = List[AstFunctionApply]
 }
 
 object TypeParser {
   def parse(ty: String): Either[ParsingFailure, TyNode] =
     ty.toLowerCase match {
-      case "int" | "i32"                         => Right(IntegerType(BitSize.B32))
-      case "uint" | "u32"                        => Right(IntegerType(BitSize.B32, signed = false))
-      case "long" | "i64"                        => Right(IntegerType(BitSize.B64))
-      case "ulong" | "u64"                       => Right(IntegerType(BitSize.B64, signed = false))
-      case "float"                               => Right(FloatType(BitSize.B32))
-      case "double"                              => Right(FloatType(BitSize.B64))
-      case "str" | "string" | "varchar" | "text" => Right(StringType)
-      case "json" | "jsonb"                      => Right(JsonObjectType)
+      case "int" | "i32"                         => Right(TyInteger(BitSize.B32))
+      case "uint" | "u32"                        => Right(TyInteger(BitSize.B32, signed = false))
+      case "long" | "i64"                        => Right(TyInteger(BitSize.B64))
+      case "ulong" | "u64"                       => Right(TyInteger(BitSize.B64, signed = false))
+      case "float"                               => Right(TyFloat(BitSize.B32))
+      case "double"                              => Right(TyFloat(BitSize.B64))
+      case "str" | "string" | "varchar" | "text" => Right(TyString)
+      case "json" | "jsonb"                      => Right(TyJsonObject)
       case "timestamp" =>
-        Right(TimeStampType(TimeUnit.MILLISECONDS, timezone = false))
+        Right(TyTimeStamp(TimeUnit.MILLISECONDS, timezone = false))
       case "timestamptz" =>
-        Right(TimeStampType(TimeUnit.MILLISECONDS, timezone = true))
+        Right(TyTimeStamp(TimeUnit.MILLISECONDS, timezone = true))
       case _ => Left(ParsingFailure("Unknown type " + ty, null))
 
     }
