@@ -6,11 +6,9 @@ import io.circe.Decoder
 import scala.collection.mutable
 
 // Assume TypedValue is always type checked.
-case class TypedValue(key: ExtKey, value: Any)
 
 trait ExtKey {
   type V
-  def apply(v: V): TypedValue = TypedValue(this, v)
   def name: String = getClass.getSimpleName.stripSuffix("$").toLowerCase
   def decoder: Option[Decoder[V]] = None
 }
@@ -31,9 +29,11 @@ trait ExtKeyInt extends ExtKey {
 }
 
 class Extendable(params: mutable.Map[ExtKey, Any] = mutable.HashMap()) {
-  def getValue[EK <: ExtKey](key: EK): Option[key.V] =
+  def getValue(key: ExtKey): Option[key.V] =
     params.get(key).asInstanceOf[Option[key.V]]
 
-  def setValue(typedValue: TypedValue): Unit =
-    params += typedValue.key -> typedValue.value
+  def setValue[EK <: ExtKey { type V = VV }, VV](key: ExtKey, v: VV): Unit =
+    params += key -> v
+  def setValue(kv: (ExtKey, Any)): Unit =
+    params += kv
 }

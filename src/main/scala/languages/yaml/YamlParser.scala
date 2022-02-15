@@ -3,7 +3,7 @@ package languages.yaml
 
 import languages.common._
 import utils.JsonUtils.{getList, getString}
-import utils.{ExtKey, TypedValue}
+import utils.{ExtKey}
 
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
@@ -115,7 +115,8 @@ object YamlParser {
       RawCodeNode(body, Some(language))
     )
 
-    collectExtKeys(content, extKeysForFuncDecl.toList).foreach(node.setValue)
+    collectExtKeys(content, extKeysForFuncDecl.toList)
+      .foreach(node.setValue)
 
     node
   }
@@ -171,8 +172,8 @@ object YamlParser {
     field
   }
   def collectExtKeys(content: JsonObject,
-                     keys: List[ExtKey]): List[TypedValue] = {
-    val result = mutable.ArrayBuffer[TypedValue]()
+                     keys: List[ExtKey]): List[(ExtKey, Any)] = {
+    val result = mutable.ArrayBuffer[(ExtKey, Any)]()
     for (k <- keys) {
       content(k.name) match {
         case Some(value) =>
@@ -190,7 +191,7 @@ object YamlParser {
             )
             .toTry
             .get
-          result += k(v)
+          result += k -> v
 
         case None =>
       }

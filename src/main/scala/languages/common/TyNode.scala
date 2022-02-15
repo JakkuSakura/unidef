@@ -51,9 +51,11 @@ object BitSize {
   case object BigInt extends BitSize(-1)
 }
 
-case class IntegerType(bitSize: BitSize, signed: Boolean = true) extends TyNode
+class NumericType extends TyNode
+case class IntegerType(bitSize: BitSize, signed: Boolean = true)
+    extends NumericType
 
-class RealType extends TyNode
+class RealType extends NumericType
 
 // sql: decimal(p, s)
 case class DecimalType(precision: Int, scale: Int) extends RealType

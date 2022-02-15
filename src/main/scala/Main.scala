@@ -6,6 +6,8 @@ import languages.sql.SqlCodeGen
 import languages.sql.SqlCodeGen.{generateFunctionDdl, generateTableDdl}
 import languages.yaml.YamlParser
 
+import com.jeekrs.unidef.languages.javascript.JsonSchemaCodeGen
+
 import scala.io.Source
 
 object Main {
@@ -28,6 +30,8 @@ object Main {
         case func: FunctionDeclNode =>
           val code2 = PythonSqlCodeGen.generateFuncWrapper(func)
           println(code2)
+          val code3 = JsonSchemaCodeGen.generateFuncDecl(func)
+          println(code3)
         case _ =>
       }
 
