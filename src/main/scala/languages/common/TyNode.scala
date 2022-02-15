@@ -79,7 +79,7 @@ case class TyList(value: TyNode) extends TyGeneric(List(value))
 case class TySet(value: TyNode) extends TyGeneric(List(value))
 
 case object TyJsonObject extends TyNode
-
+case object TyBoolean extends TyNode
 case object TyString extends TyNode
 case object TyChar extends TyNode
 

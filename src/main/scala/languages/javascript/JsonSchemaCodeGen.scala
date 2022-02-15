@@ -34,10 +34,30 @@ case object JsonSchemaCodeGen {
         JsonObject("type" -> Json.fromString("float"))
       case _: TyNumeric =>
         JsonObject("type" -> Json.fromString("numeric"))
+      case TyBoolean =>
+        JsonObject("type" -> Json.fromString("boolean"))
+      case _: TyDateTime =>
+        JsonObject(
+          "type" -> Json.fromString("string"),
+          "format" -> Json.fromString("date-time")
+        )
+      case TyTimeStamp(unit, _) =>
+        JsonObject(
+          "type" -> Json.fromString("integer"),
+          "format" -> Json.fromString("timestamp"),
+          "unit" -> Json.fromString(unit.toString)
+        )
       case TyVector(ty) =>
         JsonObject(
           "type" -> Json.fromString("array"),
           "items" -> Json.fromJsonObject(generateType(ty))
+        )
+      case TyJsonObject =>
+        JsonObject("type" -> Json.fromString("object"))
+      case TyEnum(variants, _) =>
+        JsonObject(
+          "enum" -> Json
+            .fromValues(variants.map(_.names.head).map(Json.fromString))
         )
       case struct: TyStruct =>
         JsonObject(
