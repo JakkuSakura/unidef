@@ -14,7 +14,11 @@ Unidef has some advantages over JSON Type Definition:
 4. Unidef supports more input types
 ## How to use
 ```shell
-# add a soft link to unidef
+# scala version
+sbt publishLocal
+sbt nativeImageRunAgent
+sbt nativeImage
+# python version
 pip install -e .
 ```
 ## Supported parsers
