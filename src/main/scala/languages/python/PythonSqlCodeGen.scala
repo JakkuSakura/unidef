@@ -4,15 +4,14 @@ package languages.python
 import languages.common._
 import languages.python.PythonCommon.convertType
 import languages.sql.SqlCommon.{Records, Schema}
-import utils.ExtKey
 
 import org.apache.velocity.VelocityContext
 
 import scala.jdk.CollectionConverters._
 
 private case class PythonField(name: String, ty: String)
-class PythonSqlCodeGen extends ExtKeyProvider {
-  override def keysOnFuncDecl: List[ExtKey] = List(Records, Schema)
+class PythonSqlCodeGen extends KeywordProvider {
+  override def keysOnFuncDecl: List[Keyword] = List(Records, Schema)
   private def convertToPythonField(node: TyField): PythonField =
     PythonField(node.name, convertType(node.value))
 

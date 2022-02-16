@@ -1,8 +1,6 @@
 package com.jeekrs.unidef
 package languages.common
 
-import utils.{ExtKey, ExtKeyBoolean, Extendable}
-
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{Decoder, ParsingFailure}
 
@@ -102,16 +100,16 @@ case class TyReference(referee: TyNode) extends TyNode
 
 case class TyNamed(name: String) extends TyNode
 
-case object Mutability extends ExtKeyBoolean
+case object Mutability extends KeywordBoolean
 
-case object Derive extends ExtKey {
+case object Derive extends Keyword {
   override type V = List[String]
 
   override def decoder: Option[Decoder[List[String]]] = Some(deriveDecoder)
 
 }
 
-case object Attributes extends ExtKey {
+case object Attributes extends Keyword {
   override type V = List[AstFunctionApply]
 }
 

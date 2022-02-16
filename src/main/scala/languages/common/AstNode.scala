@@ -1,8 +1,6 @@
 package com.jeekrs.unidef
 package languages.common
 
-import utils.{ExtKey, ExtKeyBoolean, ExtKeyString, Extendable}
-
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 
@@ -112,7 +110,7 @@ case class AstClassDecl(name: AstNode,
 }
 
 object AstClassDecl {
-  case object DataClass extends ExtKeyBoolean
+  case object DataClass extends KeywordBoolean
 }
 
 case class AstIdentifier(id: String) extends AstNode
@@ -149,7 +147,7 @@ case class AstRawCode(raw: String, lang: Option[String] = None) extends AstNode
 
 case class AstAnnotation(value: AstNode) extends AstNode
 
-case object AstAnnotations extends AstNode with ExtKey {
+case object AstAnnotations extends AstNode with Keyword {
   override type V = List[AstAnnotation]
 
   override def name: String = "annotations"
@@ -160,6 +158,6 @@ case object AstAnnotations extends AstNode with ExtKey {
     Some(lsDecoder)
 }
 
-case object AstComment extends AstNode with ExtKeyString {
+case object AstComment extends AstNode with KeywordString {
   override def name: String = "comment"
 }

@@ -2,13 +2,12 @@ package com.jeekrs.unidef
 package languages.javascript
 
 import languages.common._
-import utils.ExtKeyBoolean
 
 import io.circe.{Json, JsonObject}
 
 // meant for private use
-case object Required extends ExtKeyBoolean
-case object AdditionalProperties extends ExtKeyBoolean
+case object Required extends KeywordBoolean
+case object AdditionalProperties extends KeywordBoolean
 
 case object JsonSchemaCodeGen {
   def generateFuncDecl(func: AstFunctionDecl): String = {

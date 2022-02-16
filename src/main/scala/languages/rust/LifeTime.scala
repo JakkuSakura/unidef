@@ -1,11 +1,11 @@
 package com.jeekrs.unidef
 package languages.rust
 
-import utils.ExtKey
+import languages.common.Keyword
 
 sealed trait LifeTime
 
-case object LifeTime extends ExtKey {
+case object LifeTime extends Keyword {
   override type V = LifeTime
 
   case object StaticLifeTime extends LifeTime

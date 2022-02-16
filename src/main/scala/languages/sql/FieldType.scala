@@ -1,10 +1,10 @@
 package com.jeekrs.unidef
 package languages.sql
 
-import utils.ExtKeyBoolean
+import languages.common.KeywordBoolean
 
 object FieldType {
-  case object PrimaryKey extends ExtKeyBoolean
-  case object AutoIncr extends ExtKeyBoolean
-  case object Nullable extends ExtKeyBoolean
+  case object PrimaryKey extends KeywordBoolean
+  case object AutoIncr extends KeywordBoolean
+  case object Nullable extends KeywordBoolean
 }

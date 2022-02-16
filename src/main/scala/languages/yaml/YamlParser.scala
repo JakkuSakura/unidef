@@ -3,7 +3,6 @@ package languages.yaml
 
 import languages.common._
 import utils.JsonUtils.{getList, getString}
-import utils.{ExtKey}
 
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
@@ -140,11 +139,11 @@ object YamlParser {
 
     node
   }
-  private val extKeysForField = mutable.HashSet[ExtKey]()
-  private val extKeysForFuncDecl = mutable.HashSet[ExtKey]()
-  private val extKeysForClassDecl = mutable.HashSet[ExtKey]()
+  private val extKeysForField = mutable.HashSet[Keyword]()
+  private val extKeysForFuncDecl = mutable.HashSet[Keyword]()
+  private val extKeysForClassDecl = mutable.HashSet[Keyword]()
 
-  def prepareForExtKeys(obj: ExtKeyProvider): Unit = {
+  def prepareForExtKeys(obj: KeywordProvider): Unit = {
     extKeysForField ++= obj.keysOnField
     extKeysForFuncDecl ++= obj.keysOnFuncDecl
     extKeysForClassDecl ++= obj.keysOnClassDecl
@@ -172,8 +171,8 @@ object YamlParser {
     field
   }
   def collectExtKeys(content: JsonObject,
-                     keys: List[ExtKey]): List[(ExtKey, Any)] = {
-    val result = mutable.ArrayBuffer[(ExtKey, Any)]()
+                     keys: List[Keyword]): List[(Keyword, Any)] = {
+    val result = mutable.ArrayBuffer[(Keyword, Any)]()
     for (k <- keys) {
       content(k.name) match {
         case Some(value) =>

@@ -1,26 +1,13 @@
 package com.jeekrs.unidef
 package languages.sql
 
-import languages.common.{
-  BitSize,
-  TyDecimal,
-  TyEnum,
-  TyField,
-  TyFloat,
-  TyInteger,
-  TyJsonObject,
-  TyReal,
-  TyString,
-  TyStruct,
-  TyTimeStamp,
-  TyNode
-}
+import languages.common._
+
 import languages.sql.FieldType.{Nullable, PrimaryKey}
-import utils.{ExtKeyBoolean, ExtKeyString}
 
 case object SqlCommon {
-  case object Records extends ExtKeyBoolean
-  case object Schema extends ExtKeyString
+  case object Records extends KeywordBoolean
+  case object Schema extends KeywordString
   def convertReal(ty: TyReal): String = ty match {
     case TyDecimal(precision, scale) => s"decimal($precision, $scale)"
     case TyFloat(BitSize.B32)        => "real"
