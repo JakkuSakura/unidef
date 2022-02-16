@@ -11,12 +11,12 @@ import org.apache.velocity.VelocityContext
 import scala.jdk.CollectionConverters._
 
 private case class PythonField(name: String, ty: String)
-case object PythonSqlCodeGen extends ExtKeyProvider {
+class PythonSqlCodeGen extends ExtKeyProvider {
   override def keysOnFuncDecl: List[ExtKey] = List(Records, Schema)
   private def convertToPythonField(node: TyField): PythonField =
     PythonField(node.name, convertType(node.value))
 
-  private val TEMPLATE_GENERATE_FUNCTION_WRAPPER =
+  protected val template: String =
     """
       |async def $name(
       |#foreach($param in $params)
@@ -32,6 +32,24 @@ case object PythonSqlCodeGen extends ExtKeyProvider {
       |       raise Exception("Failed to execute database method")
       |    return result.data$post_op
       |""".stripMargin
+
+  protected def db_method(func: AstFunctionDecl): String = {
+    func.returnType match {
+      case AstUnit                                    => "void"
+      case AstTyped(TyList(_))                        => "record_list"
+      case _ if func.getValue(Records).contains(true) => "record_list"
+      case _: AstClassDecl                            => "data_table"
+      case AstTyped(TySet(_))                         => "record_set"
+      case AstTyped(_)                                => "void"
+    }
+  }
+  protected def post_op(func: AstFunctionDecl): String = {
+    func.returnType match {
+      case _: AstClassDecl => ".to_dict()"
+      case _               => ""
+    }
+  }
+
   def generateFuncWrapper(func: AstFunctionDecl): String = {
     val context = new VelocityContext()
     context.put("name", func.literalName.get)
@@ -44,21 +62,11 @@ case object PythonSqlCodeGen extends ExtKeyProvider {
     } else {
       context.put("return", convertType(returnType))
     }
-
-    context.put("method", func.returnType match {
-      case AstUnit                                    => "void"
-      case AstTyped(TyList(_))                        => "record_list"
-      case _ if func.getValue(Records).contains(true) => "record_list"
-      case _: AstClassDecl                            => "data_table"
-      case AstTyped(TySet(_))                         => "record_set"
-      case AstTyped(_)                                => "void"
-    })
-    context.put("post_op", func.returnType match {
-      case _: AstClassDecl => ".to_dict()"
-      case _               => ""
-    })
+    context.put("method", db_method(func))
+    context.put("post_op", post_op(func))
     context.put("schema", func.getValue(Schema).fold("")(x => s"$x."))
 
-    CodeGen.render(TEMPLATE_GENERATE_FUNCTION_WRAPPER.stripMargin, context)
+    CodeGen.render(template, context)
   }
 }
+object PythonSqlCodeGen extends PythonSqlCodeGen
