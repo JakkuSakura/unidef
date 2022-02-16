@@ -3,6 +3,7 @@ ThisBuild / organization := "com.jeekrs"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 idePackagePrefix := Some("com.jeekrs.unidef")
 // scala 2 has better tooling and IDE support, especially inlay hints
+resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 lazy val root = (project in file("."))
   .enablePlugins(NativeImagePlugin)
@@ -29,3 +30,5 @@ libraryDependencies += "org.apache.velocity" % "velocity-engine-core" % "2.3"
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"
+
+libraryDependencies += "com.github.jsqlparser" % "jsqlparser" % "4.3"
