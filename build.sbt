@@ -27,6 +27,7 @@ libraryDependencies += "io.circe" %% "circe-generic" % circeVersion
 
 // https://mvnrepository.com/artifact/org.apache.velocity/velocity-engine-core
 libraryDependencies += "org.apache.velocity" % "velocity-engine-core" % "2.3"
+libraryDependencies += "org.apache.velocity.tools" % "velocity-tools-generic" % "3.1"
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"

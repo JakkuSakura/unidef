@@ -30,6 +30,7 @@ case object SqlCommon {
     case TyEnum(_, true)       => "text"
     case TyEnum(_, false)      => "jsonb"
     case TyJsonObject          => "jsonb"
+    case TyUnit                => "void"
   }
   def convertToSqlField(node: TyField): SqlField = {
     val attributes = new StringBuilder()
