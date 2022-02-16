@@ -7,8 +7,6 @@ import languages.sql.SqlCodeGen
 import languages.sql.SqlCommon.{Records, Schema}
 import utils.CodeGen
 
-import org.apache.velocity.VelocityContext
-
 import scala.jdk.CollectionConverters._
 
 private case class PythonField(name: String, ty: String)
@@ -43,12 +41,13 @@ class PythonSqlCodeGen extends KeywordProvider {
       |    #end
       |""".stripMargin
 
-  def generateFuncWrapper(func: AstFunctionDecl): String = {
+  def generateFuncWrapper(func: AstFunctionDecl,
+                          percentage: Boolean = false): String = {
     val context = CodeGen.createContext
     context.put("name", func.literalName.get)
     context.put("params", func.parameters.map(convertToPythonField).asJava)
     context.put("db_func_name", func.literalName.get)
-    context.put("callfunc", SqlCodeGen.generateCallFunc(func))
+    context.put("callfunc", SqlCodeGen.generateCallFunc(func, percentage))
     val returnType = func.returnType.inferType
     context.put("records", func.getValue(Records).contains(true))
     if (func.getValue(Records).contains(true)) {

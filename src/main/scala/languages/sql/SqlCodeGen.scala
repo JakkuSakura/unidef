@@ -14,9 +14,15 @@ case object SqlCodeGen extends KeywordProvider {
   override def keysOnField: Seq[Keyword] = Seq(PrimaryKey, AutoIncr, Nullable)
   private val TEMPLATE_GENERATE_FUNCTION_CALL =
     """
+    |#if($percentage)
+    |#macro(generate_params)#foreach($param in $params)
+    |    $param => %s#if($foreach.hasNext), #end
+    |#end#end
+    |#else
     |#macro(generate_params)#foreach($param in $params)
     |    $param => ${esc.d}$foreach.count#if($foreach.hasNext), #end
     |#end#end
+    |#end
     |#if($records)
     |SELECT * FROM $schema${db_func_name}(
     |#generate_params()
@@ -27,7 +33,8 @@ case object SqlCodeGen extends KeywordProvider {
     |) AS _value;
     |#end
     |""".stripMargin
-  def generateCallFunc(func: AstFunctionDecl): String = {
+  def generateCallFunc(func: AstFunctionDecl,
+                       percentage: Boolean = false): String = {
     val context = CodeGen.createContext
 
     context.put("name", func.literalName.get)
@@ -35,7 +42,7 @@ case object SqlCodeGen extends KeywordProvider {
     context.put("db_func_name", func.literalName.get)
     context.put("schema", func.getValue(Schema).fold("")(x => s"$x."))
     context.put("records", func.getValue(Records).contains(true))
-
+    context.put("percentage", percentage)
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_CALL, context)
   }
   private val TEMPLATE_GENERATE_TABLE_DDL: String =
