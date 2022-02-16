@@ -39,7 +39,7 @@ class Extendable(params: mutable.Map[Keyword, Any] = mutable.HashMap()) {
 }
 
 trait KeywordProvider {
-  def keysOnField: List[Keyword] = List()
-  def keysOnFuncDecl: List[Keyword] = List()
-  def keysOnClassDecl: List[Keyword] = List()
+  def keysOnField: Seq[Keyword] = Seq()
+  def keysOnFuncDecl: Seq[Keyword] = Seq()
+  def keysOnClassDecl: Seq[Keyword] = Seq()
 }

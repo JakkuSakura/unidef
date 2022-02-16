@@ -11,7 +11,7 @@ import scala.jdk.CollectionConverters._
 
 private case class PythonField(name: String, ty: String)
 class PythonSqlCodeGen extends KeywordProvider {
-  override def keysOnFuncDecl: List[Keyword] = List(Records, Schema)
+  override def keysOnFuncDecl: Seq[Keyword] = List(Records, Schema)
   private def convertToPythonField(node: TyField): PythonField =
     PythonField(node.name, convertType(node.value))
 

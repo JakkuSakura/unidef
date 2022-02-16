@@ -11,8 +11,8 @@ import scala.jdk.CollectionConverters._
 
 case class SqlField(name: String, ty: String, attributes: String)
 case object SqlCodeGen extends KeywordProvider {
-  override def keysOnFuncDecl: List[Keyword] = List(Records, Schema)
-  override def keysOnField: List[Keyword] = List(PrimaryKey, AutoIncr, Nullable)
+  override def keysOnFuncDecl: Seq[Keyword] = Seq(Records, Schema)
+  override def keysOnField: Seq[Keyword] = Seq(PrimaryKey, AutoIncr, Nullable)
 
   def generateTableDdl(node: AstClassDecl): String = {
     val context = new VelocityContext()

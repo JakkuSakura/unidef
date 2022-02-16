@@ -7,7 +7,7 @@ import org.apache.velocity.runtime.RuntimeConstants
 import org.apache.velocity.runtime.resource.loader.StringResourceLoader
 import org.apache.velocity.runtime.resource.util.StringResourceRepository
 import org.apache.velocity.{Template, VelocityContext}
-
+import scala.jdk.CollectionConverters._
 import java.io.{StringWriter, Writer}
 
 object CodeGen {
@@ -30,8 +30,9 @@ object CodeGen {
                            |#end
                            |""".stripMargin)
 
-  val MACRO_LIBRARIES: java.util.List[Template] = new java.util.ArrayList()
-  MACRO_LIBRARIES.add(VELOCITY.getTemplate("macro"))
+  val MACRO_LIBRARIES: java.util.List[Template] = Seq(
+    VELOCITY.getTemplate("macro")
+  ).asJava
 
   def renderTo(templateSource: String,
                context: VelocityContext,

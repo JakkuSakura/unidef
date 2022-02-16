@@ -13,23 +13,23 @@ import java.util.concurrent.TimeUnit
 class TyNode extends Extendable
 
 // scala: Type[A, B, ..]
-class TyGeneric(val generics: List[TyNode]) extends TyNode
+class TyGeneric(val generics: Seq[TyNode]) extends TyNode
 
 // scala: (A, B)
-case class TyTuple(values: List[TyNode]) extends TyGeneric(values)
+case class TyTuple(values: Seq[TyNode]) extends TyGeneric(values)
 
 // scala: Option[A]
-case class TyOptional(value: TyNode) extends TyGeneric(List(value))
+case class TyOptional(value: TyNode) extends TyGeneric(Seq(value))
 
 // scala: Either[A, B] rust: Result<Ok, Err>
-case class TyResult(ok: TyNode, err: TyNode) extends TyGeneric(List(ok, err))
+case class TyResult(ok: TyNode, err: TyNode) extends TyGeneric(Seq(ok, err))
 
 // rust: Vec<T>
-case class TyVector(value: TyNode) extends TyGeneric(List(value))
+case class TyVector(value: TyNode) extends TyGeneric(Seq(value))
 
 // scala: A -> B
 case class TyMapping(key: TyNode, value: TyNode)
-    extends TyGeneric(List(key, value))
+    extends TyGeneric(Seq(key, value))
 
 sealed class BitSize(val bits: Int)
 
@@ -58,23 +58,22 @@ case class TyDecimal(precision: Int, scale: Int) extends TyReal
 case class TyFloat(bitSize: BitSize) extends TyReal
 
 // rust: enum with multiple names
-case class TyVariant(names: List[String]) extends TyNode
+case class TyVariant(names: Seq[String]) extends TyNode
 
-case class TyEnum(variants: List[TyVariant], simple_enum: Boolean = true)
+case class TyEnum(variants: Seq[TyVariant], simple_enum: Boolean = true)
     extends TyNode
 
 case class TyField(name: String, value: TyNode) extends TyNode
 
 case class TyStruct(name: String,
-                    fields: List[TyField],
+                    fields: Seq[TyField],
                     dataType: Boolean = false)
     extends TyNode
 
-case class TyDict(key: TyNode, value: TyNode)
-    extends TyGeneric(List(key, value))
+case class TyDict(key: TyNode, value: TyNode) extends TyGeneric(Seq(key, value))
 
-case class TyList(value: TyNode) extends TyGeneric(List(value))
-case class TySet(value: TyNode) extends TyGeneric(List(value))
+case class TyList(value: TyNode) extends TyGeneric(Seq(value))
+case class TySet(value: TyNode) extends TyGeneric(Seq(value))
 
 case object TyJsonObject extends TyNode
 case object TyBoolean extends TyNode
@@ -102,15 +101,17 @@ case class TyNamed(name: String) extends TyNode
 
 case object Mutability extends KeywordBoolean
 
+// #[derive(Debug)] in Rust
 case object Derive extends Keyword {
-  override type V = List[String]
+  override type V = Seq[String]
 
-  override def decoder: Option[Decoder[List[String]]] = Some(deriveDecoder)
+  override def decoder: Option[Decoder[Seq[String]]] =
+    Some(deriveDecoder[List[String]].map(_.toSeq))
 
 }
 
 case object Attributes extends Keyword {
-  override type V = List[AstFunctionApply]
+  override type V = Seq[AstFunctionApply]
 }
 
 object TypeParser {
