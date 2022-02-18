@@ -25,7 +25,7 @@ case class TyOptional(value: TyNode) extends TyGeneric(Seq(value))
 case class TyResult(ok: TyNode, err: TyNode) extends TyGeneric(Seq(ok, err))
 
 // rust: Vec<T>
-case class TyVector(value: TyNode) extends TyGeneric(Seq(value))
+case class TyVector(value: TyNode) extends TyGeneric(Seq(value)) with TyJson
 
 // scala: A -> B
 case class TyMapping(key: TyNode, value: TyNode)
@@ -46,7 +46,8 @@ object BitSize {
   case object BigInt extends BitSize(-1)
 }
 
-class TyNumeric extends TyNode
+class TyNumeric extends TyNode with TyJson
+
 case class TyInteger(bitSize: BitSize, signed: Boolean = true) extends TyNumeric
 
 class TyReal extends TyNumeric
@@ -60,8 +61,7 @@ case class TyFloat(bitSize: BitSize) extends TyReal
 // rust: enum with multiple names
 case class TyVariant(names: Seq[String]) extends TyNode
 
-case class TyEnum(variants: Seq[TyVariant], simple_enum: Boolean = true)
-    extends TyNode
+case class TyEnum(name: String, variants: Seq[TyVariant]) extends TyNode
 
 case class TyField(name: String, value: TyNode) extends TyNode
 
@@ -75,9 +75,12 @@ case class TyDict(key: TyNode, value: TyNode) extends TyGeneric(Seq(key, value))
 case class TyList(value: TyNode) extends TyGeneric(Seq(value))
 case class TySet(value: TyNode) extends TyGeneric(Seq(value))
 
-case object TyJsonObject extends TyNode
-case object TyBoolean extends TyNode
-case object TyString extends TyNode
+trait TyJson extends TyNode
+case object TyJsonAny extends TyJson
+case object TyJsonObject extends TyJson
+case object TyBoolean extends TyJson
+case object TyString extends TyJson
+
 case object TyChar extends TyNode
 
 case object TyAny extends TyNode

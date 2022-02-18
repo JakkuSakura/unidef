@@ -8,7 +8,8 @@ import scala.collection.mutable
 // Assume TypedValue is always type checked.
 
 trait Keyword {
-  type V
+  type V <: Any
+
   def name: String = getClass.getSimpleName.stripSuffix("$").toLowerCase
   def decoder: Option[Decoder[V]] = None
 }
@@ -32,10 +33,16 @@ class Extendable(params: mutable.Map[Keyword, Any] = mutable.HashMap()) {
   def getValue(key: Keyword): Option[key.V] =
     params.get(key).asInstanceOf[Option[key.V]]
 
-  def setValue[EK <: Keyword { type V = VV }, VV](key: Keyword, v: VV): Unit =
+  def setValue[EK <: Keyword, VV <: EK#V](key: EK, v: VV): this.type = {
     params += key -> v
-  def setValue(kv: (Keyword, Any)): Unit =
+    this
+  }
+
+  // type unsafe for sure
+  def setValue(kv: (Keyword, Any)): this.type = {
     params += kv
+    this
+  }
 }
 
 trait KeywordProvider {
