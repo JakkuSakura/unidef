@@ -25,6 +25,26 @@ object YamlType {
 }
 
 object YamlParser {
+
+  @throws[ParsingFailure]
+  def parseMarkdown(content: String): Seq[AstNode] = {
+    var isYaml = false
+    val sb = new mutable.StringBuilder()
+    for (line <- content.split("\n")) {
+      if (isYaml) {
+        sb += line
+        sb += "\n"
+      } else if (line.startsWith("```yaml")) {
+        isYaml = true
+      } else if (line.startsWith("```")) {
+        isYaml = false
+        sb += "---\n"
+      }
+    }
+
+    parseFile(sb.toString())
+  }
+
   @throws[ParsingFailure]
   def parseFile(content: String): Seq[AstNode] = {
     parser
