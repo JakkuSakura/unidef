@@ -15,6 +15,32 @@ object TextTool {
         .mkString("\n")
     }
   }
+  def find(text: String, pattern: String, startPos: Int = 0): Option[Int] = {
+    text.indexOf(pattern, startPos) match {
+      case -1 => None
+      case i  => Some(i)
+    }
+  }
+  def finds(text: Seq[String],
+            pattern: String,
+            startPos: Int = 0): Option[Int] = {
+    text.indexOf(pattern, startPos) match {
+      case -1 => None
+      case i  => Some(i)
+    }
+  }
+  def rfind(text: String, pattern: String): Option[Int] = {
+    text.lastIndexOf(pattern) match {
+      case -1 => None
+      case i  => Some(i)
+    }
+  }
+  def rfinds(text: Seq[String], pattern: String): Option[Int] = {
+    text.lastIndexOf(pattern) match {
+      case -1 => None
+      case i  => Some(i)
+    }
+  }
   def toSnakeCase(text: String): String =
     splitByCharacterTypeCamelCase(text).mkString("_").toLowerCase
 

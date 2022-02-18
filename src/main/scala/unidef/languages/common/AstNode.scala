@@ -74,19 +74,19 @@ case class AstLiteralStruct(values: Seq[(AstNode, AstNode)]) extends AstLiteral
 case class AstLiteralOptional(value: Option[AstNode]) extends AstLiteral
 
 sealed trait AccessModifier
-object AccessModifier {
+
+object AccessModifier extends Keyword {
+  override type V = AccessModifier
   case object Public extends AccessModifier
   case object Private extends AccessModifier
   case object Protected extends AccessModifier
   case object Package extends AccessModifier
   case class Limited(path: String) extends AccessModifier
-
 }
 
 case class AstFunctionDecl(name: AstNode,
                            parameters: Seq[TyField],
                            returnType: AstNode,
-                           access: AccessModifier,
                            body: AstNode)
     extends AstNode {
   def literalName: Option[String] = name match {
@@ -145,7 +145,7 @@ case class AstFunctionApply(func: AstFunctionIdent,
 
 case class AstAwait(value: AstNode) extends AstNode
 
-case class AstRawCode(raw: String, lang: Option[String] = None) extends AstNode
+case class AstRawCode(raw: String) extends AstNode
 
 case class AstAnnotation(value: AstNode) extends AstNode
 
@@ -165,6 +165,6 @@ case object AstComment extends AstNode with KeywordString {
 }
 
 case object Body extends KeywordOnly
-case object Language extends KeywordOnly
+case object Language extends KeywordString
 case object Parameters extends KeywordOnly
 case object Return extends KeywordOnly

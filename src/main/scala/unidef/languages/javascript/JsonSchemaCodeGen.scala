@@ -10,6 +10,7 @@ import unidef.languages.common.{
   TyFloat,
   TyInteger,
   TyJsonObject,
+  TyNamed,
   TyNode,
   TyNumeric,
   TyString,
@@ -80,6 +81,11 @@ case object JsonSchemaCodeGen {
                 .map(f => f.name -> Json.fromJsonObject(generateType(f.value)))
             )
           )
+        )
+      case TyNamed(name) =>
+        JsonObject(
+          "type" -> Json.fromString("object"),
+          "name" -> Json.fromString(name)
         )
     }
 }

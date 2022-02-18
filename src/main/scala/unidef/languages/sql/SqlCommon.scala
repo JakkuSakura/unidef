@@ -69,7 +69,7 @@ case object SqlCommon {
 
   def convertTypeFromSql(ty: String): TyNode = ty match {
     case "bigint"           => TyInteger(BitSize.B64)
-    case "int"              => TyInteger(BitSize.B32)
+    case "integer"          => TyInteger(BitSize.B32)
     case "smallint"         => TyInteger(BitSize.B16)
     case "double precision" => TyFloat(BitSize.B64)
     case "real"             => TyFloat(BitSize.B32)

@@ -71,7 +71,7 @@ case object SqlCodeGen extends KeywordProvider {
      |  $arg.name() $arg.ty()#if($foreach.hasNext),#end 
      |#end
      |)
-     |#if($return_table)
+     |#if(!$return_type)
      |RETURNS TABLE (
      |#foreach($arg in $return_table)
      |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
@@ -89,7 +89,7 @@ case object SqlCodeGen extends KeywordProvider {
     val context = CodeGen.createContext
     context.put("name", node.literalName.get)
     context.put("args", node.parameters.map(convertToSqlField).asJava)
-    context.put("language", node.body.asInstanceOf[AstRawCode].lang.get)
+    context.put("language", node.body.getValue(Language).get)
     context.put("body", node.body.asInstanceOf[AstRawCode].raw)
     context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
     node.returnType match {

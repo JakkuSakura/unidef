@@ -117,8 +117,7 @@ object YamlParser {
       AstLiteralString(name),
       parameters.toList,
       ret,
-      AccessModifier.Public,
-      AstRawCode(body, Some(language))
+      AstRawCode(body).setValue(Language, language)
     )
 
     collectExtKeys(content, extKeysForFuncDecl.toList)
