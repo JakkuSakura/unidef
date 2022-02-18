@@ -1,9 +1,22 @@
-package com.jeekrs.unidef
-package languages.javascript
-
-import languages.common._
+package unidef.languages.javascript
 
 import io.circe.{Json, JsonObject}
+import unidef.languages.common.{
+  AstFunctionDecl,
+  KeywordBoolean,
+  TyBoolean,
+  TyDateTime,
+  TyEnum,
+  TyFloat,
+  TyInteger,
+  TyJsonObject,
+  TyNode,
+  TyNumeric,
+  TyString,
+  TyStruct,
+  TyTimeStamp,
+  TyVector
+}
 
 // meant for private use
 case object Required extends KeywordBoolean

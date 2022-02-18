@@ -1,7 +1,19 @@
-package com.jeekrs.unidef
-package languages.python
+package unidef.languages.python
 
-import languages.common._
+import unidef.languages.common.{
+  TyChar,
+  TyDict,
+  TyFloat,
+  TyInteger,
+  TyJsonObject,
+  TyList,
+  TyNode,
+  TySet,
+  TyString,
+  TyStruct,
+  TyTimeStamp,
+  TyUnit
+}
 
 object PythonCommon {
   def convertType(node: TyNode): String =

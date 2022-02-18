@@ -1,7 +1,6 @@
-package com.jeekrs.unidef
-package languages.sql
+package unidef.languages.sql
 
-import languages.common.KeywordBoolean
+import unidef.languages.common.KeywordBoolean
 
 object FieldType {
   case object PrimaryKey extends KeywordBoolean

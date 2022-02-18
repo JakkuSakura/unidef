@@ -1,7 +1,6 @@
-package com.jeekrs.unidef
-package languages.rust
+package unidef.languages.rust
 
-import languages.common.Keyword
+import unidef.languages.common.Keyword
 
 sealed trait LifeTime
 

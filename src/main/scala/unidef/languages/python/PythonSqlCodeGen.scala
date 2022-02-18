@@ -1,11 +1,16 @@
-package com.jeekrs.unidef
-package languages.python
+package unidef.languages.python
 
-import languages.common._
-import languages.python.PythonCommon.convertType
-import languages.sql.SqlCodeGen
-import languages.sql.SqlCommon.{Records, Schema}
-import utils.CodeGen
+import PythonCommon.convertType
+import unidef.languages.common.{
+  AstFunctionDecl,
+  Keyword,
+  KeywordProvider,
+  TyField,
+  TyList
+}
+import unidef.languages.sql.SqlCodeGen
+import unidef.languages.sql.SqlCommon.{Records, Schema}
+import unidef.utils.CodeGen
 
 import scala.jdk.CollectionConverters._
 

@@ -1,15 +1,20 @@
-package com.jeekrs.unidef
-package languages.sql
+package unidef.languages.sql
 
-import languages.common._
-import languages.sql.SqlCommon.{Schema, convertTypeFromSql}
-
+import SqlCommon.{Schema, convertTypeFromSql}
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.create.function.CreateFunction
 import net.sf.jsqlparser.statement.create.table.{
   ColDataType,
   ColumnDefinition,
   CreateTable
+}
+import unidef.languages.common
+import unidef.languages.common.{
+  AstClassDecl,
+  AstLiteralString,
+  AstNode,
+  TyField,
+  TyNode
 }
 
 import scala.collection.mutable.ArrayBuffer
@@ -36,10 +41,12 @@ case class SqlParser() {
     takeBuffer
   }
   def parseCreateTable(tbl: CreateTable): AstClassDecl = {
-    AstClassDecl(
-      AstLiteralString(tbl.getTable.getName),
-      tbl.getColumnDefinitions.asScala.map(parseParseColumn).toSeq
-    ).setValue(Schema, tbl.getTable.getSchemaName)
+    common
+      .AstClassDecl(
+        AstLiteralString(tbl.getTable.getName),
+        tbl.getColumnDefinitions.asScala.map(parseParseColumn).toSeq
+      )
+      .setValue(Schema, tbl.getTable.getSchemaName)
   }
   def parseParseColumn(column: ColumnDefinition): TyField = {
     val ty = column.getColDataType

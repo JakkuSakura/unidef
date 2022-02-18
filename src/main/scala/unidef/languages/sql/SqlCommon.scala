@@ -1,10 +1,28 @@
-package com.jeekrs.unidef
-package languages.sql
+package unidef.languages.sql
 
-import languages.common._
-import languages.sql.FieldType.{Nullable, PrimaryKey}
+import FieldType.{Nullable, PrimaryKey}
+import unidef.languages.common.{
+  BitSize,
+  KeywordBoolean,
+  KeywordString,
+  TyDecimal,
+  TyEnum,
+  TyField,
+  TyFloat,
+  TyInteger,
+  TyJsonAny,
+  TyJsonObject,
+  TyNamed,
+  TyNode,
+  TyReal,
+  TyString,
+  TyStruct,
+  TyTimeStamp,
+  TyUnit
+}
 
 import java.util.concurrent.TimeUnit
+import scala.collection.mutable
 
 case object Oid extends KeywordBoolean {
   def get: TyInteger =
@@ -68,7 +86,7 @@ case object SqlCommon {
   }
 
   def convertToSqlField(node: TyField): SqlField = {
-    val attributes = new StringBuilder()
+    val attributes = new mutable.StringBuilder()
     if (node.getValue(PrimaryKey).contains(true))
       attributes ++= " PRIMARY KEY"
     if (!node.getValue(Nullable).contains(true))

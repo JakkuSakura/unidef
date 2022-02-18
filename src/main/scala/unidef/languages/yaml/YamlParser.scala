@@ -1,11 +1,10 @@
-package com.jeekrs.unidef
-package languages.yaml
-
-import languages.common._
-import utils.JsonUtils.{getList, getString}
+package unidef.languages.yaml
 
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
+import unidef.languages.common
+import unidef.languages.common._
+import unidef.utils.JsonUtils.{getList, getString}
 
 import scala.collection.mutable
 
@@ -114,7 +113,7 @@ object YamlParser {
       }))
       .getOrElse(AstUnit)
 
-    val node = AstFunctionDecl(
+    val node = common.AstFunctionDecl(
       AstLiteralString(name),
       parameters.toList,
       ret,
@@ -133,7 +132,7 @@ object YamlParser {
     val fields_arr = getList(content, "fields")
     val name = getString(content, "name")
 
-    val node = AstClassDecl(
+    val node = common.AstClassDecl(
       AstLiteralString(name),
       fields_arr
         .map(
@@ -147,9 +146,10 @@ object YamlParser {
 
     node
   }
-  private val extKeysForField = mutable.HashSet[Keyword]()
-  private val extKeysForFuncDecl = mutable.HashSet[Keyword]()
-  private val extKeysForClassDecl = mutable.HashSet[Keyword]()
+  private val extKeysForField = mutable.HashSet[Keyword](Name, Type, Fields)
+  private val extKeysForFuncDecl =
+    mutable.HashSet[Keyword](Name, Type, Body, Language, Parameters, Return)
+  private val extKeysForClassDecl = mutable.HashSet[Keyword](Name, Type, Fields)
 
   def prepareForExtKeys(obj: KeywordProvider): Unit = {
     extKeysForField ++= obj.keysOnField
@@ -173,33 +173,25 @@ object YamlParser {
         null
       )
     }
-
-    collectExtKeys(content, extKeysForField.toList).foreach(field.setValue)
+    if (content("name").isDefined)
+      collectExtKeys(content, extKeysForField.toList).foreach(field.setValue)
 
     field
   }
   def collectExtKeys(content: JsonObject,
-                     keys: Seq[Keyword],
-                     ignore: Seq[String] = Nil): Seq[(Keyword, Any)] = {
-    content.toMap.iterator
-      .filterNot { case (k, v) => ignore.contains(k) }
-      .map {
-        case (k, v) =>
-          keys
-            .find(kk => kk.name == k && kk.decoder.isDefined)
-            .map((_, v))
-            .getOrElse(
-              throw ParsingFailure(s"${k} is not needed for field", null)
-            )
-      }
-      .map {
-        case (k, v) =>
-          k -> v
-            .as[k.V](k.decoder.get)
-            .toTry
-            .get
-      }
-      .toSeq
+                     keywords: Seq[Keyword],
+  ): Seq[(Keyword, Any)] = {
+    content.keys.iterator.flatMap { key =>
+      keywords
+        .find(kw => kw.name == key)
+        .fold {
+          throw ParsingFailure(s"${key} is not needed in " + content, null)
+        } {
+          case kw if kw.decoder.isDefined =>
+            Some(kw -> content(key).get.as[kw.V](kw.decoder.get))
+          case _ => None
+        }
+    }.toSeq
   }
 
 }

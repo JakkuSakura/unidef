@@ -1,5 +1,4 @@
-package com.jeekrs.unidef
-package languages.common
+package unidef.languages.common
 
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{Decoder, ParsingFailure}
@@ -115,7 +114,11 @@ case object Derive extends Keyword {
 
 case object Attributes extends Keyword {
   override type V = Seq[AstFunctionApply]
+
 }
+case object Fields extends KeywordOnly
+case object Name extends KeywordOnly
+case object Type extends KeywordOnly
 
 object TypeParser {
   def parse(ty: String): Either[ParsingFailure, TyNode] =

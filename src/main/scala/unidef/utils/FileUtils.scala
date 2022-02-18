@@ -1,5 +1,4 @@
-package com.jeekrs.unidef
-package utils
+package unidef.utils
 
 import scala.io.Source
 

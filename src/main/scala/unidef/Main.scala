@@ -1,23 +1,22 @@
-package com.jeekrs.unidef
+package unidef
 
-import languages.common.{AstClassDecl, AstFunctionDecl}
-import languages.python.PythonSqlCodeGen
-import languages.sql.{SqlCodeGen, SqlParser}
-import languages.sql.SqlCodeGen.{generateFunctionDdl, generateTableDdl}
-import languages.yaml.YamlParser
-
-import com.jeekrs.unidef.languages.javascript.JsonSchemaCodeGen
-import com.jeekrs.unidef.utils.FileUtils
-
-import scala.io.Source
+import unidef.languages.common.{AstClassDecl, AstFunctionDecl}
+import unidef.languages.javascript.JsonSchemaCodeGen
+import unidef.languages.python.PythonSqlCodeGen
+import unidef.languages.sql.SqlCodeGen.{generateFunctionDdl, generateTableDdl}
+import unidef.languages.sql.{SqlCodeGen, SqlParser}
+import unidef.languages.yaml.YamlParser
+import unidef.utils.FileUtils
 
 object Main {
+  YamlParser.prepareForExtKeys(PythonSqlCodeGen)
+  YamlParser.prepareForExtKeys(SqlCodeGen)
+
   def main(args: Array[String]): Unit = {
     val filename = args(0)
     val fileContents = FileUtils.openFile(filename)
     val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
-      YamlParser.prepareForExtKeys(PythonSqlCodeGen)
-      YamlParser.prepareForExtKeys(SqlCodeGen)
+
       YamlParser.parseFile(fileContents)
     } else if (filename.endsWith(".sql"))
       SqlParser().parse(fileContents)

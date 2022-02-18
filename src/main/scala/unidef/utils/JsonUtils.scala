@@ -1,5 +1,4 @@
-package com.jeekrs.unidef
-package utils
+package unidef.utils
 
 import io.circe.{Decoder, Json, JsonObject, ParsingFailure}
 
@@ -35,6 +34,7 @@ object JsonUtils {
       .flatMap(_.asArray.toRight(ParsingFailure(name + " is not list", null)))
       .toTry
       .get
+
   @throws[ParsingFailure]
   def getObject(obj: JsonObject, name: String): JsonObject =
     getProperty(obj, name)

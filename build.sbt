@@ -33,3 +33,6 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"
 
 libraryDependencies += "com.github.jsqlparser" % "jsqlparser" % "4.3"
+
+// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.12.0"

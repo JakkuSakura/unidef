@@ -1,7 +1,7 @@
-package com.jeekrs.unidef
-package languages.common
+package unidef.languages.common
 
 import io.circe.Decoder
+import unidef.utils.TextTool.toSnakeCase
 
 import scala.collection.mutable
 
@@ -10,7 +10,8 @@ import scala.collection.mutable
 trait Keyword {
   type V <: Any
 
-  def name: String = getClass.getSimpleName.stripSuffix("$").toLowerCase
+  def name: String =
+    toSnakeCase(getClass.getSimpleName.stripSuffix("$"))
   def decoder: Option[Decoder[V]] = None
 }
 
@@ -27,6 +28,10 @@ trait KeywordString extends Keyword {
 trait KeywordInt extends Keyword {
   override type V = Int
   override def decoder: Option[Decoder[V]] = Some(Decoder.decodeInt)
+}
+
+trait KeywordOnly extends Keyword {
+  override type V = Unit
 }
 
 class Extendable(params: mutable.Map[Keyword, Any] = mutable.HashMap()) {

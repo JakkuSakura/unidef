@@ -1,5 +1,4 @@
-package com.jeekrs.unidef
-package languages.common
+package unidef.languages.common
 
 import io.circe.Decoder
 import io.circe.generic.semiauto._
@@ -39,10 +38,13 @@ case class ConditionalNode(test: AstNode, success: AstNode, failure: AstNode)
     extends AstNode
 
 sealed trait FlowControl
-case object Next extends FlowControl
-case object Continue extends FlowControl
-case object Break extends FlowControl
-case object Return extends FlowControl
+object FlowControl {
+  case object Next extends FlowControl
+  case object Break extends FlowControl
+  case object Continue extends FlowControl
+  case object Return extends FlowControl
+  case object Throw extends FlowControl
+}
 
 case class AstFlowControl(flow: FlowControl, value: AstNode) extends AstNode
 
@@ -161,3 +163,8 @@ case object AstAnnotations extends AstNode with Keyword {
 case object AstComment extends AstNode with KeywordString {
   override def name: String = "comment"
 }
+
+case object Body extends KeywordOnly
+case object Language extends KeywordOnly
+case object Parameters extends KeywordOnly
+case object Return extends KeywordOnly

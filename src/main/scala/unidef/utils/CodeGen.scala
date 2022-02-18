@@ -1,5 +1,4 @@
-package com.jeekrs.unidef
-package utils
+package unidef.utils
 
 import org.apache.velocity.app.VelocityEngine
 import org.apache.velocity.exception.ResourceNotFoundException
@@ -7,9 +6,9 @@ import org.apache.velocity.runtime.RuntimeConstants
 import org.apache.velocity.runtime.resource.ResourceCacheImpl
 import org.apache.velocity.runtime.resource.loader.StringResourceLoader
 import org.apache.velocity.runtime.resource.util.StringResourceRepository
+import org.apache.velocity.tools.{ToolContext, ToolManager}
 import org.apache.velocity.{Template, VelocityContext}
 import org.slf4j.helpers.NOPLogger
-import org.apache.velocity.tools.{ToolContext, ToolManager}
 
 import java.io.{StringWriter, Writer}
 import scala.jdk.CollectionConverters._
@@ -78,19 +77,4 @@ object CodeGen {
     writer.toString
   }
   def createContext: VelocityContext = new VelocityContext(enhancedContext)
-}
-
-object TextTool {
-  def indent(text: String, indent: Int): String = {
-    val indentStr = " " * indent
-    val spt = text.split("\n")
-    if (spt.length == 1)
-      spt(0)
-    else {
-      spt.head + "\n" + (1 until spt.length)
-        .map(spt(_))
-        .map(indentStr + _)
-        .mkString("\n")
-    }
-  }
 }

@@ -1,16 +1,20 @@
-package com.jeekrs.unidef
-package languages.sql
+package unidef.languages.sql
 
-import languages.common._
-import languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
-import languages.sql.SqlCommon.{Records, Schema, convertToSqlField, convertType}
-import utils.CodeGen
+import unidef.languages.common._
+import unidef.languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
+import unidef.languages.sql.SqlCommon.{
+  Records,
+  Schema,
+  convertToSqlField,
+  convertType
+}
+import unidef.utils.CodeGen
 
 import scala.jdk.CollectionConverters._
 
 case class SqlField(name: String, ty: String, attributes: String)
 case object SqlCodeGen extends KeywordProvider {
-  override def keysOnFuncDecl: Seq[Keyword] = Seq(Records, Schema)
+  override def keysOnFuncDecl: Seq[Keyword] = Seq(Records, Schema, Body)
   override def keysOnField: Seq[Keyword] = Seq(PrimaryKey, AutoIncr, Nullable)
   private val TEMPLATE_GENERATE_FUNCTION_CALL =
     """
