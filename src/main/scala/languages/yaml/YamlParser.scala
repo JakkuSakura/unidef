@@ -26,27 +26,17 @@ object YamlType {
 
 object YamlParser {
   @throws[ParsingFailure]
-  def parseFile(content: String): List[AstNode] = {
-    val agg = mutable.ArrayBuffer[AstNode]()
-    for (v <- parser.parseDocuments(content)) {
-      val content = v.toTry.get
-      content.foldWith(new Json.Folder[Unit] {
-        override def onObject(value: JsonObject): Unit = agg += parseDecl(value)
-
-        override def onNull: Unit = {}
-
-        override def onBoolean(value: Boolean): Unit = {}
-
-        override def onNumber(value: JsonNumber): Unit = {}
-
-        override def onString(value: String): Unit = {}
-
-        override def onArray(value: Vector[Json]): Unit = {}
-      })
-    }
-
-    agg.toList
-
+  def parseFile(content: String): Seq[AstNode] = {
+    parser
+      .parseDocuments(content)
+      .flatMap {
+        case Right(j) if j.isNull   => None
+        case Right(o) if o.isObject => Some(o.asObject.get)
+        case Right(o) =>
+          throw new ParsingFailure("Invalid doc. Object only: " + o, null)
+        case Left(err) => throw err
+      }
+      .map(parseDecl)
   }
 
   @throws[ParsingFailure]
@@ -79,31 +69,29 @@ object YamlParser {
       .map(parseFieldType)
 
     val ret = content("return")
-      .map(x => {
-        x.foldWith(new Json.Folder[AstNode] {
+      .map(_.foldWith(new Json.Folder[AstNode] {
 
-          override def onString(value: String): AstNode =
-            AstTyped(TypeParser.parse(value).toTry.get)
+        override def onString(value: String): AstNode =
+          AstTyped(TypeParser.parse(value).toTry.get)
 
-          override def onArray(value: Vector[Json]): AstNode = {
-            parseStruct(
-              JsonObject(
-                ("name", Json.fromString("unnamed")),
-                ("fields", Json.fromValues(value))
-              )
+        override def onArray(value: Vector[Json]): AstNode = {
+          parseStruct(
+            JsonObject(
+              ("name", Json.fromString("unnamed")),
+              ("fields", Json.fromValues(value))
             )
-          }
+          )
+        }
 
-          override def onObject(value: JsonObject): AstNode =
-            parseStruct(value)
+        override def onObject(value: JsonObject): AstNode =
+          parseStruct(value)
 
-          override def onNull: AstNode = ???
+        override def onNull: AstNode = ???
 
-          override def onBoolean(value: Boolean): AstNode = ???
+        override def onBoolean(value: Boolean): AstNode = ???
 
-          override def onNumber(value: JsonNumber): AstNode = ???
-        })
-      })
+        override def onNumber(value: JsonNumber): AstNode = ???
+      }))
       .getOrElse(AstUnit)
 
     val node = AstFunctionDecl(
@@ -171,32 +159,27 @@ object YamlParser {
     field
   }
   def collectExtKeys(content: JsonObject,
-                     keys: List[Keyword]): List[(Keyword, Any)] = {
-    val result = mutable.ArrayBuffer[(Keyword, Any)]()
-    for (k <- keys) {
-      content(k.name) match {
-        case Some(value) =>
-          val v = value
-            .as[k.V](
-              k.decoder
-                .toRight(
-                  ParsingFailure(
-                    s"${k.name} should not be used as key for field",
-                    null
-                  )
-                )
-                .toTry
-                .get
+                     keys: Seq[Keyword],
+                     ignore: Seq[String] = Nil): Seq[(Keyword, Any)] = {
+    content.toMap.iterator
+      .filterNot { case (k, v) => ignore.contains(k) }
+      .map {
+        case (k, v) =>
+          keys
+            .find(kk => kk.name == k && kk.decoder.isDefined)
+            .map((_, v))
+            .getOrElse(
+              throw ParsingFailure(s"${k} is not needed for field", null)
             )
+      }
+      .map {
+        case (k, v) =>
+          k -> v
+            .as[k.V](k.decoder.get)
             .toTry
             .get
-          result += k -> v
-
-        case None =>
       }
-
-    }
-    result.toList
+      .toSeq
   }
 
 }
