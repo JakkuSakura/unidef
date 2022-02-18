@@ -1,7 +1,7 @@
 ThisBuild / scalaVersion := "2.13.8"
 ThisBuild / organization := "com.jeekrs"
 ThisBuild / version := "0.1.0-SNAPSHOT"
-idePackagePrefix := Some("com.jeekrs.unidef")
+Global / onChangedBuildSource := ReloadOnSourceChanges
 // scala 2 has better tooling and IDE support, especially inlay hints
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 

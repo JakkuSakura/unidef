@@ -53,7 +53,7 @@ case object JsonSchemaCodeGen {
         )
       case TyJsonObject =>
         JsonObject("type" -> Json.fromString("object"))
-      case TyEnum(variants, _) =>
+      case TyEnum(_, variants) =>
         JsonObject(
           "enum" -> Json
             .fromValues(variants.map(_.names.head).map(Json.fromString))

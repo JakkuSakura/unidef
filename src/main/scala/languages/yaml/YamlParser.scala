@@ -32,13 +32,13 @@ object YamlParser {
     val sb = new mutable.StringBuilder()
     for (line <- content.split("\n")) {
       if (isYaml) {
-        sb += line
-        sb += "\n"
+        sb ++= line
+        sb ++= "\n"
       } else if (line.startsWith("```yaml")) {
         isYaml = true
       } else if (line.startsWith("```")) {
         isYaml = false
-        sb += "---\n"
+        sb ++= "---\n"
       }
     }
 
