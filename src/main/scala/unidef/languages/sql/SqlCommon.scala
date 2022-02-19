@@ -5,6 +5,7 @@ import unidef.languages.common.{
   BitSize,
   KeywordBoolean,
   KeywordString,
+  TyBoolean,
   TyDecimal,
   TyEnum,
   TyField,
@@ -65,6 +66,7 @@ case object SqlCommon {
     case TyJsonObject                                                => "jsonb"
     case TyUnit                                                      => "void"
     case TyNamed(name)                                               => name
+    case TyBoolean                                                   => "boolean"
   }
 
   def convertTypeFromSql(ty: String): TyNode = ty match {
@@ -82,6 +84,7 @@ case object SqlCommon {
     case "jsonb"            => TyJsonAny
     case "void"             => TyUnit
     case "oid"              => Oid.get
+    case "boolean"          => TyBoolean
     case others             => TyNamed(others)
   }
 
