@@ -1,19 +1,8 @@
 package unidef.languages.python
 
-import unidef.languages.common.{
-  TyChar,
-  TyDict,
-  TyFloat,
-  TyInteger,
-  TyJsonObject,
-  TyList,
-  TyNode,
-  TySet,
-  TyString,
-  TyStruct,
-  TyTimeStamp,
-  TyUnit
-}
+import unidef.languages.common._
+
+import java.util.concurrent.TimeUnit
 
 object PythonCommon {
   def convertType(node: TyNode): String =
@@ -29,7 +18,19 @@ object PythonCommon {
       case TySet(v)                              => s"Set[${convertType(v)}]"
       case TyJsonObject                          => "Any"
       case TyUnit                                => "NoneType"
-      case TyTimeStamp(timeUnit, timezone)       => "datetime.datetime"
+      case TyTimeStamp()                         => "datetime.datetime"
+      case TyBoolean                             => "bool"
       case t                                     => s"'$t'"
+    }
+  def convertTypeFromPy(ty: String): TyNode =
+    ty match {
+      case "int"               => TyInteger(BitSize.Unlimited)
+      case "float"             => TyFloat(BitSize.Unlimited)
+      case "str"               => TyString
+      case "bool"              => TyBoolean
+      case "NoneType"          => TyUnit
+      case "datetime.datetime" => TyTimeStamp()
+      case "Dict[str, Any]"    => TyJsonObject
+      case _                   => TyString
     }
 }

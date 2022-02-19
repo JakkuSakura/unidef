@@ -34,17 +34,25 @@ trait KeywordOnly extends Keyword {
   override type V = Unit
 }
 
-class Extendable(params: mutable.Map[Keyword, Any] = mutable.HashMap()) {
+class Extendable(
+  private val params: mutable.Map[Keyword, Any] = mutable.HashMap()
+) {
+  private def ensureModifiable(): Unit =
+    if (this.getClass.getSimpleName.endsWith("$"))
+      throw new Exception("Cannot modify a Extendable object.")
+
   def getValue(key: Keyword): Option[key.V] =
     params.get(key).asInstanceOf[Option[key.V]]
 
   def setValue[EK <: Keyword, VV <: EK#V](key: EK, v: VV): this.type = {
+    ensureModifiable()
     params += key -> v
     this
   }
 
   // type unsafe for sure
   def setValue(kv: (Keyword, Any)): this.type = {
+    ensureModifiable()
     params += kv
     this
   }

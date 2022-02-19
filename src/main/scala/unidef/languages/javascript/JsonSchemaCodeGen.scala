@@ -3,6 +3,7 @@ package unidef.languages.javascript
 import io.circe.{Json, JsonObject}
 import unidef.languages.common.{
   AstFunctionDecl,
+  HasTimeUnit,
   KeywordBoolean,
   TyBoolean,
   TyDateTime,
@@ -54,11 +55,15 @@ case object JsonSchemaCodeGen {
           "type" -> Json.fromString("string"),
           "format" -> Json.fromString("date-time")
         )
-      case TyTimeStamp(unit, _) =>
+      case t: TyTimeStamp =>
         JsonObject(
           "type" -> Json.fromString("integer"),
           "format" -> Json.fromString("timestamp"),
-          "unit" -> Json.fromString(unit.toString)
+          "unit" -> t
+            .getValue(HasTimeUnit)
+            .map(_.toString)
+            .map(Json.fromString)
+            .getOrElse(Json.Null)
         )
       case TyVector(ty) =>
         JsonObject(

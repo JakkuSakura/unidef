@@ -3,6 +3,8 @@ package unidef.languages.sql
 import FieldType.{Nullable, PrimaryKey}
 import unidef.languages.common.{
   BitSize,
+  HasTimeUnit,
+  HasTimeZone,
   KeywordBoolean,
   KeywordString,
   TyBoolean,
@@ -53,11 +55,12 @@ case object SqlCommon {
       }
   }
   def convertType(ty: TyNode): String = ty match {
-    case t: TyReal            => convertReal(t)
-    case t: TyInteger         => convertInt(t)
-    case TyTimeStamp(_, true) => "timestamp with time zone"
+    case t: TyReal    => convertReal(t)
+    case t: TyInteger => convertInt(t)
+    case t: TyTimeStamp if t.getValue(HasTimeZone).contains(true) =>
+      "timestamp with time zone"
     //case TimeStampType(_, false) => "timestamp without time zone"
-    case TyTimeStamp(_, false)                                       => "timestamp"
+    case TyTimeStamp()                                               => "timestamp"
     case TyString                                                    => "text"
     case TyStruct(_, _, _)                                           => "jsonb"
     case x @ TyEnum("", _) if x.getValue(SimpleEnum).contains(false) => "jsonb"
@@ -74,12 +77,16 @@ case object SqlCommon {
     case "integer"          => TyInteger(BitSize.B32)
     case "smallint"         => TyInteger(BitSize.B16)
     case "double precision" => TyFloat(BitSize.B64)
-    case "real"             => TyFloat(BitSize.B32)
-    case "decimal"          => ??? // TyDecimal()
+    case "real" | "float"   => TyFloat(BitSize.B32)
+    case "decimal"          => TyDecimal(None, None)
     case "timestamp" | "timestamp without time zone" =>
-      TyTimeStamp(TimeUnit.MILLISECONDS, timezone = false)
+      TyTimeStamp()
+        .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
+        .setValue(HasTimeZone, false)
     case "timestamp with time zone" =>
-      TyTimeStamp(TimeUnit.MILLISECONDS, timezone = true)
+      TyTimeStamp()
+        .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
+        .setValue(HasTimeZone, true)
     case "text" | "varchar" => TyString
     case "jsonb"            => TyJsonAny
     case "void"             => TyUnit

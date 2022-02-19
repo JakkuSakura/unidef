@@ -42,7 +42,7 @@ object BitSize {
   case object B2 extends BitSize(2)
   case object B1 extends BitSize(1)
   case object Unknown extends BitSize(0)
-  case object BigInt extends BitSize(-1)
+  case object Unlimited extends BitSize(-1)
 }
 
 class TyNumeric extends TyNode with TyJson
@@ -52,7 +52,7 @@ case class TyInteger(bitSize: BitSize, signed: Boolean = true) extends TyNumeric
 class TyReal extends TyNumeric
 
 // sql: decimal(p, s)
-case class TyDecimal(precision: Int, scale: Int) extends TyReal
+case class TyDecimal(precision: Option[Int], scale: Option[Int]) extends TyReal
 
 // scala: f32, f64
 case class TyFloat(bitSize: BitSize) extends TyReal
@@ -92,8 +92,13 @@ case object TyUnknown extends TyNode
 
 case object TyUndefined extends TyNode
 
-case class TyTimeStamp(timeUnit: TimeUnit, timezone: Boolean = false)
-    extends TyNode
+case class TyTimeStamp() extends TyNode
+
+case object HasTimeUnit extends Keyword {
+  override type V = java.util.concurrent.TimeUnit
+}
+
+case object HasTimeZone extends KeywordBoolean
 
 case class TyDateTime(timezone: Option[TimeZone]) extends TyNode
 
@@ -132,9 +137,9 @@ object TypeParser {
       case "str" | "string" | "varchar" | "text" => Right(TyString)
       case "json" | "jsonb"                      => Right(TyJsonObject)
       case "timestamp" =>
-        Right(TyTimeStamp(TimeUnit.MILLISECONDS, timezone = false))
+        Right(TyTimeStamp())
       case "timestamptz" =>
-        Right(TyTimeStamp(TimeUnit.MILLISECONDS, timezone = true))
+        Right(TyTimeStamp())
       case _ => Left(ParsingFailure("Unknown type " + ty, null))
 
     }
