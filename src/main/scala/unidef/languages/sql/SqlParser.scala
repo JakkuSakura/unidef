@@ -1,6 +1,5 @@
 package unidef.languages.sql
 
-import SqlCommon.{Records, Schema, convertTypeFromSql}
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.create.function.CreateFunction
 import net.sf.jsqlparser.statement.create.table.{
@@ -9,19 +8,9 @@ import net.sf.jsqlparser.statement.create.table.{
   CreateTable
 }
 import unidef.languages.common
-import unidef.languages.common.{
-  AccessModifier,
-  AstClassDecl,
-  AstFunctionDecl,
-  AstLiteralString,
-  AstNode,
-  AstRawCode,
-  AstTyped,
-  Language,
-  TyField,
-  TyNode
-}
-import unidef.utils.TextTool.{find, finds, rfind}
+import unidef.languages.common._
+import unidef.languages.sql.SqlCommon.{Records, Schema, convertTypeFromSql}
+import unidef.utils.TextTool.finds
 
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
@@ -30,9 +19,10 @@ case class SqlParser() {
   // does not support default value yet
 
   def parse(sql: String): Seq[AstNode] = {
-    var collected = ArrayBuffer[AstNode]()
+    val cleaned = stripDefaultValues(sql)
+    val collected = ArrayBuffer[AstNode]()
 
-    val stmts = CCJSqlParserUtil.parseStatements(sql)
+    val stmts = CCJSqlParserUtil.parseStatements(cleaned)
     stmts.getStatements.asScala.foreach {
       case table: CreateTable => collected += parseCreateTable(table)
       case func: CreateFunction =>
@@ -50,6 +40,8 @@ case class SqlParser() {
     }
     collected.toSeq
   }
+  private def stripDefaultValues(sql: String): String =
+    sql.replaceAll("(DEFAULT|default).+?(?=,|\\n|not|NOT)", "")
 
   private def parseParam(args: Seq[String]): (Boolean, TyField) = {
     var cursor = 0
