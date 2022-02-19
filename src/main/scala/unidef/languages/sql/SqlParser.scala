@@ -50,7 +50,7 @@ case class SqlParser() {
         case (k, v) =>
           k -> v
             .split(",")
-            .map(StringUtils.strip(_, "'"))
+            .map(StringUtils.strip(_, " '"))
             .map(x => TyVariant(Seq(x)))
       }
       .map {
