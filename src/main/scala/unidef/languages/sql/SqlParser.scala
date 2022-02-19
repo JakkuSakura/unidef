@@ -7,6 +7,7 @@ import net.sf.jsqlparser.statement.create.table.{
   ColumnDefinition,
   CreateTable
 }
+import org.apache.commons.lang3.StringUtils
 import unidef.languages.common
 import unidef.languages.common._
 import unidef.languages.sql.SqlCommon.{Records, Schema, convertTypeFromSql}
@@ -14,14 +15,15 @@ import unidef.utils.TextTool.finds
 
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
+import scala.util.matching.Regex
 
 case class SqlParser() {
   // does not support default value yet
 
   def parse(sql: String): Seq[AstNode] = {
-    val cleaned = stripDefaultValues(sql)
     val collected = ArrayBuffer[AstNode]()
-
+    collected ++= extractEnums(sql).map(AstTyped)
+    val cleaned = stripUnsurpported(sql)
     val stmts = CCJSqlParserUtil.parseStatements(cleaned)
     stmts.getStatements.asScala.foreach {
       case table: CreateTable => collected += parseCreateTable(table)
@@ -40,8 +42,32 @@ case class SqlParser() {
     }
     collected.toSeq
   }
-  private def stripDefaultValues(sql: String): String =
-    sql.replaceAll("(DEFAULT|default).+?(?=,|\\n|not|NOT)", "")
+  private def extractEnums(sql: String): Seq[TyEnum] = {
+    new Regex("CREATE\\s+TYPE\\s+(.+)\\s+AS\\s+enum\\s+\\((.+?)\\);")
+      .findAllMatchIn(sql)
+      .map(m => m.group(1) -> m.group(2))
+      .map {
+        case (k, v) =>
+          k -> v
+            .split(",")
+            .map(StringUtils.strip(_, "'"))
+            .map(x => TyVariant(Seq(x)))
+      }
+      .map {
+        case (k, v) => TyEnum(k, v)
+      }
+      .toSeq
+  }
+  private def stripUnsurpported(sql: String): String = {
+    sql
+      .replaceAll("(DEFAULT|default).+?(?=,|\\n|not|NOT)", "")
+      .replaceAll("CREATE SCHEMA.+?;", "")
+      .replaceAll("CREATE SEQUENCE(.|\\n)+?;", "")
+      .replaceAll("CREATE TYPE(.|\\n)+?;", "")
+      .replaceAll("NOT DEFERRABLE", "")
+      .replaceAll("INITIALLY IMMEDIATE", "")
+      .replaceAll("CREATE (UNIQUE)? INDEX(.|\\n)+?;", "")
+  }
 
   private def parseParam(args: Seq[String]): (Boolean, TyField) = {
     var cursor = 0
