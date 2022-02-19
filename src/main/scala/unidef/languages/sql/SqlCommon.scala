@@ -62,7 +62,7 @@ case object SqlCommon {
     //case TimeStampType(_, false) => "timestamp without time zone"
     case TyTimeStamp()                                               => "timestamp"
     case TyString                                                    => "text"
-    case TyStruct(_, _, _)                                           => "jsonb"
+    case TyStruct(_, _)                                              => "jsonb"
     case x @ TyEnum("", _) if x.getValue(SimpleEnum).contains(false) => "jsonb"
     case TyEnum("", _)                                               => "text"
     case TyEnum(name, _)                                             => name

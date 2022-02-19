@@ -89,13 +89,16 @@ case object SqlCodeGen extends KeywordProvider {
     val context = CodeGen.createContext
     context.put("name", node.literalName.get)
     context.put("args", node.parameters.map(convertToSqlField).asJava)
-    context.put("language", node.body.getValue(Language).get)
-    context.put("body", node.body.asInstanceOf[AstRawCode].raw)
+    context.put(
+      "language",
+      node.body.get.asInstanceOf[AstRawCode].getValue(Language).get
+    )
+    context.put("body", node.body.get.asInstanceOf[AstRawCode].raw)
     context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
     node.returnType match {
-      case AstClassDecl(_, fields, _, _) =>
+      case TyStruct(_, fields) =>
         context.put("return_table", fields.map(convertToSqlField).asJava)
-      case a => context.put("return_type", convertType(a.inferType))
+      case a => context.put("return_type", convertType(a))
     }
 
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_DDL, context)

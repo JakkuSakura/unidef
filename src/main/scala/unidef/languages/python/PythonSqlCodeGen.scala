@@ -53,7 +53,7 @@ class PythonSqlCodeGen extends KeywordProvider {
     context.put("params", func.parameters.map(convertToPythonField).asJava)
     context.put("db_func_name", func.literalName.get)
     context.put("callfunc", SqlCodeGen.generateCallFunc(func, percentage))
-    val returnType = func.returnType.inferType
+    val returnType = func.returnType
     context.put("records", func.getValue(Records).contains(true))
     if (func.getValue(Records).contains(true)) {
       context.put("return", convertType(TyList(returnType)))

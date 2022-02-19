@@ -26,7 +26,7 @@ case object AdditionalProperties extends KeywordBoolean
 
 case object JsonSchemaCodeGen {
   def generateFuncDecl(func: AstFunctionDecl): String = {
-    val struct = TyStruct("unnamed", func.parameters)
+    val struct = TyStruct(func.parameters)
     struct.setValue(Required, true)
     struct.setValue(AdditionalProperties, false)
 

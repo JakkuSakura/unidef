@@ -154,11 +154,11 @@ case class SqlParser() {
     val func = AstFunctionDecl(
       AstLiteralString(name),
       inputs.toSeq,
-      if (outputOnly.isDefined) AstTyped(outputOnly.get)
+      if (outputOnly.isDefined) outputOnly.get
       else {
-        AstClassDecl(AstLiteralString("unnamed"), outputs.toSeq)
+        TyStruct(outputs.toSeq)
       },
-      AstRawCode(body).setValue(Language, language),
+      Some(AstRawCode(body).setValue(Language, language)),
     )
     if (outputOnly.isEmpty)
       func.setValue(Records, true)

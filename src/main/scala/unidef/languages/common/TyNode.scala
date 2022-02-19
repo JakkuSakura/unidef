@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 /**
   * This is a very generic type model
   */
-class TyNode extends Extendable
+trait TyNode
 
 // scala: Type[A, B, ..]
 class TyGeneric(val generics: Seq[TyNode]) extends TyNode
@@ -45,7 +45,7 @@ object BitSize {
   case object Unlimited extends BitSize(-1)
 }
 
-class TyNumeric extends TyNode with TyJson
+class TyNumeric extends Extendable with TyNode with TyJson
 
 case class TyInteger(bitSize: BitSize, signed: Boolean = true) extends TyNumeric
 
@@ -60,15 +60,14 @@ case class TyFloat(bitSize: BitSize) extends TyReal
 // rust: enum with multiple names
 case class TyVariant(names: Seq[String]) extends TyNode
 
-case class TyEnum(name: String, variants: Seq[TyVariant]) extends TyNode
+case class TyEnum(name: String, variants: Seq[TyVariant])
+    extends Extendable
+    with TyNode
 
-case class TyField(name: String, value: TyNode) extends TyNode
+case class TyField(name: String, value: TyNode) extends Extendable with TyNode
 
-case class TyStruct(name: String,
-                    fields: Seq[TyField],
-                    dataType: Boolean = false)
-    extends TyNode
-
+case class TyStruct(fields: Seq[TyField]) extends Extendable with TyNode
+case object DataType extends KeywordBoolean
 case class TyDict(key: TyNode, value: TyNode) extends TyGeneric(Seq(key, value))
 
 case class TyList(value: TyNode) extends TyGeneric(Seq(value))
@@ -92,7 +91,8 @@ case object TyUnknown extends TyNode
 
 case object TyUndefined extends TyNode
 
-case class TyTimeStamp() extends TyNode
+case class TyLambda(params: TyNode, ret: TyNode) extends TyNode
+case class TyTimeStamp() extends Extendable with TyNode
 
 case object HasTimeUnit extends Keyword {
   override type V = java.util.concurrent.TimeUnit
@@ -122,7 +122,7 @@ case object Attributes extends Keyword {
 
 }
 case object Fields extends KeywordOnly
-case object Name extends KeywordOnly
+case object Name extends KeywordString
 case object Type extends KeywordOnly
 
 object TypeParser {

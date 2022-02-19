@@ -8,11 +8,13 @@ import io.circe.generic.semiauto._
   * It should expose minimal interface while keep its original information
   * Rules: everything is an expression
   */
-class AstNode extends Extendable {
-  def inferType: TyNode = TyUnknown
+trait AstNode
 
+trait AstTypeExpr {
+  def inferType: TyNode
 }
-class AstStaticType(ty: TyNode) extends AstNode {
+
+class AstStaticType(ty: TyNode) extends AstNode with AstTypeExpr {
   override def inferType: TyNode = ty
 }
 
@@ -48,30 +50,23 @@ object FlowControl {
 
 case class AstFlowControl(flow: FlowControl, value: AstNode) extends AstNode
 
-class AstLiteral extends AstNode
+class AstLiteral(ty: TyNode) extends AstStaticType(ty)
 
-case class AstLiteralString(value: String) extends AstLiteral {
-  override def inferType: TyNode = TyString
-}
+case class AstLiteralString(value: String) extends AstLiteral(TyString)
 
-case class AstLiteralChar(value: Char) extends AstLiteral {
-  override def inferType: TyNode = TyChar
-}
+case class AstLiteralChar(value: Char) extends AstLiteral(TyChar)
+case class AstLiteralInteger(value: Int)
+    extends AstLiteral(TyInteger(BitSize.B32))
 
-case class AstLiteralInteger(value: Int) extends AstLiteral {
-  override def inferType: TyNode = TyInteger(BitSize.B32)
-}
-
-case class AstLiteralFloat(value: Double) extends AstLiteral {
-  override def inferType: TyNode = TyFloat(BitSize.B64)
-}
+case class AstLiteralFloat(value: Double)
+    extends AstLiteral(TyFloat(BitSize.B64))
 
 // difference is from https://github.com/ron-rs/ron
-case class AstLiteralDict(values: Seq[(AstNode, AstNode)]) extends AstLiteral
+case class AstLiteralDict(values: Seq[(AstNode, AstNode)])
 
-case class AstLiteralStruct(values: Seq[(AstNode, AstNode)]) extends AstLiteral
+case class AstLiteralStruct(values: Seq[(AstNode, AstNode)])
 
-case class AstLiteralOptional(value: Option[AstNode]) extends AstLiteral
+case class AstLiteralOptional(value: Option[AstTypeExpr])
 
 sealed trait AccessModifier
 
@@ -86,9 +81,10 @@ object AccessModifier extends Keyword {
 
 case class AstFunctionDecl(name: AstNode,
                            parameters: Seq[TyField],
-                           returnType: AstNode,
-                           body: AstNode)
-    extends AstNode {
+                           returnType: TyNode,
+                           body: Option[AstNode])
+    extends Extendable
+    with AstNode {
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)
     case _                       => None
@@ -102,13 +98,16 @@ case class AstClassDecl(name: AstNode,
                         fields: Seq[TyField],
                         methods: Seq[AstNode] = Nil,
                         derived: Seq[AstClassIdent] = Nil,
-) extends AstNode {
+) extends Extendable
+    with AstNode
+    with AstTypeExpr {
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)
     case _                       => None
   }
   override def inferType: TyStruct =
-    TyStruct(literalName.get, fields)
+    TyStruct(fields).setValue(Name, literalName.get)
+
 }
 
 object AstClassDecl {
@@ -145,7 +144,7 @@ case class AstFunctionApply(func: AstFunctionIdent,
 
 case class AstAwait(value: AstNode) extends AstNode
 
-case class AstRawCode(raw: String) extends AstNode
+case class AstRawCode(raw: String) extends Extendable with AstNode
 
 case class AstAnnotation(value: AstNode) extends AstNode
 

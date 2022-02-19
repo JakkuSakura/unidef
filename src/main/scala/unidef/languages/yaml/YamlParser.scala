@@ -88,36 +88,36 @@ object YamlParser {
       .map(parseFieldType)
 
     val ret = content("return")
-      .map(_.foldWith(new Json.Folder[AstNode] {
+      .map(_.foldWith(new Json.Folder[TyNode] {
 
-        override def onString(value: String): AstNode =
-          AstTyped(TypeParser.parse(value).toTry.get)
+        override def onString(value: String): TyNode =
+          TypeParser.parse(value).toTry.get
 
-        override def onArray(value: Vector[Json]): AstNode = {
+        override def onArray(value: Vector[Json]): TyNode = {
           parseStruct(
             JsonObject(
               ("name", Json.fromString("unnamed")),
               ("fields", Json.fromValues(value))
             )
-          )
+          ).inferType
         }
 
-        override def onObject(value: JsonObject): AstNode =
-          parseStruct(value)
+        override def onObject(value: JsonObject): TyNode =
+          parseStruct(value).inferType
 
-        override def onNull: AstNode = ???
+        override def onNull: TyNode = ???
 
-        override def onBoolean(value: Boolean): AstNode = ???
+        override def onBoolean(value: Boolean): TyNode = ???
 
-        override def onNumber(value: JsonNumber): AstNode = ???
+        override def onNumber(value: JsonNumber): TyNode = ???
       }))
-      .getOrElse(AstUnit)
+      .getOrElse(TyUnit)
 
     val node = common.AstFunctionDecl(
       AstLiteralString(name),
       parameters.toList,
       ret,
-      AstRawCode(body).setValue(Language, language)
+      Some(AstRawCode(body).setValue(Language, language))
     )
 
     collectExtKeys(content, extKeysForFuncDecl.toList)
