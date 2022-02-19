@@ -187,7 +187,7 @@ object YamlParser {
           throw ParsingFailure(s"${key} is not needed in " + content, null)
         } {
           case kw if kw.decoder.isDefined =>
-            Some(kw -> content(key).get.as[kw.V](kw.decoder.get))
+            Some(kw -> content(key).get.as[kw.V](kw.decoder.get).toTry.get)
           case _ => None
         }
     }.toSeq
