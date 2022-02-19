@@ -41,3 +41,16 @@ BEGIN
     RETURN QUERY SELECT 1 as foo, 2 as bar;
 END
 $$;
+
+CREATE OR REPLACE FUNCTION api.func_example6()
+    RETURNS TABLE (
+                      foo integer,
+                      bar integer
+                  )
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    RETURN QUERY SELECT 1 as foo, 2 as bar;
+END
+$$;

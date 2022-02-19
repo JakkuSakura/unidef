@@ -1,6 +1,6 @@
 package unidef.languages.sql
 
-import net.sf.jsqlparser.parser.CCJSqlParserUtil
+import net.sf.jsqlparser.parser.{CCJSqlParserUtil, ParseException}
 import net.sf.jsqlparser.statement.create.function.CreateFunction
 import net.sf.jsqlparser.statement.create.table.{
   ColDataType,
@@ -87,24 +87,18 @@ case class SqlParser() {
     (input, TyField(name, ty))
   }
 
-  private def parseParams(args: Seq[String]): Seq[TyField] = {
-    var cursor = 0
-    val params = ArrayBuffer[TyField]()
-    while (cursor < args.length) {
-      val (input, param) = parseParam(args.slice(cursor, args.length))
-      params += param
-      cursor += 1 + param.name.length
-    }
-    params.toSeq
-  }
   def parseCreateFunction(
     parts: Seq[String]
   ): Option[(AstFunctionDecl, Int)] = {
-    val slice = parts.slice(0, 0 + 5)
+    val slice = parts
     val name = slice match {
-      case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: name +: Nil => name
-      case "CREATE" +: "FUNCTION" +: name +: _                        => name
-      case _                                                          => return None
+      case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
+        s"$schema.$name"
+      case "CREATE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
+        s"$schema.$name"
+      case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: name +: _ => name
+      case "CREATE" +: "FUNCTION" +: name +: _                      => name
+      case _                                                        => return None
     }
     val first_left_paren = finds(parts, "(").get
     val first_right_paren = finds(parts, ")").get

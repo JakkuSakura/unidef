@@ -49,7 +49,7 @@ class PythonSqlCodeGen extends KeywordProvider {
   def generateFuncWrapper(func: AstFunctionDecl,
                           percentage: Boolean = false): String = {
     val context = CodeGen.createContext
-    context.put("name", func.literalName.get)
+    context.put("name", func.literalName.get.split("\\.").last)
     context.put("params", func.parameters.map(convertToPythonField).asJava)
     context.put("db_func_name", func.literalName.get)
     context.put("callfunc", SqlCodeGen.generateCallFunc(func, percentage))
