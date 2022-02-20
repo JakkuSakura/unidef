@@ -17,13 +17,14 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.matching.Regex
 
-case class SqlParser() {
+object SqlParser {
   // does not support default value yet
 
   def parse(sql: String): Seq[AstNode] = {
     val collected = ArrayBuffer[AstNode]()
     collected ++= extractEnums(sql).map(AstTyped)
     val cleaned = stripUnsurpported(sql)
+    if (isEmpty(cleaned)) return collected.toSeq
     val stmts = CCJSqlParserUtil.parseStatements(cleaned)
     stmts.getStatements.asScala.foreach {
       case table: CreateTable => collected += parseCreateTable(table)
@@ -58,7 +59,7 @@ case class SqlParser() {
       }
       .toSeq
   }
-  private def stripUnsurpported(sql: String): String = {
+  private def stripUnsurpported(sql: String): String =
     sql
       .replaceAll("(DEFAULT|default).+?(?=,|\\n|not|NOT)", "")
       .replaceAll("CREATE SCHEMA.+?;", "")
@@ -67,8 +68,8 @@ case class SqlParser() {
       .replaceAll("NOT DEFERRABLE", "")
       .replaceAll("INITIALLY IMMEDIATE", "")
       .replaceAll("CREATE (UNIQUE)? INDEX(.|\\n)+?;", "")
-  }
-
+  private def isEmpty(s: String): Boolean =
+    s.replaceAll("--.+", "").replaceAll("\\s+", "").isEmpty
   private def parseParam(args: Seq[String]): (Boolean, TyField) = {
     var cursor = 0
     val input = args.head.toUpperCase match {

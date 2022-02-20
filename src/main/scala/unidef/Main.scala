@@ -19,7 +19,7 @@ object Main {
 
       YamlParser.parseFile(fileContents)
     } else if (filename.endsWith(".sql"))
-      SqlParser().parse(fileContents)
+      SqlParser.parse(fileContents)
     else {
       throw new RuntimeException("Unsupported file type " + filename)
     }
