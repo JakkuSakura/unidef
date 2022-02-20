@@ -40,8 +40,12 @@ class PythonSqlCodeGen extends KeywordProvider {
       |       err = result.value
       |       logger.error("Database when executing $name: " + str(err))
       |       return Err(err)
-      |    #if($table)
+      |    #if($table && $records)
       |    ret = result.value
+      |    #elseif($table && !$records)
+      |    ret = result.value[0]
+      |    #elseif(!$table && $records)
+      |    ret = [x["_value"] for x in result.value]
       |    #else
       |    ret = result.value[0]["_value"]
       |    #end
@@ -67,8 +71,10 @@ class PythonSqlCodeGen extends KeywordProvider {
 
     }
     if (func.getValue(Records).contains(true)) {
+      context.put("records", true)
       context.put("return", convertType(TyList(returnType)))
     } else {
+      context.put("records", false)
       context.put("return", convertType(returnType))
     }
 
