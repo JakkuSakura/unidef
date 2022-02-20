@@ -1,25 +1,8 @@
 package unidef.languages.javascript
 
 import com.typesafe.scalalogging.Logger
-import io.circe.{Json, JsonObject}
-import unidef.languages.common.{
-  AstFunctionDecl,
-  HasTimeUnit,
-  KeywordBoolean,
-  TyBoolean,
-  TyDateTime,
-  TyEnum,
-  TyFloat,
-  TyInteger,
-  TyJsonObject,
-  TyNamed,
-  TyNode,
-  TyNumeric,
-  TyString,
-  TyStruct,
-  TyTimeStamp,
-  TyVector
-}
+import io.circe.{Json, JsonObject, ParsingFailure}
+import unidef.languages.common._
 
 // meant for private use
 case object Required extends KeywordBoolean
@@ -41,26 +24,29 @@ case object JsonSchemaCodeGen {
       .fromJsonObject(obj)
       .spaces2
   }
-
+  def jsonObjectOf(ty: String, others: (String, Json)*): JsonObject = {
+    JsonObject.fromIterable(
+      Seq("type" -> Json.fromString(ty)) ++
+        others.map(x => x._1 -> x._2)
+    )
+  }
   def generateType(ty: TyNode): JsonObject =
     ty match {
-      case TyString => JsonObject("type" -> Json.fromString("string"))
+      case TyString => jsonObjectOf("string")
       case _: TyInteger =>
-        JsonObject("type" -> Json.fromString("integer"))
+        jsonObjectOf("integer")
       case _: TyFloat =>
-        JsonObject("type" -> Json.fromString("float"))
+        jsonObjectOf("float")
       case _: TyNumeric =>
-        JsonObject("type" -> Json.fromString("numeric"))
+        jsonObjectOf("numeric")
       case TyBoolean =>
-        JsonObject("type" -> Json.fromString("boolean"))
+        jsonObjectOf("boolean")
       case _: TyDateTime =>
-        JsonObject(
-          "type" -> Json.fromString("string"),
-          "format" -> Json.fromString("date-time")
-        )
+        jsonObjectOf("string", "format" -> Json.fromString("datetime"))
+
       case t: TyTimeStamp =>
-        JsonObject(
-          "type" -> Json.fromString("integer"),
+        jsonObjectOf(
+          "string",
           "format" -> Json.fromString("timestamp"),
           "unit" -> t
             .getValue(HasTimeUnit)
@@ -68,21 +54,20 @@ case object JsonSchemaCodeGen {
             .map(Json.fromString)
             .getOrElse(Json.Null)
         )
+
       case TyVector(ty) =>
-        JsonObject(
-          "type" -> Json.fromString("array"),
-          "items" -> Json.fromJsonObject(generateType(ty))
-        )
-      case TyJsonObject =>
-        JsonObject("type" -> Json.fromString("object"))
+        jsonObjectOf("array", "items" -> Json.fromJsonObject(generateType(ty)))
+
+      case TyJsonObject => jsonObjectOf("object")
       case TyEnum(_, variants) =>
         JsonObject(
           "enum" -> Json
             .fromValues(variants.map(_.names.head).map(Json.fromString))
         )
+
       case struct: TyStruct =>
-        JsonObject(
-          "type" -> Json.fromString("object"),
+        jsonObjectOf(
+          "object",
           "properties" -> Json.fromJsonObject(
             JsonObject.fromIterable(
               struct.fields
@@ -90,10 +75,13 @@ case object JsonSchemaCodeGen {
             )
           )
         )
+
       case TyNamed(name) =>
-        JsonObject(
-          "type" -> Json.fromString("object"),
-          "name" -> Json.fromString(name)
-        )
+        jsonObjectOf("string", "name" -> Json.fromString(name))
+      case TyByteArray =>
+        jsonObjectOf("string", "format" -> Json.fromString("byte"))
+      case TyInet => jsonObjectOf("string", "format" -> Json.fromString("inet"))
+      case TyUuid => jsonObjectOf("string", "format" -> Json.fromString("uuid"))
+      case _      => throw new ParsingFailure(s"Unsupported type: $ty", null)
     }
 }

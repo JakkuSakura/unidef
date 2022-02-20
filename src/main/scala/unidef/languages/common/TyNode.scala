@@ -1,10 +1,6 @@
 package unidef.languages.common
 
-import io.circe.generic.semiauto.deriveDecoder
-import io.circe.{Decoder, ParsingFailure}
-
 import java.util.TimeZone
-import java.util.concurrent.TimeUnit
 
 /**
   * This is a very generic type model
@@ -23,8 +19,12 @@ case class TyOptional(value: TyNode) extends TyGeneric(Seq(value))
 // scala: Either[A, B] rust: Result<Ok, Err>
 case class TyResult(ok: TyNode, err: TyNode) extends TyGeneric(Seq(ok, err))
 
+class TyVectorOf(value: TyNode) extends TyGeneric(Seq(value)) with TyJson
+
 // rust: Vec<T>
-case class TyVector(value: TyNode) extends TyGeneric(Seq(value)) with TyJson
+case class TyVector(value: TyNode) extends TyVectorOf(value)
+
+case object TyRecord extends TyNode
 
 // scala: A -> B
 case class TyMapping(key: TyNode, value: TyNode)
@@ -38,8 +38,7 @@ object BitSize {
   case object B64 extends BitSize(64)
   case object B32 extends BitSize(32)
   case object B16 extends BitSize(16)
-  case object B4 extends BitSize(4)
-  case object B2 extends BitSize(2)
+  case object B8 extends BitSize(4)
   case object B1 extends BitSize(1)
   case object Unknown extends BitSize(0)
   case object Unlimited extends BitSize(-1)
@@ -68,7 +67,9 @@ case class TyField(name: String, value: TyNode) extends Extendable with TyNode
 
 case class TyStruct(fields: Seq[TyField]) extends Extendable with TyNode
 case object DataType extends KeywordBoolean
+
 case class TyDict(key: TyNode, value: TyNode) extends TyGeneric(Seq(key, value))
+case object TyByteArray extends TyVectorOf(TyInteger(BitSize.B16))
 
 case class TyList(value: TyNode) extends TyGeneric(Seq(value))
 case class TySet(value: TyNode) extends TyGeneric(Seq(value))
@@ -90,6 +91,8 @@ case object TyNull extends TyNode
 case object TyUnknown extends TyNode
 
 case object TyUndefined extends TyNode
+case object TyInet extends TyNode
+case object TyUuid extends TyNode
 
 case class TyLambda(params: TyNode, ret: TyNode) extends TyNode
 case class TyTimeStamp() extends Extendable with TyNode
@@ -110,11 +113,7 @@ case object Mutability extends KeywordBoolean
 
 // #[derive(Debug)] in Rust
 case object Derive extends Keyword {
-  override type V = Seq[String]
-
-  override def decoder: Option[Decoder[Seq[String]]] =
-    Some(deriveDecoder[List[String]].map(_.toSeq))
-
+  override type V = Array[String]
 }
 
 case object Attributes extends Keyword {
@@ -124,24 +123,3 @@ case object Attributes extends Keyword {
 case object Fields extends KeywordOnly
 case object Name extends KeywordString
 case object Type extends KeywordOnly
-
-object TypeParser {
-  def parse(ty: String): Either[ParsingFailure, TyNode] =
-    ty.toLowerCase match {
-      case "int" | "i32"                         => Right(TyInteger(BitSize.B32))
-      case "uint" | "u32"                        => Right(TyInteger(BitSize.B32, signed = false))
-      case "long" | "i64"                        => Right(TyInteger(BitSize.B64))
-      case "ulong" | "u64"                       => Right(TyInteger(BitSize.B64, signed = false))
-      case "float"                               => Right(TyFloat(BitSize.B32))
-      case "double"                              => Right(TyFloat(BitSize.B64))
-      case "str" | "string" | "varchar" | "text" => Right(TyString)
-      case "json" | "jsonb"                      => Right(TyJsonObject)
-      case "timestamp" =>
-        Right(TyTimeStamp())
-      case "timestamptz" =>
-        Right(TyTimeStamp())
-      case _ => Left(ParsingFailure("Unknown type " + ty, null))
-
-    }
-
-}

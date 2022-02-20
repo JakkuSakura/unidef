@@ -77,19 +77,32 @@ object SqlParser {
   private def isEmpty(s: String): Boolean =
     s.replaceAll("--.+", "").replaceAll("\\s+", "").isEmpty
   private def parseParam(args: Seq[String]): (Boolean, TyField) = {
-    var cursor = 0
-    val input = args.head.toUpperCase match {
-      case "OUT" =>
-        cursor += 1
+    logger.info("parseParam: " + args.mkString(", "))
+    var nameCursor = 0
+    var typeCursor = 1
+    val input = args.slice(0, 2).map(_.toUpperCase) match {
+      case "OUT" +: _ =>
+        nameCursor = 1
+        typeCursor = 2
         false
-      case "IN" =>
-        cursor += 1
+      case _ +: "OUT" +: Nil =>
+        nameCursor = 0
+        typeCursor = 2
+        false
+      case "IN" +: _ =>
+        nameCursor = 1
+        typeCursor = 2
+        true
+      case _ +: "IN" +: Nil =>
+        nameCursor = 0
+        typeCursor = 2
         true
       case _ => true
     }
-    val name = args(cursor)
+    val name = args(nameCursor).replaceAll("\"", "")
+
     val ty = convertTypeFromSql(
-      args.slice(cursor + 1, args.length).mkString(" ")
+      args.slice(typeCursor, args.length).mkString(" ")
     )
     (input, TyField(name, ty))
   }

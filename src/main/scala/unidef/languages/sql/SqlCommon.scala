@@ -1,28 +1,7 @@
 package unidef.languages.sql
 
 import FieldType.{Nullable, PrimaryKey}
-import unidef.languages.common.{
-  BitSize,
-  HasTimeUnit,
-  HasTimeZone,
-  KeywordBoolean,
-  KeywordString,
-  TyBoolean,
-  TyDecimal,
-  TyEnum,
-  TyField,
-  TyFloat,
-  TyInteger,
-  TyJsonAny,
-  TyJsonObject,
-  TyNamed,
-  TyNode,
-  TyReal,
-  TyString,
-  TyStruct,
-  TyTimeStamp,
-  TyUnit
-}
+import unidef.languages.common._
 
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
@@ -70,15 +49,19 @@ case object SqlCommon {
     case TyUnit                                                      => "void"
     case TyNamed(name)                                               => name
     case TyBoolean                                                   => "boolean"
+    case TyByteArray                                                 => "bytea"
+    case TyInet                                                      => "inet"
+    case TyUuid                                                      => "uuid"
+    case TyRecord                                                    => "record"
   }
 
   def convertTypeFromSql(ty: String): TyNode = ty match {
-    case "bigint"           => TyInteger(BitSize.B64)
-    case "integer"          => TyInteger(BitSize.B32)
-    case "smallint"         => TyInteger(BitSize.B16)
-    case "double precision" => TyFloat(BitSize.B64)
-    case "real" | "float"   => TyFloat(BitSize.B32)
-    case "decimal"          => TyDecimal(None, None)
+    case "bigint" | "bigserial"       => TyInteger(BitSize.B64)
+    case "integer" | "int" | "serial" => TyInteger(BitSize.B32)
+    case "smallint"                   => TyInteger(BitSize.B16)
+    case "double precision"           => TyFloat(BitSize.B64)
+    case "real" | "float"             => TyFloat(BitSize.B32)
+    case "decimal" | "numeric"        => TyDecimal(None, None)
     case "timestamp" | "timestamp without time zone" =>
       TyTimeStamp()
         .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
@@ -92,6 +75,10 @@ case object SqlCommon {
     case "void"             => TyUnit
     case "oid"              => Oid.get
     case "boolean"          => TyBoolean
+    case "bytea"            => TyByteArray
+    case "inet"             => TyInet
+    case "uuid"             => TyUuid
+    case "record"           => TyRecord
     case others             => TyNamed(others)
   }
 

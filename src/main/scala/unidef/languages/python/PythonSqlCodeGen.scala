@@ -1,13 +1,7 @@
 package unidef.languages.python
 
 import PythonCommon.convertType
-import unidef.languages.common.{
-  AstFunctionDecl,
-  Keyword,
-  KeywordProvider,
-  TyField,
-  TyList
-}
+import unidef.languages.common._
 import unidef.languages.sql.SqlCodeGen
 import unidef.languages.sql.SqlCommon.{Records, Schema}
 import unidef.utils.CodeGen
@@ -54,7 +48,10 @@ class PythonSqlCodeGen extends KeywordProvider {
     context.put("db_func_name", func.literalName.get)
     context.put("callfunc", SqlCodeGen.generateCallFunc(func, percentage))
     val returnType = func.returnType
-    context.put("records", func.getValue(Records).contains(true))
+    context.put(
+      "records",
+      func.getValue(Records).contains(true) || returnType == TyRecord
+    )
     if (func.getValue(Records).contains(true)) {
       context.put("return", convertType(TyList(returnType)))
     } else {

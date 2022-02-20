@@ -26,7 +26,24 @@ object YamlType {
 
 object YamlParser {
   val logger: Logger = Logger[this.type]
+  def parseType(ty: String): Either[ParsingFailure, TyNode] =
+    ty.toLowerCase match {
+      case "int" | "i32"                         => Right(TyInteger(BitSize.B32))
+      case "uint" | "u32"                        => Right(TyInteger(BitSize.B32, signed = false))
+      case "long" | "i64"                        => Right(TyInteger(BitSize.B64))
+      case "ulong" | "u64"                       => Right(TyInteger(BitSize.B64, signed = false))
+      case "float"                               => Right(TyFloat(BitSize.B32))
+      case "double"                              => Right(TyFloat(BitSize.B64))
+      case "str" | "string" | "varchar" | "text" => Right(TyString)
+      case "json" | "jsonb"                      => Right(TyJsonObject)
+      case "timestamp" =>
+        Right(TyTimeStamp())
+      case "timestamptz" =>
+        Right(TyTimeStamp())
+      case "bytea" | "[u8]" => Right(TyByteArray)
+      case _                => Left(ParsingFailure("Unknown type " + ty, null))
 
+    }
   @throws[ParsingFailure]
   def parseMarkdown(content: String): Seq[AstNode] = {
     var isYaml = false
@@ -93,7 +110,7 @@ object YamlParser {
       .map(_.foldWith(new Json.Folder[TyNode] {
 
         override def onString(value: String): TyNode =
-          TypeParser.parse(value).toTry.get
+          parseType(value).toTry.get
 
         override def onArray(value: Vector[Json]): TyNode = {
           parseStruct(
@@ -162,11 +179,11 @@ object YamlParser {
   def parseFieldType(content: JsonObject): TyField = {
     val field = if (content("name").isDefined && content("type").isDefined) {
       val name = getString(content, "name")
-      val ty = TypeParser.parse(getString(content, "type")).toTry.get
+      val ty = parseType(getString(content, "type")).toTry.get
       TyField(name, ty)
     } else if (content.size == 1) {
       val name = content.keys.head
-      val ty = TypeParser.parse(getString(content, name)).toTry.get
+      val ty = parseType(getString(content, name)).toTry.get
       TyField(name, ty)
     } else {
       throw new ParsingFailure(

@@ -45,7 +45,10 @@ case object SqlCodeGen extends KeywordProvider {
     context.put("params", func.parameters.map(_.name).asJava)
     context.put("db_func_name", func.literalName.get)
     context.put("schema", func.getValue(Schema).fold("")(x => s"$x."))
-    context.put("records", func.getValue(Records).contains(true))
+    context.put(
+      "records",
+      func.getValue(Records).contains(true) || func.returnType == TyRecord
+    )
     context.put("percentage", percentage)
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_CALL, context)
   }
