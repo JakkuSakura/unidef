@@ -29,7 +29,6 @@ object JsonSchemaParser {
           TyUnion(getList(value, "anyOf").map(parse))
         } else if (value("enum").exists(_.isArray)) {
           TyEnum(
-            "unnamed_enum",
             getList(value, "enum")
               .map(_.asString.get)
               .map(x => TyVariant(Seq(x)))

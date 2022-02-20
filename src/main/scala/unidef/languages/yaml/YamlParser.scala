@@ -147,10 +147,13 @@ object YamlParser {
 
     node
   }
-  private val extKeysForField = mutable.HashSet[Keyword](Name, Type, Fields)
+  private val extKeysForField =
+    mutable.HashSet[Keyword](KeyName, KeyType, KeyFields)
   private val extKeysForFuncDecl =
-    mutable.HashSet[Keyword](Name, Type, Body, Language, Parameters, Return)
-  private val extKeysForClassDecl = mutable.HashSet[Keyword](Name, Type, Fields)
+    mutable
+      .HashSet[Keyword](KeyName, KeyType, Body, Language, Parameters, Return)
+  private val extKeysForClassDecl =
+    mutable.HashSet[Keyword](KeyName, KeyType, KeyFields)
 
   def prepareForExtKeys(obj: KeywordProvider): Unit = {
     extKeysForField ++= obj.keysOnField

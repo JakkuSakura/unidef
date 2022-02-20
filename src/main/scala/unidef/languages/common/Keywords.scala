@@ -11,7 +11,7 @@ trait Keyword {
   type V <: Any
 
   def name: String =
-    toSnakeCase(getClass.getSimpleName.stripSuffix("$"))
+    toSnakeCase(getClass.getSimpleName.stripSuffix("$").stripPrefix("Key"))
   def decoder: Option[Decoder[V]] = None
 }
 

@@ -91,6 +91,11 @@ case class AstFunctionDecl(name: AstNode,
 
   }
 }
+case class AstLambdaDecl(parameters: Seq[TyField],
+                         returnType: TyNode,
+                         body: AstNode)
+    extends Extendable
+    with AstNode
 
 case class AstClassIdent(name: String) extends AstNode
 
@@ -106,7 +111,7 @@ case class AstClassDecl(name: AstNode,
     case _                       => None
   }
   override def inferType: TyStruct =
-    TyStruct(Some(fields)).setValue(Name, literalName.get)
+    TyStruct(Some(fields)).setValue(KeyName, literalName.get)
 
 }
 

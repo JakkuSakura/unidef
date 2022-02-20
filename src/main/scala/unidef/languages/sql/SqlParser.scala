@@ -29,8 +29,11 @@ object SqlParser {
 
     val collected = ArrayBuffer[AstNode]()
     extractEnums(sql).foreach { x =>
-      resolver.add(x.name, x)
-      collected += AstTyped(x)
+      x.getValue(KeyName).foreach { nm =>
+        resolver.add(nm, x)
+        collected += AstTyped(x)
+      }
+
     }
 
     val cleaned = stripUnsurpported(sql)
@@ -68,7 +71,7 @@ object SqlParser {
             .map(x => TyVariant(Seq(x)))
       }
       .map {
-        case (k, v) => TyEnum(k, v.toSeq)
+        case (k, v) => TyEnum(v.toSeq).setValue(KeyName, k)
       }
       .toSeq
   }

@@ -9,8 +9,8 @@ object PythonCommon {
       case _: TyFloat   => "float"
       case TyString     => "str"
       case TyChar       => "str"
-      case t @ TyStruct(_) if t.getValue(Name).isDefined =>
-        t.getValue(Name).get
+      case t @ TyStruct(_) if t.getValue(KeyName).isDefined =>
+        t.getValue(KeyName).get
       case TyStruct(_)   => "Dict[str, Any]"
       case TyRecord      => "List[Dict[str, Any]]"
       case TyDict(k, v)  => s"Dict[${convertType(k)}, ${convertType(v)}]"
@@ -28,8 +28,10 @@ object PythonCommon {
           .decode("python", name)
           .map(convertType)
           .getOrElse(s"'${PythonNamingConvention.toClassName(name)}'")
-      case TyEnum(name, _) => "str" // TODO: use solid enum if possible
-      case t               => s"'$t'"
+      case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
+        x.getValue(KeyName).get
+      case TyEnum(_) => "str" // TODO: use solid enum if possible
+      case t         => s"'$t'"
     }
   def convertTypeFromPy(ty: String): TyNode =
     ty match {

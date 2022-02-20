@@ -49,7 +49,7 @@ case object JsonSchemaCodeGen {
           "string",
           "format" -> Json.fromString("timestamp"),
           "unit" -> t
-            .getValue(HasTimeUnit)
+            .getValue(KeyTimeUnit)
             .map(_.toString)
             .map(Json.fromString)
             .getOrElse(Json.Null)
@@ -59,7 +59,13 @@ case object JsonSchemaCodeGen {
         jsonObjectOf("array", "items" -> Json.fromJsonObject(generateType(ty)))
 
       case TyJsonObject => jsonObjectOf("object")
-      case TyEnum(_, variants) =>
+      case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
+        JsonObject(
+          "enum" -> Json
+            .fromValues(variants.map(_.names.head).map(Json.fromString)),
+          "name" -> Json.fromString(x.getValue(KeyName).get)
+        )
+      case x @ TyEnum(variants) =>
         JsonObject(
           "enum" -> Json
             .fromValues(variants.map(_.names.head).map(Json.fromString))

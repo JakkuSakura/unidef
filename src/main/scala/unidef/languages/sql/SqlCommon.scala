@@ -10,7 +10,7 @@ case object SqlCommon {
   // multiple rows
   case object Records extends KeywordBoolean
   case object Schema extends KeywordString
-  case object SimpleEnum extends KeywordBoolean
+  case object KeySimpleEnum extends KeywordBoolean
   case object Oid extends KeywordBoolean {
     def get: TyInteger =
       TyInteger(BitSize.B32, signed = false).setValue(Oid, true)
@@ -37,23 +37,24 @@ case object SqlCommon {
   def convertType(ty: TyNode): String = ty match {
     case t: TyReal    => convertReal(t)
     case t: TyInteger => convertInt(t)
-    case t: TyTimeStamp if t.getValue(HasTimeZone).contains(true) =>
+    case t: TyTimeStamp if t.getValue(KeyHasTimeZone).contains(true) =>
       "timestamp with time zone"
     //case TimeStampType(_, false) => "timestamp without time zone"
-    case TyTimeStamp()                                               => "timestamp"
-    case TyString                                                    => "text"
-    case TyStruct(_)                                                 => "jsonb"
-    case x @ TyEnum("", _) if x.getValue(SimpleEnum).contains(false) => "jsonb"
-    case TyEnum("", _)                                               => "text"
-    case TyEnum(name, _)                                             => name
-    case TyJsonObject                                                => "jsonb"
-    case TyUnit                                                      => "void"
-    case TyNamed(name)                                               => name
-    case TyBoolean                                                   => "boolean"
-    case TyByteArray                                                 => "bytea"
-    case TyInet                                                      => "inet"
-    case TyUuid                                                      => "uuid"
-    case TyRecord                                                    => "record"
+    case TyTimeStamp()                                              => "timestamp"
+    case TyString                                                   => "text"
+    case TyStruct(_)                                                => "jsonb"
+    case x @ TyEnum(_) if x.getValue(KeySimpleEnum).contains(false) => "jsonb"
+    case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
+      x.getValue(KeyName).get
+    case TyEnum(_)     => "text"
+    case TyJsonObject  => "jsonb"
+    case TyUnit        => "void"
+    case TyNamed(name) => name
+    case TyBoolean     => "boolean"
+    case TyByteArray   => "bytea"
+    case TyInet        => "inet"
+    case TyUuid        => "uuid"
+    case TyRecord      => "record"
   }
 
   def convertTypeFromSql(
@@ -71,12 +72,12 @@ case object SqlCommon {
       case "decimal" | "numeric"        => TyDecimal(None, None)
       case "timestamp" | "timestamp without time zone" =>
         TyTimeStamp()
-          .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
-          .setValue(HasTimeZone, false)
+          .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
+          .setValue(KeyHasTimeZone, false)
       case "timestamp with time zone" =>
         TyTimeStamp()
-          .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
-          .setValue(HasTimeZone, true)
+          .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
+          .setValue(KeyHasTimeZone, true)
       case "text" | "varchar" => TyString
       case "jsonb"            => TyJsonAny
       case "void"             => TyUnit
