@@ -1,5 +1,6 @@
 package unidef.languages.sql
 
+import com.typesafe.scalalogging.Logger
 import net.sf.jsqlparser.parser.{CCJSqlParserUtil, ParseException}
 import net.sf.jsqlparser.statement.create.function.CreateFunction
 import net.sf.jsqlparser.statement.create.table.{
@@ -18,13 +19,18 @@ import scala.jdk.CollectionConverters._
 import scala.util.matching.Regex
 
 object SqlParser {
+  val logger: Logger = Logger[this.type]
+
   // does not support default value yet
 
   def parse(sql: String): Seq[AstNode] = {
     val collected = ArrayBuffer[AstNode]()
     collected ++= extractEnums(sql).map(AstTyped)
     val cleaned = stripUnsurpported(sql)
-    if (isEmpty(cleaned)) return collected.toSeq
+    if (isEmpty(cleaned)) return {
+      logger.debug(s"No table or function declaration: ${sql.slice(0, 100)}")
+      collected.toSeq
+    }
     val stmts = CCJSqlParserUtil.parseStatements(cleaned)
     stmts.getStatements.asScala.foreach {
       case table: CreateTable => collected += parseCreateTable(table)
@@ -169,6 +175,7 @@ object SqlParser {
     )
     if (outputOnly.isEmpty)
       func.setValue(Records, true)
+    logger.debug(s"Parsed function: ${func.literalName.get}")
     Some((func, end))
   }
   def parseCreateTable(tbl: CreateTable): AstClassDecl = {
@@ -187,13 +194,5 @@ object SqlParser {
 
   def parseColDataType(ty: ColDataType): TyNode =
     convertTypeFromSql(ty.getDataType)
-
-  def parseFunc(sql: String): Seq[AstNode] = {
-    ???
-  }
-
-  def parseTable(sql: String): Seq[AstNode] = {
-    ???
-  }
 
 }

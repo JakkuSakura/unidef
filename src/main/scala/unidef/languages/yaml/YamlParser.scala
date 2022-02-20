@@ -1,5 +1,6 @@
 package unidef.languages.yaml
 
+import com.typesafe.scalalogging.Logger
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
 import unidef.languages.common
@@ -24,6 +25,7 @@ object YamlType {
 }
 
 object YamlParser {
+  val logger: Logger = Logger[this.type]
 
   @throws[ParsingFailure]
   def parseMarkdown(content: String): Seq[AstNode] = {

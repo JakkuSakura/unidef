@@ -1,5 +1,6 @@
 package unidef.languages.javascript
 
+import com.typesafe.scalalogging.Logger
 import io.circe.{Json, JsonObject}
 import unidef.languages.common.{
   AstFunctionDecl,
@@ -25,6 +26,8 @@ case object Required extends KeywordBoolean
 case object AdditionalProperties extends KeywordBoolean
 
 case object JsonSchemaCodeGen {
+  val logger: Logger = Logger[this.type]
+
   def generateFuncDecl(func: AstFunctionDecl): String = {
     val struct = TyStruct(func.parameters)
     struct.setValue(Required, true)

@@ -2,8 +2,6 @@ package unidef.languages.python
 
 import unidef.languages.common._
 
-import java.util.concurrent.TimeUnit
-
 object PythonCommon {
   def convertType(node: TyNode): String =
     node match {
