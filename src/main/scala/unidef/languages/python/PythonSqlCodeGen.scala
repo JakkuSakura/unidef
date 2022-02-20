@@ -14,10 +14,14 @@ class PythonSqlCodeGen extends KeywordProvider {
   private def convertToPythonField(
     node: TyField
   )(implicit resolver: TypeResolver): PythonField =
-    PythonField(node.name, convertType(node.value))
+    PythonField(
+      PythonNamingConvention.toFunctionParameterName(node.name),
+      convertType(node.value)
+    )
 
   protected val template: String =
     """
+      |@beartype.beartype
       |async def $name(
       |#foreach($param in $params)
       |    $param.name(): $param.ty(),
@@ -32,14 +36,17 @@ class PythonSqlCodeGen extends KeywordProvider {
       |        #end
       |        ]
       |    )
-      |    if result.error is not None:
-      |       logger.error("Database when executing $name: " + str(result.error))
-      |       return Err(result.error)
-      |    #if($records)
-      |    return Ok(result.data)
+      |    if isinstance(result, Err):
+      |       err = result.value
+      |       logger.error("Database when executing $name: " + str(err))
+      |       return Err(err)
+      |    #if($table)
+      |    ret = result.value
       |    #else
-      |    return Ok(result.data[0]["_value"])
+      |    ret = result.value[0]["_value"]
       |    #end
+      |    ret2 = cast($return, ret)
+      |    return Ok(ret2)
       |""".stripMargin
 
   def generateFuncWrapper(func: AstFunctionDecl, percentage: Boolean = false)(
@@ -50,11 +57,15 @@ class PythonSqlCodeGen extends KeywordProvider {
     context.put("params", func.parameters.map(convertToPythonField).asJava)
     context.put("db_func_name", func.literalName.get)
     context.put("callfunc", SqlCodeGen.generateCallFunc(func, percentage))
+
     val returnType = func.returnType
-    context.put(
-      "records",
-      func.getValue(Records).contains(true) || returnType == TyRecord
-    )
+    returnType match {
+      case TyRecord | TyStruct(_) =>
+        context.put("table", true)
+      case _ =>
+        context.put("table", false)
+
+    }
     if (func.getValue(Records).contains(true)) {
       context.put("return", convertType(TyList(returnType)))
     } else {

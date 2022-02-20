@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 
 case object SqlCommon {
-
+  // multiple rows
   case object Records extends KeywordBoolean
   case object Schema extends KeywordString
   case object SimpleEnum extends KeywordBoolean
@@ -56,7 +56,12 @@ case object SqlCommon {
     case TyRecord                                                    => "record"
   }
 
-  def convertTypeFromSql(ty: String)(implicit resolver: TypeResolver): TyNode =
+  def convertTypeFromSql(
+    ty: String
+  )(implicit resolver: TypeResolver): TyNode = {
+    if (ty.endsWith("[]")) {
+      return TyList(convertTypeFromSql(ty.dropRight(2)))
+    }
     ty match {
       case "bigint" | "bigserial"       => TyInteger(BitSize.B64)
       case "integer" | "int" | "serial" => TyInteger(BitSize.B32)
@@ -83,6 +88,7 @@ case object SqlCommon {
       case "record"           => TyRecord
       case others             => resolver.decode("sql", others).getOrElse(TyNamed(others))
     }
+  }
 
   def convertToSqlField(node: TyField): SqlField = {
     val attributes = new mutable.StringBuilder()

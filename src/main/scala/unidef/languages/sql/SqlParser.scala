@@ -86,7 +86,9 @@ object SqlParser {
   private def compactDot(args: Seq[String]): String = {
     val sb = new mutable.StringBuilder
     for (i <- args.indices) {
-      if (i > 0 && args(i) != "." && args(i - 1) != ".") sb ++= " "
+      if (i > 0)
+        if (args(i) != "." && args(i - 1) != "." && args(i) != "[" && args(i) != "]")
+          sb ++= " "
       sb ++= args(i)
     }
     sb.toString()
@@ -126,8 +128,7 @@ object SqlParser {
   def parseCreateFunction(
     parts: Seq[String]
   )(implicit resolver: TypeResolver): Option[(AstFunctionDecl, Int)] = {
-    val slice = parts
-    val name = slice match {
+    val name = parts match {
       case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
         s"$schema.$name"
       case "CREATE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
@@ -174,7 +175,7 @@ object SqlParser {
     val end = finds(parts, ";", rq + 1).get
     finds(parts, "RETURNS").filter(_ < end).foreach { i =>
       parts.slice(i + 1, as.min(languagePos)) match {
-        case "TABLE" +: "(" +: fields =>
+        case ("TABLE" | "table") +: "(" +: fields =>
           cursor = 0
           for (i <- 0 to fields.length) {
             if (i < fields.length && (fields(i) == ")" || fields(i) == ",")) {

@@ -24,7 +24,10 @@ object PythonCommon {
       case TyUuid        => "uuid.UUID"
       case TyInet        => "str" // FIXME: InetAddress
       case TyNamed(name) =>
-        resolver.decode("python", name).map(convertType).getOrElse(s"'${name}'")
+        resolver
+          .decode("python", name)
+          .map(convertType)
+          .getOrElse(s"'${PythonNamingConvention.toClassName(name)}'")
       case TyEnum(name, _) => "str" // TODO: use solid enum if possible
       case t               => s"'$t'"
     }

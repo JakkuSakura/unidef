@@ -55,7 +55,7 @@ case object JsonSchemaCodeGen {
             .getOrElse(Json.Null)
         )
 
-      case TyVector(ty) =>
+      case TyList(ty) =>
         jsonObjectOf("array", "items" -> Json.fromJsonObject(generateType(ty)))
 
       case TyJsonObject => jsonObjectOf("object")

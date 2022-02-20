@@ -27,7 +27,7 @@ case object SqlCodeGen extends KeywordProvider {
     |    $param => ${esc.d}$foreach.count#if($foreach.hasNext), #end
     |#end#end
     |#end
-    |#if($records)
+    |#if($table)
     |SELECT * FROM $schema${db_func_name}(
     |#generate_params()
     |);
@@ -41,14 +41,19 @@ case object SqlCodeGen extends KeywordProvider {
                        percentage: Boolean = false): String = {
     val context = CodeGen.createContext
 
-    context.put("name", func.literalName.get)
     context.put("params", func.parameters.map(_.name).asJava)
     context.put("db_func_name", func.literalName.get)
     context.put("schema", func.getValue(Schema).fold("")(x => s"$x."))
-    context.put(
-      "records",
-      func.getValue(Records).contains(true) || func.returnType == TyRecord
-    )
+
+    val returnType = func.returnType
+    returnType match {
+      case TyRecord | TyStruct(_) =>
+        context.put("table", true)
+      case _ =>
+        context.put("table", false)
+
+    }
+
     context.put("percentage", percentage)
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_CALL, context)
   }

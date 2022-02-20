@@ -54,3 +54,20 @@ BEGIN
     RETURN QUERY SELECT 1 as foo, 2 as bar;
 END
 $$;
+CREATE OR REPLACE FUNCTION api.fun_get_recovery_question_data()
+    RETURNS table
+            (
+                "questionId" smallint,
+                "content"    varchar,
+                "category"   tbl.enum_recovery_question_category
+            )
+    LANGUAGE plpgsql
+AS
+$fun$
+BEGIN
+    RETURN QUERY SELECT q.pkey_id,
+                        q.content,
+                        q.category
+                 FROM tbl.recovery_question_data q;
+END
+$fun$;

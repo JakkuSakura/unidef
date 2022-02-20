@@ -1,6 +1,9 @@
 package unidef.utils
 
-import org.apache.commons.lang3.StringUtils.splitByCharacterTypeCamelCase
+import org.apache.commons.lang3.StringUtils.{
+  splitByCharacterTypeCamelCase,
+  splitByWholeSeparator
+}
 
 object TextTool {
   def indent(text: String, indent: Int): String = {
@@ -51,7 +54,26 @@ object TextTool {
       case i  => Some(i)
     }
   }
+  def splitString(text: String): Seq[String] = {
+    Some(text)
+      .map(_.replaceAll("-", "_"))
+      .map(_.replaceAll("/", "_"))
+      .map(_.replaceAll("\\.", "_"))
+      .map(splitByWholeSeparator(_, null).mkString("_"))
+      .map(splitByCharacterTypeCamelCase(_).mkString("_"))
+      .map(splitByWholeSeparator(_, "_"))
+      .get
+  }
   def toSnakeCase(text: String): String =
-    splitByCharacterTypeCamelCase(text).mkString("_").toLowerCase
+    splitString(text).mkString("_").toLowerCase
+  def toStreamingSnakeCase(text: String): String =
+    splitString(text).mkString("_").toUpperCase
+  def toPascalCase(text: String): String =
+    splitString(text).map(_.capitalize).mkString("")
+
+  def toCamelCase(text: String): String = {
+    val x = splitString(text)
+    (x.head.toLowerCase ++ x.slice(1, x.length).map(_.capitalize)).mkString("")
+  }
 
 }

@@ -19,10 +19,10 @@ case class TyOptional(value: TyNode) extends TyGeneric(Seq(value))
 // scala: Either[A, B] rust: Result<Ok, Err>
 case class TyResult(ok: TyNode, err: TyNode) extends TyGeneric(Seq(ok, err))
 
-class TyVectorOf(value: TyNode) extends TyGeneric(Seq(value)) with TyJson
+class TyListOf(value: TyNode) extends TyGeneric(Seq(value)) with TyJson
 
 // rust: Vec<T>
-case class TyVector(value: TyNode) extends TyVectorOf(value)
+case class TyList(value: TyNode) extends TyListOf(value)
 
 case object TyRecord extends TyNode
 
@@ -69,9 +69,8 @@ case class TyStruct(fields: Seq[TyField]) extends Extendable with TyNode
 case object DataType extends KeywordBoolean
 
 case class TyDict(key: TyNode, value: TyNode) extends TyGeneric(Seq(key, value))
-case object TyByteArray extends TyVectorOf(TyInteger(BitSize.B16))
+case object TyByteArray extends TyListOf(TyInteger(BitSize.B16))
 
-case class TyList(value: TyNode) extends TyGeneric(Seq(value))
 case class TySet(value: TyNode) extends TyGeneric(Seq(value))
 
 trait TyJson extends TyNode
