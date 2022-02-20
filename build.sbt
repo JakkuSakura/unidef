@@ -4,7 +4,7 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 Global / onChangedBuildSource := ReloadOnSourceChanges
 // scala 2 has better tooling and IDE support, especially inlay hints
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
-
+resolvers += "jitpack" at "https://jitpack.io"
 lazy val root = (project in file("."))
   .enablePlugins(NativeImagePlugin)
   .settings(name := "unidef")
@@ -36,3 +36,5 @@ libraryDependencies += "com.github.jsqlparser" % "jsqlparser" % "4.3"
 
 // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.12.0"
+
+libraryDependencies += "com.github.saasquatch" % "json-schema-inferrer" % "0.1.4"

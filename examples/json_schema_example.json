@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "type": "object",
+  "properties": {
+    "🙈": { "type": ["string", "integer"] },
+    "months": { "type": "array", "items": { "enum": ["JANUARY", "FEBRUARY"] } },
+    "🙊": { "type": ["null", "integer"] },
+    "weekdays": { "type": "array", "items": { "enum": ["MONDAY", "TUESDAY"] } },
+    "🙉": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "🐵": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  { "type": "integer" },
+                  { "type": "string", "format": "ipv6" }
+                ]
+              }
+            },
+            "🍌": { "type": "null" },
+            "🐒": { "type": "boolean" }
+          },
+          "additionalProperties": false,
+          "required": ["🐵", "🐒"]
+        },
+        {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              { "type": ["number", "boolean"] },
+              { "type": "string", "format": "email" }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["🙈", "🙉"]
+}

@@ -5,6 +5,7 @@ import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject, ParsingFailure}
 import unidef.languages.common
 import unidef.languages.common._
+import unidef.languages.javascript.JsonSchemaExtended.parseType
 import unidef.utils.JsonUtils.{getList, getString}
 
 import scala.collection.mutable
@@ -27,26 +28,6 @@ object YamlType {
 // TODO: achieve json-schema like effect
 object YamlParser {
   val logger: Logger = Logger[this.type]
-  def parseType(ty: String): Either[ParsingFailure, TyNode] =
-    ty.toLowerCase match {
-      case "int" | "i32"                         => Right(TyInteger(BitSize.B32))
-      case "uint" | "u32"                        => Right(TyInteger(BitSize.B32, signed = false))
-      case "long" | "i64"                        => Right(TyInteger(BitSize.B64))
-      case "ulong" | "u64"                       => Right(TyInteger(BitSize.B64, signed = false))
-      case "float"                               => Right(TyFloat(BitSize.B32))
-      case "double"                              => Right(TyFloat(BitSize.B64))
-      case "str" | "string" | "varchar" | "text" => Right(TyString)
-      case "json" | "jsonb"                      => Right(TyJsonObject)
-      case "timestamp" =>
-        Right(TyTimeStamp())
-      case "timestamptz" =>
-        Right(TyTimeStamp())
-      case "bytea" | "[u8]"   => Right(TyByteArray)
-      case "bool" | "boolean" => Right(TyBoolean)
-      case "dict"             => Right(TyStruct(None))
-      case _                  => Left(ParsingFailure("Unknown type " + ty, null))
-
-    }
   @throws[ParsingFailure]
   def parseMarkdown(content: String): Seq[AstNode] = {
     var isYaml = false

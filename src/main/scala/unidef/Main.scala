@@ -23,7 +23,7 @@ object Main {
     resolver.register(sqlResolver)
 
     val filename = args(0)
-    val fileContents = FileUtils.openFile(filename)
+    val fileContents = FileUtils.readFile(filename)
     val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
 
       YamlParser.parseFile(fileContents)

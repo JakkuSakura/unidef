@@ -46,10 +46,12 @@ object BitSize {
 
 class TyNumeric extends Extendable with TyNode with TyJson
 
+case class TyNumericClass() extends TyNumeric
 case class TyInteger(bitSize: BitSize, signed: Boolean = true) extends TyNumeric
 
 class TyReal extends TyNumeric
 
+case class TyRealClass() extends TyReal
 // sql: decimal(p, s)
 case class TyDecimal(precision: Option[Int], scale: Option[Int]) extends TyReal
 
@@ -96,6 +98,7 @@ case object TyUuid extends TyNode
 
 case class TyLambda(params: TyNode, ret: TyNode) extends TyNode
 case class TyTimeStamp() extends Extendable with TyNode
+case class TyUnion(types: Seq[TyNode]) extends TyNode
 
 case object HasTimeUnit extends Keyword {
   override type V = java.util.concurrent.TimeUnit
