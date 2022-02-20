@@ -197,10 +197,12 @@ object SqlParser {
     val func = AstFunctionDecl(
       AstLiteralString(name),
       inputs.toSeq,
-      if (outputOnly.isDefined) outputOnly.get
-      else {
+      if (outputs.nonEmpty)
         TyStruct(outputs.toSeq)
-      },
+      else if (outputOnly.isDefined)
+        outputOnly.get
+      else
+        TyStruct(Nil),
       Some(AstRawCode(body).setValue(Language, language)),
     )
     if (outputOnly.isEmpty)
