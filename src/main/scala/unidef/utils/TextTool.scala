@@ -29,6 +29,16 @@ object TextTool {
       case i  => Some(i)
     }
   }
+  def findss(text: Seq[String],
+             pattern: Seq[String],
+             startPos: Int = 0): Option[Int] = {
+    for (p <- pattern)
+      finds(text, p, startPos) match {
+        case None    =>
+        case Some(i) => return Some(i)
+      }
+    None
+  }
   def rfind(text: String, pattern: String): Option[Int] = {
     text.lastIndexOf(pattern) match {
       case -1 => None

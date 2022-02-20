@@ -11,7 +11,7 @@ import org.apache.commons.lang3.StringUtils
 import unidef.languages.common
 import unidef.languages.common._
 import unidef.languages.sql.SqlCommon.{Records, Schema, convertTypeFromSql}
-import unidef.utils.TextTool.finds
+import unidef.utils.TextTool.{finds, findss}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
@@ -120,11 +120,17 @@ case class SqlParser() {
       }
     }
     val as = finds(parts, "AS").get
-
+    val delimiters = Seq("$$", "$func$", "$fun$", "$EOF$")
     val lq =
-      finds(parts, "$$").orElse(finds(parts, "$func$")).get
+      findss(parts, delimiters)
+        .toRight(new ParseException("No delimiter found"))
+        .toTry
+        .get
     val rq =
-      finds(parts, "$$", lq + 1).orElse(finds(parts, "$func$", lq + 1)).get
+      findss(parts, delimiters, lq + 1)
+        .toRight(new ParseException("No delimiter found"))
+        .toTry
+        .get
 
     val body = parts.slice(lq + 1, rq).mkString(" ")
     val languagePos = finds(parts, "LANGUAGE").get
