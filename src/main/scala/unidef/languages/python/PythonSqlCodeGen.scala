@@ -1,7 +1,7 @@
 package unidef.languages.python
 
-import PythonCommon.convertType
 import unidef.languages.common._
+import unidef.languages.python.PythonCommon.convertType
 import unidef.languages.sql.SqlCodeGen
 import unidef.languages.sql.SqlCommon.{Records, Schema}
 import unidef.utils.CodeGen
@@ -11,7 +11,9 @@ import scala.jdk.CollectionConverters._
 private case class PythonField(name: String, ty: String)
 class PythonSqlCodeGen extends KeywordProvider {
   override def keysOnFuncDecl: Seq[Keyword] = List(Records, Schema)
-  private def convertToPythonField(node: TyField): PythonField =
+  private def convertToPythonField(
+    node: TyField
+  )(implicit resolver: TypeResolver): PythonField =
     PythonField(node.name, convertType(node.value))
 
   protected val template: String =
@@ -40,8 +42,9 @@ class PythonSqlCodeGen extends KeywordProvider {
       |    #end
       |""".stripMargin
 
-  def generateFuncWrapper(func: AstFunctionDecl,
-                          percentage: Boolean = false): String = {
+  def generateFuncWrapper(func: AstFunctionDecl, percentage: Boolean = false)(
+    implicit resolver: TypeResolver
+  ): String = {
     val context = CodeGen.createContext
     context.put("name", func.literalName.get.split("\\.").last)
     context.put("params", func.parameters.map(convertToPythonField).asJava)

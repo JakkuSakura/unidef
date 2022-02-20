@@ -3,7 +3,7 @@ package unidef.languages.python
 import unidef.languages.common._
 
 object PythonCommon {
-  def convertType(node: TyNode): String =
+  def convertType(node: TyNode)(implicit resolver: TypeResolver): String =
     node match {
       case _: TyInteger => "int"
       case _: TyFloat   => "float"
@@ -23,7 +23,10 @@ object PythonCommon {
       case TyByteArray   => "bytes"
       case TyUuid        => "uuid.UUID"
       case TyInet        => "str" // FIXME: InetAddress
-      case t             => s"'$t'"
+      case TyNamed(name) =>
+        resolver.decode("python", name).map(convertType).getOrElse(s"'${name}'")
+      case TyEnum(name, _) => "str" // TODO: use solid enum if possible
+      case t               => s"'$t'"
     }
   def convertTypeFromPy(ty: String): TyNode =
     ty match {
@@ -39,4 +42,5 @@ object PythonCommon {
       case "uuid.UUID" | "UUID"   => TyUuid
       case _                      => TyString
     }
+
 }

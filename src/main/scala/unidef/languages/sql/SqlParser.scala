@@ -14,6 +14,7 @@ import unidef.languages.common._
 import unidef.languages.sql.SqlCommon.{Records, Schema, convertTypeFromSql}
 import unidef.utils.TextTool.{finds, findss}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.matching.Regex
@@ -23,9 +24,15 @@ object SqlParser {
 
   // does not support default value yet
 
-  def parse(sql: String): Seq[AstNode] = {
+  def parse(sql: String)(implicit resolver: RefTypeRegistry): Seq[AstNode] = {
+    assert(resolver.language == "sql")
+
     val collected = ArrayBuffer[AstNode]()
-    collected ++= extractEnums(sql).map(AstTyped)
+    extractEnums(sql).foreach { x =>
+      resolver.add(x.name, x)
+      collected += AstTyped(x)
+    }
+
     val cleaned = stripUnsurpported(sql)
     if (isEmpty(cleaned)) return {
       logger.debug(s"No table or function declaration: ${sql.slice(0, 100)}")
@@ -76,7 +83,18 @@ object SqlParser {
       .replaceAll("CREATE (UNIQUE)? INDEX(.|\\n)+?;", "")
   private def isEmpty(s: String): Boolean =
     s.replaceAll("--.+", "").replaceAll("\\s+", "").isEmpty
-  private def parseParam(args: Seq[String]): (Boolean, TyField) = {
+  private def compactDot(args: Seq[String]): String = {
+    val sb = new mutable.StringBuilder
+    for (i <- args.indices) {
+      if (i > 0 && args(i) != "." && args(i - 1) != ".") sb ++= " "
+      sb ++= args(i)
+    }
+    sb.toString()
+  }
+
+  private def parseParam(
+    args: Seq[String]
+  )(implicit resolver: TypeResolver): (Boolean, TyField) = {
     logger.info("parseParam: " + args.mkString(", "))
     var nameCursor = 0
     var typeCursor = 1
@@ -101,15 +119,13 @@ object SqlParser {
     }
     val name = args(nameCursor).replaceAll("\"", "")
 
-    val ty = convertTypeFromSql(
-      args.slice(typeCursor, args.length).mkString(" ")
-    )
+    val ty = convertTypeFromSql(compactDot(args.slice(typeCursor, args.length)))
     (input, TyField(name, ty))
   }
 
   def parseCreateFunction(
     parts: Seq[String]
-  ): Option[(AstFunctionDecl, Int)] = {
+  )(implicit resolver: TypeResolver): Option[(AstFunctionDecl, Int)] = {
     val slice = parts
     val name = slice match {
       case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
@@ -191,7 +207,9 @@ object SqlParser {
     logger.debug(s"Parsed function: ${func.literalName.get}")
     Some((func, end))
   }
-  def parseCreateTable(tbl: CreateTable): AstClassDecl = {
+  def parseCreateTable(
+    tbl: CreateTable
+  )(implicit resolver: TypeResolver): AstClassDecl = {
     common
       .AstClassDecl(
         AstLiteralString(tbl.getTable.getName),
@@ -199,13 +217,17 @@ object SqlParser {
       )
       .setValue(Schema, tbl.getTable.getSchemaName)
   }
-  def parseParseColumn(column: ColumnDefinition): TyField = {
+  def parseParseColumn(
+    column: ColumnDefinition
+  )(implicit resolver: TypeResolver): TyField = {
     val ty = column.getColDataType
     val name = column.getColumnName
     TyField(name, parseColDataType(ty))
   }
 
-  def parseColDataType(ty: ColDataType): TyNode =
+  def parseColDataType(
+    ty: ColDataType
+  )(implicit resolver: TypeResolver): TyNode =
     convertTypeFromSql(ty.getDataType)
 
 }

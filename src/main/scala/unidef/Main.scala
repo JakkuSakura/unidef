@@ -1,6 +1,11 @@
 package unidef
 
-import unidef.languages.common.{AstClassDecl, AstFunctionDecl}
+import unidef.languages.common.{
+  AstClassDecl,
+  AstFunctionDecl,
+  RefTypeRegistry,
+  TypeRegistry
+}
 import unidef.languages.javascript.JsonSchemaCodeGen
 import unidef.languages.python.PythonSqlCodeGen
 import unidef.languages.sql.SqlCodeGen.{generateFunctionDdl, generateTableDdl}
@@ -13,13 +18,17 @@ object Main {
   YamlParser.prepareForExtKeys(SqlCodeGen)
 
   def main(args: Array[String]): Unit = {
+    implicit val resolver: TypeRegistry = new TypeRegistry()
+    val sqlResolver: RefTypeRegistry = RefTypeRegistry("sql")
+    resolver.register(sqlResolver)
+
     val filename = args(0)
     val fileContents = FileUtils.openFile(filename)
     val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
 
       YamlParser.parseFile(fileContents)
     } else if (filename.endsWith(".sql"))
-      SqlParser.parse(fileContents)
+      SqlParser.parse(fileContents)(sqlResolver)
     else {
       throw new RuntimeException("Unsupported file type " + filename)
     }

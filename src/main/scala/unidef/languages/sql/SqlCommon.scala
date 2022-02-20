@@ -6,15 +6,16 @@ import unidef.languages.common._
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 
-case object Oid extends KeywordBoolean {
-  def get: TyInteger =
-    TyInteger(BitSize.B32, signed = false).setValue(Oid, true)
-}
-
 case object SqlCommon {
+
   case object Records extends KeywordBoolean
   case object Schema extends KeywordString
   case object SimpleEnum extends KeywordBoolean
+  case object Oid extends KeywordBoolean {
+    def get: TyInteger =
+      TyInteger(BitSize.B32, signed = false).setValue(Oid, true)
+  }
+
   def convertReal(ty: TyReal): String = ty match {
     case TyDecimal(precision, scale) => s"decimal($precision, $scale)"
     case TyFloat(BitSize.B32)        => "real"
@@ -55,32 +56,33 @@ case object SqlCommon {
     case TyRecord                                                    => "record"
   }
 
-  def convertTypeFromSql(ty: String): TyNode = ty match {
-    case "bigint" | "bigserial"       => TyInteger(BitSize.B64)
-    case "integer" | "int" | "serial" => TyInteger(BitSize.B32)
-    case "smallint"                   => TyInteger(BitSize.B16)
-    case "double precision"           => TyFloat(BitSize.B64)
-    case "real" | "float"             => TyFloat(BitSize.B32)
-    case "decimal" | "numeric"        => TyDecimal(None, None)
-    case "timestamp" | "timestamp without time zone" =>
-      TyTimeStamp()
-        .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
-        .setValue(HasTimeZone, false)
-    case "timestamp with time zone" =>
-      TyTimeStamp()
-        .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
-        .setValue(HasTimeZone, true)
-    case "text" | "varchar" => TyString
-    case "jsonb"            => TyJsonAny
-    case "void"             => TyUnit
-    case "oid"              => Oid.get
-    case "boolean"          => TyBoolean
-    case "bytea"            => TyByteArray
-    case "inet"             => TyInet
-    case "uuid"             => TyUuid
-    case "record"           => TyRecord
-    case others             => TyNamed(others)
-  }
+  def convertTypeFromSql(ty: String)(implicit resolver: TypeResolver): TyNode =
+    ty match {
+      case "bigint" | "bigserial"       => TyInteger(BitSize.B64)
+      case "integer" | "int" | "serial" => TyInteger(BitSize.B32)
+      case "smallint"                   => TyInteger(BitSize.B16)
+      case "double precision"           => TyFloat(BitSize.B64)
+      case "real" | "float"             => TyFloat(BitSize.B32)
+      case "decimal" | "numeric"        => TyDecimal(None, None)
+      case "timestamp" | "timestamp without time zone" =>
+        TyTimeStamp()
+          .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
+          .setValue(HasTimeZone, false)
+      case "timestamp with time zone" =>
+        TyTimeStamp()
+          .setValue(HasTimeUnit, TimeUnit.MILLISECONDS)
+          .setValue(HasTimeZone, true)
+      case "text" | "varchar" => TyString
+      case "jsonb"            => TyJsonAny
+      case "void"             => TyUnit
+      case "oid"              => Oid.get
+      case "boolean"          => TyBoolean
+      case "bytea"            => TyByteArray
+      case "inet"             => TyInet
+      case "uuid"             => TyUuid
+      case "record"           => TyRecord
+      case others             => resolver.decode("sql", others).getOrElse(TyNamed(others))
+    }
 
   def convertToSqlField(node: TyField): SqlField = {
     val attributes = new mutable.StringBuilder()
@@ -91,4 +93,5 @@ case object SqlCommon {
     // TODO auto incr
     SqlField(node.name, convertType(node.value), attributes.toString)
   }
+
 }
