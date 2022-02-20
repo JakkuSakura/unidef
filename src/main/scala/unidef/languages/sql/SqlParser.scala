@@ -68,7 +68,7 @@ object SqlParser {
             .map(x => TyVariant(Seq(x)))
       }
       .map {
-        case (k, v) => TyEnum(k, v)
+        case (k, v) => TyEnum(k, v.toSeq)
       }
       .toSeq
   }
