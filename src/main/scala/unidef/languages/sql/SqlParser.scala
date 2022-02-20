@@ -198,11 +198,11 @@ object SqlParser {
       AstLiteralString(name),
       inputs.toSeq,
       if (outputs.nonEmpty)
-        TyStruct(outputs.toSeq)
+        TyStruct(Some(outputs.toSeq))
       else if (outputOnly.isDefined)
         outputOnly.get
       else
-        TyStruct(Nil),
+        TyStruct(Some(Nil)),
       Some(AstRawCode(body).setValue(Language, language)),
     )
     if (outputOnly.isEmpty)

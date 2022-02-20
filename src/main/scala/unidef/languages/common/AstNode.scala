@@ -106,7 +106,7 @@ case class AstClassDecl(name: AstNode,
     case _                       => None
   }
   override def inferType: TyStruct =
-    TyStruct(fields).setValue(Name, literalName.get)
+    TyStruct(Some(fields)).setValue(Name, literalName.get)
 
 }
 

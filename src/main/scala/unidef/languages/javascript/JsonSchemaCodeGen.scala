@@ -12,7 +12,7 @@ case object JsonSchemaCodeGen {
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): String = {
-    val struct = TyStruct(func.parameters)
+    val struct = TyStruct(Some(func.parameters))
     struct.setValue(Required, true)
     struct.setValue(AdditionalProperties, false)
 
@@ -65,17 +65,18 @@ case object JsonSchemaCodeGen {
             .fromValues(variants.map(_.names.head).map(Json.fromString))
         )
 
-      case struct: TyStruct =>
+      case TyStruct(Some(fields)) =>
         jsonObjectOf(
           "object",
           "properties" -> Json.fromJsonObject(
             JsonObject.fromIterable(
-              struct.fields
+              fields
                 .map(f => f.name -> Json.fromJsonObject(generateType(f.value)))
             )
           )
         )
-
+      case TyStruct(None) =>
+        jsonObjectOf("object")
       case TyNamed(name) =>
         jsonObjectOf("string", "name" -> Json.fromString(name))
       case TyByteArray =>

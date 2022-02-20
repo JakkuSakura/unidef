@@ -43,6 +43,7 @@ object YamlParser {
         Right(TyTimeStamp())
       case "bytea" | "[u8]"   => Right(TyByteArray)
       case "bool" | "boolean" => Right(TyBoolean)
+      case "dict"             => Right(TyStruct(None))
       case _                  => Left(ParsingFailure("Unknown type " + ty, null))
 
     }
@@ -112,10 +113,13 @@ object YamlParser {
           parseType(value).toTry.get
 
         override def onArray(value: Vector[Json]): TyNode = {
-          TyStruct(value.map(f => parseFieldType(f)))
+          TyStruct(Some(value.map(f => parseFieldType(f))))
         }
 
-        override def onObject(value: JsonObject): TyNode = ???
+        override def onObject(value: JsonObject): TyNode = {
+          logger.error("Not supported yet " + value)
+          ???
+        }
 
         override def onNull: TyNode = ???
 

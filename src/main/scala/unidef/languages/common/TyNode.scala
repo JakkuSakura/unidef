@@ -65,7 +65,8 @@ case class TyEnum(name: String, variants: Seq[TyVariant])
 
 case class TyField(name: String, value: TyNode) extends Extendable with TyNode
 
-case class TyStruct(fields: Seq[TyField]) extends Extendable with TyNode
+// None means that fields are unknown
+case class TyStruct(fields: Option[Seq[TyField]]) extends Extendable with TyNode
 case object DataType extends KeywordBoolean
 
 case class TyDict(key: TyNode, value: TyNode) extends TyGeneric(Seq(key, value))

@@ -104,8 +104,10 @@ case object SqlCodeGen extends KeywordProvider {
     context.put("body", node.body.get.asInstanceOf[AstRawCode].raw)
     context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
     node.returnType match {
-      case TyStruct(fields) =>
+      case TyStruct(Some(fields)) =>
         context.put("return_table", fields.map(convertToSqlField).asJava)
+      case TyStruct(None) =>
+        context.put("return_type", "record")
       case a => context.put("return_type", convertType(a))
     }
 
