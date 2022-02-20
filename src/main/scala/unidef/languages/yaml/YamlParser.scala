@@ -24,6 +24,7 @@ object YamlType {
   }
 }
 
+// TODO: achieve json-schema like effect
 object YamlParser {
   val logger: Logger = Logger[this.type]
   def parseType(ty: String): Either[ParsingFailure, TyNode] =
@@ -40,8 +41,9 @@ object YamlParser {
         Right(TyTimeStamp())
       case "timestamptz" =>
         Right(TyTimeStamp())
-      case "bytea" | "[u8]" => Right(TyByteArray)
-      case _                => Left(ParsingFailure("Unknown type " + ty, null))
+      case "bytea" | "[u8]"   => Right(TyByteArray)
+      case "bool" | "boolean" => Right(TyBoolean)
+      case _                  => Left(ParsingFailure("Unknown type " + ty, null))
 
     }
   @throws[ParsingFailure]
@@ -98,12 +100,9 @@ object YamlParser {
   @throws[ParsingFailure]
   def parseFunction(content: JsonObject): AstFunctionDecl = {
     val name = getString(content, "name")
-    val language = getString(content, "language")
-    val body = getString(content, "body")
     val parameters = content("parameters")
       .map(_ => getList(content, "parameters"))
       .getOrElse(Vector())
-      .map(_.asObject.toRight(ParsingFailure("is not Object", null)).toTry.get)
       .map(parseFieldType)
 
     val ret = content("return")
@@ -113,16 +112,10 @@ object YamlParser {
           parseType(value).toTry.get
 
         override def onArray(value: Vector[Json]): TyNode = {
-          parseStruct(
-            JsonObject(
-              ("name", Json.fromString("unnamed")),
-              ("fields", Json.fromValues(value))
-            )
-          ).inferType
+          TyStruct(value.map(f => parseFieldType(f)))
         }
 
-        override def onObject(value: JsonObject): TyNode =
-          parseStruct(value).inferType
+        override def onObject(value: JsonObject): TyNode = ???
 
         override def onNull: TyNode = ???
 
@@ -131,12 +124,20 @@ object YamlParser {
         override def onNumber(value: JsonNumber): TyNode = ???
       }))
       .getOrElse(TyUnit)
+    val bodyVal =
+      if (content("language").isDefined && content("language").isDefined) {
+        val language = getString(content, "language")
+        val body = getString(content, "body")
+        Some(AstRawCode(body).setValue(Language, language))
+      } else {
+        None
+      }
 
     val node = common.AstFunctionDecl(
       AstLiteralString(name),
       parameters.toList,
       ret,
-      Some(AstRawCode(body).setValue(Language, language))
+      bodyVal
     )
 
     collectExtKeys(content, extKeysForFuncDecl.toList)
@@ -153,9 +154,6 @@ object YamlParser {
     val node = common.AstClassDecl(
       AstLiteralString(name),
       fields_arr
-        .map(
-          _.asObject.toRight(ParsingFailure("is not Object", null)).toTry.get
-        )
         .map(parseFieldType)
         .toList
     )
@@ -176,25 +174,46 @@ object YamlParser {
   }
 
   @throws[ParsingFailure]
-  def parseFieldType(content: JsonObject): TyField = {
-    val field = if (content("name").isDefined && content("type").isDefined) {
-      val name = getString(content, "name")
-      val ty = parseType(getString(content, "type")).toTry.get
-      TyField(name, ty)
-    } else if (content.size == 1) {
-      val name = content.keys.head
-      val ty = parseType(getString(content, name)).toTry.get
-      TyField(name, ty)
-    } else {
-      throw new ParsingFailure(
-        "FieldType must be either: has fields `name` and `type`, has the form of `name: type`",
-        null
-      )
-    }
-    if (content("name").isDefined)
-      collectExtKeys(content, extKeysForField.toList).foreach(field.setValue)
+  def parseFieldType(js: Json): TyField = {
+    js.foldWith(new Json.Folder[TyField] {
 
-    field
+      override def onString(value: String): TyField =
+        TyField("unnamed", parseType(value).toTry.get)
+
+      override def onArray(value: Vector[Json]): TyField =
+        throw ParsingFailure("Field should not be array", null)
+
+      override def onObject(value: JsonObject): TyField = {
+        val field = if (value("name").isDefined && value("type").isDefined) {
+          val name = getString(value, "name")
+          val ty = parseType(getString(value, "type")).toTry.get
+          TyField(name, ty)
+        } else if (value.size == 1) {
+          val name = value.keys.head
+          val ty = parseType(getString(value, name)).toTry.get
+          TyField(name, ty)
+        } else {
+          throw new ParsingFailure(
+            "FieldType must be either: has fields `name` and `type`, has the form of `name: type`",
+            null
+          )
+        }
+        // TODO: handle list and object recursively
+        if (value("name").isDefined)
+          collectExtKeys(value, extKeysForField.toList).foreach(field.setValue)
+
+        field
+      }
+
+      override def onNull: TyField =
+        throw ParsingFailure("Field should not be null", null)
+
+      override def onBoolean(value: Boolean): TyField =
+        throw ParsingFailure("Field should not be boolean", null)
+
+      override def onNumber(value: JsonNumber): TyField =
+        throw ParsingFailure("Field should not be number", null)
+    })
   }
   def collectExtKeys(content: JsonObject,
                      keywords: Seq[Keyword],
