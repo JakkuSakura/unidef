@@ -20,19 +20,19 @@ trait TypeBuilder {
   def optionalKeys: Seq[Keyword] = Nil
 }
 
-// scala: Type[A, B, ..]
-class TyGeneric(val generics: Seq[TyNode]) extends TyNode
+// everything is generic
+trait TyTypeVar extends TyNode
 
-// scala: (A, B)
-case class TyTuple(values: Seq[TyNode]) extends TyGeneric(values)
+// scala: (A, B, ..)
+case class TyTuple(values: Seq[TyNode]) extends TyNode
 
 // scala: Option[A]
-case class TyOptional(value: TyNode) extends TyGeneric(Seq(value))
+case class TyOptional(value: TyNode) extends TyNode
 
 // scala: Either[A, B] rust: Result<Ok, Err>
-case class TyResult(ok: TyNode, err: TyNode) extends TyGeneric(Seq(ok, err))
+case class TyResult(ok: TyNode, err: TyNode) extends TyNode
 
-class TyListOf(value: TyNode) extends TyGeneric(Seq(value)) with TyJson
+class TyListOf(value: TyNode) extends TyJson
 
 // rust: Vec<T>
 case class TyList(value: TyNode) extends TyListOf(value)
@@ -40,8 +40,7 @@ case class TyList(value: TyNode) extends TyListOf(value)
 case object TyRecord extends TyNode
 
 // scala: A -> B
-case class TyMapping(key: TyNode, value: TyNode)
-    extends TyGeneric(Seq(key, value))
+case class TyMapping(key: TyNode, value: TyNode) extends TyNode
 
 sealed class BitSize(val bits: Int)
 
@@ -97,10 +96,10 @@ object TyStruct extends TypeBuilder {
 
 case object KeyDataType extends KeywordBoolean
 
-case class TyDict(key: TyNode, value: TyNode) extends TyGeneric(Seq(key, value))
+case class TyDict(key: TyNode, value: TyNode) extends TyNode
 case object TyByteArray extends TyListOf(TyInteger(BitSize.B16))
 
-case class TySet(value: TyNode) extends TyGeneric(Seq(value))
+case class TySet(value: TyNode) extends TyNode
 
 trait TyJson extends TyNode
 case object TyJsonAny extends TyJson
@@ -164,5 +163,3 @@ case object KeyAttributes extends Keyword {
 case object KeyFields extends KeywordOnly
 case object KeyProperties extends KeywordOnly
 case object KeyType extends KeywordOnly
-
-class TypeParseError extends Exception
