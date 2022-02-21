@@ -131,4 +131,23 @@ case object SqlCodeGen extends KeywordProvider {
 
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_DDL, context)
   }
+  protected val TEMPLATE_GENERATE_FUNCTION_CONSTANT: String =
+    """
+     |CREATE OR REPLACE FUNCTION $name (
+     |)
+     |RETURNS $return_type
+     |LANGUAGE SQL
+     |AS $$
+     |SELECT $value;
+     |$$;
+     |""".stripMargin
+  def generateConstantFunction(name: String,
+                               ret: TyNode,
+                               value: String): String = {
+    val context = CodeGen.createContext
+    context.put("name", name)
+    context.put("return_type", convertType(ret))
+    context.put("value", value)
+    CodeGen.render(TEMPLATE_GENERATE_FUNCTION_CONSTANT, context)
+  }
 }
