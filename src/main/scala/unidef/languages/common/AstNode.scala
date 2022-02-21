@@ -81,7 +81,7 @@ case class AstFunctionDecl(name: AstNode,
 ) extends Extendable
     with AstNode
     with TyApplicable
-    with HasKeyword[KeyBody] {
+    with HasBody {
   override def parameterType: TyNode = TyTuple(parameters)
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)
@@ -109,8 +109,8 @@ case class AstClassDecl(name: AstNode,
     case AstLiteralString(value) => Some(value)
     case _                       => None
   }
-  override def asTypeNode: TyStruct =
-    TyStruct(Some(fields)).setValue(KeyName, literalName.get)
+  //override def asTypeNode: TyStruct =
+  //  TyStruct(Some(fields)).setValue(KeyName, literalName.get)
 
 }
 
@@ -166,13 +166,19 @@ case object AstAnnotations extends AstNode with Keyword {
 case object AstComment extends AstNode with KeywordString {
   override def name: String = "comment"
 }
-trait KeyBody extends Keyword {
+trait HasBody extends Extendable {
+  def getBody: Option[AstNode] = getValue(KeyBody)
+}
+
+case object KeyBody extends Keyword {
   override type V = AstNode
 }
-case object KeyBody extends KeyBody
 
-trait KeyName extends KeywordString
-object KeyName extends KeyName
+trait HasName extends Extendable {
+  def getName: Option[String] = getValue(KeyName)
+}
+
+object KeyName extends KeywordString
 
 case object KeyLanguage extends KeywordString
 case object KeyParameters extends KeywordOnly

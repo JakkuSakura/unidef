@@ -36,23 +36,28 @@ trait KeywordOnly extends Keyword {
 }
 
 class Extendable(
-  private val params: mutable.Map[Keyword, Any] = mutable.HashMap()
+  private val params: mutable.Map[String, Any] = mutable.HashMap()
 ) {
 
   def getValue(key: Keyword): Option[key.V] =
-    params.get(key).asInstanceOf[Option[key.V]]
+    params.get(key.name).asInstanceOf[Option[key.V]]
 
   def setValue[EK <: Keyword, VV <: EK#V](key: EK, v: VV): this.type = {
-    params += key -> v
+    params += key.name -> v
     this
   }
-  def setValueIf[EK <: Keyword, VV <: EK#V](c: Boolean,
-                                            key: EK,
-                                            v: => VV): this.type =
-    if (c) setValue(key, v) else this
+
+  def trySetValue[EK <: Keyword](key: EK, v: Option[EK#V]): this.type = {
+    v match {
+      case Some(value) => params += key.name -> value
+      case None        =>
+    }
+    this
+  }
+
   // type unsafe for sure
   def setValue(kv: (Keyword, Any)): this.type = {
-    params += kv
+    params += kv._1.name -> kv._2
     this
   }
 }
@@ -62,5 +67,3 @@ trait KeywordProvider {
   def keysOnFuncDecl: Seq[Keyword] = Seq()
   def keysOnClassDecl: Seq[Keyword] = Seq()
 }
-
-trait HasKeyword[K <: Keyword] extends Extendable

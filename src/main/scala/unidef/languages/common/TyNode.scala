@@ -87,7 +87,8 @@ trait TyClass extends TyNode
 case class TyStruct(fields: Option[Seq[TyField]])
     extends Extendable
     with TyClass
-    with HasKeyword[KeyName]
+    with HasName
+
 object TyStruct extends TypeBuilder {
   override type Type = TyStruct
 

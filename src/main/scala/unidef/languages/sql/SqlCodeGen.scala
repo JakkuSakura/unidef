@@ -66,9 +66,9 @@ case object SqlCodeGen extends KeywordProvider {
     |#end
     |);
     |""".stripMargin
-  def generateTableDdl(node: TyStruct with HasKeyword[KeyName]): String = {
+  def generateTableDdl(node: TyStruct with HasName): String = {
     val context = CodeGen.createContext
-    context.put("name", node.getValue(KeyName).get)
+    context.put("name", node.getName.get)
     context.put("fields", node.fields.get.map(convertToSqlField).asJava)
     context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
     CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)

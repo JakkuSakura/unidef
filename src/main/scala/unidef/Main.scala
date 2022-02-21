@@ -40,22 +40,21 @@ object Main {
 
     println(parsed)
     for (ty <- parsed) {
-      val code = ty match {
-        case AstTyped(n) if n.isInstanceOf[TyStruct] =>
-          generateTableDdl(n.asInstanceOf[TyStruct])
-        case AstTyped(n) if n.isInstanceOf[AstFunctionDecl] =>
-          generateFunctionDdl(n.asInstanceOf[AstFunctionDecl])
-      }
-      println(code)
       ty match {
-        case func: AstFunctionDecl =>
-          val code2 = PythonSqlCodeGen.generateFuncWrapper(func)
+        case AstTyped(n) if n.isInstanceOf[TyStruct] =>
+          val code = generateTableDdl(n.asInstanceOf[TyStruct])
+          println(code)
+        case AstTyped(n) if n.isInstanceOf[AstFunctionDecl] =>
+          val code = generateFunctionDdl(n.asInstanceOf[AstFunctionDecl])
+          println(code)
+          val code2 = PythonSqlCodeGen.generateFuncWrapper(
+            n.asInstanceOf[AstFunctionDecl]
+          )
           println(code2)
-          val code3 = JsonSchemaCodeGen.generateFuncDecl(func)
+          val code3 =
+            JsonSchemaCodeGen.generateFuncDecl(n.asInstanceOf[AstFunctionDecl])
           println(code3)
-        case _ =>
       }
-
     }
   }
 }
