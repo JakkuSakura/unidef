@@ -5,16 +5,16 @@ import io.circe.{Json, JsonObject, ParsingFailure}
 import unidef.languages.common._
 
 // meant for private use
-case object Required extends KeywordBoolean
-case object AdditionalProperties extends KeywordBoolean
+case object KeyRequired extends KeywordBoolean
+case object KeyAdditionalProperties extends KeywordBoolean
 
 case object JsonSchemaCodeGen {
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): String = {
     val struct = TyStruct().setValue(KeyFields, func.parameters)
-    struct.setValue(Required, true)
-    struct.setValue(AdditionalProperties, false)
+    struct.setValue(KeyRequired, true)
+    struct.setValue(KeyAdditionalProperties, false)
 
     val obj = generateType(struct)
     //  "required": [
@@ -36,9 +36,9 @@ case object JsonSchemaCodeGen {
       case _: TyInteger =>
         jsonObjectOf("integer")
       case _: TyFloat =>
-        jsonObjectOf("float")
+        jsonObjectOf("number")
       case _: TyNumeric =>
-        jsonObjectOf("numeric")
+        jsonObjectOf("number")
       case TyBoolean =>
         jsonObjectOf("boolean")
       case _: TyDateTime =>
