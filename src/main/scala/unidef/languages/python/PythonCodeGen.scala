@@ -16,7 +16,7 @@ class PythonCodeGen extends KeywordProvider {
 
   protected val TEMPLATE_ENUM_CODEGEN: String =
     """
-      |class $name(enum.$enum_type):
+      |class $name($enum_type):
       |#foreach ($field in $fields)
       |    $field.name() = $field.orig_name()
       |#end
@@ -26,8 +26,8 @@ class PythonCodeGen extends KeywordProvider {
     val context = CodeGen.createContext
     context.put("name", PythonNamingConvention.toClassName(func.getName.get))
     func.getValue.getOrElse(TyString) match {
-      case TyString     => context.put("enum_type", "StrEnum")
-      case _: TyInteger => context.put("enum_type", "IntEnum")
+      case TyString     => context.put("enum_type", "str, enum.Enum")
+      case _: TyInteger => context.put("enum_type", "enum.IntEnum")
     }
     var counter = -1
     context.put(
