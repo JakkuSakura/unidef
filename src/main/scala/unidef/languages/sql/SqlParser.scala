@@ -29,8 +29,6 @@ object SqlParser {
   // does not support default value yet
 
   def parse(sql: String)(implicit resolver: TypeRegistry): Seq[AstNode] = {
-    assert(resolver.language == "sql")
-
     val collected = ArrayBuffer[AstNode]()
     extractEnums(sql).foreach { x =>
       x.getValue(KeyName).foreach { nm =>

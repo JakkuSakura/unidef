@@ -20,7 +20,7 @@ object Main {
   parser.prepareForExtKeys(SqlCodeGen)
   val yamlParser = YamlParser(parser)
   def main(args: Array[String]): Unit = {
-    implicit val sqlResolver: TypeRegistry = TypeRegistry("sql")
+    implicit val sqlResolver: TypeRegistry = TypeRegistry()
 
     val filename = args(0)
     val fileContents = FileUtils.readFile(filename)

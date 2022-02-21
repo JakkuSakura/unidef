@@ -13,7 +13,7 @@ object EmptyTypeResolver extends TypeResolver {
   override def decode(typeName: String): Option[TyNode] = None
 }
 
-case class TypeRegistry(language: String) extends TypeResolver {
+case class TypeRegistry() extends TypeResolver {
   val logger: Logger = Logger[this.type]
   val mapping = new mutable.HashMap[String, TyNode]()
 
