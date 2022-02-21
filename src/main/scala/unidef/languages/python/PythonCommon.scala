@@ -17,7 +17,7 @@ object PythonCommon {
       case TyList(v)     => s"List[${convertType(v)}]"
       case TySet(v)      => s"Set[${convertType(v)}]"
       case TyJsonObject  => "Any"
-      case TyUnit        => "NoneType"
+      case TyUnit        => "None"
       case TyTimeStamp() => "datetime.datetime"
       case TyBoolean     => "bool"
       case TyByteArray   => "bytes"
@@ -39,7 +39,7 @@ object PythonCommon {
       case "float"                => TyFloat(BitSize.Unlimited)
       case "str"                  => TyString
       case "bool"                 => TyBoolean
-      case "NoneType"             => TyUnit
+      case "NoneType" | "None"    => TyUnit
       case "datetime.datetime"    => TyTimeStamp()
       case "Dict[str, Any]"       => TyJsonObject
       case "List[Dict[str, Any]]" => TyRecord
