@@ -53,9 +53,12 @@ class PythonSqlCodeGen extends KeywordProvider {
     implicit resolver: TypeResolver
   ): String = {
     val context = CodeGen.createContext
-    context.put("name", func.literalName.get)
+    context.put("name", func.getName.get)
     context.put("params", func.parameters.map(convertToPythonField).asJava)
-    context.put("db_func_name", func.literalName.get)
+    context.put(
+      "db_func_name",
+      func.getValue(KeySchema).map(_ + ".").getOrElse("") + func.getName.get
+    )
     context.put("callfunc", SqlCodeGen.generateCallFunc(func, percentage))
 
     val returnType = func.returnType
