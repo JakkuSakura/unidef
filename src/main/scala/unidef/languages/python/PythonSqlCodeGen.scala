@@ -8,7 +8,7 @@ import unidef.utils.CodeGen
 
 import scala.jdk.CollectionConverters._
 
-private case class PythonField(name: String, ty: String)
+private case class PythonField(name: String, orig_name: String, ty: String)
 class PythonSqlCodeGen extends KeywordProvider {
   override def keysOnFuncDecl: Seq[Keyword] = List(Records, Schema)
   private def convertToPythonField(
@@ -16,6 +16,7 @@ class PythonSqlCodeGen extends KeywordProvider {
   )(implicit resolver: TypeResolver): PythonField =
     PythonField(
       PythonNamingConvention.toFunctionParameterName(node.name),
+      node.name,
       convertType(node.value)
     )
 
@@ -27,15 +28,11 @@ class PythonSqlCodeGen extends KeywordProvider {
       |    $param.name(): $param.ty(),
       |#end
       |) -> Result[$return, int]:
-      |    result = await database._execute('''##
-      |        #indent($callfunc, 8)
-      |        ''',
-      |        [
+      |    result = await database.invoke('$db_func_name', {
       |        #foreach($param in $params)
-      |            $param.name(),
+      |            '$param.orig_name()': $param.name(),
       |        #end
-      |        ]
-      |    )
+      |    })
       |    if isinstance(result, Err):
       |       err = result.value
       |       logger.error("Database when executing $name: " + str(err))
@@ -45,12 +42,11 @@ class PythonSqlCodeGen extends KeywordProvider {
       |    #elseif($table && !$records)
       |    ret = result.value[0]
       |    #elseif(!$table && $records)
-      |    ret = [x["_value"] for x in result.value]
+      |    ret = [x["$db_func_name"] for x in result.value]
       |    #else
-      |    ret = result.value[0]["_value"]
+      |    ret = result.value[0]["$db_func_name"]
       |    #end
-      |    ret2 = cast($return, ret)
-      |    return Ok(ret2)
+      |    return Ok(cast($return, ret))
       |""".stripMargin
 
   def generateFuncWrapper(func: AstFunctionDecl, percentage: Boolean = false)(
