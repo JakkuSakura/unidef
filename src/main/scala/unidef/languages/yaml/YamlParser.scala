@@ -8,23 +8,8 @@ import unidef.languages.javascript.JsonSchemaParser
 
 import scala.collection.mutable
 
-sealed trait YamlType
-object YamlType {
-  case object Model extends YamlType
-  case object Enum extends YamlType
-  case object Function extends YamlType
-
-  def parse(name: String): Option[YamlType] = name match {
-    case "model"    => Some(YamlType.Model)
-    case "enum"     => Some(YamlType.Enum)
-    case "function" => Some(YamlType.Function)
-    case _          => None
-
-  }
-}
-
 // TODO: achieve json-schema like effect
-object YamlParser {
+case class YamlParser(jsParser: JsonSchemaParser) {
   val logger: Logger = Logger[this.type]
   @throws[ParsingFailure]
   def parseMarkdown(content: String): Seq[AstNode] = {
@@ -56,7 +41,7 @@ object YamlParser {
           throw new ParsingFailure("Invalid doc. Object only: " + o, null)
         case Left(err) => throw err
       }
-      .map(x => JsonSchemaParser(true).parse(Json.fromJsonObject(x)))
+      .map(x => jsParser.parse(Json.fromJsonObject(x)))
       .map(AstTyped)
   }
 

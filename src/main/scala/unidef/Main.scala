@@ -21,7 +21,7 @@ object Main {
   val parser = JsonSchemaParser(true)
   parser.prepareForExtKeys(PythonSqlCodeGen)
   parser.prepareForExtKeys(SqlCodeGen)
-
+  val yamlParser = YamlParser(parser)
   def main(args: Array[String]): Unit = {
     implicit val resolver: TypeRegistry = new TypeRegistry()
     val sqlResolver: RefTypeRegistry = RefTypeRegistry("sql")
@@ -31,7 +31,7 @@ object Main {
     val fileContents = FileUtils.readFile(filename)
     val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
 
-      YamlParser.parseFile(fileContents)
+      yamlParser.parseFile(fileContents)
     } else if (filename.endsWith(".sql"))
       SqlParser.parse(fileContents)(sqlResolver)
     else {
