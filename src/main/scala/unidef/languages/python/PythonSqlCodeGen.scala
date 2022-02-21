@@ -35,7 +35,7 @@ class PythonSqlCodeGen extends KeywordProvider {
       |    })
       |    if isinstance(result, Err):
       |       err = result.value
-      |       logger.error("Database when executing $name: " + str(err))
+      |       logger.error("Error when executing $name: " + str(err))
       |       return Err(err)
       |    #if($table && $records)
       |    ret = result.value
