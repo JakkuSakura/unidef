@@ -20,7 +20,7 @@ class PythonSqlCodeGen extends KeywordProvider {
       convertType(node.value)
     )
 
-  protected val template: String =
+  protected val TEMPLATE_DATABASE_CODEGEN: String =
     """
       |@beartype.beartype
       |async def $name(
@@ -76,7 +76,8 @@ class PythonSqlCodeGen extends KeywordProvider {
 
     context.put("schema", func.getValue(Schema).fold("")(x => s"$x."))
 
-    CodeGen.render(template, context)
+    CodeGen.render(TEMPLATE_DATABASE_CODEGEN, context)
   }
+
 }
 object PythonSqlCodeGen extends PythonSqlCodeGen

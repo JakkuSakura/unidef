@@ -182,7 +182,22 @@ case class JsonSchemaParser(extended: Boolean) {
           TyEnum(
             getList(value, "enum")
               .map(_.asString.get)
-              .map(x => TyVariant(Seq(x)))
+              .map(
+                x =>
+                  TyVariant(
+                    Seq(x),
+                    if (extended && value("number").isDefined)
+                      Some(value("number").get.asNumber.get.toInt.get)
+                    else None
+                )
+              )
+          ).trySetValue(
+            KeyReturn,
+            value("int_enum").map(
+              x =>
+                if (extended && x.asBoolean.get) TyInteger(BitSize.B8)
+                else TyString
+            )
           )
         } else {
           getString(value, "type") match {

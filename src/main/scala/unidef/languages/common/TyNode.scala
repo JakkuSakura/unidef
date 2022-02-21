@@ -15,24 +15,27 @@ trait TyNode extends TyTypeExpr {
   def asTypeNode: TyNode = this
 }
 
-trait TypeBuilder {
-  type Type <: TyNode
-  def optionalKeys: Seq[Keyword] = Nil
-}
-
 // everything is generic
 trait TyTypeVar extends TyNode
 
 // scala: (A, B, ..)
 case class TyTuple(values: Seq[TyNode]) extends TyNode
 
+trait HasValue extends Extendable {
+  def getValue: Option[TyNode] = getValue(KeyValue)
+}
+
 // scala: Option[A]
-case class TyOptional(value: TyNode) extends TyNode
+case class TyOptional(value: TyNode) extends HasValue with TyNode {
+  override def getValue: Option[TyNode] = Some(value)
+}
 
 // scala: Either[A, B] rust: Result<Ok, Err>
 case class TyResult(ok: TyNode, err: TyNode) extends TyNode
 
-class TyListOf(value: TyNode) extends TyJson
+class TyListOf(value: TyNode) extends HasValue with TyJson {
+  override def getValue: Option[TyNode] = Some(value)
+}
 
 // rust: Vec<T>
 case class TyList(value: TyNode) extends TyListOf(value)
@@ -71,14 +74,15 @@ case class TyDecimal(precision: Option[Int], scale: Option[Int]) extends TyReal
 case class TyFloat(bitSize: BitSize) extends TyReal
 
 // rust: enum with multiple names
-case class TyVariant(names: Seq[String]) extends TyNode
+case class TyVariant(names: Seq[String], code: Option[Int] = None)
+    extends TyNode
 
-case class TyEnum(variants: Seq[TyVariant]) extends Extendable with TyNode
-object TyEnum extends TypeBuilder {
-  override type Type = TyEnum
+case class TyEnum(variants: Seq[TyVariant])
+    extends Extendable
+    with TyNode
+    with HasName
+    with HasValue
 
-  override def optionalKeys: Seq[Keyword] = Seq(KeyName, KeySimpleEnum)
-}
 case class TyField(name: String, value: TyNode) extends Extendable with TyNode
 
 trait TyClass extends TyNode
@@ -87,12 +91,6 @@ case class TyStruct(fields: Option[Seq[TyField]])
     extends Extendable
     with TyClass
     with HasName
-
-object TyStruct extends TypeBuilder {
-  override type Type = TyStruct
-
-  override def optionalKeys: Seq[Keyword] = Seq(KeyName, KeyDataType)
-}
 
 case object KeyDataType extends KeywordBoolean
 
@@ -163,3 +161,6 @@ case object KeyAttributes extends Keyword {
 case object KeyFields extends KeywordOnly
 case object KeyProperties extends KeywordOnly
 case object KeyType extends KeywordOnly
+case object KeyValue extends Keyword {
+  override type V = TyNode
+}

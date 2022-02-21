@@ -184,4 +184,6 @@ object KeyName extends KeywordString
 
 case object KeyLanguage extends KeywordString
 case object KeyParameters extends KeywordOnly
-case object KeyReturn extends KeywordOnly
+case object KeyReturn extends Keyword {
+  override type V = TyNode
+}

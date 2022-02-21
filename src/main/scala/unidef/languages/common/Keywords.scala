@@ -47,7 +47,8 @@ class Extendable(
     this
   }
 
-  def trySetValue[EK <: Keyword](key: EK, v: Option[EK#V]): this.type = {
+  def trySetValue[EK <: Keyword, VV <: EK#V](key: EK,
+                                             v: Option[VV]): this.type = {
     v match {
       case Some(value) => params += key.name -> value
       case None        =>
