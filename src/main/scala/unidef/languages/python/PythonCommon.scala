@@ -10,7 +10,7 @@ object PythonCommon {
       case TyString     => "str"
       case TyChar       => "str"
       case t @ TyStruct() if t.getValue(KeyName).isDefined =>
-        t.getValue(KeyName).get
+        PythonNamingConvention.toStructName(t.getValue(KeyName).get)
       case TyStruct()    => "Dict[str, Any]"
       case TyRecord      => "List[Dict[str, Any]]"
       case TyDict(k, v)  => s"Dict[${convertType(k)}, ${convertType(v)}]"
@@ -29,7 +29,7 @@ object PythonCommon {
           .map(convertType)
           .getOrElse(s"'${PythonNamingConvention.toClassName(name)}'")
       case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
-        x.getValue(KeyName).get
+        PythonNamingConvention.toClassName(x.getValue(KeyName).get)
       case TyEnum(_) => "str" // TODO: use solid enum if possible
       case t         => s"'$t'"
     }

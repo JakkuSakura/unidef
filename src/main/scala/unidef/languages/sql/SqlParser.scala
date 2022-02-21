@@ -73,6 +73,8 @@ object SqlParser {
             .map(x => TyVariant(Seq(x)))
       }
       .map {
+        case (s"$schema.$name", v) =>
+          TyEnum(v.toSeq).setValue(KeySchema, schema).setValue(KeyName, name)
         case (k, v) => TyEnum(v.toSeq).setValue(KeyName, k)
       }
       .toSeq

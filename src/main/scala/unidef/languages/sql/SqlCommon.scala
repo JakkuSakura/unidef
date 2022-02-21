@@ -56,9 +56,7 @@ case object SqlCommon {
     case TyRecord      => "record"
   }
 
-  def convertTypeFromSql(
-    ty: String
-  )(implicit resolver: TypeResolver): TyNode = {
+  def convertTypeFromSql(ty: String): TyNode = {
     if (ty.endsWith("[]")) {
       return TyList(convertTypeFromSql(ty.dropRight(2)))
     }
@@ -86,7 +84,8 @@ case object SqlCommon {
       case "inet"             => TyInet
       case "uuid"             => TyUuid
       case "record"           => TyRecord
-      case others             => resolver.decode(others).getOrElse(TyNamed(others))
+      case s"$schema.$name"   => TyNamed(name).setValue(KeySchema, schema)
+      case others             => TyNamed(others)
     }
   }
 

@@ -144,7 +144,7 @@ case class TyDateTime(timezone: Option[TimeZone]) extends TyNode
 
 case class TyReference(referee: TyNode) extends TyNode
 
-case class TyNamed(name: String) extends TyNode
+case class TyNamed(name: String) extends Extendable with TyNode
 
 case object Mutability extends KeywordBoolean
 

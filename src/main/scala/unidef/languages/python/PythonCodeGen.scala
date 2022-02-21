@@ -24,10 +24,7 @@ class PythonCodeGen extends KeywordProvider {
 
   def generateEnum(func: TyEnum): String = {
     val context = CodeGen.createContext
-    context.put(
-      "name",
-      PythonNamingConvention.toClassName(func.getName.get.split("\\.").last)
-    )
+    context.put("name", PythonNamingConvention.toClassName(func.getName.get))
     func.getValue.getOrElse(TyString) match {
       case TyString     => context.put("enum_type", "StrEnum")
       case _: TyInteger => context.put("enum_type", "IntEnum")

@@ -53,7 +53,7 @@ class PythonSqlCodeGen extends KeywordProvider {
     implicit resolver: TypeResolver
   ): String = {
     val context = CodeGen.createContext
-    context.put("name", func.literalName.get.split("\\.").last)
+    context.put("name", func.literalName.get)
     context.put("params", func.parameters.map(convertToPythonField).asJava)
     context.put("db_func_name", func.literalName.get)
     context.put("callfunc", SqlCodeGen.generateCallFunc(func, percentage))
