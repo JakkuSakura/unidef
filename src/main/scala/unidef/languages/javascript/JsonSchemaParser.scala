@@ -13,10 +13,7 @@ case class JsonSchemaParser(extended: Boolean) {
   private def parseType(s: String) =
     JsonSchemaCommon(extended)
       .parseType(s)
-      .toRight(ParsingFailure("Failed to parse type " + s, null))
-      .toTry
-      .get
-
+      .getOrElse(throw ParsingFailure("Failed to parse type " + s, null))
   @throws[ParsingFailure]
   def parseFunction(content: JsonObject): TyApplicable = {
     val name = getString(content, "name")
@@ -28,16 +25,19 @@ case class JsonSchemaParser(extended: Boolean) {
     val ret = content("return")
       .map(
         x =>
-          TyStruct(
-            Some(
-              iterateOver(x, "name", "type")
-                .map {
-                  case (name, json) =>
-                    val ty = parse(Json.fromJsonObject(json))
-                    TyField(name, ty)
-                }
-            )
-        )
+          if (x.isString)
+            parseType(x.asString.get)
+          else
+            TyStruct(
+              Some(
+                iterateOver(x, "name", "type")
+                  .map {
+                    case (name, json) =>
+                      val ty = parse(Json.fromJsonObject(json))
+                      TyField(name, ty)
+                  }
+              )
+          )
       )
       .getOrElse(TyUnit)
 

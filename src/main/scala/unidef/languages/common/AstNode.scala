@@ -81,7 +81,9 @@ case class AstFunctionDecl(name: AstNode,
 ) extends Extendable
     with AstNode
     with TyApplicable
+    with HasName
     with HasBody {
+  override def getName: Option[String] = literalName
   override def parameterType: TyNode = TyTuple(parameters)
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)

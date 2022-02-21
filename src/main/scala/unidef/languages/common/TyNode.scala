@@ -164,3 +164,5 @@ case object KeyAttributes extends Keyword {
 case object KeyFields extends KeywordOnly
 case object KeyProperties extends KeywordOnly
 case object KeyType extends KeywordOnly
+
+class TypeParseError extends Exception

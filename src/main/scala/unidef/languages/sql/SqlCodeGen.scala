@@ -96,7 +96,7 @@ case object SqlCodeGen extends KeywordProvider {
      |""".stripMargin
   def generateFunctionDdl(node: AstFunctionDecl): String = {
     val context = CodeGen.createContext
-    context.put("name", node.getValue(KeyName).get)
+    context.put("name", node.getName.get)
     context.put(
       "args",
       node.parameterType
