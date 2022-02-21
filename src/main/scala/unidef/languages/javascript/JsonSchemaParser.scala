@@ -6,6 +6,7 @@ import unidef.languages.common
 import unidef.languages.common._
 import unidef.utils.FileUtils.readFile
 import unidef.utils.JsonUtils.{getList, getObject, getString, iterateOver}
+import unidef.utils.ParseException
 
 import scala.collection.mutable
 
@@ -13,8 +14,8 @@ case class JsonSchemaParser(extended: Boolean) {
   private def parseType(s: String) =
     JsonSchemaCommon(extended)
       .parseType(s)
-      .getOrElse(throw ParsingFailure("Failed to parse type " + s, null))
-  @throws[ParsingFailure]
+      .getOrElse(throw ParseException("Failed to parse type " + s, null))
+
   def parseFunction(content: JsonObject): TyApplicable = {
     val name = getString(content, "name")
     val parameters = content("parameters")
@@ -120,9 +121,8 @@ case class JsonSchemaParser(extended: Boolean) {
           val ty = parseType(getString(value, name))
           TyField(name, ty)
         } else {
-          throw new ParsingFailure(
+          throw ParseException(
             "FieldType must be either: has fields `name` and `type`, has the form of `name: type`",
-            null
           )
         }
         // TODO: handle list and object recursively
@@ -133,13 +133,13 @@ case class JsonSchemaParser(extended: Boolean) {
       }
 
       override def onNull: TyField =
-        throw ParsingFailure("Field should not be null", null)
+        throw ParseException("Field should not be null")
 
       override def onBoolean(value: Boolean): TyField =
-        throw ParsingFailure("Field should not be boolean", null)
+        throw ParseException("Field should not be boolean")
 
       override def onNumber(value: JsonNumber): TyField =
-        throw ParsingFailure("Field should not be number", null)
+        throw ParseException("Field should not be number")
     })
   }
   def collectExtKeys(content: JsonObject,

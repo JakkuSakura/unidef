@@ -30,6 +30,7 @@ case class JsonSchemaCommon(extended: Boolean) extends TypeResolver {
       case "bool" if extended           => Some(TyBoolean)
       case "dict" if extended           => Some(TyStruct())
       case "any" if extended            => Some(TyAny)
+      case "void" | "unit" if extended  => Some(TyUnit)
       case _                            => None
 
     }
