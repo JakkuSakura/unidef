@@ -32,6 +32,7 @@ trait KeywordInt extends Keyword {
 
 trait KeywordOnly extends Keyword {
   override type V = Unit
+  override def decoder: Option[Decoder[V]] = None
 }
 
 class Extendable(
@@ -45,7 +46,10 @@ class Extendable(
     params += key -> v
     this
   }
-
+  def setValueIf[EK <: Keyword, VV <: EK#V](c: Boolean,
+                                            key: EK,
+                                            v: => VV): this.type =
+    if (c) setValue(key, v) else this
   // type unsafe for sure
   def setValue(kv: (Keyword, Any)): this.type = {
     params += kv
@@ -58,3 +62,5 @@ trait KeywordProvider {
   def keysOnFuncDecl: Seq[Keyword] = Seq()
   def keysOnClassDecl: Seq[Keyword] = Seq()
 }
+
+trait HasKeyword[K <: Keyword] extends Extendable

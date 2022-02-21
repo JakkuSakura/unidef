@@ -205,9 +205,9 @@ object SqlParser {
       else if (outputOnly.isDefined)
         outputOnly.get
       else
-        TyStruct(Some(Nil)),
-      Some(AstRawCode(body).setValue(Language, language)),
+        TyStruct(Some(Nil))
     )
+    func.setValue(KeyBody, AstRawCode(body).setValue(KeyLanguage, language))
     if (outputOnly.isEmpty)
       func.setValue(Records, true)
     logger.debug(s"Parsed function: ${func.literalName.get}")

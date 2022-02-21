@@ -1,4 +1,4 @@
-type: model
+type: object
 name: user
 fields:
   - name: id

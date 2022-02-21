@@ -4,7 +4,29 @@ import io.circe.{Decoder, Json, JsonObject, ParsingFailure}
 
 object JsonUtils {
   def getProperty(obj: JsonObject, name: String): Either[ParsingFailure, Json] =
-    obj(name).toRight(ParsingFailure(name + " does not exist", null))
+    obj(name).toRight(ParsingFailure("Key " + name + " does not exist", null))
+
+  def tryGetName(json: JsonObject, key: String = "name"): String =
+    if (json.size == 1) json.keys.toSeq.head else getString(json, key)
+
+  def tryGetValue(json: JsonObject, key: String = "value"): JsonObject =
+    if (json.size == 1) JsonObject(key -> json.values.toSeq.head) else json
+
+  def iterateOver(json: Json,
+                  keyForName: String,
+                  keyForValue: String): Seq[(String, JsonObject)] = {
+    if (json.asArray.isDefined) {
+      json.asArray.get
+        .map(_.asObject.get)
+        .map(x => tryGetName(x, keyForName) -> x)
+        .toSeq
+    } else {
+      json.asObject.get.toIterable.map {
+        case (k, v) => k -> tryGetValue(v.asObject.get, keyForValue)
+      }.toSeq
+    }
+
+  }
 
   def getAs[A](obj: JsonObject, name: String)(implicit d: Decoder[A]): A =
     getProperty(obj, name)

@@ -1,6 +1,7 @@
 package unidef.languages.sql
 
 import unidef.languages.common._
+
 import unidef.languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
 import unidef.languages.sql.SqlCommon.{
   Records,
@@ -14,7 +15,7 @@ import scala.jdk.CollectionConverters._
 
 case class SqlField(name: String, ty: String, attributes: String)
 case object SqlCodeGen extends KeywordProvider {
-  override def keysOnFuncDecl: Seq[Keyword] = Seq(Records, Schema, Body)
+  override def keysOnFuncDecl: Seq[Keyword] = Seq(Records, Schema, KeyBody)
   override def keysOnField: Seq[Keyword] = Seq(PrimaryKey, AutoIncr, Nullable)
   private val TEMPLATE_GENERATE_FUNCTION_CALL =
     """
@@ -65,10 +66,10 @@ case object SqlCodeGen extends KeywordProvider {
     |#end
     |);
     |""".stripMargin
-  def generateTableDdl(node: AstClassDecl): String = {
+  def generateTableDdl(node: TyStruct with HasKeyword[KeyName]): String = {
     val context = CodeGen.createContext
-    context.put("name", node.literalName.get)
-    context.put("fields", node.fields.map(convertToSqlField).asJava)
+    context.put("name", node.getValue(KeyName).get)
+    context.put("fields", node.fields.get.map(convertToSqlField).asJava)
     context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
     CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)
   }
@@ -95,13 +96,26 @@ case object SqlCodeGen extends KeywordProvider {
      |""".stripMargin
   def generateFunctionDdl(node: AstFunctionDecl): String = {
     val context = CodeGen.createContext
-    context.put("name", node.literalName.get)
-    context.put("args", node.parameters.map(convertToSqlField).asJava)
+    context.put("name", node.getValue(KeyName).get)
+    context.put(
+      "args",
+      node.parameterType
+        .asInstanceOf[TyTuple]
+        .values
+        .map(_.asInstanceOf[TyField])
+        .map(convertToSqlField)
+        .asJava
+    )
     context.put(
       "language",
-      node.body.get.asInstanceOf[AstRawCode].getValue(Language).get
+      node
+        .getValue(KeyBody)
+        .get
+        .asInstanceOf[AstRawCode]
+        .getValue(KeyLanguage)
+        .get
     )
-    context.put("body", node.body.get.asInstanceOf[AstRawCode].raw)
+    context.put("body", node.getValue(KeyBody).get.asInstanceOf[AstRawCode].raw)
     context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
     node.returnType match {
       case TyStruct(Some(fields)) =>

@@ -4,21 +4,11 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 trait TypeResolver {
-  def decode(language: String, typeName: String)(
-    implicit resolver: TypeResolver
-  ): Option[TyNode]
-  def encode(language: String, node: TyNode)(
-    implicit resolver: TypeResolver
-  ): Option[String]
+  def decode(language: String, typeName: String): Option[TyNode]
 }
-object EmptyTypeResolver extends TypeResolver {
-  override def decode(language: String, typeName: String)(
-    implicit resolver: TypeResolver
-  ): Option[TyNode] = None
 
-  override def encode(language: String, node: TyNode)(
-    implicit resolver: TypeResolver
-  ): Option[String] = None
+object EmptyTypeResolver extends TypeResolver {
+  override def decode(language: String, typeName: String): Option[TyNode] = None
 }
 
 class TypeRegistry extends TypeResolver {
@@ -26,9 +16,7 @@ class TypeRegistry extends TypeResolver {
   def register(registry: TypeResolver): Unit = {
     registries += registry
   }
-  override def decode(language: String, typeName: String)(
-    implicit resolver: TypeResolver
-  ): Option[TyNode] = {
+  override def decode(language: String, typeName: String): Option[TyNode] = {
     for (registry <- registries) {
       registry.decode(language, typeName) match {
         case Some(ty) => return Some(ty)
@@ -38,17 +26,6 @@ class TypeRegistry extends TypeResolver {
     None
   }
 
-  override def encode(language: String, node: TyNode)(
-    implicit resolver: TypeResolver
-  ): Option[String] = {
-    for (registry <- registries) {
-      registry.encode(language, node) match {
-        case Some(ty) => return Some(ty)
-        case None     =>
-      }
-    }
-    None
-  }
 }
 
 case class RefTypeRegistry(language: String) extends TypeResolver {
@@ -56,9 +33,7 @@ case class RefTypeRegistry(language: String) extends TypeResolver {
 
   def add(s: String, ty: TyNode): Unit = mapping += s -> ty
 
-  override def decode(language: String, typeName: String)(
-    implicit resolver: TypeResolver
-  ): Option[TyNode] = {
+  override def decode(language: String, typeName: String): Option[TyNode] = {
     if (language == this.language) {
       mapping.get(typeName)
     } else {
@@ -66,13 +41,4 @@ case class RefTypeRegistry(language: String) extends TypeResolver {
     }
   }
 
-  override def encode(language: String, node: TyNode)(
-    implicit resolver: TypeResolver
-  ): Option[String] = {
-    if (language == this.language) {
-      mapping.find(_._2 == node).map(_._1)
-    } else {
-      None
-    }
-  }
 }

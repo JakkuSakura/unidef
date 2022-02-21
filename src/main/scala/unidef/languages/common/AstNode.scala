@@ -10,12 +10,8 @@ import io.circe.generic.semiauto._
   */
 trait AstNode
 
-trait AstTypeExpr {
-  def inferType: TyNode
-}
-
-class AstStaticType(ty: TyNode) extends AstNode with AstTypeExpr {
-  override def inferType: TyNode = ty
+class AstStaticType(ty: TyNode) extends AstNode with TyTypeExpr {
+  override def asTypeNode: TyNode = ty
 }
 
 // Unit is the bottom type
@@ -66,7 +62,7 @@ case class AstLiteralDict(values: Seq[(AstNode, AstNode)])
 
 case class AstLiteralStruct(values: Seq[(AstNode, AstNode)])
 
-case class AstLiteralOptional(value: Option[AstTypeExpr])
+case class AstLiteralOptional(value: Option[TyTypeExpr])
 
 sealed trait AccessModifier
 
@@ -81,10 +77,12 @@ object AccessModifier extends Keyword {
 
 case class AstFunctionDecl(name: AstNode,
                            parameters: Seq[TyField],
-                           returnType: TyNode,
-                           body: Option[AstNode])
-    extends Extendable
-    with AstNode {
+                           override val returnType: TyNode,
+) extends Extendable
+    with AstNode
+    with TyApplicable
+    with HasKeyword[KeyBody] {
+  override def parameterType: TyNode = TyTuple(parameters)
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)
     case _                       => None
@@ -105,12 +103,13 @@ case class AstClassDecl(name: AstNode,
                         derived: Seq[AstClassIdent] = Nil,
 ) extends Extendable
     with AstNode
-    with AstTypeExpr {
+    with TyTypeExpr
+    with TyClass {
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)
     case _                       => None
   }
-  override def inferType: TyStruct =
+  override def asTypeNode: TyStruct =
     TyStruct(Some(fields)).setValue(KeyName, literalName.get)
 
 }
@@ -167,8 +166,14 @@ case object AstAnnotations extends AstNode with Keyword {
 case object AstComment extends AstNode with KeywordString {
   override def name: String = "comment"
 }
+trait KeyBody extends Keyword {
+  override type V = AstNode
+}
+case object KeyBody extends KeyBody
 
-case object Body extends KeywordOnly
-case object Language extends KeywordString
-case object Parameters extends KeywordOnly
-case object Return extends KeywordOnly
+trait KeyName extends KeywordString
+object KeyName extends KeyName
+
+case object KeyLanguage extends KeywordString
+case object KeyParameters extends KeywordOnly
+case object KeyReturn extends KeywordOnly

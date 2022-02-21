@@ -3,10 +3,14 @@ package unidef
 import unidef.languages.common.{
   AstClassDecl,
   AstFunctionDecl,
+  AstTyped,
   RefTypeRegistry,
+  TyApplicable,
+  TyClass,
+  TyStruct,
   TypeRegistry
 }
-import unidef.languages.javascript.JsonSchemaCodeGen
+import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
 import unidef.languages.python.PythonSqlCodeGen
 import unidef.languages.sql.SqlCodeGen.{generateFunctionDdl, generateTableDdl}
 import unidef.languages.sql.{SqlCodeGen, SqlParser}
@@ -14,8 +18,9 @@ import unidef.languages.yaml.YamlParser
 import unidef.utils.FileUtils
 
 object Main {
-  YamlParser.prepareForExtKeys(PythonSqlCodeGen)
-  YamlParser.prepareForExtKeys(SqlCodeGen)
+  val parser = JsonSchemaParser(true)
+  parser.prepareForExtKeys(PythonSqlCodeGen)
+  parser.prepareForExtKeys(SqlCodeGen)
 
   def main(args: Array[String]): Unit = {
     implicit val resolver: TypeRegistry = new TypeRegistry()
@@ -36,8 +41,10 @@ object Main {
     println(parsed)
     for (ty <- parsed) {
       val code = ty match {
-        case n: AstClassDecl    => generateTableDdl(n)
-        case n: AstFunctionDecl => generateFunctionDdl(n)
+        case AstTyped(n) if n.isInstanceOf[TyStruct] =>
+          generateTableDdl(n.asInstanceOf[TyStruct])
+        case AstTyped(n) if n.isInstanceOf[AstFunctionDecl] =>
+          generateFunctionDdl(n.asInstanceOf[AstFunctionDecl])
       }
       println(code)
       ty match {

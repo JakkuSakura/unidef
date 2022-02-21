@@ -7,7 +7,14 @@ import java.util.TimeZone
 /**
   * This is a very generic type model
   */
-trait TyNode
+trait TyTypeExpr {
+  def asTypeNode: TyNode
+}
+
+trait TyNode extends TyTypeExpr {
+  def asTypeNode: TyNode = this
+}
+
 trait TypeBuilder {
   type Type <: TyNode
   def optionalKeys: Seq[Keyword] = Nil
@@ -75,8 +82,12 @@ object TyEnum extends TypeBuilder {
 }
 case class TyField(name: String, value: TyNode) extends Extendable with TyNode
 
+trait TyClass extends TyNode
 // None means that fields are unknown
-case class TyStruct(fields: Option[Seq[TyField]]) extends Extendable with TyNode
+case class TyStruct(fields: Option[Seq[TyField]])
+    extends Extendable
+    with TyClass
+    with HasKeyword[KeyName]
 object TyStruct extends TypeBuilder {
   override type Type = TyStruct
 
@@ -109,8 +120,20 @@ case object TyUnknown extends TyNode
 case object TyUndefined extends TyNode
 case object TyInet extends TyNode
 case object TyUuid extends TyNode
+trait TyApplicable extends TyNode {
+  def parameterType: TyNode
+  def returnType: TyNode
+}
+case class TyLambda(override val parameterType: TyNode,
+                    override val returnType: TyNode)
+    extends Extendable
+    with TyApplicable
 
-case class TyLambda(params: TyNode, ret: TyNode) extends TyNode
+object TyFunction {
+  def apply(params: Seq[TyNode], ret: TyNode): TyLambda =
+    TyLambda(TyTuple(params), ret)
+}
+
 case class TyTimeStamp() extends Extendable with TyNode
 case class TyUnion(types: Seq[TyNode]) extends TyNode
 
@@ -138,5 +161,5 @@ case object KeyAttributes extends Keyword {
 
 }
 case object KeyFields extends KeywordOnly
-case object KeyName extends KeywordString
+case object KeyProperties extends KeywordOnly
 case object KeyType extends KeywordOnly
