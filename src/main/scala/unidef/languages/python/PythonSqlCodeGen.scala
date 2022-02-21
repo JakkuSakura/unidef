@@ -42,9 +42,9 @@ class PythonSqlCodeGen extends KeywordProvider {
       |    #elseif($table && !$records)
       |    ret = result.value[0]
       |    #elseif(!$table && $records)
-      |    ret = [x["$db_func_name"] for x in result.value]
+      |    ret = [x["$name"] for x in result.value]
       |    #else
-      |    ret = result.value[0]["$db_func_name"]
+      |    ret = result.value[0]["$name"]
       |    #end
       |    return Ok(cast($return, ret))
       |""".stripMargin
