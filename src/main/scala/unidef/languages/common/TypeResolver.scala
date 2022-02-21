@@ -1,44 +1,29 @@
 package unidef.languages.common
 
+import com.typesafe.scalalogging.Logger
+import unidef.utils.TextTool
+
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 trait TypeResolver {
-  def decode(language: String, typeName: String): Option[TyNode]
+  def decode(typeName: String): Option[TyNode]
 }
 
 object EmptyTypeResolver extends TypeResolver {
-  override def decode(language: String, typeName: String): Option[TyNode] = None
+  override def decode(typeName: String): Option[TyNode] = None
 }
 
-class TypeRegistry extends TypeResolver {
-  private val registries = ArrayBuffer[TypeResolver]()
-  def register(registry: TypeResolver): Unit = {
-    registries += registry
-  }
-  override def decode(language: String, typeName: String): Option[TyNode] = {
-    for (registry <- registries) {
-      registry.decode(language, typeName) match {
-        case Some(ty) => return Some(ty)
-        case None     =>
-      }
-    }
-    None
-  }
-
-}
-
-case class RefTypeRegistry(language: String) extends TypeResolver {
+case class TypeRegistry(language: String) extends TypeResolver {
+  val logger: Logger = Logger[this.type]
   val mapping = new mutable.HashMap[String, TyNode]()
 
-  def add(s: String, ty: TyNode): Unit = mapping += s -> ty
+  def add(s: String, ty: TyNode with Extendable, source_lang: String): Unit = {
+    logger.debug(s"Add type $s from $source_lang")
+    mapping += TextTool.toSnakeCase(s) -> ty.setValue(KeyLanguage, source_lang)
+  }
 
-  override def decode(language: String, typeName: String): Option[TyNode] = {
-    if (language == this.language) {
-      mapping.get(typeName)
-    } else {
-      None
-    }
+  override def decode(typeName: String): Option[TyNode] = {
+    mapping.get(TextTool.toSnakeCase(typeName))
   }
 
 }

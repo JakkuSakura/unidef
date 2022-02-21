@@ -9,9 +9,9 @@ object PythonCommon {
       case _: TyFloat   => "float"
       case TyString     => "str"
       case TyChar       => "str"
-      case t @ TyStruct(_) if t.getValue(KeyName).isDefined =>
+      case t @ TyStruct() if t.getValue(KeyName).isDefined =>
         t.getValue(KeyName).get
-      case TyStruct(_)   => "Dict[str, Any]"
+      case TyStruct()    => "Dict[str, Any]"
       case TyRecord      => "List[Dict[str, Any]]"
       case TyDict(k, v)  => s"Dict[${convertType(k)}, ${convertType(v)}]"
       case TyList(v)     => s"List[${convertType(v)}]"
@@ -25,7 +25,7 @@ object PythonCommon {
       case TyInet        => "str" // FIXME: InetAddress
       case TyNamed(name) =>
         resolver
-          .decode("python", name)
+          .decode(name)
           .map(convertType)
           .getOrElse(s"'${PythonNamingConvention.toClassName(name)}'")
       case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>

@@ -11,7 +11,11 @@ import net.sf.jsqlparser.statement.create.table.{
 import org.apache.commons.lang3.StringUtils
 import unidef.languages.common
 import unidef.languages.common._
-import unidef.languages.sql.SqlCommon.{Records, Schema, convertTypeFromSql}
+import unidef.languages.sql.SqlCommon.{
+  KeyRecords,
+  KeySchema,
+  convertTypeFromSql
+}
 import unidef.utils.TextTool.{finds, findss}
 
 import scala.collection.mutable
@@ -24,13 +28,13 @@ object SqlParser {
 
   // does not support default value yet
 
-  def parse(sql: String)(implicit resolver: RefTypeRegistry): Seq[AstNode] = {
+  def parse(sql: String)(implicit resolver: TypeRegistry): Seq[AstNode] = {
     assert(resolver.language == "sql")
 
     val collected = ArrayBuffer[AstNode]()
     extractEnums(sql).foreach { x =>
       x.getValue(KeyName).foreach { nm =>
-        resolver.add(nm, x)
+        resolver.add(nm, x, "sql")
         collected += AstTyped(x)
       }
 
@@ -131,14 +135,16 @@ object SqlParser {
   def parseCreateFunction(
     parts: Seq[String]
   )(implicit resolver: TypeResolver): Option[(AstFunctionDecl, Int)] = {
-    val name = parts match {
+    val (schema, name) = parts match {
       case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
-        s"$schema.$name"
+        (schema, name)
       case "CREATE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
-        s"$schema.$name"
-      case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: name +: _ => name
-      case "CREATE" +: "FUNCTION" +: name +: _                      => name
-      case _                                                        => return None
+        (schema, name)
+
+      case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: name +: _ =>
+        ("", name)
+      case "CREATE" +: "FUNCTION" +: name +: _ => ("", name)
+      case _                                   => return None
     }
     val first_left_paren = finds(parts, "(").get
     val first_right_paren = finds(parts, ")").get
@@ -201,15 +207,15 @@ object SqlParser {
       AstLiteralString(name),
       inputs.toSeq,
       if (outputs.nonEmpty)
-        TyStruct(Some(outputs.toSeq))
+        TyStruct().setValue(KeyFields, outputs.toSeq)
       else if (outputOnly.isDefined)
         outputOnly.get
       else
-        TyStruct(Some(Nil))
-    )
+        TyStruct().setValue(KeyFields, Nil)
+    ).setValue(KeySchema, schema)
     func.setValue(KeyBody, AstRawCode(body).setValue(KeyLanguage, language))
     if (outputOnly.isEmpty)
-      func.setValue(Records, true)
+      func.setValue(KeyRecords, true)
     logger.debug(s"Parsed function: ${func.literalName.get}")
     Some((func, end))
   }
@@ -221,7 +227,7 @@ object SqlParser {
         AstLiteralString(tbl.getTable.getName),
         tbl.getColumnDefinitions.asScala.map(parseParseColumn).toSeq
       )
-      .setValue(Schema, tbl.getTable.getSchemaName)
+      .trySetValue(KeySchema, Option(tbl.getTable.getSchemaName))
   }
   def parseParseColumn(
     column: ColumnDefinition

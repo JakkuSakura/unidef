@@ -8,12 +8,11 @@ import scala.collection.mutable
 
 case object SqlCommon {
   // multiple rows
-  case object Records extends KeywordBoolean
-  case object Schema extends KeywordString
-  case object KeySimpleEnum extends KeywordBoolean
-  case object Oid extends KeywordBoolean {
+  case object KeyRecords extends KeywordBoolean
+  case object KeySchema extends KeywordString
+  case object KeyOid extends KeywordBoolean {
     def get: TyInteger =
-      TyInteger(BitSize.B32, signed = false).setValue(Oid, true)
+      TyInteger(BitSize.B32, signed = false).setValue(KeyOid, true)
   }
 
   def convertReal(ty: TyReal): String = ty match {
@@ -24,7 +23,7 @@ case object SqlCommon {
   }
 
   def convertInt(ty: TyInteger): String = ty match {
-    case ty if ty.getValue(Oid).contains(true) => "oid"
+    case ty if ty.getValue(KeyOid).contains(true) => "oid"
     case _ =>
       ty.bitSize match {
         case BitSize.B16 => "smallint"
@@ -42,7 +41,7 @@ case object SqlCommon {
     //case TimeStampType(_, false) => "timestamp without time zone"
     case TyTimeStamp()                                              => "timestamp"
     case TyString                                                   => "text"
-    case TyStruct(_)                                                => "jsonb"
+    case TyStruct()                                                 => "jsonb"
     case x @ TyEnum(_) if x.getValue(KeySimpleEnum).contains(false) => "jsonb"
     case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
       x.getValue(KeyName).get
@@ -81,13 +80,13 @@ case object SqlCommon {
       case "text" | "varchar" => TyString
       case "jsonb"            => TyJsonAny
       case "void"             => TyUnit
-      case "oid"              => Oid.get
+      case "oid"              => KeyOid.get
       case "boolean"          => TyBoolean
       case "bytea"            => TyByteArray
       case "inet"             => TyInet
       case "uuid"             => TyUuid
       case "record"           => TyRecord
-      case others             => resolver.decode("sql", others).getOrElse(TyNamed(others))
+      case others             => resolver.decode(others).getOrElse(TyNamed(others))
     }
   }
 
@@ -98,7 +97,11 @@ case object SqlCommon {
     if (!node.getValue(Nullable).contains(true))
       attributes ++= " NOT NULL"
     // TODO auto incr
-    SqlField(node.name, convertType(node.value), attributes.toString)
+    SqlField(
+      SqlNamingConvention.toFieldName(node.name),
+      convertType(node.value),
+      attributes.toString
+    )
   }
 
 }

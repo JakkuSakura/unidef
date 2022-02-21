@@ -4,9 +4,6 @@ import unidef.languages.common.{
   AstClassDecl,
   AstFunctionDecl,
   AstTyped,
-  RefTypeRegistry,
-  TyApplicable,
-  TyClass,
   TyStruct,
   TypeRegistry
 }
@@ -23,9 +20,7 @@ object Main {
   parser.prepareForExtKeys(SqlCodeGen)
   val yamlParser = YamlParser(parser)
   def main(args: Array[String]): Unit = {
-    implicit val resolver: TypeRegistry = new TypeRegistry()
-    val sqlResolver: RefTypeRegistry = RefTypeRegistry("sql")
-    resolver.register(sqlResolver)
+    implicit val sqlResolver: TypeRegistry = TypeRegistry("sql")
 
     val filename = args(0)
     val fileContents = FileUtils.readFile(filename)
@@ -41,18 +36,19 @@ object Main {
     println(parsed)
     for (ty <- parsed) {
       ty match {
+        case a @ AstClassDecl(name, fields, methods, derived) =>
+          val code = generateTableDdl(a)
+          println(code)
         case AstTyped(n) if n.isInstanceOf[TyStruct] =>
           val code = generateTableDdl(n.asInstanceOf[TyStruct])
           println(code)
-        case AstTyped(n) if n.isInstanceOf[AstFunctionDecl] =>
-          val code = generateFunctionDdl(n.asInstanceOf[AstFunctionDecl])
+        case n: AstFunctionDecl =>
+          val code = SqlCodeGen.generateFunctionDdl(n)
           println(code)
-          val code2 = PythonSqlCodeGen.generateFuncWrapper(
-            n.asInstanceOf[AstFunctionDecl]
-          )
+          val code2 = PythonSqlCodeGen.generateFuncWrapper(n)
           println(code2)
           val code3 =
-            JsonSchemaCodeGen.generateFuncDecl(n.asInstanceOf[AstFunctionDecl])
+            JsonSchemaCodeGen.generateFuncDecl(n)
           println(code3)
       }
     }

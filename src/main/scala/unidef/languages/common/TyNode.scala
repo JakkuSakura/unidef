@@ -1,7 +1,5 @@
 package unidef.languages.common
 
-import unidef.languages.sql.SqlCommon.KeySimpleEnum
-
 import java.util.TimeZone
 
 /**
@@ -87,10 +85,11 @@ case class TyField(name: String, value: TyNode) extends Extendable with TyNode
 
 trait TyClass extends TyNode
 // None means that fields are unknown
-case class TyStruct(fields: Option[Seq[TyField]])
+case class TyStruct()
     extends Extendable
     with TyClass
     with HasName
+    with HasFields
 
 case object KeyDataType extends KeywordBoolean
 
@@ -158,9 +157,15 @@ case object KeyAttributes extends Keyword {
   override type V = Seq[AstFunctionApply]
 
 }
-case object KeyFields extends KeywordOnly
+trait HasFields extends Extendable {
+  def getFields: Option[Seq[TyField]] = getValue(KeyFields)
+}
+case object KeyFields extends Keyword {
+  override type V = Seq[TyField]
+}
 case object KeyProperties extends KeywordOnly
 case object KeyType extends KeywordOnly
 case object KeyValue extends Keyword {
   override type V = TyNode
 }
+case object KeySimpleEnum extends KeywordBoolean

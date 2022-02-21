@@ -3,14 +3,14 @@ package unidef.languages.python
 import unidef.languages.common._
 import unidef.languages.python.PythonCommon.convertType
 import unidef.languages.sql.SqlCodeGen
-import unidef.languages.sql.SqlCommon.{Records, Schema}
+import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
 import unidef.utils.CodeGen
 
 import scala.jdk.CollectionConverters._
 
 private case class PythonField(name: String, orig_name: String, ty: String)
 class PythonSqlCodeGen extends KeywordProvider {
-  override def keysOnFuncDecl: Seq[Keyword] = List(Records, Schema)
+  override def keysOnFuncDecl: Seq[Keyword] = List(KeyRecords, KeySchema)
   private def convertToPythonField(
     node: TyField
   )(implicit resolver: TypeResolver): PythonField =
@@ -60,13 +60,13 @@ class PythonSqlCodeGen extends KeywordProvider {
 
     val returnType = func.returnType
     returnType match {
-      case TyRecord | TyStruct(_) =>
+      case TyRecord | TyStruct() =>
         context.put("table", true)
       case _ =>
         context.put("table", false)
 
     }
-    if (func.getValue(Records).contains(true)) {
+    if (func.getValue(KeyRecords).contains(true)) {
       context.put("records", true)
       context.put("return", convertType(TyList(returnType)))
     } else {
@@ -74,7 +74,7 @@ class PythonSqlCodeGen extends KeywordProvider {
       context.put("return", convertType(returnType))
     }
 
-    context.put("schema", func.getValue(Schema).fold("")(x => s"$x."))
+    context.put("schema", func.getValue(KeySchema).fold("")(x => s"$x."))
 
     CodeGen.render(TEMPLATE_DATABASE_CODEGEN, context)
   }

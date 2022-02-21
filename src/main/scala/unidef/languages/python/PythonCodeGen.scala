@@ -3,7 +3,6 @@ package unidef.languages.python
 import unidef.languages.common.{
   KeyName,
   KeywordProvider,
-  PythonNamingConvention,
   TyEnum,
   TyInteger,
   TyString,
@@ -42,7 +41,7 @@ class PythonCodeGen extends KeywordProvider {
           case (name, code) =>
             counter += 1
             PythonField(
-              PythonNamingConvention.toEnumName(name),
+              PythonNamingConvention.toEnumValueName(name),
               func.getValue.getOrElse(TyString) match {
                 case TyString     => s"'$name'"
                 case _: TyInteger => s"${code.getOrElse(counter)}"

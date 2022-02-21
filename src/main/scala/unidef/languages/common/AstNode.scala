@@ -106,7 +106,12 @@ case class AstClassDecl(name: AstNode,
 ) extends Extendable
     with AstNode
     with TyTypeExpr
-    with TyClass {
+    with TyClass
+    with HasName
+    with HasFields {
+
+  override def getName: Option[String] = literalName
+  override def getFields: Option[Seq[TyField]] = Some(fields)
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)
     case _                       => None

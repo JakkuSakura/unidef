@@ -4,8 +4,8 @@ import unidef.languages.common._
 
 import unidef.languages.sql.FieldType.{AutoIncr, Nullable, PrimaryKey}
 import unidef.languages.sql.SqlCommon.{
-  Records,
-  Schema,
+  KeyRecords,
+  KeySchema,
   convertToSqlField,
   convertType
 }
@@ -15,7 +15,8 @@ import scala.jdk.CollectionConverters._
 
 case class SqlField(name: String, ty: String, attributes: String)
 case object SqlCodeGen extends KeywordProvider {
-  override def keysOnFuncDecl: Seq[Keyword] = Seq(Records, Schema, KeyBody)
+  override def keysOnFuncDecl: Seq[Keyword] =
+    Seq(KeyRecords, KeySchema, KeyBody)
   override def keysOnField: Seq[Keyword] = Seq(PrimaryKey, AutoIncr, Nullable)
   private val TEMPLATE_GENERATE_FUNCTION_CALL =
     """
@@ -44,11 +45,11 @@ case object SqlCodeGen extends KeywordProvider {
 
     context.put("params", func.parameters.map(_.name).asJava)
     context.put("db_func_name", func.literalName.get)
-    context.put("schema", func.getValue(Schema).fold("")(x => s"$x."))
+    context.put("schema", func.getValue(KeySchema).fold("")(x => s"$x."))
 
     val returnType = func.returnType
     returnType match {
-      case TyRecord | TyStruct(_) =>
+      case TyRecord | TyStruct() =>
         context.put("table", true)
       case _ =>
         context.put("table", false)
@@ -66,11 +67,11 @@ case object SqlCodeGen extends KeywordProvider {
     |#end
     |);
     |""".stripMargin
-  def generateTableDdl(node: TyStruct with HasName): String = {
+  def generateTableDdl(node: TyClass with HasName with HasFields): String = {
     val context = CodeGen.createContext
-    context.put("name", node.getName.get)
-    context.put("fields", node.fields.get.map(convertToSqlField).asJava)
-    context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
+    context.put("name", SqlNamingConvention.toClassName(node.getName.get))
+    context.put("fields", node.getFields.get.map(convertToSqlField).asJava)
+    context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
     CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)
   }
   private val TEMPLATE_GENERATE_FUNCTION_DDL =
@@ -96,7 +97,7 @@ case object SqlCodeGen extends KeywordProvider {
      |""".stripMargin
   def generateFunctionDdl(node: AstFunctionDecl): String = {
     val context = CodeGen.createContext
-    context.put("name", node.getName.get)
+    context.put("name", SqlNamingConvention.toFunctionName(node.getName.get))
     context.put(
       "args",
       node.parameterType
@@ -116,11 +117,14 @@ case object SqlCodeGen extends KeywordProvider {
         .get
     )
     context.put("body", node.getValue(KeyBody).get.asInstanceOf[AstRawCode].raw)
-    context.put("schema", node.getValue(Schema).fold("")(x => s"$x."))
+    context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
     node.returnType match {
-      case TyStruct(Some(fields)) =>
-        context.put("return_table", fields.map(convertToSqlField).asJava)
-      case TyStruct(None) =>
+      case x: TyStruct if x.getFields.isDefined =>
+        context.put(
+          "return_table",
+          x.getFields.get.map(convertToSqlField).asJava
+        )
+      case TyStruct() =>
         context.put("return_type", "record")
       case a => context.put("return_type", convertType(a))
     }

@@ -10,7 +10,7 @@ case class JsonSchemaCommon(extended: Boolean) extends TypeResolver {
       case "string"                              => Some(TyString)
       case "boolean"                             => Some(TyBoolean)
       case "number"                              => Some(TyNumericClass())
-      case "object"                              => Some(TyStruct(None))
+      case "object"                              => Some(TyStruct())
       case "null"                                => Some(TyNull)
       case "int" | "i32" | "integer" if extended => Some(TyInteger(BitSize.B32))
       case "uint" | "u32" if extended =>
@@ -28,13 +28,12 @@ case class JsonSchemaCommon(extended: Boolean) extends TypeResolver {
         Some(TyTimeStamp())
       case "bytea" | "[u8]" if extended => Some(TyByteArray)
       case "bool" if extended           => Some(TyBoolean)
-      case "dict" if extended           => Some(TyStruct(None))
+      case "dict" if extended           => Some(TyStruct())
       case "any" if extended            => Some(TyAny)
       case _                            => None
 
     }
 
-  override def decode(language: String, typeName: String): Option[TyNode] =
-    if (language == "javascript") parseType(typeName) else None
+  override def decode(typeName: String): Option[TyNode] = parseType(typeName)
 
 }

@@ -28,15 +28,14 @@ case class JsonSchemaParser(extended: Boolean) {
           if (x.isString)
             parseType(x.asString.get)
           else
-            TyStruct(
-              Some(
-                iterateOver(x, "name", "type")
-                  .map {
-                    case (name, json) =>
-                      val ty = parse(Json.fromJsonObject(json))
-                      TyField(name, ty)
-                  }
-              )
+            TyStruct().setValue(
+              KeyFields,
+              iterateOver(x, "name", "type")
+                .map {
+                  case (name, json) =>
+                    val ty = parse(Json.fromJsonObject(json))
+                    TyField(name, ty)
+                }
           )
       )
       .getOrElse(TyUnit)
@@ -71,8 +70,10 @@ case class JsonSchemaParser(extended: Boolean) {
                   TyField(name, ty)
             }
         )
+        // TODO TyNamed or TyStruct?
+        .getOrElse(Nil)
 
-    val node = TyStruct(fields)
+    val node = TyStruct().setValue(KeyFields, fields)
 
     collectExtKeys(value, extKeysForClassDecl.toList).foreach(node.setValue)
 
