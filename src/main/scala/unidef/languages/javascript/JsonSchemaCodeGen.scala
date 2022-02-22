@@ -3,6 +3,7 @@ package unidef.languages.javascript
 import com.typesafe.scalalogging.Logger
 import io.circe.{Json, JsonObject, ParsingFailure}
 import unidef.languages.common._
+import unidef.utils.ParseException
 
 // meant for private use
 case object KeyRequired extends KeywordBoolean
@@ -58,7 +59,6 @@ case object JsonSchemaCodeGen {
       case TyList(ty) =>
         jsonObjectOf("array", "items" -> Json.fromJsonObject(generateType(ty)))
 
-      case TyJsonObject => jsonObjectOf("object")
       case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
         JsonObject(
           "enum" -> Json
@@ -81,14 +81,14 @@ case object JsonSchemaCodeGen {
             )
           )
         )
-      case TyStruct() =>
-        jsonObjectOf("object")
+      case TyJsonObject | TyStruct() | TyJsonAny => jsonObjectOf("object")
+
       case TyNamed(name) =>
         jsonObjectOf("string", "name" -> Json.fromString(name))
       case TyByteArray =>
         jsonObjectOf("string", "format" -> Json.fromString("byte"))
       case TyInet => jsonObjectOf("string", "format" -> Json.fromString("inet"))
       case TyUuid => jsonObjectOf("string", "format" -> Json.fromString("uuid"))
-      case _      => throw new ParsingFailure(s"Unsupported type: $ty", null)
+      case _      => throw ParseException(s"Unsupported type: $ty")
     }
 }
