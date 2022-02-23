@@ -6,7 +6,7 @@ import unidef.languages.common
 import unidef.languages.common._
 import unidef.utils.FileUtils.readFile
 import unidef.utils.JsonUtils.{getList, getObject, getString, iterateOver}
-import unidef.utils.ParseException
+import unidef.utils.UnidefParseException
 
 import scala.collection.mutable
 
@@ -14,7 +14,7 @@ case class JsonSchemaParser(extended: Boolean) {
   private def parseType(s: String) =
     JsonSchemaCommon(extended)
       .parseType(s)
-      .getOrElse(throw ParseException("Failed to parse type " + s, null))
+      .getOrElse(throw UnidefParseException("Failed to parse type " + s, null))
 
   def parseFunction(content: JsonObject): TyApplicable = {
     val name = getString(content, "name")
@@ -56,7 +56,6 @@ case class JsonSchemaParser(extended: Boolean) {
     node
   }
 
-  @throws[ParsingFailure]
   def parseStruct(value: JsonObject): TyClass = {
     val fields =
       value("properties")
@@ -101,7 +100,6 @@ case class JsonSchemaParser(extended: Boolean) {
     extKeysForClassDecl ++= obj.keysOnClassDecl
   }
 
-  @throws[ParsingFailure]
   def parseFieldType(js: Json): TyField = {
     js.foldWith(new Json.Folder[TyField] {
 
@@ -109,7 +107,7 @@ case class JsonSchemaParser(extended: Boolean) {
         TyField("unnamed", parseType(value))
 
       override def onArray(value: Vector[Json]): TyField =
-        throw ParsingFailure("Field should not be array", null)
+        throw UnidefParseException("Field should not be array", null)
 
       override def onObject(value: JsonObject): TyField = {
         val field = if (value("name").isDefined && value("type").isDefined) {
@@ -121,7 +119,7 @@ case class JsonSchemaParser(extended: Boolean) {
           val ty = parseType(getString(value, name))
           TyField(name, ty)
         } else {
-          throw ParseException(
+          throw UnidefParseException(
             "FieldType must be either: has fields `name` and `type`, has the form of `name: type`",
           )
         }
@@ -133,13 +131,13 @@ case class JsonSchemaParser(extended: Boolean) {
       }
 
       override def onNull: TyField =
-        throw ParseException("Field should not be null")
+        throw UnidefParseException("Field should not be null")
 
       override def onBoolean(value: Boolean): TyField =
-        throw ParseException("Field should not be boolean")
+        throw UnidefParseException("Field should not be boolean")
 
       override def onNumber(value: JsonNumber): TyField =
-        throw ParseException("Field should not be number")
+        throw UnidefParseException("Field should not be number")
     })
   }
   def collectExtKeys(content: JsonObject,
@@ -149,7 +147,7 @@ case class JsonSchemaParser(extended: Boolean) {
       keywords
         .find(kw => kw.name == key)
         .fold {
-          //throw ParsingFailure(s"${key} is not needed in " + content, null)
+          //throw UnidefParseException(s"${key} is not needed in " + content, null)
           None.asInstanceOf[Option[(Keyword, Any)]]
         } {
           case kw if kw.decoder.isDefined =>

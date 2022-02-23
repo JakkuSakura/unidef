@@ -1,4 +1,5 @@
 package unidef.languages.common
+import unidef.languages.common.*
 
 import io.circe.Decoder
 import io.circe.generic.semiauto._

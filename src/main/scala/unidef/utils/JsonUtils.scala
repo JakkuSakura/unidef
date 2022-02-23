@@ -1,13 +1,12 @@
 package unidef.utils
 
-import io.circe.{Decoder, Json, JsonObject, ParsingFailure}
-
-case class ParseException(msg: String, cause: Throwable = null)
-    extends Exception(msg)
+import io.circe.{Decoder, Json, JsonObject}
 
 object JsonUtils {
   def getProperty(obj: JsonObject, name: String): Json =
-    obj(name).getOrElse(throw ParseException("Key " + name + " does not exist"))
+    obj(name).getOrElse(
+      throw UnidefParseException("Key " + name + " does not exist")
+    )
 
   def tryGetName(json: JsonObject, key: String = "name"): String =
     if (json.size == 1) json.keys.toSeq.head else getString(json, key)
@@ -47,22 +46,22 @@ object JsonUtils {
   def getAs[A](obj: JsonObject, name: String)(implicit d: Decoder[A]): A =
     getProperty(obj, name)
       .as[A]
-      .getOrElse(throw ParseException(name + " is not bool"))
+      .getOrElse(throw UnidefParseException(name + " is not bool"))
 
   def getBool(obj: JsonObject, name: String): Boolean =
     getProperty(obj, name).asBoolean
-      .getOrElse(throw ParseException(name + " is not bool"))
+      .getOrElse(throw UnidefParseException(name + " is not bool"))
 
   def getString(obj: JsonObject, name: String): String =
     getProperty(obj, name).asString
-      .getOrElse(throw ParseException(name + " is not string"))
+      .getOrElse(throw UnidefParseException(name + " is not string"))
 
   def getList(obj: JsonObject, name: String): Vector[Json] =
     getProperty(obj, name).asArray
-      .getOrElse(throw ParseException(name + " is not list"))
+      .getOrElse(throw UnidefParseException(name + " is not list"))
 
   def getObject(obj: JsonObject, name: String): JsonObject =
     getProperty(obj, name).asObject
-      .getOrElse(throw ParseException(name + " is not JsonObject"))
+      .getOrElse(throw UnidefParseException(name + " is not JsonObject"))
 
 }

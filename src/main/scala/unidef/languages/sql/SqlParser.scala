@@ -17,6 +17,7 @@ import unidef.languages.sql.SqlCommon.{
   convertTypeFromSql
 }
 import unidef.utils.TextTool.{finds, findss}
+import unidef.utils.UnidefParseException
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -166,17 +167,17 @@ object SqlParser {
       }
     }
     val as = finds(parts, "AS").get
-    val delimiters = Seq("$$", "$func$", "$fun$", "$EOF$")
-    val lq =
-      findss(parts, delimiters)
-        .toRight(new ParseException("No delimiter found"))
-        .toTry
-        .get
-    val rq =
-      findss(parts, delimiters, lq + 1)
-        .toRight(new ParseException("No delimiter found"))
-        .toTry
-        .get
+    var lq_ : Option[Int] = None
+    var rq_ : Option[Int] = None
+    Seq("$$", "$func$", "$fun$", "$EOF$").foreach(
+      x =>
+        finds(parts, x).foreach(y => {
+          lq_ = Some(y)
+          rq_ = finds(parts, x, y + 1)
+        })
+    )
+    val lq: Int = lq_.getOrElse(throw UnidefParseException("lq not found"))
+    val rq: Int = rq_.getOrElse(throw UnidefParseException("rq not found"))
 
     val body = parts.slice(lq + 1, rq).mkString(" ")
     val languagePos = finds(parts, "LANGUAGE").get

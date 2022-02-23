@@ -2,7 +2,7 @@ package unidef.languages.common
 
 import io.circe.Decoder
 import unidef.utils.TextTool.toSnakeCase
-
+import unidef.utils.TextTool
 import scala.collection.mutable
 
 // Assume TypedValue is always type checked.
@@ -42,13 +42,12 @@ class Extendable(
   def getValue(key: Keyword): Option[key.V] =
     params.get(key.name).asInstanceOf[Option[key.V]]
 
-  def setValue[EK <: Keyword, VV <: EK#V](key: EK, v: VV): this.type = {
+  def setValue[EK <: Keyword](key: EK, v: key.V): this.type = {
     params += key.name -> v
     this
   }
 
-  def trySetValue[EK <: Keyword, VV <: EK#V](key: EK,
-                                             v: Option[VV]): this.type = {
+  def trySetValue[EK <: Keyword](key: EK, v: Option[key.V]): this.type = {
     v match {
       case Some(value) => params += key.name -> value
       case None        =>
