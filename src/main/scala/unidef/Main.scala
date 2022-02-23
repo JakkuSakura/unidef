@@ -15,10 +15,10 @@ import unidef.languages.yaml.YamlParser
 import unidef.utils.FileUtils
 
 object Main {
-  val parser = JsonSchemaParser(true)
+  val parser: JsonSchemaParser = JsonSchemaParser(true)
   parser.prepareForExtKeys(PythonSqlCodeGen)
   parser.prepareForExtKeys(SqlCodeGen)
-  val yamlParser = YamlParser(parser)
+  val yamlParser: YamlParser = YamlParser(parser)
   def main(args: Array[String]): Unit = {
     implicit val sqlResolver: TypeRegistry = TypeRegistry()
 

@@ -216,7 +216,9 @@ object SqlParser {
     func.setValue(KeyBody, AstRawCode(body).setValue(KeyLanguage, language))
     if (outputOnly.isEmpty)
       func.setValue(KeyRecords, true)
-    logger.debug(s"Parsed function: ${func.literalName.get}")
+    logger.debug(
+      s"Parsed function: ${func.getName.get}(${func.parameters})->${func.returnType}"
+    )
     Some((func, end))
   }
   def parseCreateTable(
