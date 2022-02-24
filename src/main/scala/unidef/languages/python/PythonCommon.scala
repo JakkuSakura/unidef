@@ -2,36 +2,31 @@ package unidef.languages.python
 
 import unidef.languages.common._
 
-object PythonCommon {
-  def convertType(node: TyNode)(implicit resolver: TypeResolver): String =
+case class PythonCommon(naming: NamingConvention = PythonNamingConvention) {
+  def convertType(node: TyNode): Option[String] =
     node match {
-      case _: TyInteger => "int"
-      case _: TyFloat   => "float"
-      case TyString     => "str"
-      case TyChar       => "str"
+      case _: TyInteger => Some("int")
+      case _: TyFloat   => Some("float")
+      case TyString     => Some("str")
+      case TyChar       => Some("str")
       case t @ TyStruct() if t.getValue(KeyName).isDefined =>
-        PythonNamingConvention.toStructName(t.getValue(KeyName).get)
-      case TyStruct()    => "Dict[str, Any]"
-      case TyRecord      => "List[Dict[str, Any]]"
-      case TyDict(k, v)  => s"Dict[${convertType(k)}, ${convertType(v)}]"
-      case TyList(v)     => s"List[${convertType(v)}]"
-      case TySet(v)      => s"Set[${convertType(v)}]"
-      case TyJsonObject  => "Any"
-      case TyUnit        => "None"
-      case TyTimeStamp() => "datetime.datetime"
-      case TyBoolean     => "bool"
-      case TyByteArray   => "bytes"
-      case TyUuid        => "uuid.UUID"
-      case TyInet        => "str" // FIXME: InetAddress
-      case TyNamed(name) =>
-        resolver
-          .decode(name)
-          .map(convertType)
-          .getOrElse(s"'${PythonNamingConvention.toClassName(name)}'")
+        Some(naming.toStructName(t.getValue(KeyName).get))
+      case TyStruct()    => Some("Dict[str, Any]")
+      case TyRecord      => Some("List[Dict[str, Any]]")
+      case TyDict(k, v)  => Some(s"Dict[${convertType(k)}, ${convertType(v)}]")
+      case TyList(v)     => Some(s"List[${convertType(v)}]")
+      case TySet(v)      => Some(s"Set[${convertType(v)}]")
+      case TyJsonObject  => Some("Any")
+      case TyUnit        => Some("None")
+      case TyTimeStamp() => Some("datetime.datetime")
+      case TyBoolean     => Some("bool")
+      case TyByteArray   => Some("bytes")
+      case TyUuid        => Some("uuid.UUID")
+      case TyInet        => Some("str") // FIXME: InetAddress
       case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
-        PythonNamingConvention.toClassName(x.getValue(KeyName).get)
-      case TyEnum(_) => "str" // TODO: use solid enum if possible
-      case t         => s"'$t'"
+        Some(naming.toClassName(x.getValue(KeyName).get))
+      case TyEnum(_) => Some("str") // TODO: use solid enum if possible
+      case _ => None
     }
   def convertTypeFromPy(ty: String): TyNode =
     ty match {

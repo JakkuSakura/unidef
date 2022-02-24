@@ -9,7 +9,7 @@ import unidef.utils.UnidefParseException
 case object KeyRequired extends KeywordBoolean
 case object KeyAdditionalProperties extends KeywordBoolean
 
-case object JsonSchemaCodeGen {
+case class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): String = {

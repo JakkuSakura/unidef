@@ -1,23 +1,26 @@
 package unidef.languages.python
 
-import unidef.languages.common._
-import unidef.languages.python.PythonCommon.convertType
-import unidef.languages.sql.SqlCodeGen
+import unidef.languages.common.*
+import unidef.languages.sql.SqlFieldType.{KeyNullable, KeyPrimary}
 import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
+import unidef.languages.sql.{SqlCodeGen, SqlCommon, SqlField, SqlNamingConvention}
 import unidef.utils.CodeGen
 
-import scala.jdk.CollectionConverters._
+import scala.collection.mutable
+import scala.jdk.CollectionConverters.*
 
 private case class PythonField(name: String, orig_name: String, ty: String)
-class PythonSqlCodeGen extends KeywordProvider {
+case class PythonSqlCodeGen(naming: NamingConvention = PythonNamingConvention, sqlNaming: NamingConvention = SqlNamingConvention) extends KeywordProvider {
+  val pythonCommon = PythonCommon(naming)
+  val sqlCodeGen = SqlCodeGen(sqlNaming)
   override def keysOnFuncDecl: Seq[Keyword] = List(KeyRecords, KeySchema)
   private def convertToPythonField(
     node: TyField
-  )(implicit resolver: TypeResolver): PythonField =
+  ): PythonField =
     PythonField(
-      PythonNamingConvention.toFunctionParameterName(node.name),
+      naming.toFunctionParameterName(node.name),
       node.name,
-      convertType(node.value)
+      pythonCommon.convertType(node.value).get
     )
 
   protected val TEMPLATE_DATABASE_CODEGEN: String =
@@ -49,9 +52,7 @@ class PythonSqlCodeGen extends KeywordProvider {
       |    return Ok(cast($return, ret))
       |""".stripMargin
 
-  def generateFuncWrapper(func: AstFunctionDecl, percentage: Boolean = false)(
-    implicit resolver: TypeResolver
-  ): String = {
+  def generateFuncWrapper(func: AstFunctionDecl, percentage: Boolean = false): String = {
     val context = CodeGen.createContext
     context.put("name", func.getName.get)
     context.put("params", func.parameters.map(convertToPythonField).asJava)
@@ -59,7 +60,7 @@ class PythonSqlCodeGen extends KeywordProvider {
       "db_func_name",
       func.getValue(KeySchema).map(_ + ".").getOrElse("") + func.getName.get
     )
-    context.put("callfunc", SqlCodeGen.generateCallFunc(func, percentage))
+    context.put("callfunc", sqlCodeGen.generateCallFunc(func, percentage))
 
     val returnType = func.returnType
     returnType match {
@@ -71,10 +72,10 @@ class PythonSqlCodeGen extends KeywordProvider {
     }
     if (func.getValue(KeyRecords).contains(true)) {
       context.put("records", true)
-      context.put("return", convertType(TyList(returnType)))
+      context.put("return", pythonCommon.convertType(TyList(returnType)))
     } else {
       context.put("records", false)
-      context.put("return", convertType(returnType))
+      context.put("return", pythonCommon.convertType(returnType))
     }
 
     context.put("schema", func.getValue(KeySchema).fold("")(x => s"$x."))
@@ -83,4 +84,3 @@ class PythonSqlCodeGen extends KeywordProvider {
   }
 
 }
-object PythonSqlCodeGen extends PythonSqlCodeGen

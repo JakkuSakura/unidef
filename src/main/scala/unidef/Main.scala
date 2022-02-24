@@ -9,15 +9,16 @@ import unidef.languages.common.{
 }
 import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
 import unidef.languages.python.PythonSqlCodeGen
-import unidef.languages.sql.SqlCodeGen.{generateFunctionDdl, generateTableDdl}
 import unidef.languages.sql.{SqlCodeGen, SqlParser}
 import unidef.languages.yaml.YamlParser
 import unidef.utils.FileUtils
 
 object Main {
+  val pythonSqlCodeGen = PythonSqlCodeGen()
+  val sqlCodegen = SqlCodeGen()
   val parser: JsonSchemaParser = JsonSchemaParser(true)
-  parser.prepareForExtKeys(PythonSqlCodeGen)
-  parser.prepareForExtKeys(SqlCodeGen)
+  parser.prepareForExtKeys(pythonSqlCodeGen)
+  parser.prepareForExtKeys(sqlCodegen)
   val yamlParser: YamlParser = YamlParser(parser)
   def main(args: Array[String]): Unit = {
     implicit val sqlResolver: TypeRegistry = TypeRegistry()
@@ -37,18 +38,18 @@ object Main {
     for (ty <- parsed) {
       ty match {
         case a @ AstClassDecl(name, fields, methods, derived) =>
-          val code = generateTableDdl(a)
+          val code = sqlCodegen.generateTableDdl(a)
           println(code)
         case AstTyped(n) if n.isInstanceOf[TyStruct] =>
-          val code = generateTableDdl(n.asInstanceOf[TyStruct])
+          val code = sqlCodegen.generateTableDdl(n.asInstanceOf[TyStruct])
           println(code)
         case n: AstFunctionDecl =>
-          val code = SqlCodeGen.generateFunctionDdl(n)
+          val code = sqlCodegen.generateFunctionDdl(n)
           println(code)
-          val code2 = PythonSqlCodeGen.generateFuncWrapper(n)
+          val code2 = pythonSqlCodeGen.generateFuncWrapper(n)
           println(code2)
           val code3 =
-            JsonSchemaCodeGen.generateFuncDecl(n)
+            JsonSchemaCodeGen().generateFuncDecl(n)
           println(code3)
       }
     }
