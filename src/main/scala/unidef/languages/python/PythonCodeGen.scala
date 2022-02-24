@@ -59,6 +59,8 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
           "from " + path.mkString(".") + " import " + objs.mkString(", ")
         case AstImportAs(path, obj, as) =>
           "from " + path.mkString(".") + " import " + obj + " as " + as
+        case AstImportRaw(imports) =>
+          imports
         case _ => ???
       }
       .mkString("\n")
