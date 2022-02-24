@@ -1,5 +1,6 @@
 package unidef.languages.sql
 
+import com.typesafe.scalalogging.Logger
 import unidef.languages.common.*
 import unidef.languages.sql.{KeyNullable, KeyPrimary}
 
@@ -42,12 +43,12 @@ case object SqlCommon {
     case t: TyInteger => convertInt(t)
     case t: TyTimeStamp if t.getValue(KeyHasTimeZone).contains(true) =>
       "timestamp with time zone"
-    //case TimeStampType(_, false) => "timestamp without time zone"
+    // case TimeStampType(_, false) => "timestamp without time zone"
     case TyTimeStamp() => "timestamp"
     case TyString => "text"
     case TyStruct() => "jsonb"
-    case x@TyEnum(_) if x.getValue(KeySimpleEnum).contains(false) => "jsonb"
-    case x@TyEnum(_) if x.getValue(KeyName).isDefined =>
+    case x @ TyEnum(_) if x.getValue(KeySimpleEnum).contains(false) => "jsonb"
+    case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
       x.getValue(KeyName).get
     case TyEnum(_) => "text"
     case TyJsonObject => "jsonb"
@@ -60,36 +61,39 @@ case object SqlCommon {
     case TyRecord => "record"
   }
 
-  def convertTypeFromSql(ty: String): TyNode = {
+  def convertTypeFromSql(ty: String): Option[TyNode] = {
     if (ty.endsWith("[]")) {
-      return TyList(convertTypeFromSql(ty.dropRight(2)))
+      return convertTypeFromSql(ty.dropRight(2)).map(TyList.apply)
     }
     ty match {
-      case "bigint" | "bigserial" => TyInteger(BitSize.B64)
-      case "integer" | "int" | "serial" => TyInteger(BitSize.B32)
-      case "smallint" => TyInteger(BitSize.B16)
-      case "double precision" => TyFloat(BitSize.B64)
-      case "real" | "float" => TyFloat(BitSize.B32)
-      case "decimal" | "numeric" => TyDecimal(None, None)
+      case "bigint" | "bigserial" => Some(TyInteger(BitSize.B64))
+      case "integer" | "int" | "serial" => Some(TyInteger(BitSize.B32))
+      case "smallint" => Some(TyInteger(BitSize.B16))
+      case "double precision" => Some(TyFloat(BitSize.B64))
+      case "real" | "float" => Some(TyFloat(BitSize.B32))
+      case "decimal" | "numeric" => Some(TyDecimal(None, None))
       case "timestamp" | "timestamp without time zone" =>
-        TyTimeStamp()
-          .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
-          .setValue(KeyHasTimeZone, false)
+        Some(
+          TyTimeStamp()
+            .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
+            .setValue(KeyHasTimeZone, false)
+        )
       case "timestamp with time zone" =>
-        TyTimeStamp()
-          .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
-          .setValue(KeyHasTimeZone, true)
-      case "text" | "varchar" => TyString
-      case "jsonb" => TyJsonAny
-      case "void" => TyUnit
-      case "oid" => KeyOid.get
-      case "boolean" => TyBoolean
-      case "bytea" => TyByteArray
-      case "inet" => TyInet
-      case "uuid" => TyUuid
-      case "record" => TyRecord
-      case s"$schema.$name" => TyNamed(name).setValue(KeySchema, schema)
-      case others => TyNamed(others)
+        Some(
+          TyTimeStamp()
+            .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
+            .setValue(KeyHasTimeZone, true)
+        )
+      case "text" | "varchar" => Some(TyString)
+      case "jsonb" => Some(TyJsonAny)
+      case "void" => Some(TyUnit)
+      case "oid" => Some(KeyOid.get)
+      case "boolean" => Some(TyBoolean)
+      case "bytea" => Some(TyByteArray)
+      case "inet" => Some(TyInet)
+      case "uuid" => Some(TyUuid)
+      case "record" => Some(TyRecord)
+      case _ => None
     }
   }
 

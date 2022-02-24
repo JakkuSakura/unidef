@@ -3,19 +3,11 @@ package unidef.languages.sql
 import com.typesafe.scalalogging.Logger
 import net.sf.jsqlparser.parser.{CCJSqlParserUtil, ParseException}
 import net.sf.jsqlparser.statement.create.function.CreateFunction
-import net.sf.jsqlparser.statement.create.table.{
-  ColDataType,
-  ColumnDefinition,
-  CreateTable
-}
+import net.sf.jsqlparser.statement.create.table.{ColDataType, ColumnDefinition, CreateTable}
 import org.apache.commons.lang3.StringUtils
 import unidef.languages.common
 import unidef.languages.common._
-import unidef.languages.sql.SqlCommon.{
-  KeyRecords,
-  KeySchema,
-  convertTypeFromSql
-}
+import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema, convertTypeFromSql}
 import unidef.utils.TextTool.{finds, findss}
 import unidef.utils.UnidefParseException
 
@@ -66,12 +58,11 @@ object SqlParser {
     new Regex("CREATE\\s+TYPE\\s+(.+)\\s+AS\\s+enum\\s+\\((.+?)\\);")
       .findAllMatchIn(sql)
       .map(m => m.group(1) -> m.group(2))
-      .map {
-        case (k, v) =>
-          k -> v
-            .split(",")
-            .map(StringUtils.strip(_, " '"))
-            .map(x => TyVariant(Seq(x)))
+      .map { case (k, v) =>
+        k -> v
+          .split(",")
+          .map(StringUtils.strip(_, " '"))
+          .map(x => TyVariant(Seq(x)))
       }
       .map {
         case (s"$schema.$name", v) =>
@@ -103,7 +94,7 @@ object SqlParser {
   }
 
   private def parseParam(
-    args: Seq[String]
+      args: Seq[String]
   )(implicit resolver: TypeResolver): (Boolean, TyField) = {
     logger.info("parseParam: " + args.mkString(", "))
     var nameCursor = 0
@@ -129,12 +120,16 @@ object SqlParser {
     }
     val name = args(nameCursor).replaceAll("\"", "")
 
-    val ty = convertTypeFromSql(compactDot(args.slice(typeCursor, args.length)))
+    val tyName = compactDot(args.slice(typeCursor, args.length))
+    val ty =
+      lookUpType(tyName)
+        .orElse(convertTypeFromSql(tyName))
+        .getOrElse(throw UnidefParseException(s"Failed to parse type $tyName"))
     (input, TyField(name, ty))
   }
 
   def parseCreateFunction(
-    parts: Seq[String]
+      parts: Seq[String]
   )(implicit resolver: TypeResolver): Option[(AstFunctionDecl, Int)] = {
     val (schema, name) = parts match {
       case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
@@ -145,7 +140,7 @@ object SqlParser {
       case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: name +: _ =>
         ("", name)
       case "CREATE" +: "FUNCTION" +: name +: _ => ("", name)
-      case _                                   => return None
+      case _ => return None
     }
     val first_left_paren = finds(parts, "(").get
     val first_right_paren = finds(parts, ")").get
@@ -159,7 +154,7 @@ object SqlParser {
       if (i == params.length || params(i) == ",") {
         if (cursor < i) {
           parseParam(params.slice(cursor, i)) match {
-            case (true, ty)  => inputs += ty
+            case (true, ty) => inputs += ty
             case (false, ty) => outputs += ty
           }
         }
@@ -169,12 +164,11 @@ object SqlParser {
     val as = finds(parts, "AS").get
     var lq_ : Option[Int] = None
     var rq_ : Option[Int] = None
-    Seq("$$", "$func$", "$fun$", "$EOF$").foreach(
-      x =>
-        finds(parts, x).foreach(y => {
-          lq_ = Some(y)
-          rq_ = finds(parts, x, y + 1)
-        })
+    Seq("$$", "$func$", "$fun$", "$EOF$").foreach(x =>
+      finds(parts, x).foreach(y => {
+        lq_ = Some(y)
+        rq_ = finds(parts, x, y + 1)
+      })
     )
     val lq: Int = lq_.getOrElse(throw UnidefParseException("lq not found"))
     val rq: Int = rq_.getOrElse(throw UnidefParseException("rq not found"))
@@ -199,7 +193,10 @@ object SqlParser {
           }
         case ty =>
           val ret = ty.mkString(" ")
-          outputOnly = Some(convertTypeFromSql(ret))
+          outputOnly = Some(
+            convertTypeFromSql(ret)
+              .getOrElse(throw UnidefParseException(s"Failed to parse type $ret"))
+          )
       }
 
     }
@@ -223,7 +220,7 @@ object SqlParser {
     Some((func, end))
   }
   def parseCreateTable(
-    tbl: CreateTable
+      tbl: CreateTable
   )(implicit resolver: TypeResolver): AstClassDecl = {
     common
       .AstClassDecl(
@@ -233,16 +230,23 @@ object SqlParser {
       .trySetValue(KeySchema, Option(tbl.getTable.getSchemaName))
   }
   def parseParseColumn(
-    column: ColumnDefinition
+      column: ColumnDefinition
   )(implicit resolver: TypeResolver): TyField = {
     val ty = column.getColDataType
     val name = column.getColumnName
-    TyField(name, parseColDataType(ty))
+    TyField(
+      name,
+      parseColDataType(ty).getOrElse(throw UnidefParseException(s"Failed to parse type $ty"))
+    )
+  }
+  def lookUpType(ty: String)(implicit resolver: TypeResolver): Option[TyNode] = {
+    resolver
+      .decode(ty.replaceAll("\\w+?\\.", ""))
   }
 
   def parseColDataType(
-    ty: ColDataType
-  )(implicit resolver: TypeResolver): TyNode =
-    convertTypeFromSql(ty.getDataType)
+      ty: ColDataType
+  )(implicit resolver: TypeResolver): Option[TyNode] =
+    lookUpType(ty.getDataType).orElse(convertTypeFromSql(ty.getDataType))
 
 }
