@@ -1,7 +1,7 @@
 package unidef.languages.python
 
 import unidef.languages.common.*
-import unidef.languages.sql.SqlFieldType.{KeyNullable, KeyPrimary}
+import unidef.languages.sql.{KeyNullable, KeyPrimary}
 import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
 import unidef.languages.sql.{SqlCodeGen, SqlCommon, SqlField, SqlNamingConvention}
 import unidef.utils.CodeGen
@@ -10,17 +10,21 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 private case class PythonField(name: String, orig_name: String, ty: String)
-case class PythonSqlCodeGen(naming: NamingConvention = PythonNamingConvention, sqlNaming: NamingConvention = SqlNamingConvention) extends KeywordProvider {
+case class PythonSqlCodeGen(
+    naming: NamingConvention = PythonNamingConvention,
+    sqlNaming: NamingConvention = SqlNamingConvention
+) extends KeywordProvider {
   val pythonCommon = PythonCommon(naming)
   val sqlCodeGen = SqlCodeGen(sqlNaming)
   override def keysOnFuncDecl: Seq[Keyword] = List(KeyRecords, KeySchema)
   private def convertToPythonField(
-    node: TyField
+      node: TyField,
+      importManager: Option[ImportManager]
   ): PythonField =
     PythonField(
       naming.toFunctionParameterName(node.name),
       node.name,
-      pythonCommon.convertType(node.value).get
+      pythonCommon.convertType(node.value, importManager).get
     )
 
   protected val TEMPLATE_DATABASE_CODEGEN: String =
@@ -52,10 +56,17 @@ case class PythonSqlCodeGen(naming: NamingConvention = PythonNamingConvention, s
       |    return Ok(cast($return, ret))
       |""".stripMargin
 
-  def generateFuncWrapper(func: AstFunctionDecl, percentage: Boolean = false): String = {
+  def generateFuncWrapper(
+      func: AstFunctionDecl,
+      percentage: Boolean = false,
+      importManager: Option[ImportManager] = None
+  ): String = {
     val context = CodeGen.createContext
     context.put("name", func.getName.get)
-    context.put("params", func.parameters.map(convertToPythonField).asJava)
+    context.put(
+      "params",
+      func.parameters.map(convertToPythonField(_, importManager = importManager)).asJava
+    )
     context.put(
       "db_func_name",
       func.getValue(KeySchema).map(_ + ".").getOrElse("") + func.getName.get

@@ -4,11 +4,12 @@ import unidef.languages.common.{
   AstClassDecl,
   AstFunctionDecl,
   AstTyped,
+  ImportManager,
   TyStruct,
   TypeRegistry
 }
 import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
-import unidef.languages.python.PythonSqlCodeGen
+import unidef.languages.python.{PythonCodeGen, PythonSqlCodeGen}
 import unidef.languages.sql.{SqlCodeGen, SqlParser}
 import unidef.languages.yaml.YamlParser
 import unidef.utils.FileUtils
@@ -16,6 +17,7 @@ import unidef.utils.FileUtils
 object Main {
   val pythonSqlCodeGen = PythonSqlCodeGen()
   val sqlCodegen = SqlCodeGen()
+  val pyCodeGen = PythonCodeGen()
   val parser: JsonSchemaParser = JsonSchemaParser(true)
   parser.prepareForExtKeys(pythonSqlCodeGen)
   parser.prepareForExtKeys(sqlCodegen)
@@ -46,7 +48,8 @@ object Main {
         case n: AstFunctionDecl =>
           val code = sqlCodegen.generateFunctionDdl(n)
           println(code)
-          val code2 = pythonSqlCodeGen.generateFuncWrapper(n)
+          val importManager = ImportManager()
+          val code2 = pythonSqlCodeGen.generateFuncWrapper(n, importManager = Some(importManager))
           println(code2)
           val code3 =
             JsonSchemaCodeGen().generateFuncDecl(n)
