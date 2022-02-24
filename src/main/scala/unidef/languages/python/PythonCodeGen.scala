@@ -55,8 +55,10 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
     imports
       .map {
         case AstImportSingle(paths) => "import " + paths.mkString(".")
-        case AstImportMulti(paths, objs) =>
-          "from " + paths.mkString(".") + " import " + objs.mkString(", ")
+        case AstImportMulti(path, objs) =>
+          "from " + path.mkString(".") + " import " + objs.mkString(", ")
+        case AstImportAs(path, obj, as) =>
+          "from " + path.mkString(".") + " import " + obj + " as " + as
         case _ => ???
       }
       .mkString("\n")
