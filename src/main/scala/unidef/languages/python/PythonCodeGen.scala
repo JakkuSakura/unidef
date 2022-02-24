@@ -51,8 +51,8 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
       case _ => ???
     }
   }
-  def generateImports(imports: ImportManager): String = {
-    imports.imports
+  def generateImports(imports: Seq[AstImport]): String = {
+    imports
       .map {
         case AstImportSingle(paths) => "import " + paths.mkString(".")
         case _ => ???
