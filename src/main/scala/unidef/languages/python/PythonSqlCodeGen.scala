@@ -10,7 +10,7 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 private case class PythonField(name: String, orig_name: String, ty: String)
-case class PythonSqlCodeGen(
+class PythonSqlCodeGen(
     naming: NamingConvention = PythonNamingConvention,
     sqlNaming: NamingConvention = SqlNamingConvention
 ) extends KeywordProvider {

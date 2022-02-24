@@ -19,8 +19,7 @@ import unidef.utils.CodeGen
 import java.time.LocalDateTime
 import scala.jdk.CollectionConverters.*
 
-case class PythonCodeGen(naming: NamingConvention = PythonNamingConvention)
-    extends KeywordProvider {
+class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends KeywordProvider {
 
   protected val TEMPLATE_ENUM_CODEGEN: String =
     """

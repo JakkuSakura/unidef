@@ -9,7 +9,6 @@ import unidef.utils.UnidefParseException
 
 import scala.collection.mutable
 
-// TODO: achieve json-schema like effect
 case class YamlParser(jsParser: JsonSchemaParser) {
   val logger: Logger = Logger[this.type]
 
@@ -35,7 +34,7 @@ case class YamlParser(jsParser: JsonSchemaParser) {
     parser
       .parseDocuments(content)
       .flatMap {
-        case Right(j) if j.isNull   => None
+        case Right(j) if j.isNull => None
         case Right(o) if o.isObject => Some(o.asObject.get)
         case Right(o) =>
           throw UnidefParseException("Invalid doc. Object only: " + o, null)

@@ -2,7 +2,7 @@ package unidef.languages.python
 
 import unidef.languages.common._
 
-case class PythonCommon(naming: NamingConvention = PythonNamingConvention) {
+class PythonCommon(naming: NamingConvention = PythonNamingConvention) {
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =
     node match {
       case _: TyInteger => Some("int")

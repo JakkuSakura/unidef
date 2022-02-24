@@ -9,7 +9,7 @@ import unidef.utils.UnidefParseException
 case object KeyRequired extends KeywordBoolean
 case object KeyAdditionalProperties extends KeywordBoolean
 
-case class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
+class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): String = {
@@ -89,6 +89,6 @@ case class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
         jsonObjectOf("string", "format" -> Json.fromString("byte"))
       case TyInet => jsonObjectOf("string", "format" -> Json.fromString("inet"))
       case TyUuid => jsonObjectOf("string", "format" -> Json.fromString("uuid"))
-      case _      => throw UnidefParseException(s"Unsupported type: $ty")
+      case _ => throw UnidefParseException(s"Unsupported type: $ty")
     }
 }

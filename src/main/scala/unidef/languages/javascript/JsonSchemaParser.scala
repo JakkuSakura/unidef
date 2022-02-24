@@ -10,7 +10,7 @@ import unidef.utils.UnidefParseException
 
 import scala.collection.mutable
 
-case class JsonSchemaParser(extended: Boolean) {
+class JsonSchemaParser(extended: Boolean) {
   private def parseType(s: String) =
     JsonSchemaCommon(extended)
       .parseType(s)
@@ -24,19 +24,17 @@ case class JsonSchemaParser(extended: Boolean) {
       .map(parseFieldType)
 
     val ret = content("return")
-      .map(
-        x =>
-          if (x.isString)
-            parseType(x.asString.get)
-          else
-            TyStruct().setValue(
-              KeyFields,
-              iterateOver(x, "name", "type")
-                .map {
-                  case (name, json) =>
-                    val ty = parse(Json.fromJsonObject(json))
-                    TyField(name, ty)
-                }
+      .map(x =>
+        if (x.isString)
+          parseType(x.asString.get)
+        else
+          TyStruct().setValue(
+            KeyFields,
+            iterateOver(x, "name", "type")
+              .map { case (name, json) =>
+                val ty = parse(Json.fromJsonObject(json))
+                TyField(name, ty)
+              }
           )
       )
       .getOrElse(TyUnit)
@@ -60,14 +58,12 @@ case class JsonSchemaParser(extended: Boolean) {
     val fields =
       value("properties")
         .orElse(if (extended) value("fields") else None)
-        .map(
-          x =>
-            // check extended
-            iterateOver(x, "name", "type")
-              .map {
-                case (name, json) =>
-                  val ty = parse(Json.fromJsonObject(json))
-                  TyField(name, ty)
+        .map(x =>
+          // check extended
+          iterateOver(x, "name", "type")
+            .map { case (name, json) =>
+              val ty = parse(Json.fromJsonObject(json))
+              TyField(name, ty)
             }
         )
         // TODO TyNamed or TyStruct?
@@ -120,7 +116,7 @@ case class JsonSchemaParser(extended: Boolean) {
           TyField(name, ty)
         } else {
           throw UnidefParseException(
-            "FieldType must be either: has fields `name` and `type`, has the form of `name: type`",
+            "FieldType must be either: has fields `name` and `type`, has the form of `name: type`"
           )
         }
         // TODO: handle list and object recursively
@@ -140,14 +136,12 @@ case class JsonSchemaParser(extended: Boolean) {
         throw UnidefParseException("Field should not be number")
     })
   }
-  def collectExtKeys(content: JsonObject,
-                     keywords: Seq[Keyword],
-  ): Seq[(Keyword, Any)] = {
+  def collectExtKeys(content: JsonObject, keywords: Seq[Keyword]): Seq[(Keyword, Any)] = {
     content.keys.iterator.flatMap { key =>
       keywords
         .find(kw => kw.name == key)
         .fold {
-          //throw UnidefParseException(s"${key} is not needed in " + content, null)
+          // throw UnidefParseException(s"${key} is not needed in " + content, null)
           None.asInstanceOf[Option[(Keyword, Any)]]
         } {
           case kw if kw.decoder.isDefined =>
@@ -181,21 +175,19 @@ case class JsonSchemaParser(extended: Boolean) {
           TyEnum(
             getList(value, "enum")
               .map(_.asString.get)
-              .map(
-                x =>
-                  TyVariant(
-                    Seq(x),
-                    if (extended && value("number").isDefined)
-                      Some(value("number").get.asNumber.get.toInt.get)
-                    else None
+              .map(x =>
+                TyVariant(
+                  Seq(x),
+                  if (extended && value("number").isDefined)
+                    Some(value("number").get.asNumber.get.toInt.get)
+                  else None
                 )
               )
           ).trySetValue(
             KeyReturn,
-            value("int_enum").map(
-              x =>
-                if (extended && x.asBoolean.get) TyInteger(BitSize.B8)
-                else TyString
+            value("int_enum").map(x =>
+              if (extended && x.asBoolean.get) TyInteger(BitSize.B8)
+              else TyString
             )
           )
         } else {
@@ -205,7 +197,7 @@ case class JsonSchemaParser(extended: Boolean) {
               val items = getObject(value, "items")
               TyList(parse(Json.fromJsonObject(items)))
             case "function" if extended => parseFunction(value)
-            case ty                     => parseType(ty)
+            case ty => parseType(ty)
           }
 
         }

@@ -3,19 +3,12 @@ package unidef.languages.sql
 import unidef.languages.common._
 
 import unidef.languages.sql.{KeyAutoIncr, KeyNullable, KeyPrimary}
-import unidef.languages.sql.SqlCommon.{
-  KeyRecords,
-  KeySchema,
-  convertToSqlField,
-  convertType
-}
+import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema, convertToSqlField, convertType}
 import unidef.utils.CodeGen
 
 import scala.jdk.CollectionConverters._
 
-
-
-case class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends KeywordProvider {
+class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends KeywordProvider {
   override def keysOnFuncDecl: Seq[Keyword] =
     Seq(KeyRecords, KeySchema, KeyBody)
 
@@ -43,12 +36,11 @@ case class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Ke
       |#end
       |""".stripMargin
 
-  def generateCallFunc(func: AstFunctionDecl,
-                       percentage: Boolean = false): String = {
+  def generateCallFunc(func: AstFunctionDecl, percentage: Boolean = false): String = {
     val context = CodeGen.createContext
 
     context.put("params", func.parameters.map(_.name).map(naming.toFunctionParameterName).asJava)
-    context.put("db_func_name", naming.toFunctionName(func.getName.get) )
+    context.put("db_func_name", naming.toFunctionName(func.getName.get))
     context.put("schema", func.getValue(KeySchema).fold("")(x => s"$x."))
 
     val returnType = func.returnType
@@ -151,9 +143,7 @@ case class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Ke
       |$$;
       |""".stripMargin
 
-  def generateConstantFunction(name: String,
-                               ret: TyNode,
-                               value: String): String = {
+  def generateConstantFunction(name: String, ret: TyNode, value: String): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toFunctionName(name))
     context.put("return_type", convertType(ret))
