@@ -1,19 +1,6 @@
 package unidef.languages.python
 
-import unidef.languages.common.{
-  AstImportSingle,
-  AstNode,
-  AstRawCode,
-  AstSourceFile,
-  ImportManager,
-  KeyName,
-  KeywordProvider,
-  NamingConvention,
-  TyEnum,
-  TyInteger,
-  TyString,
-  TyVariant
-}
+import unidef.languages.common._
 import unidef.utils.CodeGen
 
 import java.time.LocalDateTime
@@ -29,7 +16,8 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
       |#end
       |""".stripMargin
 
-  def generateEnum(func: TyEnum): String = {
+  def generateEnum(func: TyEnum, importManager: Option[ImportManager] = None): String = {
+    importManager.foreach(_ += AstImport("enum"))
     val context = CodeGen.createContext
     context.put("name", naming.toClassName(func.getName.get))
     func.getValue.getOrElse(TyString) match {
