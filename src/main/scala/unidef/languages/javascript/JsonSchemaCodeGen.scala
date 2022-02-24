@@ -8,7 +8,7 @@ import unidef.utils.UnidefParseException
 // meant for private use
 case object KeyRequired extends KeywordBoolean
 case object KeyAdditionalProperties extends KeywordBoolean
-
+case object KeyIsMethodParameters extends KeywordBoolean
 class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
   val logger: Logger = Logger[this.type]
 
@@ -16,7 +16,7 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
     val struct = TyStruct().setValue(KeyFields, func.parameters)
     struct.setValue(KeyRequired, true)
     struct.setValue(KeyAdditionalProperties, false)
-
+    struct.setValue(KeyIsMethodParameters, true)
     val obj = generateType(struct)
     //  "required": [
     //  ],
@@ -62,22 +62,39 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
       case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
         JsonObject(
           "enum" -> Json
-            .fromValues(variants.map(_.names.head).map(Json.fromString)),
-          "name" -> Json.fromString(x.getValue(KeyName).get)
+            .fromValues(
+              variants.map(_.names.head).map(naming.toEnumKeyName).map(Json.fromString)
+            ),
+          "name" -> Json.fromString(naming.toClassName(x.getValue(KeyName).get))
         )
       case x @ TyEnum(variants) =>
         JsonObject(
           "enum" -> Json
-            .fromValues(variants.map(_.names.head).map(Json.fromString))
+            .fromValues(variants.map(_.names.head).map(naming.toEnumKeyName).map(Json.fromString))
         )
 
+      case x @ TyStruct()
+          if x.getFields.isDefined && x.getValue(KeyIsMethodParameters).contains(true) =>
+        jsonObjectOf(
+          "object",
+          "properties" -> Json.fromJsonObject(
+            JsonObject.fromIterable(
+              x.getFields.get
+                .map(f =>
+                  naming.toFunctionParameterName(f.name) -> Json.fromJsonObject(
+                    generateType(f.value)
+                  )
+                )
+            )
+          )
+        )
       case x @ TyStruct() if x.getFields.isDefined =>
         jsonObjectOf(
           "object",
           "properties" -> Json.fromJsonObject(
             JsonObject.fromIterable(
               x.getFields.get
-                .map(f => f.name -> Json.fromJsonObject(generateType(f.value)))
+                .map(f => naming.toFieldName(f.name) -> Json.fromJsonObject(generateType(f.value)))
             )
           )
         )
