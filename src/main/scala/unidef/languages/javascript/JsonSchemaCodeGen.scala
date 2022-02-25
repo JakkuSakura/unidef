@@ -21,17 +21,17 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
     //  "required": [
     //  ],
     //  "additionalProperties": false
-    Json
-      .fromJsonObject(obj)
-      .spaces2
+    obj.spaces2
   }
-  def jsonObjectOf(ty: String, others: (String, Json)*): JsonObject = {
-    JsonObject.fromIterable(
-      Seq("type" -> Json.fromString(ty)) ++
-        others.map(x => x._1 -> x._2)
+  def jsonObjectOf(ty: String, others: (String, Json)*): Json = {
+    Json.fromJsonObject(
+      JsonObject.fromIterable(
+        Seq("type" -> Json.fromString(ty)) ++
+          others.map(x => x._1 -> x._2)
+      )
     )
   }
-  def generateType(ty: TyNode): JsonObject =
+  def generateType(ty: TyNode): Json =
     ty match {
       case TyString => jsonObjectOf("string")
       case _: TyInteger =>
@@ -57,20 +57,24 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
         )
 
       case TyList(ty) =>
-        jsonObjectOf("array", "items" -> Json.fromJsonObject(generateType(ty)))
+        jsonObjectOf("array", "items" -> generateType(ty))
 
       case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
-        JsonObject(
-          "enum" -> Json
-            .fromValues(
-              variants.map(_.names.head).map(naming.toEnumKeyName).map(Json.fromString)
-            ),
-          "name" -> Json.fromString(naming.toClassName(x.getValue(KeyName).get))
+        Json.fromJsonObject(
+          JsonObject(
+            "enum" -> Json
+              .fromValues(
+                variants.map(_.names.head).map(naming.toEnumKeyName).map(Json.fromString)
+              ),
+            "name" -> Json.fromString(naming.toClassName(x.getValue(KeyName).get))
+          )
         )
       case x @ TyEnum(variants) =>
-        JsonObject(
-          "enum" -> Json
-            .fromValues(variants.map(_.names.head).map(naming.toEnumKeyName).map(Json.fromString))
+        Json.fromJsonObject(
+          JsonObject(
+            "enum" -> Json
+              .fromValues(variants.map(_.names.head).map(naming.toEnumKeyName).map(Json.fromString))
+          )
         )
 
       case x @ TyStruct()
@@ -81,9 +85,8 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
             JsonObject.fromIterable(
               x.getFields.get
                 .map(f =>
-                  naming.toFunctionParameterName(f.name) -> Json.fromJsonObject(
+                  naming.toFunctionParameterName(f.name) ->
                     generateType(f.value)
-                  )
                 )
             )
           )
@@ -94,12 +97,15 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
           "properties" -> Json.fromJsonObject(
             JsonObject.fromIterable(
               x.getFields.get
-                .map(f => naming.toFieldName(f.name) -> Json.fromJsonObject(generateType(f.value)))
+                .map(f => naming.toFieldName(f.name) -> generateType(f.value))
             )
           )
         )
-      case TyJsonObject | TyStruct() | TyJsonAny => jsonObjectOf("object")
-
+      case TyJsonObject | TyStruct() => jsonObjectOf("object")
+      case TyJsonAny() =>
+        Json.fromValues(
+          Seq("number", "string", "boolean", "object", "array", "null").map(Json.fromString)
+        )
       case TyNamed(name) =>
         jsonObjectOf("string", "name" -> Json.fromString(name))
       case TyByteArray =>
