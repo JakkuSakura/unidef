@@ -85,10 +85,10 @@ class PythonSqlCodeGen(
     }
     if (func.getValue(KeyRecords).contains(true)) {
       context.put("records", true)
-      context.put("return", pythonCommon.convertType(TyList(returnType)))
+      context.put("return", pythonCommon.convertType(TyList(returnType)).get)
     } else {
       context.put("records", false)
-      context.put("return", pythonCommon.convertType(returnType))
+      context.put("return", pythonCommon.convertType(returnType).get)
     }
 
     context.put("schema", func.getValue(KeySchema).fold("")(x => s"$x."))
