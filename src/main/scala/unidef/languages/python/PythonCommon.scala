@@ -12,28 +12,28 @@ class PythonCommon(naming: NamingConvention = PythonNamingConvention) {
       case t @ TyStruct() if t.getValue(KeyName).isDefined =>
         Some(naming.toStructName(t.getValue(KeyName).get))
       case TyStruct() => {
-        importManager.foreach(_ += AstImport("typing.Dict"))
+        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
         Some("Dict[str, Any]")
       }
       case TyRecord => {
-        importManager.foreach(_ += AstImport("typing.Dict"))
-        importManager.foreach(_ += AstImport("typing.List"))
+        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
+        importManager.foreach(_ += AstImport("typing", Seq("List")))
         Some("List[Dict[str, Any]]")
       }
       case TyDict(k, v) => {
-        importManager.foreach(_ += AstImport("typing.Dict"))
+        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
         Some(s"Dict[${convertType(k, importManager)}, ${convertType(v, importManager)}]")
       }
       case TyList(v) => {
-        importManager.foreach(_ += AstImport("typing.Dict"))
+        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
         Some(s"List[${convertType(v, importManager)}]")
       }
       case TySet(v) => {
-        importManager.foreach(_ += AstImport("typing.Set"))
+        importManager.foreach(_ += AstImport("typing", Seq("Set")))
         Some(s"Set[${convertType(v, importManager)}]")
       }
       case TyJsonObject => {
-        importManager.foreach(_ += AstImport("typing.Any"))
+        importManager.foreach(_ += AstImport("typing", Seq("Any")))
         Some("Any")
       }
       case TyUnit => Some("None")
