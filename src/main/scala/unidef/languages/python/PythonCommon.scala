@@ -32,7 +32,7 @@ class PythonCommon(naming: NamingConvention = PythonNamingConvention) {
         importManager.foreach(_ += AstImport("typing", Seq("Set")))
         Some(s"Set[${convertType(v, importManager)}]")
       }
-      case TyJsonObject => {
+      case TyJsonObject | TyJsonAny() => {
         importManager.foreach(_ += AstImport("typing", Seq("Any")))
         Some("Any")
       }
