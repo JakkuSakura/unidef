@@ -22,15 +22,18 @@ class PythonCommon(naming: NamingConvention = PythonNamingConvention) {
       }
       case TyDict(k, v) => {
         importManager.foreach(_ += AstImport("typing", Seq("Dict")))
-        Some(s"Dict[${convertType(k, importManager)}, ${convertType(v, importManager)}]")
+        (convertType(k, importManager), convertType(v, importManager)) match {
+          case (Some(k), Some(v)) => Some(s"Dict[${}, ${}]")
+          case _ => None
+        }
       }
       case TyList(v) => {
         importManager.foreach(_ += AstImport("typing", Seq("Dict")))
-        Some(s"List[${convertType(v, importManager)}]")
+        convertType(v, importManager).map(x => s"List[${x}]")
       }
       case TySet(v) => {
         importManager.foreach(_ += AstImport("typing", Seq("Set")))
-        Some(s"Set[${convertType(v, importManager)}]")
+        convertType(v, importManager).map(x => s"Set[${x}]")
       }
       case TyJsonObject | TyJsonAny() => {
         importManager.foreach(_ += AstImport("typing", Seq("Any")))
