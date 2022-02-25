@@ -2,8 +2,7 @@ package unidef.languages.common
 
 import java.util.TimeZone
 
-/**
-  * This is a very generic type model
+/** This is a very generic type model
   */
 trait TyTypeExpr {
   def asTypeNode: TyNode
@@ -72,8 +71,7 @@ case class TyDecimal(precision: Option[Int], scale: Option[Int]) extends TyReal
 case class TyFloat(bitSize: BitSize) extends TyReal
 
 // rust: enum with multiple names
-case class TyVariant(names: Seq[String], code: Option[Int] = None)
-    extends TyNode
+case class TyVariant(names: Seq[String], code: Option[Int] = None) extends TyNode
 
 case class TyEnum(variants: Seq[TyVariant])
     extends Extendable
@@ -85,11 +83,7 @@ case class TyField(name: String, value: TyNode) extends Extendable with TyNode
 
 trait TyClass extends TyNode
 // None means that fields are unknown
-case class TyStruct()
-    extends Extendable
-    with TyClass
-    with HasName
-    with HasFields
+case class TyStruct() extends Extendable with TyClass with HasName with HasFields
 
 case object KeyDataType extends KeywordBoolean
 
@@ -99,7 +93,8 @@ case object TyByteArray extends TyListOf(TyInteger(BitSize.B16))
 case class TySet(value: TyNode) extends TyNode
 
 trait TyJson extends TyNode
-case object TyJsonAny extends TyJson
+case class TyJsonAny() extends Extendable with TyJson
+case object KeyIsBinary extends KeywordBoolean
 case object TyJsonObject extends TyJson // TyStruct(None)
 case object TyBoolean extends TyJson
 case object TyString extends TyJson
@@ -121,8 +116,7 @@ trait TyApplicable extends TyNode {
   def parameterType: TyNode
   def returnType: TyNode
 }
-case class TyLambda(override val parameterType: TyNode,
-                    override val returnType: TyNode)
+case class TyLambda(override val parameterType: TyNode, override val returnType: TyNode)
     extends Extendable
     with TyApplicable
 

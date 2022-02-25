@@ -52,6 +52,8 @@ case object SqlCommon {
       x.getValue(KeyName).get
     case TyEnum(_) => "text"
     case TyJsonObject => "jsonb"
+    case t: TyJsonAny if !t.getValue(KeyIsBinary).contains(false) => "jsonb"
+    case t: TyJsonAny => "json"
     case TyUnit => "void"
     case TyNamed(name) => name
     case TyBoolean => "boolean"
@@ -85,7 +87,8 @@ case object SqlCommon {
             .setValue(KeyHasTimeZone, true)
         )
       case "text" | "varchar" => Some(TyString)
-      case "jsonb" => Some(TyJsonAny)
+      case "jsonb" => Some(TyJsonAny().setValue(KeyIsBinary, true))
+      case "json" => Some(TyJsonAny().setValue(KeyIsBinary, false))
       case "void" => Some(TyUnit)
       case "oid" => Some(KeyOid.get)
       case "boolean" => Some(TyBoolean)
