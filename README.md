@@ -69,3 +69,10 @@ TyNode is an independent concept that cannot exist on its own
 AstNode is a standalone concept, the minimal element to represent everything
 
 
+### Scala tasty version
+I try to implement the tasty version to
+
+1. support parsing scala 3
+2. implement a interpreter in the same time
+3. try to do some optimization work(similar to LMS, but without intruding the original language)
+4. leave space for a transpile framework
