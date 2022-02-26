@@ -32,7 +32,7 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
         .map { case (name, code) =>
           counter += 1
           PythonField(
-            naming.toEnumValueName(name),
+            naming.toEnumKeyName(name),
             func.getValue.getOrElse(TyString) match {
               case TyString => s"'$name'"
               case _: TyInteger => s"${code.getOrElse(counter)}"

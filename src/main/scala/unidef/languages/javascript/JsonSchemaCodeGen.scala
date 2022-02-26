@@ -64,7 +64,7 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
           JsonObject(
             "enum" -> Json
               .fromValues(
-                variants.map(_.names.head).map(naming.toEnumKeyName).map(Json.fromString)
+                variants.map(_.names.head).map(naming.toEnumValueName).map(Json.fromString)
               ),
             "name" -> Json.fromString(naming.toClassName(x.getValue(KeyName).get))
           )
@@ -73,7 +73,9 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
         Json.fromJsonObject(
           JsonObject(
             "enum" -> Json
-              .fromValues(variants.map(_.names.head).map(naming.toEnumKeyName).map(Json.fromString))
+              .fromValues(
+                variants.map(_.names.head).map(naming.toEnumValueName).map(Json.fromString)
+              )
           )
         )
 
