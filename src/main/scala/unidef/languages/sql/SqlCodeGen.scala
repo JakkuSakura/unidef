@@ -143,9 +143,9 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
       |$$;
       |""".stripMargin
 
-  def generateConstantFunction(name: String, ret: TyNode, value: String): String = {
+  def generateRawFunction(name: String, ret: TyNode, value: String): String = {
     val context = CodeGen.createContext
-    context.put("name", naming.toFunctionName(name))
+    context.put("name", name)
     context.put("return_type", convertType(ret))
     context.put("value", value)
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_CONSTANT, context)
