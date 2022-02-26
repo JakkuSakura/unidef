@@ -39,6 +39,8 @@ libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.12.0"
 
 libraryDependencies += "com.github.saasquatch" % "json-schema-inferrer" % "0.1.4"
 
+libraryDependencies += "org.scala-lang" %% "scala3-tasty-inspector" % scalaVersion.value
+
 // https://mvnrepository.com/artifact/com.google.jimfs/jimfs
 libraryDependencies += "com.google.jimfs" % "jimfs" % "1.2"
 
