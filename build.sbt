@@ -2,9 +2,10 @@ ThisBuild / scalaVersion := "3.1.1"
 ThisBuild / organization := "com.jeekrs"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 Global / onChangedBuildSource := ReloadOnSourceChanges
-// scala 2 has better tooling and IDE support, especially inlay hints
+
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 resolvers += "jitpack" at "https://jitpack.io"
+
 lazy val root = (project in file("."))
   .enablePlugins(NativeImagePlugin)
   .settings(name := "unidef")
@@ -49,3 +50,6 @@ libraryDependencies += "org.apache.commons" % "commons-text" % "1.9"
 
 // https://mvnrepository.com/artifact/org.apache.commons/commons-io
 libraryDependencies += "org.apache.commons" % "commons-io" % "1.3.2"
+
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.11"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.11" % "test"
