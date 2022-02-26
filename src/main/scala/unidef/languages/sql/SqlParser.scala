@@ -83,7 +83,7 @@ object SqlParser {
   }
   private def stripUnsurpported(sql: String): String =
     sql
-      .replaceAll("(DEFAULT|default).+?(?=,|\\n|not|NOT)", "")
+      .replaceAll("\\b(DEFAULT|default)\\b.+?(?=,|\\n|not|NOT)", "")
       .replaceAll("CREATE SCHEMA.+?;", "")
       .replaceAll("CREATE SEQUENCE(.|\\n)+?;", "")
       .replaceAll("CREATE TYPE(.|\\n)+?;", "")
