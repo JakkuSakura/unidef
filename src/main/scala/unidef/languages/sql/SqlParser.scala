@@ -1,19 +1,20 @@
 package unidef.languages.sql
 
 import com.typesafe.scalalogging.Logger
+import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.{CCJSqlParserUtil, ParseException}
 import net.sf.jsqlparser.statement.create.function.CreateFunction
 import net.sf.jsqlparser.statement.create.table.{ColDataType, ColumnDefinition, CreateTable}
 import org.apache.commons.lang3.StringUtils
 import unidef.languages.common
-import unidef.languages.common._
+import unidef.languages.common.*
 import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema, convertTypeFromSql}
 import unidef.utils.TextTool.{finds, findss}
 import unidef.utils.UnidefParseException
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.matching.Regex
 
 object SqlParser {
@@ -36,7 +37,16 @@ object SqlParser {
       logger.debug(s"No table or function declaration: ${sql.slice(0, 100)}")
       collected.toSeq
     }
-    val stmts = CCJSqlParserUtil.parseStatements(cleaned)
+    val stmts =
+      try {
+        CCJSqlParserUtil.parseStatements(cleaned)
+      } catch {
+        case t: JSQLParserException =>
+          logger.info("Errr while parsing sql: " + cleaned)
+          throw t
+        case t =>
+          throw t
+      }
     stmts.getStatements.asScala.foreach {
       case table: CreateTable => collected += parseCreateTable(table)
       case func: CreateFunction =>
