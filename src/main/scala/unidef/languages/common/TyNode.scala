@@ -19,19 +19,19 @@ trait TyTypeVar extends TyNode
 case class TyTuple(values: Seq[TyNode]) extends TyNode
 
 trait HasValue extends Extendable {
-  def getValue: Option[TyNode] = getValue(KeyValue)
+  def getContentValue: Option[TyNode] = getValue(KeyValue)
 }
 
 // scala: Option[A]
 case class TyOptional(value: TyNode) extends HasValue with TyNode {
-  override def getValue: Option[TyNode] = Some(value)
+  override def getContentValue: Option[TyNode] = Some(value)
 }
 
 // scala: Either[A, B] rust: Result<Ok, Err>
 case class TyResult(ok: TyNode, err: TyNode) extends TyNode
 
 class TyListOf(value: TyNode) extends HasValue with TyJson {
-  override def getValue: Option[TyNode] = Some(value)
+  override def getContentValue: Option[TyNode] = Some(value)
 }
 
 // rust: Vec<T>

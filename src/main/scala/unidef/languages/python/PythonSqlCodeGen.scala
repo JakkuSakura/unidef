@@ -4,29 +4,27 @@ import unidef.languages.common.*
 import unidef.languages.sql.{KeyNullable, KeyPrimary}
 import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
 import unidef.languages.sql.{SqlCodeGen, SqlCommon, SqlField, SqlNamingConvention}
-import unidef.utils.{CodeGen, UnidefParseException}
+import unidef.utils.{CodeGen, ParseCodeException}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 private case class PythonField(name: String, orig_name: String, ty: String)
 class PythonSqlCodeGen(
-    naming: NamingConvention = PythonNamingConvention,
-    sqlNaming: NamingConvention = SqlNamingConvention
+    pythonCommon: PythonCommon = PythonCommon(PythonNamingConvention),
+    sqlCodeGen: SqlCodeGen = SqlCodeGen(SqlNamingConvention)
 ) extends KeywordProvider {
-  val pythonCommon = PythonCommon(naming)
-  val sqlCodeGen = SqlCodeGen(sqlNaming)
   override def keysOnFuncDecl: Seq[Keyword] = List(KeyRecords, KeySchema)
   private def convertToPythonField(
       node: TyField,
       importManager: Option[ImportManager]
   ): PythonField =
     PythonField(
-      naming.toFunctionParameterName(node.name),
+      pythonCommon.naming.toFunctionParameterName(node.name),
       node.name,
       pythonCommon
         .convertType(node.value, importManager)
-        .getOrElse(throw UnidefParseException(s"Failed to convert type: ${node.value}"))
+        .getOrElse(throw ParseCodeException(s"Failed to convert type: ${node.value}"))
     )
 
   protected val TEMPLATE_DATABASE_CODEGEN: String =

@@ -1,9 +1,6 @@
 package unidef.utils
 
-import org.apache.commons.lang3.StringUtils.{
-  splitByCharacterTypeCamelCase,
-  splitByWholeSeparator
-}
+import org.apache.commons.lang3.StringUtils.{splitByCharacterTypeCamelCase, splitByWholeSeparator}
 
 object TextTool {
   def indent(text: String, indent: Int): String = {
@@ -21,23 +18,19 @@ object TextTool {
   def find(text: String, pattern: String, startPos: Int = 0): Option[Int] = {
     text.indexOf(pattern, startPos) match {
       case -1 => None
-      case i  => Some(i)
+      case i => Some(i)
     }
   }
-  def finds(text: Seq[String],
-            pattern: String,
-            startPos: Int = 0): Option[Int] = {
+  def finds(text: Seq[String], pattern: String, startPos: Int = 0): Option[Int] = {
     text.indexOf(pattern, startPos) match {
       case -1 => None
-      case i  => Some(i)
+      case i => Some(i)
     }
   }
-  def findss(text: Seq[String],
-             pattern: Seq[String],
-             startPos: Int = 0): Option[Int] = {
+  def findss(text: Seq[String], pattern: Seq[String], startPos: Int = 0): Option[Int] = {
     for (p <- pattern)
       finds(text, p, startPos) match {
-        case None    =>
+        case None =>
         case Some(i) => return Some(i)
       }
     None
@@ -45,13 +38,13 @@ object TextTool {
   def rfind(text: String, pattern: String): Option[Int] = {
     text.lastIndexOf(pattern) match {
       case -1 => None
-      case i  => Some(i)
+      case i => Some(i)
     }
   }
   def rfinds(text: Seq[String], pattern: String): Option[Int] = {
     text.lastIndexOf(pattern) match {
       case -1 => None
-      case i  => Some(i)
+      case i => Some(i)
     }
   }
   def splitString(text: String): Seq[String] = {

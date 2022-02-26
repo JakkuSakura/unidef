@@ -1,7 +1,7 @@
 package unidef.languages.python
 
-import unidef.languages.common._
-import unidef.utils.CodeGen
+import unidef.languages.common.*
+import unidef.utils.{CodeGen, CodegenException, ParseCodeException}
 
 import java.time.LocalDateTime
 import scala.jdk.CollectionConverters.*
@@ -16,26 +16,29 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
       |#end
       |""".stripMargin
 
-  def generateEnum(func: TyEnum, importManager: Option[ImportManager] = None): String = {
+  def generateEnum(enm: TyEnum, importManager: Option[ImportManager] = None): String = {
     importManager.foreach(_ += AstImport("enum"))
     val context = CodeGen.createContext
-    context.put("name", naming.toClassName(func.getName.get))
-    func.getValue.getOrElse(TyString) match {
+    context.put("name", naming.toClassName(enm.getName.get))
+    enm.getContentValue.getOrElse(TyString) match {
       case TyString => context.put("enum_type", "str, enum.Enum")
       case _: TyInteger => context.put("enum_type", "enum.IntEnum")
     }
     var counter = -1
     context.put(
       "fields",
-      func.variants
+      enm.variants
         .map(x => x.names.head -> x.code)
         .map { case (name, code) =>
           counter += 1
           PythonField(
             naming.toEnumKeyName(name),
-            func.getValue.getOrElse(TyString) match {
-              case TyString => s"'$name'"
-              case _: TyInteger => s"${code.getOrElse(counter)}"
+            enm.getContentValue match {
+              case Some(x @ TyString) => s"'${name}'"
+              case Some(_: TyInteger) => s"${code.getOrElse(counter)}"
+              case None => s"'${naming.toEnumValueName(name)}'"
+              case Some(t) =>
+                throw CodegenException(s"Does not support ${t} as enum value type")
             },
             null
           )

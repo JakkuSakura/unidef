@@ -6,7 +6,7 @@ import unidef.languages.common
 import unidef.languages.common._
 import unidef.utils.FileUtils.readFile
 import unidef.utils.JsonUtils.{getList, getObject, getString, iterateOver}
-import unidef.utils.UnidefParseException
+import unidef.utils.ParseCodeException
 
 import scala.collection.mutable
 
@@ -14,7 +14,7 @@ class JsonSchemaParser(extended: Boolean) {
   private def parseType(s: String) =
     JsonSchemaCommon(extended)
       .parseType(s)
-      .getOrElse(throw UnidefParseException("Failed to parse type " + s, null))
+      .getOrElse(throw ParseCodeException("Failed to parse type " + s, null))
 
   def parseFunction(content: JsonObject): TyApplicable = {
     val name = getString(content, "name")
@@ -103,7 +103,7 @@ class JsonSchemaParser(extended: Boolean) {
         TyField("unnamed", parseType(value))
 
       override def onArray(value: Vector[Json]): TyField =
-        throw UnidefParseException("Field should not be array", null)
+        throw ParseCodeException("Field should not be array", null)
 
       override def onObject(value: JsonObject): TyField = {
         val field = if (value("name").isDefined && value("type").isDefined) {
@@ -115,7 +115,7 @@ class JsonSchemaParser(extended: Boolean) {
           val ty = parseType(getString(value, name))
           TyField(name, ty)
         } else {
-          throw UnidefParseException(
+          throw ParseCodeException(
             "FieldType must be either: has fields `name` and `type`, has the form of `name: type`"
           )
         }
@@ -127,13 +127,13 @@ class JsonSchemaParser(extended: Boolean) {
       }
 
       override def onNull: TyField =
-        throw UnidefParseException("Field should not be null")
+        throw ParseCodeException("Field should not be null")
 
       override def onBoolean(value: Boolean): TyField =
-        throw UnidefParseException("Field should not be boolean")
+        throw ParseCodeException("Field should not be boolean")
 
       override def onNumber(value: JsonNumber): TyField =
-        throw UnidefParseException("Field should not be number")
+        throw ParseCodeException("Field should not be number")
     })
   }
   def collectExtKeys(content: JsonObject, keywords: Seq[Keyword]): Seq[(Keyword, Any)] = {

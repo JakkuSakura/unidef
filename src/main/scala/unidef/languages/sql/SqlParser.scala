@@ -10,7 +10,7 @@ import unidef.languages.common
 import unidef.languages.common.*
 import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema, convertTypeFromSql}
 import unidef.utils.TextTool.{finds, findss}
-import unidef.utils.UnidefParseException
+import unidef.utils.ParseCodeException
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -134,7 +134,7 @@ object SqlParser {
     val ty =
       lookUpType(tyName)
         .orElse(convertTypeFromSql(tyName))
-        .getOrElse(throw UnidefParseException(s"Failed to parse type $tyName"))
+        .getOrElse(throw ParseCodeException(s"Failed to parse type $tyName"))
     (input, TyField(name, ty))
   }
 
@@ -180,8 +180,8 @@ object SqlParser {
         rq_ = finds(parts, x, y + 1)
       })
     )
-    val lq: Int = lq_.getOrElse(throw UnidefParseException("lq not found"))
-    val rq: Int = rq_.getOrElse(throw UnidefParseException("rq not found"))
+    val lq: Int = lq_.getOrElse(throw ParseCodeException("lq not found"))
+    val rq: Int = rq_.getOrElse(throw ParseCodeException("rq not found"))
 
     val body = parts.slice(lq + 1, rq).mkString(" ")
     val languagePos = finds(parts, "LANGUAGE").get
@@ -205,7 +205,7 @@ object SqlParser {
           val ret = ty.mkString(" ")
           outputOnly = Some(
             convertTypeFromSql(ret)
-              .getOrElse(throw UnidefParseException(s"Failed to parse type $ret"))
+              .getOrElse(throw ParseCodeException(s"Failed to parse type $ret"))
           )
       }
 
@@ -246,7 +246,7 @@ object SqlParser {
     val name = column.getColumnName
     TyField(
       name,
-      parseColDataType(ty).getOrElse(throw UnidefParseException(s"Failed to parse type $ty"))
+      parseColDataType(ty).getOrElse(throw ParseCodeException(s"Failed to parse type $ty"))
     )
   }
   def lookUpType(ty: String)(implicit resolver: TypeResolver): Option[TyNode] = {

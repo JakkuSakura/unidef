@@ -5,7 +5,7 @@ import io.circe.yaml.parser
 import io.circe.Json
 import unidef.languages.common._
 import unidef.languages.javascript.JsonSchemaParser
-import unidef.utils.UnidefParseException
+import unidef.utils.ParseCodeException
 
 import scala.collection.mutable
 
@@ -37,7 +37,7 @@ case class YamlParser(jsParser: JsonSchemaParser) {
         case Right(j) if j.isNull => None
         case Right(o) if o.isObject => Some(o.asObject.get)
         case Right(o) =>
-          throw UnidefParseException("Invalid doc. Object only: " + o, null)
+          throw ParseCodeException("Invalid doc. Object only: " + o, null)
         case Left(err) => throw err
       }
       .map(x => jsParser.parse(Json.fromJsonObject(x)))

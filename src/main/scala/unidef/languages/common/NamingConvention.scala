@@ -15,7 +15,7 @@ trait NamingConvention {
   def toEnumValueName(s: String): String = ???
 }
 
-case object NoopNamingConvention extends NamingConvention {
+trait NoopNamingConvention extends NamingConvention {
   override def toFunctionParameterName(s: String): String = s
   override def toFunctionName(s: String): String = s
   override def toVariableName(s: String): String = s
@@ -27,3 +27,4 @@ case object NoopNamingConvention extends NamingConvention {
   override def toEnumKeyName(s: String): String = s
   override def toEnumValueName(s: String): String = s
 }
+case object NoopNamingConvention extends NoopNamingConvention
