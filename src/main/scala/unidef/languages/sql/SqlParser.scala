@@ -72,12 +72,21 @@ object SqlParser {
         k -> v
           .split(",")
           .map(StringUtils.strip(_, " '"))
-          .map(x => TyVariant(Seq(x)))
+          .map(variantName =>
+            TyVariant(Seq(variantName))
+              .setValue(KeyName, variantName)
+          )
       }
       .map {
         case (s"$schema.$name", v) =>
-          TyEnum(v.toSeq).setValue(KeySchema, schema).setValue(KeyName, name)
-        case (k, v) => TyEnum(v.toSeq).setValue(KeyName, k)
+          TyEnum(v.toSeq)
+            .setValue(KeySchema, schema)
+            .setValue(KeyName, name)
+            .setValue(KeyValue, TyString)
+        case (enumName, v) =>
+          TyEnum(v.toSeq)
+            .setValue(KeyName, enumName)
+            .setValue(KeyValue, TyString)
       }
       .toSeq
   }
@@ -220,7 +229,7 @@ object SqlParser {
         outputOnly.get
       else
         TyStruct().setValue(KeyFields, Nil)
-    ).setValue(KeySchema, schema)
+    ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
     func.setValue(KeyBody, AstRawCode(body).setValue(KeyLanguage, language))
     if (outputOnly.isEmpty)
       func.setValue(KeyRecords, true)

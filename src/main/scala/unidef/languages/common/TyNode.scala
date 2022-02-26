@@ -71,7 +71,7 @@ case class TyDecimal(precision: Option[Int], scale: Option[Int]) extends TyReal
 case class TyFloat(bitSize: BitSize) extends TyReal
 
 // rust: enum with multiple names
-case class TyVariant(names: Seq[String], code: Option[Int] = None) extends TyNode
+case class TyVariant(names: Seq[String], code: Option[Int] = None) extends Extendable with TyNode
 
 case class TyEnum(variants: Seq[TyVariant])
     extends Extendable
