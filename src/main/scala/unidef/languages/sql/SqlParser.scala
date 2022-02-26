@@ -10,7 +10,7 @@ import unidef.languages.common
 import unidef.languages.common.*
 import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema, convertTypeFromSql}
 import unidef.utils.TextTool.{finds, findss}
-import unidef.utils.ParseCodeException
+import unidef.utils.{ParseCodeException, TypeDecodeException}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -134,7 +134,7 @@ object SqlParser {
     val ty =
       lookUpType(tyName)
         .orElse(convertTypeFromSql(tyName))
-        .getOrElse(throw ParseCodeException(s"Failed to parse type $tyName"))
+        .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     (input, TyField(name, ty))
   }
 
@@ -205,7 +205,7 @@ object SqlParser {
           val ret = ty.mkString(" ")
           outputOnly = Some(
             convertTypeFromSql(ret)
-              .getOrElse(throw ParseCodeException(s"Failed to parse type $ret"))
+              .getOrElse(throw TypeDecodeException("Failed to parse type", ret))
           )
       }
 
@@ -246,7 +246,9 @@ object SqlParser {
     val name = column.getColumnName
     TyField(
       name,
-      parseColDataType(ty).getOrElse(throw ParseCodeException(s"Failed to parse type $ty"))
+      parseColDataType(ty).getOrElse(
+        throw TypeDecodeException("Failed to parse type", ty.getDataType)
+      )
     )
   }
   def lookUpType(ty: String)(implicit resolver: TypeResolver): Option[TyNode] = {

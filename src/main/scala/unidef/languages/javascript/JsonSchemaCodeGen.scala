@@ -2,8 +2,8 @@ package unidef.languages.javascript
 
 import com.typesafe.scalalogging.Logger
 import io.circe.{Json, JsonObject}
-import unidef.languages.common._
-import unidef.utils.ParseCodeException
+import unidef.languages.common.*
+import unidef.utils.{ParseCodeException, TypeEncodeException}
 
 // meant for private use
 case object KeyRequired extends KeywordBoolean
@@ -114,6 +114,6 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
         jsonObjectOf("string", "format" -> Json.fromString("byte"))
       case TyInet => jsonObjectOf("string", "format" -> Json.fromString("inet"))
       case TyUuid => jsonObjectOf("string", "format" -> Json.fromString("uuid"))
-      case _ => throw ParseCodeException(s"Unsupported type: $ty")
+      case _ => throw TypeEncodeException(s"Unsupported type", ty)
     }
 }

@@ -1,6 +1,19 @@
 package unidef.utils
 
-case class ParseCodeException(msg: String, cause: Throwable = null) extends Exception(msg)
-case class TypeLookupException(msg: String, cause: Throwable = null) extends Exception(msg)
+import unidef.languages.common.TyNode
 
-case class CodegenException(msg: String, cause: Throwable = null) extends Exception(msg)
+class ExceptionBase(msg: String, cause: Option[Throwable] = None)
+    extends Exception(msg, cause.orNull)
+
+case class ParseCodeException(msg: String, cause: Option[Throwable] = None)
+    extends ExceptionBase(msg)
+case class TypeEncodeException(msg: String, ty: TyNode, cause: Option[Throwable] = None)
+    extends ExceptionBase(s"$msg (type: $ty)", cause)
+case class TypeDecodeException(
+    msg: String,
+    ty: String,
+    lang: String = "",
+    cause: Option[Throwable] = None
+) extends ExceptionBase(s"$msg (type: $ty $lang)", cause)
+
+case class CodegenException(msg: String, cause: Option[Throwable] = None) extends ExceptionBase(msg)

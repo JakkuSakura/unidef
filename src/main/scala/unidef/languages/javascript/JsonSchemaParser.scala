@@ -1,12 +1,12 @@
 package unidef.languages.javascript
 
 import io.circe.Json.Folder
-import io.circe._
+import io.circe.*
 import unidef.languages.common
-import unidef.languages.common._
+import unidef.languages.common.*
 import unidef.utils.FileUtils.readFile
 import unidef.utils.JsonUtils.{getList, getObject, getString, iterateOver}
-import unidef.utils.ParseCodeException
+import unidef.utils.{ParseCodeException, TypeDecodeException}
 
 import scala.collection.mutable
 
@@ -14,7 +14,7 @@ class JsonSchemaParser(extended: Boolean) {
   private def parseType(s: String) =
     JsonSchemaCommon(extended)
       .parseType(s)
-      .getOrElse(throw ParseCodeException("Failed to parse type " + s, null))
+      .getOrElse(throw TypeDecodeException("Failed to parse type", s))
 
   def parseFunction(content: JsonObject): TyApplicable = {
     val name = getString(content, "name")

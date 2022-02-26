@@ -4,7 +4,7 @@ import unidef.languages.common.*
 import unidef.languages.sql.{KeyNullable, KeyPrimary}
 import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
 import unidef.languages.sql.{SqlCodeGen, SqlCommon, SqlField, SqlNamingConvention}
-import unidef.utils.{CodeGen, ParseCodeException}
+import unidef.utils.{CodeGen, ParseCodeException, TypeEncodeException}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -24,7 +24,7 @@ class PythonSqlCodeGen(
       node.name,
       pythonCommon
         .convertType(node.value, importManager)
-        .getOrElse(throw ParseCodeException(s"Failed to convert type: ${node.value}"))
+        .getOrElse(throw TypeEncodeException("Failed to convert type", node.value))
     )
 
   protected val TEMPLATE_DATABASE_CODEGEN: String =
