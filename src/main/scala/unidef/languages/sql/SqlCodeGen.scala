@@ -15,26 +15,25 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   override def keysOnField: Seq[Keyword] = Seq(KeyPrimary, KeyAutoIncr, KeyNullable)
 
   private val TEMPLATE_GENERATE_FUNCTION_CALL =
-    """
-      |#if($percentage)
-      |#macro(generate_params)#foreach($param in $params)
-      |    $param => %s#if($foreach.hasNext), #end
-      |#end#end
-      |#else
-      |#macro(generate_params)#foreach($param in $params)
-      |    $param => ${esc.d}$foreach.count#if($foreach.hasNext), #end
-      |#end#end
-      |#end
-      |#if($table)
-      |SELECT * FROM $schema${db_func_name}(
-      |#generate_params()
-      |);
-      |#else
-      |SELECT $schema$db_func_name(
-      |#generate_params()
-      |) AS _value;
-      |#end
-      |""".stripMargin
+    """|#if($percentage)
+       |#macro(generate_params)#foreach($param in $params)
+       |    $param => %s#if($foreach.hasNext), #end
+       |#end#end
+       |#else
+       |#macro(generate_params)#foreach($param in $params)
+       |    $param => ${esc.d}$foreach.count#if($foreach.hasNext), #end
+       |#end#end
+       |#end
+       |#if($table)
+       |SELECT * FROM $schema${db_func_name}(
+       |#generate_params()
+       |);
+       |#else
+       |SELECT $schema$db_func_name(
+       |#generate_params()
+       |) AS _value;
+       |#end
+       |""".stripMargin
 
   def generateCallFunc(func: AstFunctionDecl, percentage: Boolean = false): String = {
     val context = CodeGen.createContext
@@ -57,13 +56,12 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   }
 
   private val TEMPLATE_GENERATE_TABLE_DDL: String =
-    """
-      |CREATE TABLE IF NOT EXIST $schema$name (
-      |#foreach($field in $fields)
-      |   $field.name() $field.ty()$field.attributes()#if($foreach.hasNext),#end
-      |#end
-      |);
-      |""".stripMargin
+    """|CREATE TABLE IF NOT EXIST $schema$name (
+       |#foreach($field in $fields)
+       |   $field.name() $field.ty()$field.attributes()#if($foreach.hasNext),#end
+       |#end
+       |);
+       |""".stripMargin
 
   def generateTableDdl(node: TyClass with HasName with HasFields): String = {
     val context = CodeGen.createContext
@@ -74,26 +72,25 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   }
 
   private val TEMPLATE_GENERATE_FUNCTION_DDL =
-    """
-      |CREATE OR REPLACE FUNCTION $schema$name (
-      |#foreach($arg in $args)
-      |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
-      |#end
-      |)
-      |#if(!$return_type)
-      |RETURNS TABLE (
-      |#foreach($arg in $return_table)
-      |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
-      |#end
-      |)
-      |#else
-      |RETURNS $return_type
-      |#end
-      |LANGUAGE $language
-      |AS $$
-      |$body
-      |$$;
-      |""".stripMargin
+    """|CREATE OR REPLACE FUNCTION $schema$name (
+       |#foreach($arg in $args)
+       |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
+       |#end
+       |)
+       |#if(!$return_type)
+       |RETURNS TABLE (
+       |#foreach($arg in $return_table)
+       |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
+       |#end
+       |)
+       |#else
+       |RETURNS $return_type
+       |#end
+       |LANGUAGE $language
+       |AS $$
+       |$body
+       |$$;
+       |""".stripMargin
 
   def generateFunctionDdl(node: AstFunctionDecl): String = {
     val context = CodeGen.createContext
@@ -133,15 +130,13 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   }
 
   protected val TEMPLATE_GENERATE_FUNCTION_CONSTANT: String =
-    """
-      |CREATE OR REPLACE FUNCTION $name (
-      |)
-      |RETURNS $return_type
-      |LANGUAGE SQL
-      |AS $$
-      |SELECT $value;
-      |$$;
-      |""".stripMargin
+    """|CREATE OR REPLACE FUNCTION $name ()
+       |RETURNS $return_type
+       |LANGUAGE SQL
+       |AS $$
+       |SELECT $value;
+       |$$;
+       |""".stripMargin
 
   def generateRawFunction(name: String, ret: TyNode, value: String): String = {
     val context = CodeGen.createContext

@@ -28,33 +28,32 @@ class PythonSqlCodeGen(
     )
 
   protected val TEMPLATE_DATABASE_CODEGEN: String =
-    """
-      |@beartype.beartype
-      |async def $name(
-      |#foreach($param in $params)
-      |    $param.name(): $param.ty(),
-      |#end
-      |) -> Result[$return, int]:
-      |    result = await database.invoke('$db_func_name', {
-      |        #foreach($param in $params)
-      |            '$param.orig_name()': $param.name(),
-      |        #end
-      |    })
-      |    if isinstance(result, Err):
-      |       err = result.value
-      |       logger.error("Error when executing $name: " + str(err))
-      |       return Err(err)
-      |    #if($table && $records)
-      |    ret = result.value
-      |    #elseif($table && !$records)
-      |    ret = result.value[0]
-      |    #elseif(!$table && $records)
-      |    ret = [x["$name"] for x in result.value]
-      |    #else
-      |    ret = result.value[0]["$name"]
-      |    #end
-      |    return Ok(cast($return, ret))
-      |""".stripMargin
+    """|@beartype.beartype
+       |async def $name(
+       |#foreach($param in $params)
+       |    $param.name(): $param.ty(),
+       |#end
+       |) -> Result[$return, int]:
+       |    result = await database.invoke('$db_func_name', {
+       |        #foreach($param in $params)
+       |            '$param.orig_name()': $param.name(),
+       |        #end
+       |    })
+       |    if isinstance(result, Err):
+       |       err = result.value
+       |       logger.error("Error when executing $name: " + str(err))
+       |       return Err(err)
+       |    #if($table && $records)
+       |    ret = result.value
+       |    #elseif($table && !$records)
+       |    ret = result.value[0]
+       |    #elseif(!$table && $records)
+       |    ret = [x["$name"] for x in result.value]
+       |    #else
+       |    ret = result.value[0]["$name"]
+       |    #end
+       |    return Ok(cast($return, ret))
+       |""".stripMargin
 
   def generateFuncWrapper(
       func: AstFunctionDecl,
