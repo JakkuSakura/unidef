@@ -12,7 +12,8 @@ case object KeyIsMethodParameters extends KeywordBoolean
 
 class JsonSchemaCodeGenOption(
     val naming: NamingConvention = JsonNamingConvention,
-    val useListForJsonAny: Boolean = false
+    val useListForJsonAny: Boolean = false,
+    val useCustomFormat: Boolean = false
 )
 
 class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOption()) {
@@ -119,8 +120,11 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case TyNamed(name) =>
         jsonObjectOf("string", "name" -> Json.fromString(name))
       case TyByteArray =>
-        jsonObjectOf("string", "format" -> Json.fromString("byte"))
-      case TyInet => jsonObjectOf("string", "format" -> Json.fromString("inet"))
+        jsonObjectOf(
+          "string",
+          (if (options.useCustomFormat) "format" else "$comment") -> Json.fromString("byte")
+        )
+      case TyInet => jsonObjectOf("string", "format" -> Json.fromString("hostname"))
       case TyUuid => jsonObjectOf("string", "format" -> Json.fromString("uuid"))
       case _ => throw TypeEncodeException(s"Unsupported type", ty)
     }

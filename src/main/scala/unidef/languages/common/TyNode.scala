@@ -111,6 +111,7 @@ case object TyUnknown extends TyNode
 
 case object TyUndefined extends TyNode
 case object TyInet extends TyNode
+//TODO: ipv4/ipv6/ip/hostname/...
 case object TyUuid extends TyNode
 trait TyApplicable extends TyNode {
   def parameterType: TyNode
