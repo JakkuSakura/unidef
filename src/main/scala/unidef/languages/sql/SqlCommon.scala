@@ -29,11 +29,11 @@ case object SqlCommon {
   def convertInt(ty: TyInteger): String = ty match {
     case ty if ty.getValue(KeyOid).contains(true) => "oid"
     case _ =>
-      ty.bitSize match {
-        case BitSize.B16 => "smallint"
-        case BitSize.B32 => "integer"
-        case BitSize.B64 => "bigint"
-        case x => s"integer($x)"
+      ty.getBitSize match {
+        case Some(BitSize.B16) => "smallint"
+        case Some(BitSize.B64) => "bigint"
+        case Some(x) => s"integer($x)"
+        case _ => "integer"
 
       }
   }

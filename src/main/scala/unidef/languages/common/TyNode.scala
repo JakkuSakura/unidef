@@ -59,7 +59,19 @@ object BitSize {
 class TyNumeric extends Extendable with TyNode with TyJson
 
 case class TyNumericClass() extends TyNumeric
-case class TyInteger(bitSize: BitSize, signed: Boolean = true) extends TyNumeric
+case class TyInteger(signed: Boolean) extends TyNumeric with HasBitSize
+object TyInteger {
+  def apply(): TyInteger = TyInteger(true)
+  def apply(bits: BitSize, signed: Boolean = true): TyInteger =
+    TyInteger(signed).setValue(KeyBitSize, bits)
+}
+case object KeyBitSize extends Keyword {
+  override type V = BitSize
+}
+
+trait HasBitSize extends Extendable {
+  def getBitSize: Option[BitSize] = getValue(KeyBitSize)
+}
 
 class TyReal extends TyNumeric
 
@@ -88,7 +100,7 @@ case class TyStruct() extends Extendable with TyClass with HasName with HasField
 case object KeyDataType extends KeywordBoolean
 
 case class TyDict(key: TyNode, value: TyNode) extends TyNode
-case object TyByteArray extends TyListOf(TyInteger(BitSize.B16))
+case object TyByteArray extends TyListOf(TyInteger().setValue(KeyBitSize, BitSize.B8))
 
 case class TySet(value: TyNode) extends TyNode
 

@@ -5,15 +5,18 @@ import unidef.utils.TextTool
 
 import scala.collection.mutable
 
-trait TypeResolver {
-  def decode(typeName: String): Option[TyNode]
+trait TypeDecoder {
+  def decode(name: String): Option[TyNode]
+}
+trait TypeEncoder {
+  def encode(ty: TyNode): Option[String]
 }
 
-object EmptyTypeResolver extends TypeResolver {
-  override def decode(typeName: String): Option[TyNode] = None
+object EmptyTypeDecoder extends TypeDecoder {
+  override def decode(name: String): Option[TyNode] = None
 }
 
-case class TypeRegistry() extends TypeResolver {
+case class TypeRegistry() extends TypeDecoder {
   val logger: Logger = Logger[this.type]
   val mapping = new mutable.HashMap[String, TyNode]()
 
@@ -22,8 +25,8 @@ case class TypeRegistry() extends TypeResolver {
     mapping += TextTool.toSnakeCase(s) -> ty.setValue(KeyLanguage, source_lang)
   }
 
-  override def decode(typeName: String): Option[TyNode] = {
-    mapping.get(TextTool.toSnakeCase(typeName))
+  override def decode(name: String): Option[TyNode] = {
+    mapping.get(TextTool.toSnakeCase(name))
   }
 
 }

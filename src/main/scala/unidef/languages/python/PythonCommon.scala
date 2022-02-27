@@ -2,7 +2,9 @@ package unidef.languages.python
 
 import unidef.languages.common._
 
-class PythonCommon(val naming: NamingConvention = PythonNamingConvention) {
+class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
+    extends TypeEncoder
+    with TypeDecoder {
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =
     node match {
       case _: TyInteger => Some("int")
@@ -56,19 +58,22 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention) {
       case TyEnum(_) => Some("str") // TODO: use solid enum if possible
       case _ => None
     }
-  def convertTypeFromPy(ty: String): TyNode =
+  def convertTypeFromPy(ty: String): Option[TyNode] =
     ty match {
-      case "int" => TyInteger(BitSize.Unlimited)
-      case "float" => TyFloat(BitSize.Unlimited)
-      case "str" => TyString
-      case "bool" => TyBoolean
-      case "NoneType" | "None" => TyUnit
-      case "datetime.datetime" => TyTimeStamp()
-      case "Dict[str, Any]" => TyJsonObject
-      case "List[Dict[str, Any]]" => TyRecord
-      case "bytes" => TyByteArray
-      case "uuid.UUID" | "UUID" => TyUuid
-      case _ => TyString
+      case "int" => Some(TyInteger(BitSize.Unlimited))
+      case "float" => Some(TyFloat(BitSize.Unlimited))
+      case "str" => Some(TyString)
+      case "bool" => Some(TyBoolean)
+      case "NoneType" | "None" => Some(TyUnit)
+      case "datetime.datetime" => Some(TyTimeStamp())
+      case "Dict[str, Any]" => Some(TyJsonObject)
+      case "List[Dict[str, Any]]" => Some(TyRecord)
+      case "bytes" => Some(TyByteArray)
+      case "uuid.UUID" | "UUID" => Some(TyUuid)
+      case _ => None
     }
 
+  override def encode(ty: TyNode): Option[String] = convertType(ty)
+
+  override def decode(name: String): Option[TyNode] = convertTypeFromPy(name)
 }

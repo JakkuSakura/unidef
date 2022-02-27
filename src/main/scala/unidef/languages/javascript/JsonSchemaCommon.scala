@@ -2,7 +2,7 @@ package unidef.languages.javascript
 
 import unidef.languages.common._
 
-class JsonSchemaCommon(extended: Boolean) extends TypeResolver {
+class JsonSchemaCommon(extended: Boolean) extends TypeDecoder {
   def parseType(ty: String): Option[TyNode] =
     ty.toLowerCase match {
       case "integer" if !extended =>
@@ -35,6 +35,6 @@ class JsonSchemaCommon(extended: Boolean) extends TypeResolver {
 
     }
 
-  override def decode(typeName: String): Option[TyNode] = parseType(typeName)
+  override def decode(name: String): Option[TyNode] = parseType(name)
 
 }

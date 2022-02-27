@@ -51,5 +51,5 @@ libraryDependencies += "org.apache.commons" % "commons-text" % "1.9"
 // https://mvnrepository.com/artifact/org.apache.commons/commons-io
 libraryDependencies += "org.apache.commons" % "commons-io" % "1.3.2"
 
-libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.11"
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.11" % "test"
+// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+libraryDependencies += "org.junit.jupiter" % "junit-jupiter-api" % "5.8.2" % Test

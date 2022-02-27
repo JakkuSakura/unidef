@@ -114,7 +114,7 @@ object SqlParser {
 
   private def parseParam(
       args: Seq[String]
-  )(implicit resolver: TypeResolver): (Boolean, TyField) = {
+  )(implicit resolver: TypeDecoder): (Boolean, TyField) = {
     logger.info("parseParam: " + args.mkString(", "))
     var nameCursor = 0
     var typeCursor = 1
@@ -149,7 +149,7 @@ object SqlParser {
 
   def parseCreateFunction(
       parts: Seq[String]
-  )(implicit resolver: TypeResolver): Option[(AstFunctionDecl, Int)] = {
+  )(implicit resolver: TypeDecoder): Option[(AstFunctionDecl, Int)] = {
     val (schema, name) = parts match {
       case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
         (schema, name)
@@ -240,7 +240,7 @@ object SqlParser {
   }
   def parseCreateTable(
       tbl: CreateTable
-  )(implicit resolver: TypeResolver): AstClassDecl = {
+  )(implicit resolver: TypeDecoder): AstClassDecl = {
     common
       .AstClassDecl(
         AstLiteralString(tbl.getTable.getName),
@@ -250,7 +250,7 @@ object SqlParser {
   }
   def parseParseColumn(
       column: ColumnDefinition
-  )(implicit resolver: TypeResolver): TyField = {
+  )(implicit resolver: TypeDecoder): TyField = {
     val ty = column.getColDataType
     val name = column.getColumnName
     TyField(
@@ -260,14 +260,14 @@ object SqlParser {
       )
     )
   }
-  def lookUpType(ty: String)(implicit resolver: TypeResolver): Option[TyNode] = {
+  def lookUpType(ty: String)(implicit resolver: TypeDecoder): Option[TyNode] = {
     resolver
       .decode(ty.replaceAll("\\w+?\\.", ""))
   }
 
   def parseColDataType(
       ty: ColDataType
-  )(implicit resolver: TypeResolver): Option[TyNode] =
+  )(implicit resolver: TypeDecoder): Option[TyNode] =
     lookUpType(ty.getDataType).orElse(convertTypeFromSql(ty.getDataType))
 
 }
