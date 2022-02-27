@@ -29,7 +29,20 @@ import org.apache.commons.io.FileUtils
 import scala.collection.mutable
 import java.nio.file.attribute.FileAttribute
 
-private case class OpenedFile(filePath: Path, writer: PrintWriter, out: OutputStream)
+private class OpenedFile(val filePath: Path, var stream: OutputStream, var writer: PrintWriter) {
+  def resetWriters(): Unit = {
+    writer.close()
+    stream = Files.newOutputStream(filePath)
+    writer = new PrintWriter(new NioWriter(stream))
+  }
+}
+private object OpenedFile {
+  def apply(filePath: Path): OpenedFile = {
+    val stream = Files.newOutputStream(filePath)
+    val writer = new PrintWriter(new NioWriter(stream))
+    new OpenedFile(filePath, stream, writer)
+  }
+}
 
 private class NioWriter(outputStream: OutputStream) extends Writer {
   @throws[IOException]
@@ -46,19 +59,29 @@ class VirtualFileSystem {
   val logger: Logger = Logger[this.type]
   val fs: FileSystem = Jimfs.newFileSystem(Configuration.unix())
   val openList: mutable.HashMap[String, OpenedFile] = mutable.HashMap.empty
-  def newWriterAt(filename: String): PrintWriter = {
+  def getWriterAt(filename: String): PrintWriter = {
     if (openList.contains(filename)) {
       openList(filename).writer
+    } else
+      newWriterAt(filename)
+  }
+
+  def newWriterAt(filename: String): PrintWriter = {
+    if (openList.contains(filename)) {
+      logger.warn(s"Attempting to create a new writer for an already opened file $filename")
+      val cached = openList(filename)
+      cached.resetWriters()
+      cached.writer
     } else {
+      logger.debug(s"Creating virtual file $filename")
       val filePath = fs.getPath(filename)
       if (filePath.getParent != null) {
         Files.createDirectories(filePath.getParent)
       }
-      logger.debug(s"Creating virtual file $filename")
       val stream = Files.newOutputStream(filePath)
-      val writer = new PrintWriter(new NioWriter(stream))
-      openList += filename -> OpenedFile(filePath, writer, stream)
-      writer
+      val openedFile = OpenedFile(filePath)
+      openList += filename -> openedFile
+      openedFile.writer
     }
   }
 
@@ -96,5 +119,4 @@ class VirtualFileSystem {
     openList.values.foreach(f => f.writer.close())
     openList.clear()
   }
-
 }
