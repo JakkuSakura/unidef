@@ -29,7 +29,7 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
       "fields",
       enm.variants
         .map(x => x.names.head -> x.code)
-        .map { case (name, code) =>
+        .map { (name, code) =>
           counter += 1
           PythonField(
             naming.toEnumKeyName(name),

@@ -58,7 +58,7 @@ class VirtualFileSystem {
     if (remove)
       FileUtils.deleteDirectory(base.toFile);
     flushFiles()
-    openList.foreach { case (name, f) =>
+    openList.foreach { (name, f) =>
       val dest = base.resolve(name)
       if (dest.getParent != null)
         Files.createDirectories(dest.getParent)
@@ -68,7 +68,7 @@ class VirtualFileSystem {
   }
   def showAsString(writer: Writer): Unit = {
     flushFiles()
-    openList.foreach { case (name, f) =>
+    openList.foreach { (name, f) =>
       writer.write(s"====${name}====\n")
       val content = Files.readAllBytes(f.filePath)
       writer.append(new String(content))

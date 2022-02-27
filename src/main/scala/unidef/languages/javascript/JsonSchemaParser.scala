@@ -33,7 +33,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           TyStruct().setValue(
             KeyFields,
             iterateOver(x, "name", "type")
-              .map { case (name, json) =>
+              .map { (name, json) =>
                 val ty = parse(Json.fromJsonObject(json))
                 TyField(name, ty)
               }
@@ -63,7 +63,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         .map(x =>
           // check extended
           iterateOver(x, "name", "type")
-            .map { case (name, json) =>
+            .map { (name, json) =>
               val ty = parse(Json.fromJsonObject(json))
               TyField(name, ty)
             }

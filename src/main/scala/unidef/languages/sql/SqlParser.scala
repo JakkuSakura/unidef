@@ -68,7 +68,7 @@ object SqlParser {
     new Regex("CREATE\\s+TYPE\\s+(.+)\\s+AS\\s+enum\\s+\\((.+?)\\);")
       .findAllMatchIn(sql)
       .map(m => m.group(1) -> m.group(2))
-      .map { case (k, v) =>
+      .map { (k, v) =>
         k -> v
           .split(",")
           .map(StringUtils.strip(_, " '"))

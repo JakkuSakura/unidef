@@ -17,11 +17,11 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   private val TEMPLATE_GENERATE_FUNCTION_CALL =
     """
       |#if($percentage)
-      |#macro(generate_params)#foreach($param in $params)
+      |#macro(generate_params)#foreach($param <- $params)
       |    $param => %s#if($foreach.hasNext), #end
       |#end#end
       |#else
-      |#macro(generate_params)#foreach($param in $params)
+      |#macro(generate_params)#foreach($param <- $params)
       |    $param => ${esc.d}$foreach.count#if($foreach.hasNext), #end
       |#end#end
       |#end
@@ -59,8 +59,8 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   private val TEMPLATE_GENERATE_TABLE_DDL: String =
     """
       |CREATE TABLE IF NOT EXIST $schema$name (
-      |#foreach($field in $fields)
-      |   $field.name() $field.ty()$field.attributes()#if($foreach.hasNext),#end
+      |#foreach(field <- fields)
+      |   ${field.name()} ${field.ty()}${field.attributes()}#if($foreach.hasNext),#end
       |#end
       |);
       |""".stripMargin
@@ -68,7 +68,7 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   def generateTableDdl(node: TyClass with HasName with HasFields): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toFunctionName(node.getName.get))
-    context.put("fields", node.getFields.get.map(convertToSqlField(_, naming)).asJava)
+    context.put("fields", node.getFields.get.map(convertToSqlField(_, naming)))
     context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
     CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)
   }
@@ -76,13 +76,13 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   private val TEMPLATE_GENERATE_FUNCTION_DDL =
     """
       |CREATE OR REPLACE FUNCTION $schema$name (
-      |#foreach($arg in $args)
+      |#foreach($arg <- $args)
       |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
       |#end
       |)
       |#if(!$return_type)
       |RETURNS TABLE (
-      |#foreach($arg in $return_table)
+      |#foreach($arg <- $return_table)
       |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
       |#end
       |)
