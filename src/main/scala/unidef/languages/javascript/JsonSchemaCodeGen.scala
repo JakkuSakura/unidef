@@ -9,7 +9,13 @@ import unidef.utils.{ParseCodeException, TypeEncodeException}
 case object KeyRequired extends KeywordBoolean
 case object KeyAdditionalProperties extends KeywordBoolean
 case object KeyIsMethodParameters extends KeywordBoolean
-class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
+
+class JsonSchemaCodeGenOption(
+    val naming: NamingConvention = JsonNamingConvention,
+    val useListForJsonAny: Boolean = false
+)
+
+class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOption()) {
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): String = {
@@ -64,9 +70,9 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
           JsonObject(
             "enum" -> Json
               .fromValues(
-                variants.map(_.names.head).map(naming.toEnumValueName).map(Json.fromString)
+                variants.map(_.names.head).map(options.naming.toEnumValueName).map(Json.fromString)
               ),
-            "name" -> Json.fromString(naming.toClassName(x.getValue(KeyName).get))
+            "name" -> Json.fromString(options.naming.toClassName(x.getValue(KeyName).get))
           )
         )
       case x @ TyEnum(variants) =>
@@ -74,7 +80,7 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
           JsonObject(
             "enum" -> Json
               .fromValues(
-                variants.map(_.names.head).map(naming.toEnumValueName).map(Json.fromString)
+                variants.map(_.names.head).map(options.naming.toEnumValueName).map(Json.fromString)
               )
           )
         )
@@ -87,7 +93,7 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
             JsonObject.fromIterable(
               x.getFields.get
                 .map(f =>
-                  naming.toFunctionParameterName(f.name) ->
+                  options.naming.toFunctionParameterName(f.name) ->
                     generateType(f.value)
                 )
             )
@@ -99,15 +105,17 @@ class JsonSchemaCodeGen(naming: NamingConvention = JsonNamingConvention) {
           "properties" -> Json.fromJsonObject(
             JsonObject.fromIterable(
               x.getFields.get
-                .map(f => naming.toFieldName(f.name) -> generateType(f.value))
+                .map(f => options.naming.toFieldName(f.name) -> generateType(f.value))
             )
           )
         )
       case TyJsonObject | TyStruct() => jsonObjectOf("object")
-      case TyJsonAny() =>
+      case TyJsonAny() if options.useListForJsonAny =>
         Json.fromValues(
           Seq("number", "string", "boolean", "object", "array", "null").map(Json.fromString)
         )
+      case TyJsonAny() if !options.useListForJsonAny =>
+        Json.fromJsonObject(JsonObject.empty)
       case TyNamed(name) =>
         jsonObjectOf("string", "name" -> Json.fromString(name))
       case TyByteArray =>

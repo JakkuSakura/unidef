@@ -21,7 +21,7 @@ import java.io.PrintWriter
   val pythonSqlCodeGen = PythonSqlCodeGen()
   val sqlCodegen = SqlCodeGen()
   val pyCodeGen = PythonCodeGen()
-  val parser: JsonSchemaParser = JsonSchemaParser(true)
+  val parser: JsonSchemaParser = JsonSchemaParser()
   parser.prepareForExtKeys(pythonSqlCodeGen)
   parser.prepareForExtKeys(sqlCodegen)
   val yamlParser: YamlParser = YamlParser(parser)

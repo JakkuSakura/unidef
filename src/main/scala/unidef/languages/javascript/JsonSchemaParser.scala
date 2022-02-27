@@ -9,10 +9,12 @@ import unidef.utils.JsonUtils.{getList, getObject, getString, iterateOver}
 import unidef.utils.{ParseCodeException, TypeDecodeException}
 
 import scala.collection.mutable
-
-class JsonSchemaParser(extended: Boolean) {
+class JsonSchemaParserOption(
+    val extendedGrammar: Boolean = true
+)
+class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption()) {
   private def parseType(s: String) =
-    JsonSchemaCommon(extended)
+    JsonSchemaCommon(options.extendedGrammar)
       .parseType(s)
       .getOrElse(throw TypeDecodeException("Failed to parse type", s))
 
@@ -57,7 +59,7 @@ class JsonSchemaParser(extended: Boolean) {
   def parseStruct(value: JsonObject): TyClass = {
     val fields =
       value("properties")
-        .orElse(if (extended) value("fields") else None)
+        .orElse(if (options.extendedGrammar) value("fields") else None)
         .map(x =>
           // check extended
           iterateOver(x, "name", "type")
@@ -178,7 +180,7 @@ class JsonSchemaParser(extended: Boolean) {
               .map(x =>
                 TyVariant(
                   Seq(x),
-                  if (extended && value("number").isDefined)
+                  if (options.extendedGrammar && value("number").isDefined)
                     Some(value("number").get.asNumber.get.toInt.get)
                   else None
                 )
@@ -186,7 +188,7 @@ class JsonSchemaParser(extended: Boolean) {
           ).trySetValue(
             KeyReturn,
             value("int_enum").map(x =>
-              if (extended && x.asBoolean.get) TyInteger(BitSize.B8)
+              if (options.extendedGrammar && x.asBoolean.get) TyInteger(BitSize.B8)
               else TyString
             )
           )
@@ -196,7 +198,7 @@ class JsonSchemaParser(extended: Boolean) {
             case "array" =>
               val items = getObject(value, "items")
               TyList(parse(Json.fromJsonObject(items)))
-            case "function" if extended => parseFunction(value)
+            case "function" if options.extendedGrammar => parseFunction(value)
             case ty => parseType(ty)
           }
 
@@ -206,12 +208,4 @@ class JsonSchemaParser(extended: Boolean) {
     })
   }
 
-}
-object JsonSchemaParser {
-
-  def main(args: Array[String]): Unit = {
-    println(
-      JsonSchemaParser(true).parse(parser.parse(readFile(args(0))).toTry.get)
-    )
-  }
 }
