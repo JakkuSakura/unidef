@@ -41,3 +41,9 @@ libraryDependencies += "com.github.saasquatch" % "json-schema-inferrer" % "0.1.4
 
 // https://mvnrepository.com/artifact/com.google.jimfs/jimfs
 libraryDependencies += "com.google.jimfs" % "jimfs" % "1.2"
+
+// https://mvnrepository.com/artifact/org.apache.commons/commons-text
+libraryDependencies += "org.apache.commons" % "commons-text" % "1.9"
+
+// https://mvnrepository.com/artifact/org.apache.commons/commons-io
+libraryDependencies += "org.apache.commons" % "commons-io" % "1.3.2"
