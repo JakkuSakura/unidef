@@ -14,7 +14,7 @@ import java.io.{
   Reader,
   Writer
 }
-import java.nio.file.{FileSystem, Files, Path, StandardOpenOption}
+import java.nio.file.{CopyOption, FileSystem, Files, Path, StandardCopyOption, StandardOpenOption}
 import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.io.FileUtils
 
@@ -60,7 +60,7 @@ class VirtualFileSystem {
     flushFiles()
     openList.foreach { case (name, f) =>
       val dest = base.resolve(name)
-      Files.copy(f.filePath, dest)
+      Files.copy(f.filePath, dest, StandardCopyOption.REPLACE_EXISTING)
 
     }
   }

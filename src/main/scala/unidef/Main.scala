@@ -26,7 +26,7 @@ import java.io.PrintWriter
   parser.prepareForExtKeys(sqlCodegen)
   val yamlParser: YamlParser = YamlParser(parser)
   implicit val sqlResolver: TypeRegistry = TypeRegistry()
-  val codeGenResult = new VirtualFileSystem()
+  val fs = new VirtualFileSystem()
   val fileContents = FileUtils.readFile(filename)
   val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
     yamlParser.parseFile(fileContents)
@@ -35,33 +35,33 @@ import java.io.PrintWriter
   else {
     throw new RuntimeException("Unsupported file type " + filename)
   }
-  val parsedWriter = codeGenResult.newWriterAt("parsed.txt")
+  val parsedWriter = fs.newWriterAt("parsed.txt")
   parsedWriter.println(parsed)
   for (ty <- parsed) {
     ty match {
       case a @ AstClassDecl(name, fields, methods, derived) =>
         val code = sqlCodegen.generateTableDdl(a)
-        codeGenResult.newWriterAt("AstClassDecl.txt").println(code)
+        fs.newWriterAt("AstClassDecl.txt").println(code)
       case AstTyped(n) if n.isInstanceOf[TyStruct] =>
         val code = sqlCodegen.generateTableDdl(n.asInstanceOf[TyStruct])
-        codeGenResult.newWriterAt("TyStruct.txt").println(code)
+        fs.newWriterAt("TyStruct.txt").println(code)
 
       case AstTyped(en: TyEnum) =>
-        codeGenResult.newWriterAt("TyEnum.txt").println(en)
+        fs.newWriterAt("TyEnum.txt").println(en)
       case n: AstFunctionDecl =>
         val code = sqlCodegen.generateFunctionDdl(n)
-        codeGenResult.newWriterAt("AstFunctionDeclSqlCodeGen.txt").println(code)
+        fs.newWriterAt("AstFunctionDeclSqlCodeGen.txt").println(code)
 
         val importManager = ImportManager()
         val code2 = pythonSqlCodeGen.generateFuncWrapper(n, importManager = Some(importManager))
-        codeGenResult.newWriterAt("AstFunctionDeclPySqlCodeGen.txt").println(code2)
+        fs.newWriterAt("AstFunctionDeclPySqlCodeGen.txt").println(code2)
 
         val code3 =
           JsonSchemaCodeGen().generateFuncDecl(n)
-        codeGenResult.newWriterAt("AstFunctionDeclJsonSchemaCodeGen.txt").println(code2)
+        fs.newWriterAt("AstFunctionDeclJsonSchemaCodeGen.txt").println(code2)
 
     }
   }
-  codeGenResult.showAsString(new PrintWriter(System.out))
-  codeGenResult.closeFiles()
+  fs.showAsString(new PrintWriter(System.out))
+  fs.closeFiles()
 }
