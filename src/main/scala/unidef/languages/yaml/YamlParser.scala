@@ -41,7 +41,10 @@ case class YamlParser(jsParser: JsonSchemaParser) {
         case Left(err) => throw err
       }
       .map(x => jsParser.parse(Json.fromJsonObject(x)))
-      .map(AstTyped.apply)
+      .map {
+        case a: AstNode => a
+        case t: TyNode => AstTyped(t)
+      }
   }
 
 }

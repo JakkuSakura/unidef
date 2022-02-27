@@ -1,3 +1,4 @@
+CREATE TYPE tbl.enum_role AS enum ('guest', 'contributor', 'owner', 'administrator', 'developer', 'manager', 'scholar');
 -- auto-generated definition
 create table usr
 (

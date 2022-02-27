@@ -68,7 +68,7 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   def generateTableDdl(node: TyClass with HasName with HasFields): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toFunctionName(node.getName.get))
-    context.put("fields", node.getFields.get.map(SqlCommon.convertType).asJava)
+    context.put("fields", node.getFields.get.map(convertToSqlField(_, naming)).asJava)
     context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
     CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)
   }

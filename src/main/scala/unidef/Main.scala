@@ -5,6 +5,7 @@ import unidef.languages.common.{
   AstFunctionDecl,
   AstTyped,
   ImportManager,
+  TyEnum,
   TyStruct,
   TypeRegistry
 }
@@ -12,9 +13,11 @@ import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
 import unidef.languages.python.{PythonCodeGen, PythonSqlCodeGen}
 import unidef.languages.sql.{SqlCodeGen, SqlParser}
 import unidef.languages.yaml.YamlParser
-import unidef.utils.FileUtils
+import unidef.utils.{VirtualFileSystem, FileUtils}
 
-object Main {
+import java.io.PrintWriter
+
+@main def main(filename: String): Unit = {
   val pythonSqlCodeGen = PythonSqlCodeGen()
   val sqlCodegen = SqlCodeGen()
   val pyCodeGen = PythonCodeGen()
@@ -22,39 +25,43 @@ object Main {
   parser.prepareForExtKeys(pythonSqlCodeGen)
   parser.prepareForExtKeys(sqlCodegen)
   val yamlParser: YamlParser = YamlParser(parser)
-  def main(args: Array[String]): Unit = {
-    implicit val sqlResolver: TypeRegistry = TypeRegistry()
+  implicit val sqlResolver: TypeRegistry = TypeRegistry()
+  val codeGenResult = new VirtualFileSystem()
+  val fileContents = FileUtils.readFile(filename)
+  val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
+    yamlParser.parseFile(fileContents)
+  } else if (filename.endsWith(".sql"))
+    SqlParser.parse(fileContents)(sqlResolver)
+  else {
+    throw new RuntimeException("Unsupported file type " + filename)
+  }
+  val parsedWriter = codeGenResult.newWriterAt("parsed.txt")
+  parsedWriter.println(parsed)
+  for (ty <- parsed) {
+    ty match {
+      case a @ AstClassDecl(name, fields, methods, derived) =>
+        val code = sqlCodegen.generateTableDdl(a)
+        codeGenResult.newWriterAt("AstClassDecl.txt").println(code)
+      case AstTyped(n) if n.isInstanceOf[TyStruct] =>
+        val code = sqlCodegen.generateTableDdl(n.asInstanceOf[TyStruct])
+        codeGenResult.newWriterAt("TyStruct.txt").println(code)
 
-    val filename = args(0)
-    val fileContents = FileUtils.readFile(filename)
-    val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
+      case AstTyped(en: TyEnum) =>
+        codeGenResult.newWriterAt("TyEnum.txt").println(en)
+      case n: AstFunctionDecl =>
+        val code = sqlCodegen.generateFunctionDdl(n)
+        codeGenResult.newWriterAt("AstFunctionDeclSqlCodeGen.txt").println(code)
 
-      yamlParser.parseFile(fileContents)
-    } else if (filename.endsWith(".sql"))
-      SqlParser.parse(fileContents)(sqlResolver)
-    else {
-      throw new RuntimeException("Unsupported file type " + filename)
-    }
+        val importManager = ImportManager()
+        val code2 = pythonSqlCodeGen.generateFuncWrapper(n, importManager = Some(importManager))
+        codeGenResult.newWriterAt("AstFunctionDeclPySqlCodeGen.txt").println(code2)
 
-    println(parsed)
-    for (ty <- parsed) {
-      ty match {
-        case a @ AstClassDecl(name, fields, methods, derived) =>
-          val code = sqlCodegen.generateTableDdl(a)
-          println(code)
-        case AstTyped(n) if n.isInstanceOf[TyStruct] =>
-          val code = sqlCodegen.generateTableDdl(n.asInstanceOf[TyStruct])
-          println(code)
-        case n: AstFunctionDecl =>
-          val code = sqlCodegen.generateFunctionDdl(n)
-          println(code)
-          val importManager = ImportManager()
-          val code2 = pythonSqlCodeGen.generateFuncWrapper(n, importManager = Some(importManager))
-          println(code2)
-          val code3 =
-            JsonSchemaCodeGen().generateFuncDecl(n)
-          println(code3)
-      }
+        val code3 =
+          JsonSchemaCodeGen().generateFuncDecl(n)
+        codeGenResult.newWriterAt("AstFunctionDeclJsonSchemaCodeGen.txt").println(code2)
+
     }
   }
+  codeGenResult.showAsString(new PrintWriter(System.out))
+  codeGenResult.closeFiles()
 }
