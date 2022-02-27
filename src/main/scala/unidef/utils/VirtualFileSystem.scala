@@ -60,6 +60,8 @@ class VirtualFileSystem {
     flushFiles()
     openList.foreach { case (name, f) =>
       val dest = base.resolve(name)
+      if (dest.getParent != null)
+        Files.createDirectories(dest.getParent)
       Files.copy(f.filePath, dest, StandardCopyOption.REPLACE_EXISTING)
 
     }
