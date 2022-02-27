@@ -122,7 +122,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case TyByteArray =>
         jsonObjectOf(
           "string",
-          (if (options.useCustomFormat) "format" else "$comment") -> Json.fromString("byte")
+          (if (options.useCustomFormat) "format" else "$comment") -> Json.fromString("bytes")
         )
       case TyInet => jsonObjectOf("string", "format" -> Json.fromString("hostname"))
       case TyUuid => jsonObjectOf("string", "format" -> Json.fromString("uuid"))
