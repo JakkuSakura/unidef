@@ -14,7 +14,15 @@ import java.io.{
   Reader,
   Writer
 }
-import java.nio.file.{CopyOption, FileSystem, Files, Path, StandardCopyOption, StandardOpenOption}
+import java.nio.file.{
+  CopyOption,
+  FileAlreadyExistsException,
+  FileSystem,
+  Files,
+  Path,
+  StandardCopyOption,
+  StandardOpenOption
+}
 import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.io.FileUtils
 
@@ -61,7 +69,12 @@ class VirtualFileSystem {
     openList.foreach { (name, f) =>
       val dest = base.resolve(name)
       if (dest.getParent != null)
-        Files.createDirectories(dest.getParent)
+        try {
+          Files.createDirectories(dest.getParent)
+        } catch {
+          case e: FileAlreadyExistsException =>
+          case e => throw e
+        }
       Files.copy(f.filePath, dest, StandardCopyOption.REPLACE_EXISTING)
 
     }
