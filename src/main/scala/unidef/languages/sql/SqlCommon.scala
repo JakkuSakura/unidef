@@ -32,7 +32,7 @@ case object SqlCommon {
       ty.getBitSize match {
         case Some(BitSize.B16) => "smallint"
         case Some(BitSize.B64) => "bigint"
-        case Some(x) => s"integer($x)"
+        case Some(x) if x != BitSize.B32 => s"integer($x)"
         case _ => "integer"
 
       }
