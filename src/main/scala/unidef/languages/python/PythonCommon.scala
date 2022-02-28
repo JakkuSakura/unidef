@@ -37,9 +37,14 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         importManager.foreach(_ += AstImport("typing", Seq("Set")))
         convertType(v, importManager).map(x => s"Set[${x}]")
       }
-      case TyJsonObject | TyJsonAny() => {
+      case TyJsonAny() => {
         importManager.foreach(_ += AstImport("typing", Seq("Any")))
         Some("Any")
+      }
+      case TyJsonObject => {
+        importManager.foreach(_ += AstImport("typing", Seq("Any")))
+        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
+        Some("Dict[str, Any]")
       }
       case TyUnit => Some("None")
       case TyTimeStamp() => {
