@@ -63,10 +63,15 @@ object TextTool {
     splitString(text).mkString("_").toUpperCase
   def toPascalCase(text: String): String =
     splitString(text).map(_.capitalize).mkString("")
-
+  def toKebabCase(text: String): String =
+    splitString(text).mkString("-").toLowerCase
+  def toStreamingKebabCase(text: String): String =
+    splitString(text).mkString("-").toUpperCase
   def toCamelCase(text: String): String = {
     val x = splitString(text)
     (x.head.toLowerCase ++ x.slice(1, x.length).map(_.capitalize)).mkString("")
   }
+  def replace(text: String, pattern: String, replacement: String): String =
+    text.replaceAll(pattern, replacement)
 
 }
