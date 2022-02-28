@@ -5,6 +5,8 @@ import io.circe.{Json, JsonObject}
 import unidef.languages.common.*
 import unidef.utils.{ParseCodeException, TypeEncodeException}
 
+import scala.collection.mutable
+
 // meant for private use
 case object KeyRequired extends KeywordBoolean
 case object KeyAdditionalProperties extends KeywordBoolean
@@ -25,9 +27,6 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     struct.setValue(KeyAdditionalProperties, false)
     struct.setValue(KeyIsMethodParameters, true)
     val obj = generateType(struct)
-    //  "required": [
-    //  ],
-    //  "additionalProperties": false
     obj.spaces2
   }
   def jsonObjectOf(ty: String, others: (String, Json)*): Json = {
@@ -38,6 +37,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       )
     )
   }
+
   def generateType(ty: TyNode): Json =
     ty match {
       case TyString => jsonObjectOf("string")
@@ -86,29 +86,33 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           )
         )
 
-      case x @ TyStruct()
-          if x.getFields.isDefined && x.getValue(KeyIsMethodParameters).contains(true) =>
-        jsonObjectOf(
-          "object",
-          "properties" -> Json.fromJsonObject(
-            JsonObject.fromIterable(
-              x.getFields.get
-                .map(f =>
-                  options.naming.toFunctionParameterName(f.name) ->
-                    generateType(f.value)
-                )
-            )
+      case x @ TyStruct() if x.getFields.isDefined =>
+        val naming = if (x.getValue(KeyIsMethodParameters).contains(true)) {
+          options.naming.toFunctionParameterName
+        } else {
+          options.naming.toClassName
+        }
+        val others: mutable.Map[String, Json] = mutable.Map.empty
+        others += "properties" -> Json.fromJsonObject(
+          JsonObject.fromIterable(
+            x.getFields.get.map(f => naming(f.name) -> generateType(f.value))
           )
         )
-      case x @ TyStruct() if x.getFields.isDefined =>
+
+        if (x.getValue(KeyAdditionalProperties).contains(false)) {
+          others += "additionalProperties" -> Json.False
+        }
+        if (x.getValue(KeyRequired).contains(true)) {
+          others += "required" -> Json.fromValues(
+            x.getFields.get
+              .map(f => naming(f.name))
+              .map(Json.fromString)
+          )
+
+        }
         jsonObjectOf(
           "object",
-          "properties" -> Json.fromJsonObject(
-            JsonObject.fromIterable(
-              x.getFields.get
-                .map(f => options.naming.toFieldName(f.name) -> generateType(f.value))
-            )
-          )
+          others.toSeq: _*
         )
       case TyJsonObject | TyStruct() => jsonObjectOf("object")
       case TyJsonAny() if options.useListForJsonAny =>
