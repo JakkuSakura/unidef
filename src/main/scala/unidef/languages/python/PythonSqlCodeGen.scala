@@ -9,7 +9,12 @@ import unidef.utils.{CodeGen, ParseCodeException, TypeEncodeException}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
-private case class PythonField(name: String, orig_name: String, ty: String)
+private case class PythonSqlCodeGenField(
+    name: String,
+    db_name: String,
+    conv_name: String,
+    ty: String
+)
 class PythonSqlCodeGen(
     pythonCommon: PythonCommon = PythonCommon(PythonNamingConvention),
     sqlCodeGen: SqlCodeGen = SqlCodeGen(SqlNamingConvention)
@@ -18,14 +23,20 @@ class PythonSqlCodeGen(
   private def convertToPythonField(
       node: TyField,
       importManager: Option[ImportManager]
-  ): PythonField =
-    PythonField(
-      pythonCommon.naming.toFunctionParameterName(node.name),
+  ): PythonSqlCodeGenField = {
+    val pyName = pythonCommon.naming.toFunctionParameterName(node.name)
+    PythonSqlCodeGenField(
+      pyName,
       node.name,
+      node.value match {
+        case TyUuid => s"str($pyName)"
+        case _ => pyName
+      },
       pythonCommon
         .convertType(node.value, importManager)
         .getOrElse(throw TypeEncodeException("Failed to convert type", node.value))
     )
+  }
 
   protected val TEMPLATE_DATABASE_CODEGEN: String =
     """|@beartype.beartype
@@ -36,7 +47,7 @@ class PythonSqlCodeGen(
        |) -> Result[$return, int]:
        |    result = await database.invoke('$db_func_name', {
        |        #foreach($param in $params)
-       |            '$param.orig_name()': $param.name(),
+       |            '$param.db_name()': $param.conv_name(),
        |        #end
        |    })
        |    if isinstance(result, Err):
@@ -64,7 +75,9 @@ class PythonSqlCodeGen(
     context.put("name", func.getName.get)
     context.put(
       "params",
-      func.parameters.map(convertToPythonField(_, importManager = importManager)).asJava
+      func.parameters
+        .map(convertToPythonField(_, importManager = importManager))
+        .asJava
     )
     context.put(
       "db_func_name",

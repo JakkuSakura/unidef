@@ -6,6 +6,11 @@ import unidef.utils.{CodeGen, CodegenException, ParseCodeException}
 import java.time.LocalDateTime
 import scala.jdk.CollectionConverters.*
 
+private case class PythonCodeGenField(
+    name: String,
+    orig_name: String,
+    ty: String
+)
 class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends KeywordProvider {
 
   protected val TEMPLATE_ENUM_CODEGEN: String =
@@ -30,7 +35,7 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
         .map(x => x.names.head -> x.code)
         .map { (name, code) =>
           counter += 1
-          PythonField(
+          PythonCodeGenField(
             naming.toEnumKeyName(name),
             enm.getContentValue match {
               case Some(x @ TyString) => s"'${name}'"
