@@ -13,14 +13,14 @@ case object PythonNamingConvention extends NamingConvention {
 
   override def toVariableName(s: String): String = s
   override def toConstantName(s: String): String =
-    TextTool.toStreamingSnakeCase(s)
+    TextTool.toScreamingSnakeCase(s)
   override def toClassName(s: String): String = TextTool.toPascalCase(s)
   override def toStructName(s: String): String = TextTool.toSnakeCase(s)
   override def toFieldName(s: String): String = TextTool.toSnakeCase(s)
   override def toMethodName(s: String): String = TextTool.toSnakeCase(s)
   override def toFunctionName(s: String): String = TextTool.toSnakeCase(s)
 
-  override def toEnumKeyName(s: String): String = TextTool.toStreamingSnakeCase(s)
+  override def toEnumKeyName(s: String): String = TextTool.toScreamingSnakeCase(s)
   override def toEnumValueName(s: String): String =
-    TextTool.toStreamingSnakeCase(s)
+    TextTool.toScreamingSnakeCase(s)
 }

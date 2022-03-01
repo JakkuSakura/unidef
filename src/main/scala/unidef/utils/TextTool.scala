@@ -59,7 +59,7 @@ object TextTool {
   }
   def toSnakeCase(text: String): String =
     splitString(text).mkString("_").toLowerCase
-  def toStreamingSnakeCase(text: String): String =
+  def toScreamingSnakeCase(text: String): String =
     splitString(text).mkString("_").toUpperCase
   def toPascalCase(text: String): String =
     splitString(text).map(_.capitalize).mkString("")

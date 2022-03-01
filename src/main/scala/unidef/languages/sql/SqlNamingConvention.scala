@@ -8,7 +8,7 @@ case object SqlNamingConvention extends NamingConvention {
     TextTool.toSnakeCase(s)
   override def toVariableName(s: String): String = TextTool.toSnakeCase(s)
   override def toConstantName(s: String): String =
-    TextTool.toStreamingSnakeCase(s)
+    TextTool.toScreamingSnakeCase(s)
   override def toClassName(s: String): String = s.toLowerCase
   override def toFieldName(s: String): String = TextTool.toSnakeCase(s)
   override def toFunctionName(s: String): String = TextTool.toSnakeCase(s)
