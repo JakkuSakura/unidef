@@ -10,7 +10,7 @@ import unidef.languages.common.{
   TypeRegistry
 }
 import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
-import unidef.languages.python.{PythonCodeGen, PythonSqlCodeGen}
+import unidef.languages.python.PythonCodeGen
 import unidef.languages.sql.{SqlCodeGen, SqlParser}
 import unidef.languages.yaml.YamlParser
 import unidef.utils.{VirtualFileSystem, FileUtils}
@@ -18,11 +18,9 @@ import unidef.utils.{VirtualFileSystem, FileUtils}
 import java.io.PrintWriter
 
 @main def main(filename: String): Unit = {
-  val pythonSqlCodeGen = PythonSqlCodeGen()
   val sqlCodegen = SqlCodeGen()
   val pyCodeGen = PythonCodeGen()
   val parser: JsonSchemaParser = JsonSchemaParser()
-  parser.prepareForExtKeys(pythonSqlCodeGen)
   parser.prepareForExtKeys(sqlCodegen)
   val yamlParser: YamlParser = YamlParser(parser)
   implicit val sqlResolver: TypeRegistry = TypeRegistry()
@@ -53,12 +51,9 @@ import java.io.PrintWriter
         fs.newWriterAt("AstFunctionDeclSqlCodeGen.txt").println(code)
 
         val importManager = ImportManager()
-        val code2 = pythonSqlCodeGen.generateFuncWrapper(n, importManager = Some(importManager))
-        fs.newWriterAt("AstFunctionDeclPySqlCodeGen.txt").println(code2)
-
         val code3 =
           JsonSchemaCodeGen().generateFuncDecl(n)
-        fs.newWriterAt("AstFunctionDeclJsonSchemaCodeGen.txt").println(code2)
+        fs.newWriterAt("AstFunctionDeclJsonSchemaCodeGen.txt").println(code3)
 
     }
   }
