@@ -15,8 +15,12 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
 
   protected val TEMPLATE_ENUM_CODEGEN: String =
     """|class $name($enum_type):
+       |#if($fields)
        |#foreach ($field in $fields)
        |    $field.name() = $field.orig_name()
+       |#end
+       |#else
+       |    pass
        |#end
        |""".stripMargin
 
