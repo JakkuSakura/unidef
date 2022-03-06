@@ -8,6 +8,7 @@ class ScalaCommon() extends TypeEncoder {
       case _: TyInteger => Some("Int")
       case TyString => Some("String")
       case TyUnit => Some("Unit")
+      case TyBoolean => Some("Boolean")
       case TyOptional(t) => encode(t).map(x => s"Option[${x}]")
       case TyList(t) => encode(t).map(x => s"List[${x}]")
       case _ => None

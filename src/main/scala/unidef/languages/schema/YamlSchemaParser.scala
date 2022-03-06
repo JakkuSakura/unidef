@@ -5,7 +5,7 @@ import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject}
 import unidef.languages.common.*
 import unidef.languages.javascript.{JsonSchemaCommon, JsonSchemaParser}
-import unidef.languages.scala.{AstTrait, ScalaCommon}
+import unidef.languages.scala.{ScalaCommon, ScalaCodeGen}
 import unidef.utils.FileUtils.readFile
 import unidef.utils.{ParseCodeException, TypeDecodeException, TypeEncodeException}
 
@@ -119,35 +119,77 @@ case class YamlSchemaParser() {
         .getOrElse(throw TypeDecodeException("Yaml schema type", name))
 
   }
-  def collectFields(types: Seq[AstTypeDecl]): Set[TyField] = {
-    types
-      .flatMap(
-        _.params.map((k, v) => TyField(k, decodeType(v)))
-      )
+  def collectFields(ty: AstTypeDecl): Set[TyField] = {
+    ty.params
+      .map((k, v) => TyField(k, decodeType(v)))
       .filterNot(x => Seq("is").contains(x.name))
       .toSet
   }
+  def collectFields(types: Seq[AstTypeDecl]): Set[TyField] = {
+    types
+      .flatMap(collectFields)
+      .toSet
+  }
+  def scalaField(name: String, derive: String, methods: Seq[String]): AstClassDecl = {
+    AstClassDecl(
+      AstLiteralString(name),
+      Nil,
+      methods.map(AstRawCode.apply),
+      Seq(AstClassIdent(derive))
+    )
+  }
 
-  def generateScalaTrait(field: TyField): AstTrait = {
+  def generateScalaKeyObject(field: TyField): AstClassDecl = {
     val traitName = "Key" + field.name.capitalize
-    field.value match {
-      case _: TyInteger => AstTrait(traitName, Seq("KeywordInteger"), Nil, Nil)
-      case TyString => AstTrait(traitName, Seq("KeywordString"), Nil, Nil)
-      case TyBoolean => AstTrait(traitName, Seq("KeywordBoolean"), Nil, Nil)
+    val cls = field.value match {
+      case _: TyInteger =>
+        scalaField(traitName, "KeywordInteger", Nil)
+      case TyString => scalaField(traitName, "KeywordString", Nil)
+      case TyBoolean => scalaField(traitName, "KeywordBoolean", Nil)
       case _ =>
         val scalaCommon = ScalaCommon()
         val valueType =
           scalaCommon.encode(field.value).getOrElse(throw TypeEncodeException("Scala", field.value))
-        AstTrait(
-          traitName,
-          Seq("Keyword"),
-          Seq(AstRawCode(s"override type V = ${valueType}")),
-          Nil
-        )
+        scalaField(traitName, "Keyword", Seq(s"override type V = ${valueType}"))
     }
-
+    cls.setValue(KeyClassType, "case object")
   }
+  def generateScalaHasTrait(field: TyField): AstClassDecl = {
+    val traitName = "Has" + field.name.capitalize
+    val scalaCommon = ScalaCommon()
+    val valueType =
+      scalaCommon.encode(field.value).getOrElse(throw TypeEncodeException("Scala", field.value))
 
+    scalaField(
+      traitName,
+      "TyNode",
+      Seq(s"def get${field.name.capitalize}: ${valueType}")
+    )
+  }
+  def generateScalaCaseClass(ty: AstTypeDecl): AstClassDecl = {
+    val scalaCommon = ScalaCommon()
+    val fields = collectFields(ty)
+
+    AstClassDecl(
+      AstLiteralString("Ty" + ty.name.capitalize),
+      fields.toSeq,
+      fields.toSeq
+        .map(x => x.name -> x.value)
+        .map((k, v) =>
+          AstFunctionDecl(
+            AstLiteralString(k),
+            Nil,
+            TyOptional(v)
+          ).setValue(KeyBody, AstRawCode(k))
+            .setValue(KeyOverride, true)
+        ),
+      fields
+        .map(x => x.name -> x.value)
+        .map((k, v) => "Has" + k.capitalize)
+        .map(x => AstClassIdent(x))
+        .toSeq
+    )
+  }
 }
 
 object YamlSchemaParser {
@@ -160,8 +202,20 @@ object YamlSchemaParser {
     val fields = parser.collectFields(types)
     println("Parsed fields")
     println(fields.mkString("\n"))
-    val traits = fields.map(parser.generateScalaTrait)
-    println("Generated traits")
-    println(traits.mkString("\n"))
+    val keyObjects = fields.map(parser.generateScalaKeyObject)
+    println("Generated key objects")
+    println(keyObjects.mkString("\n"))
+    val hasTraits = fields.map(parser.generateScalaHasTrait)
+    println("Generated has traits")
+    println(hasTraits.mkString("\n"))
+    val caseClasses = types.map(parser.generateScalaCaseClass)
+    println("Generated case classes")
+    println(caseClasses.mkString("\n"))
+    val scalaCodegen = ScalaCodeGen(NoopNamingConvention)
+    println(
+      (keyObjects.map(scalaCodegen.generateClass)
+        ++ hasTraits.map(scalaCodegen.generateClass)
+        ++ caseClasses.map(scalaCodegen.generateClass)).mkString("\n")
+    )
   }
 }

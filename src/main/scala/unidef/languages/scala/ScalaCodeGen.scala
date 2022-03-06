@@ -1,50 +1,75 @@
 package unidef.languages.scala
 
-import unidef.languages.common.{AstNode, AstRawCode, NamingConvention, TyField}
-import unidef.utils.CodeGen
+import unidef.languages.common.*
+import unidef.utils.{CodeGen, TypeEncodeException}
 
 import scala.jdk.CollectionConverters.*
-case class AstMethod(name: String, args: Seq[TyField], body: AstNode)
-case class AstTrait(
-    name: String,
-    derive: Seq[String],
-    raw: Seq[AstRawCode],
-    methods: Seq[AstMethod]
-)
+
 class ScalaCodeGen(naming: NamingConvention) {
   val TEMPLATE_METHOD: String =
     """
-      |def $name($args): %s = {
-      |  #indent(2, $body)
+      |${override}def $name($params): $return = {
+      |  $text.indent($body, 2)
       |}
     """.stripMargin
-  def generateMethod(method: AstMethod): String = {
+  // TODO func decl without definition
+  def generateMethod(method: AstFunctionDecl): String = {
     val context = CodeGen.createContext
-    context.put("name", naming.toMethodName(method.name))
+    context.put("name", naming.toMethodName(method.getName.get))
     context.put(
-      "args",
-      method.args.map(x => x.name + ": " + ScalaCommon().encode(x)).mkString(", ")
+      "params",
+      method.parameters.map(x => x.name + ": " + ScalaCommon().encode(x).get).mkString(", ")
     )
-    context.put("body", method.body.asInstanceOf[AstRawCode].raw)
+    context.put("body", method.getBody.get.asInstanceOf[AstRawCode].raw)
+    context.put(
+      "override",
+      if (method.getValue(KeyOverride).getOrElse(false)) {
+        "override "
+      } else {
+        ""
+      }
+    )
+    context.put("return", ScalaCommon().encode(method.returnType).get)
     CodeGen.render(TEMPLATE_METHOD, context)
   }
-  val TEMPLATE_TRAIT: String =
+
+  val TEMPLATE_CLASS: String =
     """
-      |trait %s
-      |#if($derive.nonEmpty) extends
-      |#foreach($d in $derive) $d #if($foreach.hasNext) with #end
-      |#end
+      |$cls $name#if($hasParams)($params)#end
+      |#if($derive) extends
+      |#foreach($d in $derive)
+      |  $d #if($foreach.hasNext)with#end
+      |#end#end
       |{
       |#foreach($m in $methods)
-      |  #indent(2, #m)
+      |  $text.indent($m, 2)
       |#end
       |}
     """.stripMargin
-  def generateTrait(trt: AstTrait): String = {
+  def generateClass(trt: AstClassDecl): String = {
     val context = CodeGen.createContext
-    context.put("name", naming.toClassName(trt.name))
-    context.put("derive", trt.derive.map(naming.toClassName).asJava)
-    context.put("methods", (trt.methods.map(generateMethod) ++ trt.raw.map(_.raw)).asJava)
-    CodeGen.render(TEMPLATE_TRAIT, context)
+    val cls = trt.getValue(KeyClassType).getOrElse("case class")
+    context.put("cls", trt.getValue(KeyClassType).getOrElse("case class"))
+    context.put("name", naming.toClassName(trt.getName.get))
+    context.put(
+      "params",
+      trt.fields
+        .map(x =>
+          x.name + ": " + ScalaCommon()
+            .encode(x.value)
+            .getOrElse(throw TypeEncodeException("Scala", x))
+        )
+        .mkString(", ")
+    )
+    context.put("hasParams", !cls.contains("object"))
+    context.put("derive", trt.derived.map(_.name).map(naming.toClassName).asJava)
+    context.put(
+      "methods",
+      trt.methods.map {
+        case x: AstFunctionDecl => generateMethod(x)
+        case x: AstRawCode => x.raw
+      }.asJava
+    )
+    CodeGen.render(TEMPLATE_CLASS, context)
   }
 }

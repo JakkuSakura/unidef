@@ -88,6 +88,7 @@ case class AstFunctionDecl(name: AstNode, parameters: Seq[TyField], override val
 
   }
 }
+
 case class AstLambdaDecl(parameters: Seq[TyField], returnType: TyNode, body: AstNode)
     extends Extendable
     with AstNode
@@ -188,3 +189,5 @@ case object KeyParameters extends KeywordOnly
 case object KeyReturn extends Keyword {
   override type V = TyNode
 }
+case object KeyOverride extends KeywordBoolean
+case object KeyClassType extends KeywordString

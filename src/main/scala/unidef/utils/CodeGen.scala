@@ -42,32 +42,24 @@ object CodeGen {
   enhancedContext.put("text", TextTool)
 
   val REPO: StringResourceRepository = StringResourceLoader.getRepository()
-  REPO.putStringResource(
-    "macro",
-    """
-          |#macro(indent $code $i)$text.indent($code, $i)
-          |#end
-          |""".stripMargin
-  )
 
   val MACRO_LIBRARIES: java.util.List[Template] = Seq(
-    VELOCITY.getTemplate("macro")
+    // VELOCITY.getTemplate("macro")
   ).asJava
 
-  def renderTo(templateSource: String,
-               context: VelocityContext,
-               writer: Writer): Unit = {
+  def renderTo(templateSource: String, context: VelocityContext, writer: Writer): Unit = {
 
     if (context.getMacroLibraries == null)
       context.setMacroLibraries(MACRO_LIBRARIES)
     val id = System.identityHashCode(templateSource).toString
-    val template = try {
-      VELOCITY.getTemplate(id)
-    } catch {
-      case e: ResourceNotFoundException =>
-        REPO.putStringResource(id, templateSource)
+    val template =
+      try {
         VELOCITY.getTemplate(id)
-    }
+      } catch {
+        case e: ResourceNotFoundException =>
+          REPO.putStringResource(id, templateSource)
+          VELOCITY.getTemplate(id)
+      }
     template.merge(context, writer)
 
   }
