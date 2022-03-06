@@ -5,7 +5,12 @@ import unidef.utils.CodeGen
 
 import scala.jdk.CollectionConverters.*
 case class AstMethod(name: String, args: Seq[TyField], body: AstNode)
-case class AstTrait(name: String, derive: Seq[String], methods: Seq[AstMethod])
+case class AstTrait(
+    name: String,
+    derive: Seq[String],
+    raw: Seq[AstRawCode],
+    methods: Seq[AstMethod]
+)
 class ScalaCodeGen(naming: NamingConvention) {
   val TEMPLATE_METHOD: String =
     """
@@ -39,7 +44,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     val context = CodeGen.createContext
     context.put("name", naming.toClassName(trt.name))
     context.put("derive", trt.derive.map(naming.toClassName).asJava)
-    context.put("methods", trt.methods.map(generateMethod).asJava)
+    context.put("methods", (trt.methods.map(generateMethod) ++ trt.raw.map(_.raw)).asJava)
     CodeGen.render(TEMPLATE_TRAIT, context)
   }
 }

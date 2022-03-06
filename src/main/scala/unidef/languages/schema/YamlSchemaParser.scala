@@ -5,8 +5,9 @@ import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject}
 import unidef.languages.common.*
 import unidef.languages.javascript.{JsonSchemaCommon, JsonSchemaParser}
+import unidef.languages.scala.{AstTrait, ScalaCommon}
 import unidef.utils.FileUtils.readFile
-import unidef.utils.{ParseCodeException, TypeDecodeException}
+import unidef.utils.{ParseCodeException, TypeDecodeException, TypeEncodeException}
 
 import scala.collection.mutable
 
@@ -104,6 +105,14 @@ case class YamlSchemaParser() {
             .asInstanceOf[AstTypeApply]
         )
       )
+    case "option" =>
+      TyOptional(
+        decodeType(
+          tyApp.args
+            .getOrElse("content", throw ParseCodeException("Could not find content in " + tyApp))
+            .asInstanceOf[AstTypeApply]
+        )
+      )
     case name =>
       common
         .decode(name)
@@ -115,7 +124,28 @@ case class YamlSchemaParser() {
       .flatMap(
         _.params.map((k, v) => TyField(k, decodeType(v)))
       )
+      .filterNot(x => Seq("is").contains(x.name))
       .toSet
+  }
+
+  def generateScalaTrait(field: TyField): AstTrait = {
+    val traitName = "Key" + field.name.capitalize
+    field.value match {
+      case _: TyInteger => AstTrait(traitName, Seq("KeywordInteger"), Nil, Nil)
+      case TyString => AstTrait(traitName, Seq("KeywordString"), Nil, Nil)
+      case TyBoolean => AstTrait(traitName, Seq("KeywordBoolean"), Nil, Nil)
+      case _ =>
+        val scalaCommon = ScalaCommon()
+        val valueType =
+          scalaCommon.encode(field.value).getOrElse(throw TypeEncodeException("Scala", field.value))
+        AstTrait(
+          traitName,
+          Seq("Keyword"),
+          Seq(AstRawCode(s"override type V = ${valueType}")),
+          Nil
+        )
+    }
+
   }
 
 }
@@ -130,5 +160,8 @@ object YamlSchemaParser {
     val fields = parser.collectFields(types)
     println("Parsed fields")
     println(fields.mkString("\n"))
+    val traits = fields.map(parser.generateScalaTrait)
+    println("Generated traits")
+    println(traits.mkString("\n"))
   }
 }
