@@ -15,7 +15,7 @@ class JsonSchemaParserOption(
 class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption()) {
   private def parseType(s: String) =
     JsonSchemaCommon(options.extendedGrammar)
-      .parseType(s)
+      .decode(s)
       .getOrElse(throw TypeDecodeException("Failed to parse type", s))
 
   def parseFunction(content: JsonObject): TyApplicable = {

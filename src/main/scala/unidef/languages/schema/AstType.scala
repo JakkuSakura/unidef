@@ -9,8 +9,4 @@ import scala.collection.mutable
 
 case class AstTypeRef(name: String) extends AstNode
 case class AstTypeApply(ty: AstTypeRef, args: Map[String, AstNode] = Map.empty) extends AstNode
-case class AstTypeDecl(params: Map[String, AstNode]) extends AstNode {}
-
-class TypeRegistry {
-  val types: Map[String, AstTypeDecl] = Map[String, AstTypeDecl]()
-}
+case class AstTypeDecl(name: String, params: Map[String, AstTypeApply]) extends AstNode {}

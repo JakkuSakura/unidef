@@ -4,14 +4,15 @@ import com.typesafe.scalalogging.Logger
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject}
 import unidef.languages.common.*
-import unidef.languages.javascript.JsonSchemaParser
+import unidef.languages.javascript.{JsonSchemaCommon, JsonSchemaParser}
 import unidef.utils.FileUtils.readFile
-import unidef.utils.ParseCodeException
+import unidef.utils.{ParseCodeException, TypeDecodeException}
 
 import scala.collection.mutable
 
 case class YamlSchemaParser() {
   val logger: Logger = Logger[this.type]
+  val common = JsonSchemaCommon(true)
 
   def parseTypeApply(json: Json): AstTypeApply = {
     json.foldWith(new Json.Folder[AstTypeApply] {
@@ -23,8 +24,11 @@ case class YamlSchemaParser() {
         AstTypeApply(AstTypeRef("int"), Map("value" -> AstLiteralInteger(value.toInt.get)))
 
       override def onString(value: String): AstTypeApply = {
-        AstTypeApply(AstTypeRef(json.asString.get))
-        // TODO? AstTypeApply(AstTypeRef("str"), mutable.Map("value" -> AstLiteral(value)))
+        if (common.decode(value).isDefined) {
+          AstTypeApply(AstTypeRef(value))
+        } else {
+          AstTypeApply(AstTypeRef("string"), Map("value" -> AstLiteralString(value)))
+        }
       }
       override def onArray(value: Vector[Json]): AstTypeApply = AstTypeApply(
         AstTypeRef("array"),
@@ -38,28 +42,42 @@ case class YamlSchemaParser() {
             .getOrElse(
               throw ParseCodeException(tyCur.history.mkString(".") + " of object is not found")
             )
-
-        AstTypeApply(
+        logger.info(s"onObject $value")
+        val v = AstTypeApply(
           AstTypeRef(ty),
           value.toIterable
+            .filterNot((x, _) => x == "type")
             .map(
               _ -> parseTypeApply(_)
             )
             .toMap
         )
-
+        logger.info(s"onObject result $v")
+        v
       }
     })
 
   }
-  def parseTypeDecl(json: Json)(using types: TypeRegistry): AstTypeDecl = {
+  def parseTypeDecl(json: Json): AstTypeDecl = {
     val obj = json.asObject.getOrElse(
       throw ParseCodeException(json.hcursor.history.mkString(" ") + " is not object")
     )
-
-    AstTypeDecl(obj.toIterable.map { case (k, v) =>
-      k -> parseTypeApply(v)
-    }.toMap)
+    val name = json.hcursor
+      .downField("name")
+      .focus
+      .flatMap(_.asString)
+      .getOrElse(
+        throw ParseCodeException(
+          json.hcursor.downField("name").history.mkString(".") + " of string is not found"
+        )
+      )
+    AstTypeDecl(
+      name,
+      obj.toIterable
+        .filterNot((x, _) => x == "name")
+        .map((k, v) => k -> parseTypeApply(v))
+        .toMap
+    )
   }
 
   def parseFile(content: String): Seq[AstTypeDecl] = {
@@ -74,8 +92,30 @@ case class YamlSchemaParser() {
           throw ParseCodeException("Invalid doc. Object only: " + o, null)
         case Left(err) => throw err
       }
-      .map(x => parseTypeDecl(Json.fromJsonObject(x))(using typeRegistry))
+      .map(x => parseTypeDecl(Json.fromJsonObject(x)))
       .toArray
+  }
+  def decodeType(tyApp: AstTypeApply): TyNode = tyApp.ty.name match {
+    case "list" =>
+      TyList(
+        decodeType(
+          tyApp.args
+            .getOrElse("content", throw ParseCodeException("Could not find content in " + tyApp))
+            .asInstanceOf[AstTypeApply]
+        )
+      )
+    case name =>
+      common
+        .decode(name)
+        .getOrElse(throw TypeDecodeException("Yaml schema type", name))
+
+  }
+  def collectFields(types: Seq[AstTypeDecl]): Set[TyField] = {
+    types
+      .flatMap(
+        _.params.map((k, v) => TyField(k, decodeType(v)))
+      )
+      .toSet
   }
 
 }
@@ -83,6 +123,12 @@ case class YamlSchemaParser() {
 object YamlSchemaParser {
   def main(args: Array[String]): Unit = {
     val file = readFile("examples/types.yaml")
-    println(YamlSchemaParser().parseFile(file).mkString("\n"))
+    val parser = YamlSchemaParser()
+    val types = parser.parseFile(file)
+    println("Parsed types")
+    println(types.mkString("\n"))
+    val fields = parser.collectFields(types)
+    println("Parsed fields")
+    println(fields.mkString("\n"))
   }
 }
