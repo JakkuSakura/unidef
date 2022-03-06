@@ -53,12 +53,15 @@ case class AstLiteralInteger(value: Int) extends AstLiteral(TyInteger(BitSize.B3
 
 case class AstLiteralFloat(value: Double) extends AstLiteral(TyFloat(BitSize.B64))
 
+// TODO extends AstLiteral(TyFloat(BitSize.B32))
 // difference is from https://github.com/ron-rs/ron
-case class AstLiteralDict(values: Seq[(AstNode, AstNode)])
+case class AstLiteralDict(values: Seq[(AstNode, AstNode)]) extends AstNode
 
-case class AstLiteralStruct(values: Seq[(AstNode, AstNode)])
+case class AstLiteralStruct(values: Seq[(AstNode, AstNode)]) extends AstNode
 
-case class AstLiteralOptional(value: Option[TyTypeExpr])
+case class AstLiteralArray(values: Seq[AstNode]) extends AstNode
+case class AstLiteralOptional(value: Option[TyTypeExpr]) extends AstNode
+case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBoolean)
 
 sealed trait AccessModifier
 

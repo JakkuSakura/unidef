@@ -1,0 +1,167 @@
+name: list
+content: type
+---
+name: is
+root:
+  type: list
+  name: type
+---
+name: string
+---
+name: enum
+variants:
+  type: list
+  content: string
+---
+name: tuple
+values:
+  type: list
+  content: type
+---
+name: option
+content: type
+---
+name: result
+ok: type
+err: type
+---
+name: record
+---
+name: mapping
+key: type
+value: type
+#---
+#type: enum
+#name: bit_size
+#enum:
+#  - B1
+#  - B8
+#  - B16
+#  - B32
+#  - B64
+#  - B128
+#  - B256
+#  - Unknown
+#  - Unlimited
+---
+name: numeric
+---
+name: integer
+bit_size: bit_size
+signed: bool
+is:
+  - numeric
+---
+name: real
+is:
+  - numeric
+---
+name: decimal
+precision:
+  type: option
+  content: int
+scale:
+  type: option
+  content: int
+
+---
+name: float
+bit_size: bit_size
+is:
+  - real
+---
+name: variant
+names:
+  type: list
+  content: type
+
+---
+name: class
+---
+name: struct
+fields:
+  type: list
+  content: field
+derive:
+  type: list
+  content: string
+attributes:
+  type: list
+  content: string
+
+is:
+  - class
+---
+name: dict
+key: type
+value: type
+---
+name: byte
+is:
+  - type: integer
+    bit_size: B8
+    signed: false
+
+---
+name: byte_array
+is:
+  - type: list
+    content: byte
+#---
+#name: json
+#subtypes:
+#  - string
+#  - numeric
+#  - bool
+#  - null
+#  - list
+#  - object
+#---
+#name: boolean
+#---
+#name: string
+#---
+#name: "null"
+#---
+#name: char
+#---
+#name: any
+#---
+#name: unit
+#---
+#name: nothing
+#---
+#name: unknown
+#---
+#name: undefined
+#---
+#name: inet
+#---
+#name: uuid
+#---
+#name: timestamp
+#properties:
+#  has_timezone: bool
+#  timeunit: option[string]
+#---
+#name: datetime
+#properties:
+#  has_timezone: bool
+#---
+#name: union
+#properties:
+#  types: list[type]
+#---
+#name: named
+#properties:
+#  name: string
+#---
+#name: reference
+#properties:
+#  referee: type
+#---
+#type: enum
+#name: mutability
+#enum:
+#  - Immutable
+#  - Mutable
