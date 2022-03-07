@@ -26,7 +26,7 @@ pip install -e .
 - [x] Unidef fields/variants
 - [x] JSON message example
 - [x] FIX message example
-- [ ] JSON Schema
+- [x] JSON Schema
 - [ ] [OpenAPI Schema object](https://spec.openapis.org/oas/v3.1.0#schemaObject)
 - [ ] JavaScript
 - [ ] protobuf
@@ -76,3 +76,14 @@ I try to implement the tasty version to
 2. implement a interpreter in the same time
 3. try to do some optimization work(similar to LMS, but without intruding the original language)
 4. leave space for a transpile framework
+
+### TODOs
+- [ ] Add more tests for json schema
+- [ ] Support anonymous struct with fields in yaml
+- [ ] Support anonymous enum in yaml
+- [ ] Use automatically generated TyNode and AstNode(self bootstrap)
+- [ ] Use circe.json.HCursor to spot the problem
+- [ ] Support save actions: formatter, etc
+- [ ] Simple SVN for code generated files
+- [ ] Support most of what python version can do: Rust structs, FIX, sql ddl, python peewee/pydantic model, etc
+- [ ] Workflow: Generic AST + Extendable <=> Specific AST with static type <=> Source code
