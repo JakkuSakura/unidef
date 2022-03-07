@@ -20,7 +20,7 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder {
     case "float" if extended => Some(TyFloat(BitSize.B32))
     case "double" if extended => Some(TyFloat(BitSize.B64))
     case "str" | "varchar" | "text" if extended => Some(TyString)
-    case "json" | "jsonb" => Some(TyJsonObject)
+    case "json" | "jsonb" => Some(TyJsonAny())
     case "timestamp" if extended =>
       Some(TyTimeStamp())
     case "timestamptz" if extended =>
