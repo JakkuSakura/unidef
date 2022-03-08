@@ -3,15 +3,20 @@ package unidef.languages.sql
 import com.typesafe.scalalogging.Logger
 import unidef.languages.common.*
 import unidef.languages.sql.{KeyNullable, KeyPrimary}
+import unidef.utils.TypeEncodeException
 
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
-
-case object SqlCommon {
+object SqlCommon {
   // multiple rows
   case object KeyRecords extends KeywordBoolean
 
   case object KeySchema extends KeywordString
+}
+
+class SqlCommon(naming: NamingConvention = SqlNamingConvention)
+    extends TypeDecoder
+    with TypeEncoder {
 
   case object KeyOid extends KeywordBoolean {
     def get: TyInteger =
@@ -39,33 +44,38 @@ case object SqlCommon {
   }
 
   def convertType(ty: TyNode): String = ty match {
-    case t: TyReal => convertReal(t)
-    case t: TyInteger => convertInt(t)
-    case t: TyTimeStamp if t.getValue(KeyHasTimeZone).contains(true) =>
-      "timestamp with time zone"
-    // case TimeStampType(_, false) => "timestamp without time zone"
-    case TyTimeStamp() => "timestamp"
-    case TyString => "text"
-    case TyStruct() => "jsonb"
-    case x @ TyEnum(_) if x.getValue(KeySimpleEnum).contains(false) => "jsonb"
-    case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
-      x.getValue(KeyName).get
-    case TyEnum(_) => "text"
-    case TyJsonObject => "jsonb"
-    case t: TyJsonAny if !t.getValue(KeyIsBinary).contains(false) => "jsonb"
-    case t: TyJsonAny => "json"
-    case TyUnit => "void"
-    case TyNamed(name) => name
-    case TyBoolean => "boolean"
-    case TyByteArray => "bytea"
-    case TyInet => "inet"
-    case TyUuid => "uuid"
-    case TyRecord => "record"
+    case t: TyNamed => t.name
+    case t => encode(t).getOrElse(throw TypeEncodeException("SQL", t))
   }
 
-  def convertTypeFromSql(ty: String): Option[TyNode] = {
+  override def encode(ty: TyNode): Option[String] = ty match {
+    case t: TyReal => Some(convertReal(t))
+    case t: TyInteger => Some(convertInt(t))
+    case t: TyTimeStamp if t.getValue(KeyHasTimeZone).contains(true) =>
+      Some("timestamp with time zone")
+    // case TimeStampType(_, false) => "timestamp without time zone"
+    case TyTimeStamp() => Some("timestamp")
+    case TyString => Some("text")
+    case TyStruct() => Some("jsonb")
+    case x @ TyEnum(_) if x.getValue(KeySimpleEnum).contains(false) => Some("jsonb")
+    case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
+      x.getValue(KeyName)
+    case TyEnum(_) => Some("text")
+    case TyJsonObject => Some("jsonb")
+    case t: TyJsonAny if !t.getValue(KeyIsBinary).contains(false) => Some("jsonb")
+    case t: TyJsonAny => Some("json")
+    case TyUnit => Some("void")
+    case TyBoolean => Some("boolean")
+    case TyByteArray => Some("bytea")
+    case TyInet => Some("inet")
+    case TyUuid => Some("uuid")
+    case TyRecord => Some("record")
+    case _ => None
+  }
+
+  override def decode(ty: String): Option[TyNode] = {
     if (ty.endsWith("[]")) {
-      return convertTypeFromSql(ty.dropRight(2)).map(TyList.apply)
+      return decode(ty.dropRight(2)).map(TyList.apply)
     }
     ty match {
       case "bigint" | "bigserial" => Some(TyInteger(BitSize.B64))
@@ -91,7 +101,7 @@ case object SqlCommon {
       case "json" => Some(TyJsonAny().setValue(KeyIsBinary, false))
       case "void" => Some(TyUnit)
       case "oid" => Some(KeyOid.get)
-      case "boolean" => Some(TyBoolean)
+      case "bool" | "boolean" => Some(TyBoolean)
       case "bytea" => Some(TyByteArray)
       case "inet" => Some(TyInet)
       case "uuid" => Some(TyUuid)

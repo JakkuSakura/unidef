@@ -8,7 +8,7 @@ import net.sf.jsqlparser.statement.create.table.{ColDataType, ColumnDefinition, 
 import org.apache.commons.lang3.StringUtils
 import unidef.languages.common
 import unidef.languages.common.*
-import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema, convertTypeFromSql}
+import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
 import unidef.utils.TextTool.{finds, findss}
 import unidef.utils.{ParseCodeException, TypeDecodeException}
 
@@ -19,7 +19,7 @@ import scala.util.matching.Regex
 
 object SqlParser {
   val logger: Logger = Logger[this.type]
-
+  val sqlCommon: SqlCommon = SqlCommon()
   // does not support default value yet
 
   def parse(sql: String)(implicit resolver: TypeRegistry): Seq[AstNode] = {
@@ -143,7 +143,7 @@ object SqlParser {
     val tyName = compactDot(args.slice(typeCursor, args.length))
     val ty =
       lookUpType(tyName)
-        .orElse(convertTypeFromSql(tyName))
+        .orElse(sqlCommon.decode(tyName))
         .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     (input, TyField(name, ty))
   }
@@ -214,7 +214,8 @@ object SqlParser {
         case ty =>
           val ret = ty.mkString(" ")
           outputOnly = Some(
-            convertTypeFromSql(ret)
+            sqlCommon
+              .decode(ret)
               .getOrElse(throw TypeDecodeException("Failed to parse type", ret))
           )
       }
@@ -269,6 +270,6 @@ object SqlParser {
   def parseColDataType(
       ty: ColDataType
   )(implicit resolver: TypeDecoder): Option[TyNode] =
-    lookUpType(ty.getDataType).orElse(convertTypeFromSql(ty.getDataType))
+    lookUpType(ty.getDataType).orElse(sqlCommon.decode(ty.getDataType))
 
 }

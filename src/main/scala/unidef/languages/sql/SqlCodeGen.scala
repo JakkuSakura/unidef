@@ -1,14 +1,16 @@
 package unidef.languages.sql
 
-import unidef.languages.common._
-
+import unidef.languages.common.*
+import unidef.languages.sql.SqlCommon.*
 import unidef.languages.sql.{KeyAutoIncr, KeyNullable, KeyPrimary}
-import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema, convertToSqlField, convertType}
 import unidef.utils.CodeGen
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
-class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends KeywordProvider {
+class SqlCodeGen(
+    naming: NamingConvention = SqlNamingConvention,
+    sqlCommon: SqlCommon = SqlCommon()
+) extends KeywordProvider {
   override def keysOnFuncDecl: Seq[Keyword] =
     Seq(KeyRecords, KeySchema, KeyBody)
 
@@ -66,7 +68,7 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   def generateTableDdl(node: TyClass with HasName with HasFields): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toFunctionName(node.getName.get))
-    context.put("fields", node.getFields.get.map(convertToSqlField(_, naming)).asJava)
+    context.put("fields", node.getFields.get.map(sqlCommon.encode(_)).asJava)
     context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
     CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)
   }
@@ -101,7 +103,7 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
         .asInstanceOf[TyTuple]
         .values
         .map(_.asInstanceOf[TyField])
-        .map(convertToSqlField(_, naming))
+        .map(sqlCommon.encode(_))
         .asJava
     )
     context.put(
@@ -119,11 +121,11 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
       case x: TyStruct if x.getFields.isDefined =>
         context.put(
           "return_table",
-          x.getFields.get.map(convertToSqlField(_, naming)).asJava
+          x.getFields.get.map(sqlCommon.encode).asJava
         )
       case TyStruct() =>
         context.put("return_type", "record")
-      case a => context.put("return_type", convertType(a))
+      case a => context.put("return_type", sqlCommon.convertType(a))
     }
 
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_DDL, context)
@@ -141,7 +143,7 @@ class SqlCodeGen(naming: NamingConvention = SqlNamingConvention) extends Keyword
   def generateRawFunction(name: String, ret: TyNode, value: String): String = {
     val context = CodeGen.createContext
     context.put("name", name)
-    context.put("return_type", convertType(ret))
+    context.put("return_type", sqlCommon.convertType(ret))
     context.put("value", value)
     CodeGen.render(TEMPLATE_GENERATE_FUNCTION_CONSTANT, context)
   }
