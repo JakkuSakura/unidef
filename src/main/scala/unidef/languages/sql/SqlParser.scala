@@ -141,10 +141,8 @@ object SqlParser {
     val name = args(nameCursor).replaceAll("\"", "")
 
     val tyName = compactDot(args.slice(typeCursor, args.length))
-    val ty =
-      lookUpType(tyName)
-        .orElse(sqlCommon.decode(tyName))
-        .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
+    val ty = lookUpOrParseType(tyName)
+      .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     (input, TyField(name, ty))
   }
 
@@ -214,7 +212,8 @@ object SqlParser {
         case ty =>
           val ret = compactDot(ty)
           outputOnly = Some(
-            lookUpType(ret).getOrElse(throw TypeDecodeException(s"Failed to parse type", ret))
+            lookUpOrParseType(ret)
+              .getOrElse(throw TypeDecodeException(s"Failed to parse type", ret))
           )
       }
 
@@ -255,19 +254,16 @@ object SqlParser {
     val name = column.getColumnName
     TyField(
       name,
-      parseColDataType(ty).getOrElse(
+      lookUpOrParseType(ty.getDataType).getOrElse(
         throw TypeDecodeException("Failed to parse type", ty.getDataType)
       )
     )
   }
-  def lookUpType(ty: String)(implicit resolver: TypeDecoder[String]): Option[TyNode] = {
+  def lookUpOrParseType(ty: String)(implicit resolver: TypeDecoder[String]): Option[TyNode] = {
+    val x = ty.replaceAll("\\w+?\\.", "").trim
     resolver
-      .decode(ty.replaceAll("\\w+?\\.", "").trim)
+      .decode(x)
+      .orElse(sqlCommon.decode(ty))
   }
-
-  def parseColDataType(
-      ty: ColDataType
-  )(implicit resolver: TypeDecoder[String]): Option[TyNode] =
-    lookUpType(ty.getDataType).orElse(sqlCommon.decode(ty.getDataType))
 
 }
