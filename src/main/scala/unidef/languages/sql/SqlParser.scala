@@ -116,7 +116,7 @@ object SqlParser {
   private def parseParam(
       args: Seq[String]
   )(implicit resolver: TypeDecoder[String]): (Boolean, TyField) = {
-    logger.info("parseParam: " + args.mkString(", "))
+    // logger.info("parseParam: " + args.mkString(", "))
     var nameCursor = 0
     var typeCursor = 1
     val input = args.slice(0, 2).map(_.toUpperCase) match {
@@ -158,7 +158,9 @@ object SqlParser {
       case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: name +: _ =>
         ("", name)
       case "CREATE" +: "FUNCTION" +: name +: _ => ("", name)
-      case _ => return None
+      case _ if parts.length < 10 => return None
+      case _ =>
+        throw ParseCodeException(s"Failed to parse remaining function: " + parts.mkString(" "))
     }
     val first_left_paren = finds(parts, "(").get
     val first_right_paren = finds(parts, ")").get
@@ -182,12 +184,12 @@ object SqlParser {
     val as = finds(parts, "AS").get
     var lq_ : Option[Int] = None
     var rq_ : Option[Int] = None
-    Seq("$$", "$func$", "$fun$", "$EOF$").foreach(x =>
-      finds(parts, x).foreach(y => {
+    for (delim <- Seq("$$", "$func$", "$fun$", "$EOF$") if lq_.isEmpty)
+      finds(parts, delim).foreach(y => {
         lq_ = Some(y)
-        rq_ = finds(parts, x, y + 1)
+        rq_ = finds(parts, delim, y + 1)
       })
-    )
+
     val lq: Int = lq_.getOrElse(throw ParseCodeException("lq not found"))
     val rq: Int = rq_.getOrElse(throw ParseCodeException("rq not found"))
 
