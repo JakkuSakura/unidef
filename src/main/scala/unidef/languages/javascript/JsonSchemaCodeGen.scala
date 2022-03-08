@@ -18,7 +18,8 @@ class JsonSchemaCodeGenOption(
     val useCustomFormat: Boolean = false
 )
 
-class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOption()) {
+class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOption())
+    extends TypeEncoder[Json] {
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): String = {
@@ -38,21 +39,21 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     )
   }
 
-  def generateType(ty: TyNode): Json =
-    ty match {
-      case TyString => jsonObjectOf("string")
-      case _: TyInteger =>
-        jsonObjectOf("integer")
-      case _: TyFloat =>
-        jsonObjectOf("number")
-      case _: TyNumeric =>
-        jsonObjectOf("number")
-      case TyBoolean =>
-        jsonObjectOf("boolean")
-      case _: TyDateTime =>
-        jsonObjectOf("string", "format" -> Json.fromString("datetime"))
+  override def encode(ty: TyNode): Option[Json] = ty match {
+    case TyString => Some(jsonObjectOf("string"))
+    case _: TyInteger =>
+      Some(jsonObjectOf("integer"))
+    case _: TyFloat =>
+      Some(jsonObjectOf("number"))
+    case _: TyNumeric =>
+      Some(jsonObjectOf("number"))
+    case TyBoolean =>
+      Some(jsonObjectOf("boolean"))
+    case _: TyDateTime =>
+      Some(jsonObjectOf("string", "format" -> Json.fromString("datetime")))
 
-      case t: TyTimeStamp =>
+    case t: TyTimeStamp =>
+      Some(
         jsonObjectOf(
           "string",
           "format" -> Json.fromString("timestamp"),
@@ -62,11 +63,13 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
             .map(Json.fromString)
             .getOrElse(Json.Null)
         )
+      )
 
-      case TyList(ty) =>
-        jsonObjectOf("array", "items" -> generateType(ty))
+    case TyList(ty) =>
+      Some(jsonObjectOf("array", "items" -> generateType(ty)))
 
-      case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
+    case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
+      Some(
         Json.fromJsonObject(
           JsonObject(
             "enum" -> Json
@@ -76,7 +79,9 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
             "name" -> Json.fromString(options.naming.toClassName(x.getValue(KeyName).get))
           )
         )
-      case x @ TyEnum(variants) =>
+      )
+    case x @ TyEnum(variants) =>
+      Some(
         Json.fromJsonObject(
           JsonObject(
             "enum" -> Json
@@ -85,51 +90,60 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
               )
           )
         )
+      )
 
-      case x @ TyStruct() if x.getFields.isDefined =>
-        val naming = if (x.getValue(KeyIsMethodParameters).contains(true)) {
-          options.naming.toFunctionParameterName
-        } else {
-          options.naming.toClassName
-        }
-        val others: mutable.Map[String, Json] = mutable.Map.empty
-        others += "properties" -> Json.fromJsonObject(
-          JsonObject.fromIterable(
-            x.getFields.get.map(f => naming(f.name) -> generateType(f.value))
-          )
+    case x @ TyStruct() if x.getFields.isDefined =>
+      val naming = if (x.getValue(KeyIsMethodParameters).contains(true)) {
+        options.naming.toFunctionParameterName
+      } else {
+        options.naming.toClassName
+      }
+      val others: mutable.Map[String, Json] = mutable.Map.empty
+      others += "properties" -> Json.fromJsonObject(
+        JsonObject.fromIterable(
+          x.getFields.get.map(f => naming(f.name) -> generateType(f.value))
+        )
+      )
+
+      if (x.getValue(KeyAdditionalProperties).contains(false)) {
+        others += "additionalProperties" -> Json.False
+      }
+      if (x.getValue(KeyRequired).contains(true)) {
+        others += "required" -> Json.fromValues(
+          x.getFields.get
+            .map(f => naming(f.name))
+            .map(Json.fromString)
         )
 
-        if (x.getValue(KeyAdditionalProperties).contains(false)) {
-          others += "additionalProperties" -> Json.False
-        }
-        if (x.getValue(KeyRequired).contains(true)) {
-          others += "required" -> Json.fromValues(
-            x.getFields.get
-              .map(f => naming(f.name))
-              .map(Json.fromString)
-          )
-
-        }
+      }
+      Some(
         jsonObjectOf(
           "object",
           others.toSeq: _*
         )
-      case TyJsonObject | TyStruct() => jsonObjectOf("object")
-      case TyJsonAny() if options.useListForJsonAny =>
+      )
+    case TyJsonObject | TyStruct() => Some(jsonObjectOf("object"))
+    case TyJsonAny() if options.useListForJsonAny =>
+      Some(
         Json.fromValues(
           Seq("number", "string", "boolean", "object", "array", "null").map(Json.fromString)
         )
-      case TyJsonAny() if !options.useListForJsonAny =>
-        Json.fromJsonObject(JsonObject.empty)
-      case TyNamed(name) =>
-        jsonObjectOf("string", "name" -> Json.fromString(name))
-      case TyByteArray =>
+      )
+    case TyJsonAny() if !options.useListForJsonAny =>
+      Some(Json.fromJsonObject(JsonObject.empty))
+    case TyNamed(name) =>
+      Some(jsonObjectOf("string", "name" -> Json.fromString(name)))
+    case TyByteArray =>
+      Some(
         jsonObjectOf(
           "string",
           (if (options.useCustomFormat) "format" else "$comment") -> Json.fromString("bytes")
         )
-      case TyInet => jsonObjectOf("string", "format" -> Json.fromString("hostname"))
-      case TyUuid => jsonObjectOf("string", "format" -> Json.fromString("uuid"))
-      case _ => throw TypeEncodeException(s"Unsupported type", ty)
-    }
+      )
+    case TyInet => Some(jsonObjectOf("string", "format" -> Json.fromString("hostname")))
+    case TyUuid => Some(jsonObjectOf("string", "format" -> Json.fromString("uuid")))
+    case _ => None
+  }
+  def generateType(ty: TyNode): Json = encodeOrThrow(ty, "json schema")
+
 }

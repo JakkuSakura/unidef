@@ -13,10 +13,7 @@ class JsonSchemaParserOption(
     val extendedGrammar: Boolean = true
 )
 class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption()) {
-  private def parseType(s: String) =
-    JsonSchemaCommon(options.extendedGrammar)
-      .decode(s)
-      .getOrElse(throw TypeDecodeException("Failed to parse type", s))
+  val jsonSchemaCommon: JsonSchemaCommon = JsonSchemaCommon(options.extendedGrammar)
 
   def parseFunction(content: JsonObject): TyApplicable = {
     val name = getString(content, "name")
@@ -28,7 +25,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
     val ret = content("return")
       .map(x =>
         if (x.isString)
-          parseType(x.asString.get)
+          jsonSchemaCommon.decodeOrThrow(x.asString.get)
         else
           TyStruct().setValue(
             KeyFields,
@@ -102,7 +99,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
     js.foldWith(new Json.Folder[TyField] {
 
       override def onString(value: String): TyField =
-        TyField("unnamed", parseType(value))
+        TyField("unnamed", jsonSchemaCommon.decodeOrThrow(value))
 
       override def onArray(value: Vector[Json]): TyField =
         throw ParseCodeException("Field should not be array", null)
@@ -110,11 +107,11 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
       override def onObject(value: JsonObject): TyField = {
         val field = if (value("name").isDefined && value("type").isDefined) {
           val name = getString(value, "name")
-          val ty = parseType(getString(value, "type"))
+          val ty = jsonSchemaCommon.decodeOrThrow(getString(value, "type"))
           TyField(name, ty)
         } else if (value.size == 1) {
           val name = value.keys.head
-          val ty = parseType(getString(value, name))
+          val ty = jsonSchemaCommon.decodeOrThrow(getString(value, name))
           TyField(name, ty)
         } else {
           throw ParseCodeException(
@@ -163,7 +160,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
 
       // extension
       override def onString(value: String): TyNode =
-        parseType(value)
+        jsonSchemaCommon.decodeOrThrow(value)
 
       override def onArray(value: Vector[Json]): TyNode = ???
 
@@ -199,7 +196,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
               val items = getObject(value, "items")
               TyList(parse(Json.fromJsonObject(items)))
             case "function" if options.extendedGrammar => parseFunction(value)
-            case ty => parseType(ty)
+            case ty => jsonSchemaCommon.decodeOrThrow(ty)
           }
 
         }

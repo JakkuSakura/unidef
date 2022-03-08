@@ -3,8 +3,8 @@ package unidef.languages.python
 import unidef.languages.common._
 
 class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
-    extends TypeEncoder
-    with TypeDecoder {
+    extends TypeEncoder[String]
+    with TypeDecoder[String] {
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =
     node match {
       case _: TyInteger => Some("int")

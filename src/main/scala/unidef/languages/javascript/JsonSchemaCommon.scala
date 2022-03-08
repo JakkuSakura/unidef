@@ -2,7 +2,7 @@ package unidef.languages.javascript
 
 import unidef.languages.common._
 
-class JsonSchemaCommon(extended: Boolean) extends TypeDecoder {
+class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
   override def decode(name: String): Option[TyNode] = name.toLowerCase match {
     case "integer" if !extended =>
       Some(TyInteger(BitSize.Unknown, signed = true))

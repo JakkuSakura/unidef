@@ -9,9 +9,9 @@ case class ParseCodeException(msg: String, cause: Option[Throwable] = None)
     extends ExceptionBase(msg)
 case class TypeEncodeException(msg: String, ty: TyNode, cause: Option[Throwable] = None)
     extends ExceptionBase(s"$msg (type: $ty)", cause)
-case class TypeDecodeException(
+case class TypeDecodeException[I](
     msg: String,
-    ty: String,
+    ty: I,
     lang: String = "",
     cause: Option[Throwable] = None
 ) extends ExceptionBase(s"$msg (type: $ty $lang)", cause)

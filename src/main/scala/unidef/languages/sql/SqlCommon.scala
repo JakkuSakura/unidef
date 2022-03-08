@@ -15,8 +15,8 @@ object SqlCommon {
 }
 
 class SqlCommon(naming: NamingConvention = SqlNamingConvention)
-    extends TypeDecoder
-    with TypeEncoder {
+    extends TypeDecoder[String]
+    with TypeEncoder[String] {
 
   case object KeyOid extends KeywordBoolean {
     def get: TyInteger =

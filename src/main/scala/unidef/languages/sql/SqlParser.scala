@@ -115,7 +115,7 @@ object SqlParser {
 
   private def parseParam(
       args: Seq[String]
-  )(implicit resolver: TypeDecoder): (Boolean, TyField) = {
+  )(implicit resolver: TypeDecoder[String]): (Boolean, TyField) = {
     logger.info("parseParam: " + args.mkString(", "))
     var nameCursor = 0
     var typeCursor = 1
@@ -150,7 +150,7 @@ object SqlParser {
 
   def parseCreateFunction(
       parts: Seq[String]
-  )(implicit resolver: TypeDecoder): Option[(AstFunctionDecl, Int)] = {
+  )(implicit resolver: TypeDecoder[String]): Option[(AstFunctionDecl, Int)] = {
     val (schema, name) = parts match {
       case "CREATE" +: "OR" +: "REPLACE" +: "FUNCTION" +: schema +: "." +: name +: _ =>
         (schema, name)
@@ -214,9 +214,7 @@ object SqlParser {
         case ty =>
           val ret = ty.mkString(" ")
           outputOnly = Some(
-            sqlCommon
-              .decode(ret)
-              .getOrElse(throw TypeDecodeException("Failed to parse type", ret))
+            sqlCommon.decodeOrThrow(ret)
           )
       }
 
@@ -242,7 +240,7 @@ object SqlParser {
   }
   def parseCreateTable(
       tbl: CreateTable
-  )(implicit resolver: TypeDecoder): AstClassDecl = {
+  )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
     common
       .AstClassDecl(
         AstLiteralString(tbl.getTable.getName),
@@ -252,7 +250,7 @@ object SqlParser {
   }
   def parseParseColumn(
       column: ColumnDefinition
-  )(implicit resolver: TypeDecoder): TyField = {
+  )(implicit resolver: TypeDecoder[String]): TyField = {
     val ty = column.getColDataType
     val name = column.getColumnName
     TyField(
@@ -262,14 +260,14 @@ object SqlParser {
       )
     )
   }
-  def lookUpType(ty: String)(implicit resolver: TypeDecoder): Option[TyNode] = {
+  def lookUpType(ty: String)(implicit resolver: TypeDecoder[String]): Option[TyNode] = {
     resolver
       .decode(ty.replaceAll("\\w+?\\.", ""))
   }
 
   def parseColDataType(
       ty: ColDataType
-  )(implicit resolver: TypeDecoder): Option[TyNode] =
+  )(implicit resolver: TypeDecoder[String]): Option[TyNode] =
     lookUpType(ty.getDataType).orElse(sqlCommon.decode(ty.getDataType))
 
 }

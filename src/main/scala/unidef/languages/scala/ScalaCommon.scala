@@ -2,7 +2,7 @@ package unidef.languages.scala
 
 import unidef.languages.common.*
 
-class ScalaCommon() extends TypeEncoder {
+class ScalaCommon() extends TypeEncoder[String] {
   override def encode(ty: TyNode): Option[String] =
     ty match {
       case _: TyInteger => Some("Int")

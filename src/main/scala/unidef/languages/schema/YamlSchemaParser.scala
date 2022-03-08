@@ -114,10 +114,7 @@ case class YamlSchemaParser() {
         )
       )
     case name =>
-      common
-        .decode(name)
-        .getOrElse(throw TypeDecodeException("Yaml schema type", name))
-
+      common.decodeOrThrow(name, "Yaml schema")
   }
   def collectFields(ty: AstTypeDecl): Set[TyField] = {
     ty.params
@@ -149,7 +146,7 @@ case class YamlSchemaParser() {
       case _ =>
         val scalaCommon = ScalaCommon()
         val valueType =
-          scalaCommon.encode(field.value).getOrElse(throw TypeEncodeException("Scala", field.value))
+          scalaCommon.encodeOrThrow(field.value, "scala")
         scalaField(traitName, "Keyword", Seq(s"override type V = ${valueType}"))
     }
     cls.setValue(KeyClassType, "case object")
@@ -158,7 +155,7 @@ case class YamlSchemaParser() {
     val traitName = "Has" + field.name.capitalize
     val scalaCommon = ScalaCommon()
     val valueType =
-      scalaCommon.encode(field.value).getOrElse(throw TypeEncodeException("Scala", field.value))
+      scalaCommon.encodeOrThrow(field.value, "Scala")
 
     scalaField(
       traitName,
