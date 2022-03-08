@@ -212,9 +212,9 @@ object SqlParser {
             }
           }
         case ty =>
-          val ret = ty.mkString(" ")
+          val ret = compactDot(ty)
           outputOnly = Some(
-            sqlCommon.decodeOrThrow(ret)
+            lookUpType(ret).getOrElse(throw TypeDecodeException(s"Failed to parse type", ret))
           )
       }
 
@@ -262,7 +262,7 @@ object SqlParser {
   }
   def lookUpType(ty: String)(implicit resolver: TypeDecoder[String]): Option[TyNode] = {
     resolver
-      .decode(ty.replaceAll("\\w+?\\.", ""))
+      .decode(ty.replaceAll("\\w+?\\.", "").trim)
   }
 
   def parseColDataType(
