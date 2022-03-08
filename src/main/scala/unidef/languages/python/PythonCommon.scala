@@ -8,7 +8,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =
     node match {
       case _: TyInteger => Some("int")
-      case _: TyFloat => Some("float")
+      case _: TyReal => Some("float")
       case TyString => Some("str")
       case TyChar => Some("str")
       case t @ TyStruct() if t.getValue(KeyName).isDefined =>
