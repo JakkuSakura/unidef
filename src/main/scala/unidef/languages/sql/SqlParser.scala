@@ -24,7 +24,8 @@ object SqlParser {
 
   def parse(sql: String)(implicit resolver: TypeRegistry): Seq[AstNode] = {
     val collected = ArrayBuffer[AstNode]()
-    extractEnums(sql).foreach { x =>
+    val enums = extractEnums(sql)
+    enums.foreach { x =>
       x.getValue(KeyName).foreach { nm =>
         resolver.add(nm, x, "sql")
         collected += AstTyped(x)
@@ -65,9 +66,9 @@ object SqlParser {
     collected.toSeq
   }
   private def extractEnums(sql: String): Seq[TyEnum] = {
-    new Regex("CREATE\\s+TYPE\\s+(.+)\\s+AS\\s+enum\\s+\\((.+?)\\);")
+    new Regex("(CREATE|create)\\s+(TYPE|type)\\s+(.+)\\s+(AS|as)\\s+(ENUM|enum)\\s*\\((.+?)\\);")
       .findAllMatchIn(sql)
-      .map(m => m.group(1) -> m.group(2))
+      .map(m => m.group(3) -> m.group(6))
       .map { (k, v) =>
         k -> v
           .split(",")
