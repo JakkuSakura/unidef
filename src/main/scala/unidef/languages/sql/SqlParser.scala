@@ -110,7 +110,7 @@ object SqlParser {
           sb ++= " "
       sb ++= args(i)
     }
-    sb.toString()
+    sb.toString().trim.replaceAll("\\s*=.+", "")
   }
 
   private def parseParam(
