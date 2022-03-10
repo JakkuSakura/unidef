@@ -115,7 +115,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           TyField(name, ty)
         } else {
           throw ParseCodeException(
-            "FieldType must be either: has fields `name` and `type`, has the form of `name: type`"
+            "FieldType must be either: has fields `name` and `type`, has the form of `name: type`. Got " + value
           )
         }
         // TODO: handle list and object recursively
