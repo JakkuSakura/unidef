@@ -70,6 +70,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case TyInet => Some("inet")
     case TyUuid => Some("uuid")
     case TyRecord => Some("record")
+    case x: TyListOf => encode(x.getContentValue.get).map(x => s"${x}[]")
     case _ => None
   }
 

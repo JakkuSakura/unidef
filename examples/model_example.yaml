@@ -1,7 +1,19 @@
+type: object
+name: list_of_stuff
+properties:
+  - name: stuff
+    type: array
+    items: string
 ---
-type: example
+type: object
+name: list_of_stuff2
+properties:
+  stuff:
+    type: array
+    items: string
+---
+type: object
 name: model
-note: This is a example
 fields:
   - name: id_ts
     type: i128
@@ -13,20 +25,20 @@ fields:
   - name: page_number
     type: i32
     nullable: True
+#---
+#type: object
+#name: delay_data
+#fields:
+#  - name: exchange
+#    type: exchange_enum
+#  - name: instrument
+#    type: human_instrument/enum
+#  - name: st
+#    type: timestamp/ns
+#  - name: lt
+#    type: timestamp/ns
 ---
-type: example
-name: delay_data
-fields:
-  - name: exchange
-    type: exchange_enum
-  - name: instrument
-    type: human_instrument/enum
-  - name: st
-    type: timestamp/ns
-  - name: lt
-    type: timestamp/ns
----
-type: example
+type: object
 name: currency_kind
 variants:
   - name: "NULL"
@@ -35,7 +47,7 @@ variants:
   - name: BSV BCHSV
   - name: 1INCH
 ---
-type: export
+type: object
 name: order_export
 fields:
   - name: exchange
@@ -92,6 +104,6 @@ fields:
     type: f64
 
   - name: open_t
-    type: timestamp/ns
+    type: i64
   - name: close_t
-    type: timestamp/ns
+    type: i64

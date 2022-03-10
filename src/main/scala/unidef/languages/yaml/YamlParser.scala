@@ -45,6 +45,7 @@ case class YamlParser(jsParser: JsonSchemaParser) {
         case a: AstNode => a
         case t: TyNode => AstTyped(t)
       }
+      .toArray
   }
 
 }

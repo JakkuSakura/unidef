@@ -36,6 +36,7 @@ import java.io.PrintWriter
   } else {
     throw new RuntimeException("Unsupported file type " + filename)
   }
+
   val parsedWriter = fs.newWriterAt("parsed.txt")
   parsedWriter.println(parsed)
   for (ty <- parsed) {

@@ -17,8 +17,10 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "long" | "i64" if extended => Some(TyInteger(BitSize.B64))
     case "ulong" | "u64" if extended =>
       Some(TyInteger(BitSize.B64, signed = false))
+    case "i128" if extended => Some(TyInteger(BitSize.B128))
+    case "u128" if extended => Some(TyInteger(BitSize.B128, signed = false))
     case "float" if extended => Some(TyFloat(BitSize.B32))
-    case "double" if extended => Some(TyFloat(BitSize.B64))
+    case "double" | "f64" if extended => Some(TyFloat(BitSize.B64))
     case "str" | "varchar" | "text" if extended => Some(TyString)
     case "json" | "jsonb" => Some(TyJsonAny())
     case "timestamp" if extended =>
