@@ -28,9 +28,12 @@ import java.io.PrintWriter
   val fileContents = FileUtils.readFile(filename)
   val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
     yamlParser.parseFile(fileContents)
-  } else if (filename.endsWith(".sql"))
+  } else if (filename.endsWith(".sql")) {
     SqlParser.parse(fileContents)(sqlResolver)
-  else {
+  } else if (filename.endsWith(".json")) {
+    val parsed = JsonSchemaParser().parse(io.circe.parser.parse(fileContents).toTry.get)
+    Seq(AstTyped(parsed))
+  } else {
     throw new RuntimeException("Unsupported file type " + filename)
   }
   val parsedWriter = fs.newWriterAt("parsed.txt")
@@ -39,21 +42,24 @@ import java.io.PrintWriter
     ty match {
       case a @ AstClassDecl(name, fields, methods, derived) =>
         val code = sqlCodegen.generateTableDdl(a)
-        fs.newWriterAt("AstClassDecl.txt").println(code)
+        fs.getWriterAt("AstClassDecl.txt").println(code)
       case AstTyped(n) if n.isInstanceOf[TyStruct] =>
-        val code = sqlCodegen.generateTableDdl(n.asInstanceOf[TyStruct])
-        fs.newWriterAt("TyStruct.txt").println(code)
+        val struct = n.asInstanceOf[TyStruct]
+        if (struct.getName.isDefined) {
+          val code = sqlCodegen.generateTableDdl(struct)
+          fs.getWriterAt("TyStruct.txt").println(code)
+        }
 
       case AstTyped(en: TyEnum) =>
-        fs.newWriterAt("TyEnum.txt").println(en)
+        fs.getWriterAt("TyEnum.txt").println(en)
       case n: AstFunctionDecl =>
         val code = sqlCodegen.generateFunctionDdl(n)
-        fs.newWriterAt("AstFunctionDeclSqlCodeGen.txt").println(code)
+        fs.getWriterAt("AstFunctionDeclSqlCodeGen.txt").println(code)
 
         val importManager = ImportManager()
         val code3 =
           JsonSchemaCodeGen().generateFuncDecl(n)
-        fs.newWriterAt("AstFunctionDeclJsonSchemaCodeGen.txt").println(code3)
+        fs.getWriterAt("AstFunctionDeclJsonSchemaCodeGen.txt").println(code3)
 
     }
   }
