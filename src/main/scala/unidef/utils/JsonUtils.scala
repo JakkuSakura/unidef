@@ -39,8 +39,10 @@ object JsonUtils {
         })
         .toSeq
     } else {
-      json.asObject.get.toIterable.map { case (k, v) =>
-        k -> tryGetValue(v.asObject.get, keyForName, k, keyForValue)
+      json.asObject.get.toIterable.map {
+        case (k, v) if v.isObject =>
+          k -> tryGetValue(v.asObject.get, keyForName, k, keyForValue)
+        case (k, v) => k -> JsonObject(keyForValue -> v)
       }.toSeq
     }
 

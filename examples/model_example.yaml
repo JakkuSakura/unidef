@@ -11,6 +11,13 @@ properties:
   stuff:
     type: array
     items: string
+  thing:
+    type: array
+    items:
+      type: object
+      properties:
+        name_: string
+        value_: integer
 ---
 type: object
 name: model
