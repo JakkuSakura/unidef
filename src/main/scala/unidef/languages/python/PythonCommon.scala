@@ -60,7 +60,11 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case TyInet => Some("str") // FIXME: InetAddress
       case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
         Some(naming.toClassName(x.getValue(KeyName).get))
-      case TyEnum(_) => Some("str") // TODO: use solid enum if possible
+      case TyEnum(_) =>
+        Some("str") // TODO: use solid enum if possible
+      case TyAny =>
+        importManager.foreach(_ += AstImport("typing", Seq("Any")))
+        Some("Any")
       case _ => None
     }
   def convertTypeFromPy(ty: String): Option[TyNode] =
