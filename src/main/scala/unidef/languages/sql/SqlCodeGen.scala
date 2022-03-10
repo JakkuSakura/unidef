@@ -68,7 +68,7 @@ class SqlCodeGen(
   def generateTableDdl(node: TyClass with HasName with HasFields): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toFunctionName(node.getName.get))
-    context.put("fields", node.getFields.get.map(sqlCommon.encode(_)).asJava)
+    context.put("fields", node.getFields.get.map(sqlCommon.convertToSqlField).asJava)
     context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
     CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)
   }
@@ -103,7 +103,7 @@ class SqlCodeGen(
         .asInstanceOf[TyTuple]
         .values
         .map(_.asInstanceOf[TyField])
-        .map(sqlCommon.encode(_))
+        .map(sqlCommon.convertToSqlField)
         .asJava
     )
     context.put(
@@ -121,7 +121,7 @@ class SqlCodeGen(
       case x: TyStruct if x.getFields.isDefined =>
         context.put(
           "return_table",
-          x.getFields.get.map(sqlCommon.encode).asJava
+          x.getFields.get.map(sqlCommon.convertToSqlField).asJava
         )
       case TyStruct() =>
         context.put("return_type", "record")
