@@ -182,17 +182,16 @@ object SqlParser {
       }
     }
     val as = finds(parts, "AS").get
-    var lq_ : Option[Int] = None
-    var rq_ : Option[Int] = None
-    for (delim <- Seq("$$", "$func$", "$fun$", "$EOF$"))
-      if (lq_.isEmpty)
-        finds(parts, delim).foreach(y => {
-          lq_ = Some(y)
-          rq_ = finds(parts, delim, y + 1)
-        })
 
-    val lq: Int = lq_.getOrElse(throw ParseCodeException("lq not found"))
-    val rq: Int = rq_.getOrElse(throw ParseCodeException("rq not found"))
+    val delims = Seq("$$", "$func$", "$fun$", "$EOF$")
+    val lq = delims
+      .flatMap(delim => finds(parts, delim))
+      .minOption
+      .getOrElse(throw ParseCodeException("lq not found"))
+    val rq = delims
+      .flatMap(delim => finds(parts, delim, lq + 1))
+      .minOption
+      .getOrElse(throw ParseCodeException("rq not found"))
 
     val body = parts.slice(lq + 1, rq).mkString(" ")
     val languagePos = finds(parts, "LANGUAGE").get
