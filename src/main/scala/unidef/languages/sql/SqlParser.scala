@@ -184,11 +184,12 @@ object SqlParser {
     val as = finds(parts, "AS").get
     var lq_ : Option[Int] = None
     var rq_ : Option[Int] = None
-    for (delim <- Seq("$$", "$func$", "$fun$", "$EOF$") if lq_.isEmpty)
-      finds(parts, delim).foreach(y => {
-        lq_ = Some(y)
-        rq_ = finds(parts, delim, y + 1)
-      })
+    for (delim <- Seq("$$", "$func$", "$fun$", "$EOF$"))
+      if (lq_.isEmpty)
+        finds(parts, delim).foreach(y => {
+          lq_ = Some(y)
+          rq_ = finds(parts, delim, y + 1)
+        })
 
     val lq: Int = lq_.getOrElse(throw ParseCodeException("lq not found"))
     val rq: Int = rq_.getOrElse(throw ParseCodeException("rq not found"))
