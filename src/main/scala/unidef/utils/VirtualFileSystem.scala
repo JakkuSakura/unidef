@@ -88,7 +88,42 @@ class VirtualFileSystem {
   def dumpAll(base: Path, remove: Boolean = false): Unit = {
     if (remove)
       FileUtils.deleteDirectory(base.toFile);
+    fileList.dumpAll(base)
+  }
+
+  def showAsString(writer: Writer): Unit = {
+    fileList.showAsString(writer)
+  }
+  def fileList: FileList = {
     flushFiles()
+    FileList(openList.toSeq)
+  }
+  def flushFiles(): Unit = {
+    openList.values.foreach(f => f.writer.flush())
+  }
+  def closeFiles(): Unit = {
+    openList.values.foreach(f => f.writer.close())
+    openList.clear()
+  }
+}
+
+class FileList(openList: Seq[(String, OpenedFile)]) {
+  def filterPath(predicate: String => Boolean): FileList = {
+    FileList(openList.filter(x => predicate(x._1)))
+  }
+  def mapPath(f: String => String): Seq[String] = {
+    openList.map(x => f(x._1))
+  }
+  def showAsString(writer: Writer): Unit = {
+    openList.foreach { (name, f) =>
+      writer.write(s"====${name}====\n")
+      val content = Files.readAllBytes(f.filePath)
+      writer.append(new String(content))
+
+    }
+    writer.flush()
+  }
+  def dumpAll(base: Path): Unit = {
     openList.foreach { (name, f) =>
       val dest = base.resolve(name)
       if (dest.getParent != null)
@@ -99,24 +134,6 @@ class VirtualFileSystem {
           case e => throw e
         }
       Files.copy(f.filePath, dest, StandardCopyOption.REPLACE_EXISTING)
-
     }
-  }
-  def showAsString(writer: Writer): Unit = {
-    flushFiles()
-    openList.foreach { (name, f) =>
-      writer.write(s"====${name}====\n")
-      val content = Files.readAllBytes(f.filePath)
-      writer.append(new String(content))
-
-    }
-    writer.flush()
-  }
-  def flushFiles(): Unit = {
-    openList.values.foreach(f => f.writer.flush())
-  }
-  def closeFiles(): Unit = {
-    openList.values.foreach(f => f.writer.close())
-    openList.clear()
   }
 }
