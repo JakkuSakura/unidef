@@ -5,10 +5,11 @@ import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject}
 import unidef.languages.common.*
 import unidef.languages.javascript.{JsonSchemaCommon, JsonSchemaParser}
-import unidef.languages.scala.{ScalaCommon, ScalaCodeGen}
+import unidef.languages.scala.{ScalaCodeGen, ScalaCommon}
 import unidef.utils.FileUtils.readFile
-import unidef.utils.{ParseCodeException, TypeDecodeException, TypeEncodeException}
+import unidef.utils.{ParseCodeException, TextTool, TypeDecodeException, TypeEncodeException}
 
+import java.io.PrintWriter
 import scala.collection.mutable
 
 case class YamlSchemaParser() {
@@ -152,7 +153,7 @@ case class YamlSchemaParser() {
     cls.setValue(KeyClassType, "case object")
   }
   def generateScalaHasTrait(field: TyField): AstClassDecl = {
-    val traitName = "Has" + field.name.capitalize
+    val traitName = "Has" + TextTool.toPascalCase(field.name)
     val scalaCommon = ScalaCommon()
     val valueType =
       scalaCommon.encodeOrThrow(field.value, "Scala")
@@ -160,8 +161,8 @@ case class YamlSchemaParser() {
     scalaField(
       traitName,
       "TyNode",
-      Seq(s"def get${field.name.capitalize}: ${valueType}")
-    )
+      Seq(s"def get${field.name.capitalize}: Option[${valueType}]")
+    ).setValue(KeyClassType, "trait")
   }
   def generateScalaCaseClass(ty: AstTypeDecl): AstClassDecl = {
     val scalaCommon = ScalaCommon()
@@ -174,15 +175,15 @@ case class YamlSchemaParser() {
         .map(x => x.name -> x.value)
         .map((k, v) =>
           AstFunctionDecl(
-            AstLiteralString(k),
+            AstLiteralString("get" + k.capitalize),
             Nil,
             TyOptional(v)
-          ).setValue(KeyBody, AstRawCode(k))
+          ).setValue(KeyBody, AstRawCode(s"Some(${k})"))
             .setValue(KeyOverride, true)
         ),
       fields
         .map(x => x.name -> x.value)
-        .map((k, v) => "Has" + k.capitalize)
+        .map((k, v) => "Has" + TextTool.toPascalCase(k))
         .map(x => AstClassIdent(x))
         .toSeq
     )
@@ -209,10 +210,30 @@ object YamlSchemaParser {
     println("Generated case classes")
     println(caseClasses.mkString("\n"))
     val scalaCodegen = ScalaCodeGen(NoopNamingConvention)
-    println(
-      (keyObjects.map(scalaCodegen.generateClass)
-        ++ hasTraits.map(scalaCodegen.generateClass)
-        ++ caseClasses.map(scalaCodegen.generateClass)).mkString("\n")
-    )
+    val scalaCode = (keyObjects.map(scalaCodegen.generateClass)
+      ++ hasTraits.map(scalaCodegen.generateClass)
+      ++ caseClasses.map(scalaCodegen.generateClass)).mkString("\n")
+
+    println(scalaCode)
+    val writer = new PrintWriter("target/TyNode.scala")
+    writer.println("""
+         |package unidef.languages.common
+         |
+         |import java.util.TimeZone
+         |
+         |/** This is a very generic type model
+         |  */
+         |trait TyTypeExpr {
+         |  def asTypeNode: TyNode
+         |}
+         |
+         |trait TyNode extends TyTypeExpr {
+         |  def asTypeNode: TyNode = this
+         |}
+         |
+         |""".trim.stripMargin)
+    writer.write(scalaCode)
+    writer.close()
+
   }
 }

@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters.*
 class ScalaCodeGen(naming: NamingConvention) {
   val TEMPLATE_METHOD: String =
     """
-      |${override}def $name($params): $return = {
+      |${override}def $name$params: $return = {
       |  $text.indent($body, 2)
       |}
     """.stripMargin
@@ -16,10 +16,15 @@ class ScalaCodeGen(naming: NamingConvention) {
   def generateMethod(method: AstFunctionDecl): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toMethodName(method.getName.get))
-    context.put(
-      "params",
-      method.parameters.map(x => x.name + ": " + ScalaCommon().encode(x).get).mkString(", ")
-    )
+    if (method.parameters.isEmpty && method.getName.get.startsWith("get"))
+      context.put("params", "")
+    else
+      context.put(
+        "params",
+        "(" + method.parameters
+          .map(x => x.name + ": " + ScalaCommon().encode(x).get)
+          .mkString(", ") + ")"
+      )
     context.put("body", method.getBody.get.asInstanceOf[AstRawCode].raw)
     context.put(
       "override",
@@ -61,7 +66,10 @@ class ScalaCodeGen(naming: NamingConvention) {
         )
         .mkString(", ")
     )
-    context.put("hasParams", !cls.contains("object"))
+    context.put(
+      "hasParams",
+      !cls.contains("object") && !(cls.contains("trait") && trt.fields.isEmpty)
+    )
     context.put("derive", trt.derived.map(_.name).map(naming.toClassName).asJava)
     context.put(
       "methods",
