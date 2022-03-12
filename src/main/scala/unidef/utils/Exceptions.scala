@@ -5,7 +5,7 @@ import unidef.languages.common.TyNode
 class ExceptionBase(msg: String, cause: Option[Throwable] = None)
     extends Exception(msg, cause.orNull)
 
-case class ParseCodeException(msg: String, cause: Option[Throwable] = None)
+case class ParseCodeException(msg: String, code: String = "", cause: Option[Throwable] = None)
     extends ExceptionBase(msg)
 case class TypeEncodeException(msg: String, ty: TyNode, cause: Option[Throwable] = None)
     extends ExceptionBase(s"$msg (type: $ty)", cause)

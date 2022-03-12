@@ -1,18 +1,18 @@
 package unidef.languages.scala
 
 import unidef.languages.common.*
-import unidef.utils.{CodeGen, TypeEncodeException}
+import unidef.utils.{CodeGen, TextTool, TypeEncodeException}
 
 import scala.jdk.CollectionConverters.*
 
 class ScalaCodeGen(naming: NamingConvention) {
   val TEMPLATE_METHOD: String =
     """
-      |${override}def $name$params: $return = {
+      |${override}def $name$params: $return#if($body) = {
       |  $text.indent($body, 2)
-      |}
+      |}#end
     """.stripMargin
-  // TODO func decl without definition
+
   def generateMethod(method: AstFunctionDecl): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toMethodName(method.getName.get))
@@ -25,7 +25,8 @@ class ScalaCodeGen(naming: NamingConvention) {
           .map(x => x.name + ": " + ScalaCommon().encode(x).get)
           .mkString(", ") + ")"
       )
-    context.put("body", method.getBody.get.asInstanceOf[AstRawCode].raw)
+
+    context.put("body", method.getBody.map(_.asInstanceOf[AstRawCode].raw).getOrElse(""))
     context.put(
       "override",
       if (method.getValue(KeyOverride).getOrElse(false)) {
@@ -40,12 +41,7 @@ class ScalaCodeGen(naming: NamingConvention) {
 
   val TEMPLATE_CLASS: String =
     """
-      |$cls $name#if($hasParams)($params)#end
-      |#if($derive) extends
-      |#foreach($d in $derive)
-      |  $d #if($foreach.hasNext)with#end
-      |#end#end
-      |{
+      |$cls $name#if($hasParams)($params)#end #if($derive)extends #foreach($d in $derive)$d #if($foreach.hasNext)with #end#end#end{
       |#foreach($m in $methods)
       |  $text.indent($m, 2)
       |#end
@@ -79,5 +75,23 @@ class ScalaCodeGen(naming: NamingConvention) {
       }.asJava
     )
     CodeGen.render(TEMPLATE_CLASS, context)
+  }
+  val TEMPLATE_ENUM: String =
+    """
+      |sealed trait $name
+      |object $name {
+      |  #foreach($x in $variants)
+      |  case object $x extends $name
+      |  #end
+      |}
+    """.stripMargin
+  def generateScala2Enum(enm: TyEnum): String = {
+    val context = CodeGen.createContext
+    context.put("name", TextTool.toPascalCase(enm.getName.get))
+    context.put(
+      "variants",
+      enm.variants.map(x => x.names.head).map(TextTool.toScreamingSnakeCase).asJava
+    )
+    CodeGen.render(TEMPLATE_ENUM, context)
   }
 }

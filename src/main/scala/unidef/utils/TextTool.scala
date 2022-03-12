@@ -65,7 +65,7 @@ object TextTool {
     splitString(text).map(_.capitalize).mkString("")
   def toKebabCase(text: String): String =
     splitString(text).mkString("-").toLowerCase
-  def toStreamingKebabCase(text: String): String =
+  def toScreamingKebabCase(text: String): String =
     splitString(text).mkString("-").toUpperCase
   def toCamelCase(text: String): String = {
     val x = splitString(text)
