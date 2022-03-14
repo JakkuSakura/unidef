@@ -7,12 +7,12 @@ class ScalaCommon() extends TypeEncoder[String] {
   override def encode(ty: TyNode): Option[String] =
     ty match {
       case _: TyInteger => Some("Int")
-      case TyString => Some("String")
+      case _: TyString => Some("String")
       case TyUnit => Some("Unit")
-      case TyBoolean => Some("Boolean")
-      case TyOptional(t) => encode(t).map(x => s"Option[${x}]")
+      case _: TyBoolean => Some("Boolean")
+      case t: TyOptional => encode(t.getContent.get).map(x => s"Option[${x}]")
       case TyAny => Some("Any")
-      case TyList(t) => encode(t).map(x => s"List[${x}]")
+      case t: TyList => encode(t.getContent.get).map(x => s"List[${x}]")
       case TyNamed(name) => Some(TextTool.toPascalCase(name))
       case TyNode => Some("TyNode")
       case _ => None

@@ -46,7 +46,7 @@ class SqlCodeGen(
 
     val returnType = func.returnType
     returnType match {
-      case TyRecord | TyStruct() =>
+      case /* FIXME: TyRecord |*/ _: TyStruct =>
         context.put("table", true)
       case _ =>
         context.put("table", false)
@@ -65,7 +65,7 @@ class SqlCodeGen(
        |);
        |""".stripMargin
 
-  def generateTableDdl(node: TyClass with HasName with HasFields): String = {
+  def generateTableDdl(node: TyStruct with Extendable): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toFunctionName(node.getName.get))
     context.put("fields", node.getFields.get.map(sqlCommon.convertToSqlField).asJava)
@@ -101,7 +101,8 @@ class SqlCodeGen(
       "args",
       node.parameterType
         .asInstanceOf[TyTuple]
-        .values
+        .getValues
+        .get
         .map(_.asInstanceOf[TyField])
         .map(sqlCommon.convertToSqlField)
         .asJava
@@ -123,7 +124,7 @@ class SqlCodeGen(
           "return_table",
           x.getFields.get.map(sqlCommon.convertToSqlField).asJava
         )
-      case TyStruct() =>
+      case _: TyStruct =>
         context.put("return_type", "record")
       case a => context.put("return_type", sqlCommon.convertType(a))
     }

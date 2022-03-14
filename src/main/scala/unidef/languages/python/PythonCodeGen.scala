@@ -28,8 +28,8 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
     importManager.foreach(_ += AstImport("enum"))
     val context = CodeGen.createContext
     context.put("name", naming.toClassName(enm.getName.get))
-    enm.getContentValue.getOrElse(TyString) match {
-      case TyString => context.put("enum_type", "str, enum.Enum")
+    enm.getValue.getOrElse(TyStringImpl()) match {
+      case _: TyString => context.put("enum_type", "str, enum.Enum")
       case _: TyInteger => context.put("enum_type", "enum.IntEnum")
     }
     var counter = -1
@@ -41,8 +41,8 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
           counter += 1
           PythonCodeGenField(
             naming.toEnumKeyName(name),
-            enm.getContentValue match {
-              case Some(x @ TyString) => s"'${name}'"
+            enm.getValue match {
+              case Some(x: TyString) => s"'${name}'"
               case Some(_: TyInteger) => s"${code.getOrElse(counter)}"
               case None => s"'${naming.toEnumValueName(name)}'"
               case Some(t) =>

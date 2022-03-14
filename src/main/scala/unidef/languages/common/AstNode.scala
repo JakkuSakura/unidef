@@ -44,12 +44,12 @@ case class AstFlowControl(flow: FlowControl, value: AstNode) extends AstNode
 
 class AstLiteral(ty: TyNode) extends AstStaticType(ty)
 
-case class AstLiteralString(value: String) extends AstLiteral(TyString)
+case class AstLiteralString(value: String) extends AstLiteral(TyStringImpl())
 
 case class AstLiteralChar(value: Char) extends AstLiteral(TyChar)
-case class AstLiteralInteger(value: Int) extends AstLiteral(TyInteger(BitSize.B32))
+case class AstLiteralInteger(value: Int) extends AstLiteral(TyIntegerImpl(Some(BitSize.B32), None))
 
-case class AstLiteralFloat(value: Double) extends AstLiteral(TyFloat(BitSize.B64))
+case class AstLiteralFloat(value: Double) extends AstLiteral(TyFloatImpl(Some(BitSize.B64)))
 
 // TODO extends AstLiteral(TyFloat(BitSize.B32))
 // difference is from https://github.com/ron-rs/ron
@@ -59,7 +59,7 @@ case class AstLiteralStruct(values: Seq[(AstNode, AstNode)]) extends AstNode
 
 case class AstLiteralArray(values: Seq[AstNode]) extends AstNode
 case class AstLiteralOptional(value: Option[AstNode]) extends AstNode
-case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBoolean)
+case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBooleanImpl())
 
 sealed trait AccessModifier
 
@@ -72,14 +72,17 @@ object AccessModifier extends Keyword {
   case class Limited(path: String) extends AccessModifier
 }
 
-case class AstFunctionDecl(name: AstNode, parameters: Seq[TyField], override val returnType: TyNode)
-    extends Extendable
+case class AstFunctionDecl(
+    name: AstNode,
+    parameters: List[TyField],
+    override val returnType: TyNode
+) extends Extendable
     with AstNode
     with TyApplicable
     with HasName
     with HasBody {
   override def getName: Option[String] = literalName
-  override def parameterType: TyNode = TyTuple(parameters)
+  override def parameterType: TyNode = TyTupleImpl(Some(parameters))
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)
     case _ => None
@@ -87,7 +90,7 @@ case class AstFunctionDecl(name: AstNode, parameters: Seq[TyField], override val
   }
 }
 
-case class AstLambdaDecl(parameters: Seq[TyField], returnType: TyNode, body: AstNode)
+case class AstLambdaDecl(parameters: List[TyField], returnType: TyNode, body: AstNode)
     extends Extendable
     with AstNode
 
@@ -95,24 +98,23 @@ case class AstClassIdent(name: String) extends AstNode
 
 case class AstClassDecl(
     name: AstNode,
-    fields: Seq[TyField],
+    fields: List[TyField],
     methods: Seq[AstNode] = Nil,
     derived: Seq[AstClassIdent] = Nil
 ) extends Extendable
     with AstNode
-    with TyClass
-    with HasName
-    with HasFields {
+    with TyStruct {
 
   override def getName: Option[String] = literalName
-  override def getFields: Option[Seq[TyField]] = Some(fields)
+  override def getFields: Option[List[TyField]] = Some(fields)
   def literalName: Option[String] = name match {
     case AstLiteralString(value) => Some(value)
     case _ => None
   }
-  // override def asTypeNode: TyStruct =
-  //  TyStruct(Some(fields)).setValue(KeyName, literalName.get)
 
+  override def getAttributes: Option[List[String]] = Some(Nil)
+
+  override def getDerives: Option[List[String]] = Some(derived.map(_.name).toList)
 }
 
 object AstClassDecl {
@@ -174,12 +176,6 @@ trait HasBody extends Extendable {
 case object KeyBody extends Keyword {
   override type V = AstNode
 }
-
-trait HasName extends Extendable {
-  def getName: Option[String] = getValue(KeyName)
-}
-
-object KeyName extends KeywordString
 
 case object KeyLanguage extends KeywordString
 case object KeyParameters extends KeywordOnly

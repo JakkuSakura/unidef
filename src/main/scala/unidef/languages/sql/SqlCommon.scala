@@ -20,27 +20,23 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
 
   case object KeyOid extends KeywordBoolean {
     def get: TyInteger =
-      TyInteger(BitSize.B32, signed = false).setValue(KeyOid, true)
+      TyIntegerImpl(Some(BitSize.B32), Some(false)).setValue(KeyOid, true)
   }
 
   def convertReal(ty: TyReal): String = ty match {
-    case TyDecimal(Some(precision), Some(scale)) => s"decimal($precision, $scale)"
-    case TyDecimal(None, None) => s"decimal"
-    case TyFloat(BitSize.B32) => "real"
-    case TyFloat(BitSize.B64) => "double precision"
+    case x: TyDecimal if x.getPrecision.isDefined && x.getScale.isDefined =>
+      s"decimal(${x.getPrecision.get}, ${x.getScale.get})"
+    case _: TyDecimal => s"decimal"
+    case x: TyFloat if x.getBitSize.contains(BitSize.B32) => "real"
+    case x: TyFloat if x.getBitSize.contains(BitSize.B64) => "double precision"
 
   }
 
-  def convertInt(ty: TyInteger): String = ty match {
-    case ty if ty.getValue(KeyOid).contains(true) => "oid"
-    case _ =>
-      ty.getBitSize match {
-        case Some(BitSize.B16) => "smallint"
-        case Some(BitSize.B64) => "bigint"
-        case Some(x) if x != BitSize.B32 => s"integer($x)"
-        case _ => "integer"
-
-      }
+  def convertInt(ty: TyInteger): String = ty.getBitSize match {
+    case Some(BitSize.B16) => "smallint"
+    case Some(BitSize.B64) => "bigint"
+    case Some(x) if x != BitSize.B32 => s"integer($x)"
+    case _ => "integer"
   }
 
   def convertType(ty: TyNode): String = ty match {
@@ -50,13 +46,14 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
 
   override def encode(ty: TyNode): Option[String] = ty match {
     case t: TyReal => Some(convertReal(t))
+    case t: TyInteger with Extendable if t.getValue(KeyOid).contains(true) => Some("oid")
     case t: TyInteger => Some(convertInt(t))
     case t: TyTimeStamp if t.getValue(KeyHasTimeZone).contains(true) =>
       Some("timestamp with time zone")
     // case TimeStampType(_, false) => "timestamp without time zone"
     case TyTimeStamp() => Some("timestamp")
-    case TyString => Some("text")
-    case TyStruct() => Some("jsonb")
+    case _: TyString => Some("text")
+    case _: TyStruct => Some("jsonb")
     case x @ TyEnum(_) if x.getValue(KeySimpleEnum).contains(false) => Some("jsonb")
     case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
       x.getValue(KeyName)
@@ -65,26 +62,26 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case t: TyJsonAny if !t.getValue(KeyIsBinary).contains(false) => Some("jsonb")
     case t: TyJsonAny => Some("json")
     case TyUnit => Some("void")
-    case TyBoolean => Some("boolean")
-    case TyByteArray => Some("bytea")
+    case _: TyBoolean => Some("boolean")
+    case _: TyByteArray => Some("bytea")
     case TyInet => Some("inet")
     case TyUuid => Some("uuid")
-    case TyRecord => Some("record")
-    case x: TyListOf => encode(x.getContentValue.get).map(x => s"${x}[]")
+    // case TyRecord => Some("record")
+    case t: TyList => encode(t.getContent.get).map(x => s"${x}[]")
     case _ => None
   }
 
   override def decode(ty: String): Option[TyNode] = {
     if (ty.endsWith("[]")) {
-      return decode(ty.dropRight(2)).map(TyList.apply)
+      return decode(ty.dropRight(2)).map(x => TyListImpl(Some(x)))
     }
     ty match {
-      case "bigint" | "bigserial" => Some(TyInteger(BitSize.B64))
-      case "integer" | "int" | "serial" => Some(TyInteger(BitSize.B32))
-      case "smallint" => Some(TyInteger(BitSize.B16))
-      case "double precision" => Some(TyFloat(BitSize.B64))
-      case "real" | "float" => Some(TyFloat(BitSize.B32))
-      case "decimal" | "numeric" => Some(TyDecimal(None, None))
+      case "bigint" | "bigserial" => Some(TyIntegerImpl(Some(BitSize.B64), Some(true)))
+      case "integer" | "int" | "serial" => Some(TyIntegerImpl(Some(BitSize.B32), Some(true)))
+      case "smallint" => Some(TyIntegerImpl(Some(BitSize.B16), Some(true)))
+      case "double precision" => Some(TyFloatImpl(Some(BitSize.B64)))
+      case "real" | "float" => Some(TyFloatImpl(Some(BitSize.B32)))
+      case "decimal" | "numeric" => Some(TyDecimalImpl(None, None))
       case "timestamp" | "timestamp without time zone" =>
         Some(
           TyTimeStamp()
@@ -97,16 +94,16 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
             .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
             .setValue(KeyHasTimeZone, true)
         )
-      case "text" | "varchar" => Some(TyString)
+      case "text" | "varchar" => Some(TyStringImpl())
       case "jsonb" => Some(TyJsonAny().setValue(KeyIsBinary, true))
       case "json" => Some(TyJsonAny().setValue(KeyIsBinary, false))
       case "void" => Some(TyUnit)
       case "oid" => Some(KeyOid.get)
-      case "bool" | "boolean" => Some(TyBoolean)
-      case "bytea" => Some(TyByteArray)
+      case "bool" | "boolean" => Some(TyBooleanImpl())
+      case "bytea" => Some(TyByteArrayImpl())
       case "inet" => Some(TyInet)
       case "uuid" => Some(TyUuid)
-      case "record" => Some(TyRecord)
+      // case "record" => Some(TyRecord)
       case _ => None
     }
   }

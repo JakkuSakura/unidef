@@ -4,6 +4,7 @@ import unidef.languages.common.{
   AstClassDecl,
   AstFunctionDecl,
   AstTyped,
+  Extendable,
   ImportManager,
   TyEnum,
   TyStruct,
@@ -13,7 +14,7 @@ import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
 import unidef.languages.python.PythonCodeGen
 import unidef.languages.sql.{SqlCodeGen, SqlParser}
 import unidef.languages.yaml.YamlParser
-import unidef.utils.{VirtualFileSystem, FileUtils}
+import unidef.utils.{FileUtils, VirtualFileSystem}
 
 import java.io.PrintWriter
 
@@ -44,8 +45,8 @@ import java.io.PrintWriter
       case a @ AstClassDecl(name, fields, methods, derived) =>
         val code = sqlCodegen.generateTableDdl(a)
         fs.getWriterAt("AstClassDecl.txt").println(code)
-      case AstTyped(n) if n.isInstanceOf[TyStruct] =>
-        val struct = n.asInstanceOf[TyStruct]
+      case AstTyped(n) if n.isInstanceOf[TyStruct with Extendable] =>
+        val struct = n.asInstanceOf[TyStruct with Extendable]
         if (struct.getName.isDefined) {
           val code = sqlCodegen.generateTableDdl(struct)
           fs.getWriterAt("TyStruct.txt").println(code)

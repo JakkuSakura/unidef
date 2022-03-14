@@ -1,6 +1,6 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import unidef.languages.common.{TyInteger, TyNode, TypeDecoder}
+import unidef.languages.common.*
 import unidef.languages.python.PythonCommon
 
 object TestHelper {
@@ -13,7 +13,7 @@ object TestHelper {
 class TypeDecodeTest {
   @Test def python_decoder(): Unit = {
     def test(using TypeDecoder[String]): Unit = {
-      TestHelper.typeDecode("int", TyInteger())
+      TestHelper.typeDecode("int", TyIntegerImpl(Some(BitSize.Unlimited), Some(true)))
     }
     test(using PythonCommon())
   }

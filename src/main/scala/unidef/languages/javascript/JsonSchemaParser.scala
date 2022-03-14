@@ -27,13 +27,16 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         if (x.isString)
           jsonSchemaCommon.decodeOrThrow(x.asString.get)
         else
-          TyStruct().setValue(
-            KeyFields,
-            iterateOver(x, "name", "type")
-              .map { (name, json) =>
+          TyStructImpl(
+            None,
+            Some(
+              iterateOver(x, "name", "type").map { (name, json) =>
                 val ty = parse(Json.fromJsonObject(json))
                 TyField(name, ty)
-              }
+              }.toList
+            ),
+            None,
+            None
           )
       )
       .getOrElse(TyUnit)
@@ -53,7 +56,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
     node
   }
 
-  def parseStruct(value: JsonObject): TyClass = {
+  def parseStruct(value: JsonObject): TyStruct = {
     val fields =
       value("properties")
         .orElse(if (options.extendedGrammar) value("fields") else None)
@@ -68,8 +71,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         // TODO TyNamed or TyStruct?
         .getOrElse(Nil)
 
-    val node = TyStruct().setValue(KeyFields, fields)
-
+    val node = TyStructImpl(None, Some(fields.toList), None, None)
     collectExtKeys(value, extKeysForClassDecl.toList).foreach(node.setValue)
 
     node
@@ -185,18 +187,19 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           ).trySetValue(
             KeyReturn,
             value("int_enum").map(x =>
-              if (options.extendedGrammar && x.asBoolean.get) TyInteger(BitSize.B8)
-              else TyString
+              if (options.extendedGrammar && x.asBoolean.get)
+                TyIntegerImpl(Some(BitSize.B8), Some(true))
+              else TyStringImpl()
             )
           )
         } else {
           getString(value, "type") match {
             case "object" => parseStruct(value)
             case "array" if options.extendedGrammar =>
-              TyList(value("items").map(parse).getOrElse(TyAny))
+              TyListImpl(Some(value("items").map(parse).getOrElse(TyAny)))
             case "array" =>
               val items = getObject(value, "items")
-              TyList(parse(Json.fromJsonObject(items)))
+              TyListImpl(Some(parse(Json.fromJsonObject(items))))
             case "function" if options.extendedGrammar => parseFunction(value)
             case ty => jsonSchemaCommon.decodeOrThrow(ty)
           }

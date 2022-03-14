@@ -17,9 +17,7 @@ case class ScalaSchemaParser() {
   val common = JsonSchemaCommon(true)
 
   def collectFields(ty: TypeBuilder, extra: Seq[String]): Set[TyField] = {
-    ty.fields
-      .map((k, v) => TyField(k, v))
-      .toSet
+    ty.fields.toSet
   }
   def collectFields(types: Seq[TypeBuilder], extra: Seq[String]): Set[TyField] = {
     types
@@ -35,12 +33,12 @@ case class ScalaSchemaParser() {
     )
   }
   def generateScalaKeyObject(field: TyField): AstClassDecl = {
-    val traitName = "Key" + field.name.capitalize
+    val traitName = "Key" + TextTool.toPascalCase(field.name)
     val cls = field.value match {
       case _: TyInteger =>
         scalaField(traitName, "KeywordInt", Nil)
-      case TyString => scalaField(traitName, "KeywordString", Nil)
-      case TyBoolean => scalaField(traitName, "KeywordBoolean", Nil)
+      case _: TyString => scalaField(traitName, "KeywordString", Nil)
+      case _: TyBoolean => scalaField(traitName, "KeywordBoolean", Nil)
       case _ =>
         val scalaCommon = ScalaCommon()
         val valueType =
@@ -75,7 +73,7 @@ case class ScalaSchemaParser() {
           AstFunctionDecl(
             AstLiteralString("get" + TextTool.toPascalCase(k)),
             Nil,
-            TyOptional(v)
+            TyOptionalImpl(Some(v))
           )
         ),
       Seq(AstClassIdent("TyNode"))
@@ -94,14 +92,14 @@ case class ScalaSchemaParser() {
 
     AstClassDecl(
       AstLiteralString("Ty" + TextTool.toPascalCase(ty.name) + "Impl"),
-      fields.map(x => TyField(x.name, TyOptional(x.value))).toSeq,
+      fields.map(x => TyField(x.name, TyOptionalImpl(Some(x.value)))).toList,
       fields.toSeq
         .map(x => x.name -> x.value)
         .map((k, v) =>
           AstFunctionDecl(
             AstLiteralString("get" + TextTool.toPascalCase(k)),
             Nil,
-            TyOptional(v)
+            TyOptionalImpl(Some(v))
           ).setValue(KeyBody, AstRawCode(s"${k}"))
             .setValue(KeyOverride, true)
         ),
@@ -116,9 +114,9 @@ object ScalaSchemaParser {
         .field("content", TyNode),
       "string" -> TypeBuilder("string"),
       "enum" -> TypeBuilder("enum")
-        .field("variants", TyList(TyString)),
+        .field("variants", TyListImpl(Some(TyStringImpl()))),
       "tuple" -> TypeBuilder("tuple")
-        .field("values", TyList(TyNode)),
+        .field("values", TyListImpl(Some(TyNode))),
       "option" -> TypeBuilder("optional")
         .field("content", TyNode),
       "result" -> TypeBuilder("result")
@@ -127,22 +125,23 @@ object ScalaSchemaParser {
       "numeric" -> TypeBuilder("numeric"),
       "integer" -> TypeBuilder("integer")
         .field("bit_size", TyNamed("bit_size"))
-        .field("sized", TyBoolean)
+        .field("sized", TyBooleanImpl())
         .is(TyNamed("numeric")),
       "real" -> TypeBuilder("real")
         .is(TyNamed("numeric")),
       "decimal" -> TypeBuilder("decimal")
-        .field("precision", TyInteger())
-        .field("scale", TyInteger())
+        .field("precision", TyIntegerImpl(None, None))
+        .field("scale", TyIntegerImpl(None, None))
         .is(TyNamed("real")),
       "float" -> TypeBuilder("float")
-        .field("bis_size", TyNamed("bit_size"))
+        .field("bit_size", TyNamed("bit_size"))
         .is(TyNamed("real")),
       "class" -> TypeBuilder("class"),
       "struct" -> TypeBuilder("struct")
-        .field("fields", TyList(TyNode))
-        .field("derives", TyList(TyString))
-        .field("attributes", TyList(TyString))
+        .field("name", TyStringImpl())
+        .field("fields", TyListImpl(Some(TyNamed("TyField"))))
+        .field("derives", TyListImpl(Some(TyStringImpl())))
+        .field("attributes", TyListImpl(Some(TyStringImpl())))
         .is(TyNamed("class")),
       "object" -> TypeBuilder("object"),
       "dict" -> TypeBuilder("map")
@@ -152,9 +151,10 @@ object ScalaSchemaParser {
         .field("content", TyNode),
       "byte" -> TypeBuilder("set")
         .field("content", TyNode)
-        .is(TyInteger(BitSize.B8, false)),
+        .is(TyIntegerImpl(Some(BitSize.B8), Some(false))),
       "byte_array" -> TypeBuilder("byte_array")
-        .is(TyList(TyInteger(BitSize.B8, false)))
+        .is(TyListImpl(Some(TyIntegerImpl(Some(BitSize.B8), Some(false))))),
+      "boolean" -> TypeBuilder("boolean")
     )
 
   def main(args: Array[String]): Unit = {

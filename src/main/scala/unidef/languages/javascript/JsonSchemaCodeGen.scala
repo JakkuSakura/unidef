@@ -23,7 +23,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): String = {
-    val struct = TyStruct().setValue(KeyFields, func.parameters)
+    val struct = TyStructImpl(None, Some(func.parameters), None, None)
     struct.setValue(KeyRequired, true)
     struct.setValue(KeyAdditionalProperties, false)
     struct.setValue(KeyIsMethodParameters, true)
@@ -40,14 +40,14 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   }
 
   override def encode(ty: TyNode): Option[Json] = ty match {
-    case TyString => Some(jsonObjectOf("string"))
+    case _: TyString => Some(jsonObjectOf("string"))
     case _: TyInteger =>
       Some(jsonObjectOf("integer"))
     case _: TyFloat =>
       Some(jsonObjectOf("number"))
     case _: TyNumeric =>
       Some(jsonObjectOf("number"))
-    case TyBoolean =>
+    case _: TyBoolean =>
       Some(jsonObjectOf("boolean"))
     case _: TyDateTime =>
       Some(jsonObjectOf("string", "format" -> Json.fromString("datetime")))
@@ -65,8 +65,8 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         )
       )
 
-    case TyList(ty) =>
-      Some(jsonObjectOf("array", "items" -> generateType(ty)))
+    case x: TyList =>
+      Some(jsonObjectOf("array", "items" -> generateType(x.getContent.get)))
 
     case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
       Some(
@@ -92,7 +92,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         )
       )
 
-    case x @ TyStruct() if x.getFields.isDefined =>
+    case x: TyStruct with Extendable if x.getFields.isDefined =>
       val naming = if (x.getValue(KeyIsMethodParameters).contains(true)) {
         options.naming.toFunctionParameterName
       } else {
@@ -122,7 +122,8 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           others.toSeq: _*
         )
       )
-    case TyJsonObject | TyStruct() => Some(jsonObjectOf("object"))
+    case TyJsonObject => Some(jsonObjectOf("object"))
+    case _: TyStruct => Some(jsonObjectOf("object"))
     case TyJsonAny() if options.useListForJsonAny =>
       Some(
         Json.fromValues(
@@ -133,7 +134,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       Some(Json.fromJsonObject(JsonObject.empty))
     case TyNamed(name) =>
       Some(jsonObjectOf("string", "name" -> Json.fromString(name)))
-    case TyByteArray =>
+    case _: TyByteArray =>
       Some(
         jsonObjectOf(
           "string",

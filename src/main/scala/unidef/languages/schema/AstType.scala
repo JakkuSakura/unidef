@@ -8,6 +8,7 @@ import unidef.languages.common.{
   AstLiteralInteger,
   AstNode,
   TyEnum,
+  TyField,
   TyNode
 }
 import unidef.utils.ParseCodeException
@@ -23,11 +24,11 @@ case class AstEnumDecl(e: TyEnum) extends AstDecl
 case class AstBuiltin(name: String) extends AstDecl
 
 class TypeBuilder(val name: String) {
-  val fields: mutable.Map[String, TyNode] = mutable.Map.empty
+  val fields: mutable.ArrayBuffer[TyField] = mutable.ArrayBuffer.empty
   val equivalent: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
 
   def field(name: String, ty: TyNode): TypeBuilder = {
-    fields += (name -> ty)
+    fields += TyField(name, ty)
     this
   }
 

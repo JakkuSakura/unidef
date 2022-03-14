@@ -83,11 +83,11 @@ object SqlParser {
           TyEnum(v.toSeq)
             .setValue(KeySchema, schema)
             .setValue(KeyName, name)
-            .setValue(KeyValue, TyString)
+            .setValue(KeyValue, TyStringImpl())
         case (enumName, v) =>
           TyEnum(v.toSeq)
             .setValue(KeyName, enumName)
-            .setValue(KeyValue, TyString)
+            .setValue(KeyValue, TyStringImpl())
       }
       .toSeq
   }
@@ -223,13 +223,13 @@ object SqlParser {
 
     val func = AstFunctionDecl(
       AstLiteralString(name),
-      inputs.toSeq,
+      inputs.toList,
       if (outputs.nonEmpty)
-        TyStruct().setValue(KeyFields, outputs.toSeq)
+        TyStructImpl(None, Some(outputs.toList), None, None)
       else if (outputOnly.isDefined)
         outputOnly.get
       else
-        TyStruct().setValue(KeyFields, Nil)
+        TyStructImpl(None, None, Some(Nil), None)
     ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
     func.setValue(KeyBody, AstRawCode(body).setValue(KeyLanguage, language))
     if (outputOnly.isEmpty)
@@ -245,7 +245,7 @@ object SqlParser {
     common
       .AstClassDecl(
         AstLiteralString(tbl.getTable.getName),
-        tbl.getColumnDefinitions.asScala.map(parseParseColumn).toSeq
+        tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList
       )
       .trySetValue(KeySchema, Option(tbl.getTable.getSchemaName))
   }
