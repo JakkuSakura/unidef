@@ -2,15 +2,7 @@ package unidef.languages.common
 
 import java.util.TimeZone
 
-/** This is a very generic type model
-  */
-trait TyTypeExpr {
-  def asTypeNode: TyNode
-}
-
-trait TyNode extends TyTypeExpr {
-  def asTypeNode: TyNode = this
-}
+trait TyNode
 
 case object Type extends TyNode
 case class TyApp(ty: TyNode, tyArgs: List[TyNode]) extends TyNode

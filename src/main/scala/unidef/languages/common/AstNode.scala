@@ -8,11 +8,9 @@ import io.circe.generic.semiauto._
   * languages It should expose minimal interface while keep its original information Rules:
   * everything is an expression
   */
-trait AstNode
+trait AstNode extends TyNode
 
-class AstStaticType(ty: TyNode) extends AstNode with TyTypeExpr {
-  override def asTypeNode: TyNode = ty
-}
+class AstStaticType(ty: TyNode) extends AstNode
 
 // Unit is the bottom type
 case object AstUnit extends AstStaticType(TyUnit)
@@ -60,7 +58,7 @@ case class AstLiteralDict(values: Seq[(AstNode, AstNode)]) extends AstNode
 case class AstLiteralStruct(values: Seq[(AstNode, AstNode)]) extends AstNode
 
 case class AstLiteralArray(values: Seq[AstNode]) extends AstNode
-case class AstLiteralOptional(value: Option[TyTypeExpr]) extends AstNode
+case class AstLiteralOptional(value: Option[AstNode]) extends AstNode
 case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBoolean)
 
 sealed trait AccessModifier
@@ -102,7 +100,6 @@ case class AstClassDecl(
     derived: Seq[AstClassIdent] = Nil
 ) extends Extendable
     with AstNode
-    with TyTypeExpr
     with TyClass
     with HasName
     with HasFields {
