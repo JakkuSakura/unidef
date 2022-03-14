@@ -4,7 +4,7 @@ import java.util.TimeZone
 
 trait TyNode
 
-case object Type extends TyNode
+case object TyNode extends TyNode
 case class TyApp(ty: TyNode, tyArgs: List[TyNode]) extends TyNode
 
 // everything is generic

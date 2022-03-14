@@ -11,7 +11,7 @@ import unidef.utils.{ParseCodeException, TextTool, TypeDecodeException, TypeEnco
 
 import java.io.PrintWriter
 import scala.collection.mutable
-
+@deprecated
 case class YamlSchemaParser() {
   val logger: Logger = Logger[this.type]
   val common = JsonSchemaCommon(true)

@@ -14,6 +14,7 @@ class ScalaCommon() extends TypeEncoder[String] {
       case TyAny => Some("Any")
       case TyList(t) => encode(t).map(x => s"List[${x}]")
       case TyNamed(name) => Some(TextTool.toPascalCase(name))
+      case TyNode => Some("TyNode")
       case _ => None
     }
 }
