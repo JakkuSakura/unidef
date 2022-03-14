@@ -38,7 +38,7 @@ case class ScalaSchemaParser() {
     val traitName = "Key" + field.name.capitalize
     val cls = field.value match {
       case _: TyInteger =>
-        scalaField(traitName, "KeywordInteger", Nil)
+        scalaField(traitName, "KeywordInt", Nil)
       case TyString => scalaField(traitName, "KeywordString", Nil)
       case TyBoolean => scalaField(traitName, "KeywordBoolean", Nil)
       case _ =>
@@ -116,7 +116,7 @@ object ScalaSchemaParser {
         .field("content", TyNode),
       "string" -> TypeBuilder("string"),
       "enum" -> TypeBuilder("enum")
-        .field("values", TyList(TyString)),
+        .field("variants", TyList(TyString)),
       "tuple" -> TypeBuilder("tuple")
         .field("values", TyList(TyNode)),
       "option" -> TypeBuilder("optional")
