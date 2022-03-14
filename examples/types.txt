@@ -2,7 +2,6 @@ type list(content: type);
 type string;
 type enum(variants: list(string));
 type tuple(types: list(type));
-type list(content: type);
 type option(content: type);
 type result(ok: type, err: type);
 type record;

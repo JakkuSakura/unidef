@@ -12,6 +12,9 @@ trait TyNode extends TyTypeExpr {
   def asTypeNode: TyNode = this
 }
 
+case object Type extends TyNode
+case class TyApp(ty: TyNode, tyArgs: List[TyNode]) extends TyNode
+
 // everything is generic
 trait TyTypeVar extends TyNode
 
