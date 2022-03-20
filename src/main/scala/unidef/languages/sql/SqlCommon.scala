@@ -28,8 +28,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       s"decimal(${x.getPrecision.get}, ${x.getScale.get})"
     case _: TyDecimal => s"decimal"
     case x: TyFloat if x.getBitSize.contains(BitSize.B32) => "real"
-    case x: TyFloat if x.getBitSize.contains(BitSize.B64) => "double precision"
-
+    case x: TyFloat if x.getBitSize.contains(BitSize.B64) => "float" // "double precision"
   }
 
   def convertInt(ty: TyInteger): String = ty.getBitSize match {
@@ -72,15 +71,13 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   }
 
   override def decode(ty: String): Option[TyNode] = {
-    if (ty.endsWith("[]")) {
-      return decode(ty.dropRight(2)).map(x => TyListImpl(Some(x)))
-    }
     ty match {
+      case s"$ty[]" => decode(ty).map(x => TyListImpl(Some(x)))
       case "bigint" | "bigserial" => Some(TyIntegerImpl(Some(BitSize.B64), Some(true)))
       case "integer" | "int" | "serial" => Some(TyIntegerImpl(Some(BitSize.B32), Some(true)))
       case "smallint" => Some(TyIntegerImpl(Some(BitSize.B16), Some(true)))
-      case "double precision" => Some(TyFloatImpl(Some(BitSize.B64)))
-      case "real" | "float" => Some(TyFloatImpl(Some(BitSize.B32)))
+      case "double precision" | "float" => Some(TyFloatImpl(Some(BitSize.B64)))
+      case "real" => Some(TyFloatImpl(Some(BitSize.B32)))
       case "decimal" | "numeric" => Some(TyDecimalImpl(None, None))
       case "timestamp" | "timestamp without time zone" =>
         Some(
