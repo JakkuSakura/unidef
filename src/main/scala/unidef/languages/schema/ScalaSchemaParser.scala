@@ -78,6 +78,13 @@ case class ScalaSchemaParser() {
         ),
       Seq(AstClassIdent("TyNode"))
         ++
+          ty.equivalent
+            .flatMap {
+              case TyNamed(x) => Some("Ty" + TextTool.toPascalCase(x))
+              case _ => None // TODO: support other IS
+            }
+            .map(x => AstClassIdent(x))
+          ++
           fields
             .map(x => x.name -> x.value)
             .map((k, v) => "Has" + TextTool.toPascalCase(k))

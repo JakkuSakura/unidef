@@ -10,11 +10,11 @@ trait HasSized extends TyNode {
   def getSized: Option[Boolean]
 }
 
-case class TyListImpl(content: Option[TyNode]) extends Extendable with TyList {
+trait TyDecimal extends TyNode with TyReal with HasPrecision with HasScale {
 
-  override def getContent: Option[TyNode] = {
-    content
-  }
+  def getPrecision: Option[Int]
+
+  def getScale: Option[Int]
 
 }
 
@@ -22,10 +22,6 @@ trait TyList extends TyNode with HasContent {
 
   def getContent: Option[TyNode]
 
-}
-
-trait HasName extends TyNode {
-  def getName: Option[String]
 }
 
 trait HasOk extends TyNode {
@@ -54,44 +50,16 @@ case object KeyValue extends Keyword {
   override type V = TyNode
 }
 
-trait TyStruct extends TyNode with HasName with HasFields with HasDerives with HasAttributes {
-
-  def getName: Option[String]
-
-  def getFields: Option[List[TyField]]
-
-  def getDerives: Option[List[String]]
-
-  def getAttributes: Option[List[String]]
-
-}
-
 case class TyObjectImpl() extends Extendable with TyObject {}
 
 case object KeySized extends KeywordBoolean {}
 
-trait TyDecimal extends TyNode with HasPrecision with HasScale {
-
-  def getPrecision: Option[Int]
-
-  def getScale: Option[Int]
-
+case object KeyAttributes extends Keyword {
+  override type V = List[String]
 }
 
 trait HasKey extends TyNode {
   def getKey: Option[TyNode]
-}
-
-trait TyInteger extends TyNode with HasBitSize with HasSized {
-
-  def getBitSize: Option[BitSize]
-
-  def getSized: Option[Boolean]
-
-}
-
-case object KeyAttributes extends Keyword {
-  override type V = List[String]
 }
 
 case object KeyOk extends Keyword {
@@ -102,6 +70,14 @@ trait HasValues extends TyNode {
   def getValues: Option[List[TyNode]]
 }
 
+trait TyInteger extends TyNode with TyNumeric with HasBitSize with HasSized {
+
+  def getBitSize: Option[BitSize]
+
+  def getSized: Option[Boolean]
+
+}
+
 case object KeyBitSize extends Keyword {
   override type V = BitSize
 }
@@ -109,8 +85,6 @@ case object KeyBitSize extends Keyword {
 trait HasAttributes extends TyNode {
   def getAttributes: Option[List[String]]
 }
-
-trait TyReal extends TyNode {}
 
 case class TyFloatImpl(bit_size: Option[BitSize]) extends Extendable with TyFloat {
 
@@ -234,13 +208,19 @@ trait TyMap extends TyNode with HasKey with HasValue {
 
 }
 
-case class TyStringImpl() extends Extendable with TyString {}
-
 //trait TyEnum extends TyNode with HasVariants {
 //
 //  def getVariants: Option[List[String]]
 //
 //}
+
+trait TyFloat extends TyNode with TyReal with HasBitSize {
+
+  def getBitSize: Option[BitSize]
+
+}
+
+case class TyStringImpl() extends Extendable with TyString {}
 
 case object KeyErr extends Keyword {
   override type V = TyNode
@@ -262,6 +242,18 @@ case class TySetImpl(content: Option[TyNode]) extends Extendable with TySet {
 
 case object KeyName extends KeywordString {}
 
+trait TyRecord extends TyNode {}
+
+case class TyRecordImpl() extends Extendable with TyRecord {}
+
+case class TyListImpl(content: Option[TyNode]) extends Extendable with TyList {
+
+  override def getContent: Option[TyNode] = {
+    content
+  }
+
+}
+
 case class TyClassImpl() extends Extendable with TyClass {}
 
 trait HasDerives extends TyNode {
@@ -270,12 +262,6 @@ trait HasDerives extends TyNode {
 
 trait HasErr extends TyNode {
   def getErr: Option[TyNode]
-}
-
-trait TyFloat extends TyNode with HasBitSize {
-
-  def getBitSize: Option[BitSize]
-
 }
 
 case class TyRealImpl() extends Extendable with TyReal {}
@@ -318,11 +304,35 @@ trait HasPrecision extends TyNode {
   def getPrecision: Option[Int]
 }
 
+trait TyReal extends TyNode with TyNumeric {}
+
+trait HasName extends TyNode {
+  def getName: Option[String]
+}
+
 trait HasVariants extends TyNode {
   def getVariants: Option[List[String]]
 }
 
 case class TyNumericImpl() extends Extendable with TyNumeric {}
+
+trait TyStruct
+    extends TyNode
+    with TyClass
+    with HasName
+    with HasFields
+    with HasDerives
+    with HasAttributes {
+
+  def getName: Option[String]
+
+  def getFields: Option[List[TyField]]
+
+  def getDerives: Option[List[String]]
+
+  def getAttributes: Option[List[String]]
+
+}
 
 trait HasValue extends TyNode {
   def getValue: Option[TyNode]
@@ -345,6 +355,3 @@ case class TyMapImpl(key: Option[TyNode], value: Option[TyNode]) extends Extenda
   }
 
 }
-trait TyRecord extends TyNode {}
-
-case class TyRecordImpl() extends Extendable with TyRecord {}
