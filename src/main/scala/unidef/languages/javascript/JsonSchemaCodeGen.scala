@@ -116,7 +116,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       if (x.getValue(KeyRequired).contains(true)) {
         others += "required" -> Json.fromValues(
           x.getFields.get
-            .filterNot(f => f.isInstanceOf[TyOptional])
+            .filterNot(f => f.value.isInstanceOf[TyOptional])
             .map(f => naming(f.name))
             .map(Json.fromString)
         )
