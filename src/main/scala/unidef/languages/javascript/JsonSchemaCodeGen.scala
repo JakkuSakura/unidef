@@ -66,6 +66,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       )
 
     case x: TyList =>
+      // TODO: support "items": []
       Some(jsonObjectOf("array", "items" -> generateType(x.getContent.get)))
 
     case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
@@ -130,13 +131,13 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       )
     case TyJsonObject => Some(jsonObjectOf("object"))
     case _: TyStruct => Some(jsonObjectOf("object"))
-    case TyJsonAny() if options.useListForJsonAny =>
+    case TyAny | TyJsonAny() if options.useListForJsonAny =>
       Some(
         Json.fromValues(
           Seq("number", "string", "boolean", "object", "array", "null").map(Json.fromString)
         )
       )
-    case TyJsonAny() if !options.useListForJsonAny =>
+    case TyAny | TyJsonAny() if !options.useListForJsonAny =>
       Some(Json.fromJsonObject(JsonObject.empty))
     case TyNamed(name) =>
       Some(jsonObjectOf("string", "name" -> Json.fromString(name)))
