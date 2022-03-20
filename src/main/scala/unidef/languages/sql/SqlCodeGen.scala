@@ -46,7 +46,7 @@ class SqlCodeGen(
 
     val returnType = func.returnType
     returnType match {
-      case /* FIXME: TyRecord |*/ _: TyStruct =>
+      case _: TyRecord | _: TyStruct =>
         context.put("table", true)
       case _ =>
         context.put("table", false)

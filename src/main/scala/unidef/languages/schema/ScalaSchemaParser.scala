@@ -154,7 +154,8 @@ object ScalaSchemaParser {
         .is(TyIntegerImpl(Some(BitSize.B8), Some(false))),
       "byte_array" -> TypeBuilder("byte_array")
         .is(TyListImpl(Some(TyIntegerImpl(Some(BitSize.B8), Some(false))))),
-      "boolean" -> TypeBuilder("boolean")
+      "boolean" -> TypeBuilder("boolean"),
+      "record" -> TypeBuilder("record")
     )
 
   def main(args: Array[String]): Unit = {

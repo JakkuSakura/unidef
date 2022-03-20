@@ -345,3 +345,6 @@ case class TyMapImpl(key: Option[TyNode], value: Option[TyNode]) extends Extenda
   }
 
 }
+trait TyRecord extends TyNode {}
+
+case class TyRecordImpl() extends Extendable with TyRecord {}

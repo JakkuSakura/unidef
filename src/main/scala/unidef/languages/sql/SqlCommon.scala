@@ -66,7 +66,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case _: TyByteArray => Some("bytea")
     case TyInet => Some("inet")
     case TyUuid => Some("uuid")
-    // case TyRecord => Some("record")
+    case _: TyRecord => Some("record")
     case t: TyList => encode(t.getContent.get).map(x => s"${x}[]")
     case _ => None
   }
@@ -103,7 +103,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       case "bytea" => Some(TyByteArrayImpl())
       case "inet" => Some(TyInet)
       case "uuid" => Some(TyUuid)
-      // case "record" => Some(TyRecord)
+      case "record" => Some(TyRecordImpl())
       case _ => None
     }
   }
