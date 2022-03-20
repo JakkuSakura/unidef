@@ -4,6 +4,7 @@ import unidef.languages.common.*
 
 class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
   override def decode(name: String): Option[TyNode] = name.toLowerCase match {
+    case s"$x?" if extended => decode(x).map(x => TyOptionalImpl(Some(x)))
     case "integer" if !extended =>
       Some(TyIntegerImpl(None, Some(true)))
     case "string" => Some(TyStringImpl())
