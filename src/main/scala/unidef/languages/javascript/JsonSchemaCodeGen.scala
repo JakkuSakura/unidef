@@ -97,7 +97,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       val naming = if (x.getValue(KeyIsMethodParameters).contains(true)) {
         options.naming.toFunctionParameterName
       } else {
-        options.naming.toClassName
+        options.naming.toFieldName
       }
       val others: mutable.Map[String, Json] = mutable.Map.empty
       others += "properties" -> Json.fromJsonObject(
