@@ -42,11 +42,11 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
           PythonCodeGenField(
             naming.toEnumKeyName(name),
             enm.getValue match {
-              case Some(x: TyString) => s"'${name}'"
+              case Some(x: TyString) => s"'$name'"
               case Some(_: TyInteger) => s"${code.getOrElse(counter)}"
               case None => s"'${naming.toEnumValueName(name)}'"
               case Some(t) =>
-                throw CodegenException(s"Does not support ${t} as enum value type")
+                throw CodegenException(s"Does not support $t as enum value type")
             },
             null
           )
@@ -65,11 +65,10 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
   def generateImports(imports: Seq[AstImport]): String = {
     imports
       .map {
-        case AstImportSingle(paths) => "import " + paths.mkString(".")
-        case AstImportMulti(path, objs) =>
-          "from " + path.mkString(".") + " import " + objs.mkString(", ")
-        case AstImportAs(path, obj, as) =>
-          "from " + path.mkString(".") + " import " + obj + " as " + as
+        case AstImportSimple(obj :+ x, y +: Nil) if obj.nonEmpty && x == y =>
+          s"from ${obj.mkString(".")} import $x"
+        case AstImportSimple(obj, use) if obj == use => s"import ${obj.mkString(".")}"
+        case AstImportSimple(obj, use) => s"import ${obj.mkString(".")} as ${use.mkString(".")}"
         case AstImportRaw(imports) =>
           imports
         case _ => ???

@@ -10,7 +10,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case x: TyOptional if x.getContent.isDefined =>
         convertType(x.getContent.get, importManager)
           .map(s =>
-            importManager.foreach(_ += AstImport("typing", Seq("Optional")))
+            importManager.foreach(_ += AstImport("typing.Optional"))
             s"Optional[$s]"
           )
       case _: TyInteger => Some("int")
@@ -20,33 +20,33 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case t: TyStruct if t.getName.isDefined =>
         Some(naming.toStructName(t.getName.get))
       case _: TyStruct =>
-        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
+        importManager.foreach(_ += AstImport("typing.Dict"))
         Some("Dict[str, Any]")
 
       case _: TyRecord =>
-        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
-        importManager.foreach(_ += AstImport("typing", Seq("List")))
+        importManager.foreach(_ += AstImport("typing.Dict"))
+        importManager.foreach(_ += AstImport("typing.List"))
         Some("List[Dict[str, Any]]")
 
       case TyDict(k, v) =>
-        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
+        importManager.foreach(_ += AstImport("typing.Dict"))
         (convertType(k, importManager), convertType(v, importManager)) match {
           case (Some(k), Some(v)) => Some(s"Dict[${}, ${}]")
           case _ => None
         }
 
       case l: TyList =>
-        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
+        importManager.foreach(_ += AstImport("typing.Dict"))
         convertType(l.getContent.getOrElse(TyAny), importManager).map(x => s"List[${x}]")
       case s: TySet =>
-        importManager.foreach(_ += AstImport("typing", Seq("Set")))
+        importManager.foreach(_ += AstImport("typing.Set"))
         convertType(s.getContent.getOrElse(TyAny), importManager).map(x => s"Set[${x}]")
       case TyJsonAny() =>
-        importManager.foreach(_ += AstImport("typing", Seq("Any")))
+        importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")
       case TyJsonObject =>
-        importManager.foreach(_ += AstImport("typing", Seq("Any")))
-        importManager.foreach(_ += AstImport("typing", Seq("Dict")))
+        importManager.foreach(_ += AstImport("typing.Any"))
+        importManager.foreach(_ += AstImport("typing.Dict"))
         Some("Dict[str, Any]")
       case TyUnit => Some("None")
       case TyTimeStamp() =>
@@ -63,7 +63,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case TyEnum(_) =>
         Some("str") // TODO: use solid enum if possible
       case TyAny =>
-        importManager.foreach(_ += AstImport("typing", Seq("Any")))
+        importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")
       case _ => None
     }
