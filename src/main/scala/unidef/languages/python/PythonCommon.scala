@@ -7,6 +7,12 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
     with TypeDecoder[String] {
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =
     node match {
+      case x: TyOptional if x.getContent.isDefined =>
+        convertType(x.getContent.get, importManager)
+          .map(s =>
+            importManager.foreach(_ += AstImport("typing", Seq("Optional")))
+            s"Optional[$s]"
+          )
       case _: TyInteger => Some("int")
       case _: TyReal => Some("float")
       case _: TyString => Some("str")
