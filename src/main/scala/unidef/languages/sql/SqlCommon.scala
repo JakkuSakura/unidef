@@ -44,6 +44,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   }
 
   override def encode(ty: TyNode): Option[String] = ty match {
+    case t: TyOptional if t.getContent.isDefined => encode(t.getContent.get).map(s => s"$s = NULL")
     case t: TyReal => Some(convertReal(t))
     case t: TyInteger with Extendable if t.getValue(KeyOid).contains(true) => Some("oid")
     case t: TyInteger => Some(convertInt(t))

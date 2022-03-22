@@ -1,3 +1,10 @@
+CREATE OR REPLACE FUNCTION func_default_value(foo integer = NULL)
+    RETURNS integer AS
+$$
+BEGIN
+    RETURN foo + 1;
+END
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION func_example(foo integer)
     RETURNS integer AS
 $$
@@ -59,7 +66,7 @@ CREATE OR REPLACE FUNCTION api.fun_get_recovery_question_data()
             (
                 "questionId" smallint,
                 "content"    varchar,
-                "category"   tbl.enum_recovery_question_category
+                "category"   integer
             )
     LANGUAGE plpgsql
 AS

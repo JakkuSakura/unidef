@@ -102,7 +102,7 @@ object SqlParser {
       .replaceAll("CREATE (UNIQUE)? INDEX(.|\\n)+?;", "")
   private def isEmpty(s: String): Boolean =
     s.replaceAll("--.+", "").replaceAll("\\s+", "").isEmpty
-  private def compactDot(args: Seq[String]): String = {
+  private def compactDot(args: Seq[String]): (String, String) = {
     val sb = new mutable.StringBuilder
     for (i <- args.indices) {
       if (i > 0)
@@ -110,13 +110,19 @@ object SqlParser {
           sb ++= " "
       sb ++= args(i)
     }
-    sb.toString().trim.replaceAll("\\s*=.+", "")
+    val result = sb.toString().trim
+    if (result.contains("=")) {
+      val parts = result.split("=")
+      (parts(0).trim, parts(1).trim)
+    } else {
+      (result, "")
+    }
   }
 
   private def parseParam(
       args: Seq[String]
   )(implicit resolver: TypeDecoder[String]): (Boolean, TyField) = {
-    // logger.info("parseParam: " + args.mkString(", "))
+    logger.info("parseParam: " + args.mkString(", "))
     var nameCursor = 0
     var typeCursor = 1
     val input = args.slice(0, 2).map(_.toUpperCase) match {
@@ -140,10 +146,13 @@ object SqlParser {
     }
     val name = args(nameCursor).replaceAll("\"", "")
 
-    val tyName = compactDot(args.slice(typeCursor, args.length))
+    val (tyName, default) = compactDot(args.slice(typeCursor, args.length))
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
-    (input, TyField(name, ty))
+    if (default == "NULL")
+      (input, TyField(name, TyOptionalImpl(Some(ty))))
+    else
+      (input, TyField(name, ty))
   }
 
   def parseCreateFunction(
@@ -212,7 +221,7 @@ object SqlParser {
             }
           }
         case ty =>
-          val ret = compactDot(ty)
+          val (ret, _) = compactDot(ty)
           outputOnly = Some(
             lookUpOrParseType(ret)
               .getOrElse(throw TypeDecodeException(s"Failed to parse type", ret))
