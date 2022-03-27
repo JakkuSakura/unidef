@@ -131,13 +131,13 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       )
     case TyJsonObject => Some(jsonObjectOf("object"))
     case _: TyStruct => Some(jsonObjectOf("object"))
-    case TyAny | TyJsonAny() if options.useListForJsonAny =>
+    case _: TyAny | TyJsonAny() if options.useListForJsonAny =>
       Some(
         Json.fromValues(
           Seq("number", "string", "boolean", "object", "array", "null").map(Json.fromString)
         )
       )
-    case TyAny | TyJsonAny() if !options.useListForJsonAny =>
+    case _: TyAny | TyJsonAny() if !options.useListForJsonAny =>
       Some(Json.fromJsonObject(JsonObject.empty))
     case TyNamed(name) =>
       Some(jsonObjectOf("string", "name" -> Json.fromString(name)))
@@ -148,8 +148,8 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           (if (options.useCustomFormat) "format" else "$comment") -> Json.fromString("bytes")
         )
       )
-    case TyInet => Some(jsonObjectOf("string", "format" -> Json.fromString("hostname")))
-    case TyUuid => Some(jsonObjectOf("string", "format" -> Json.fromString("uuid")))
+    case _: TyInet => Some(jsonObjectOf("string", "format" -> Json.fromString("hostname")))
+    case _: TyUuid => Some(jsonObjectOf("string", "format" -> Json.fromString("uuid")))
     case _ => None
   }
   def generateType(ty: TyNode): Json = encodeOrThrow(ty, "json schema")

@@ -13,13 +13,13 @@ trait AstNode extends TyNode
 class AstStaticType(ty: TyNode) extends AstNode
 
 // Unit is the bottom type
-case object AstUnit extends AstStaticType(TyUnit)
+case object AstUnit extends AstStaticType(TyUnitImpl())
 
 // Null is a null reference/pointer
-case object AstNull extends AstStaticType(TyNull)
+case object AstNull extends AstStaticType(TyNullImpl())
 
 // Undefined
-case object AstUndefined extends AstStaticType(TyUndefined)
+case object AstUndefined extends AstStaticType(TyUndefinedImpl())
 
 case class AstTyped(ty: TyNode) extends AstStaticType(ty)
 
@@ -46,7 +46,7 @@ class AstLiteral(ty: TyNode) extends AstStaticType(ty)
 
 case class AstLiteralString(value: String) extends AstLiteral(TyStringImpl())
 
-case class AstLiteralChar(value: Char) extends AstLiteral(TyChar)
+case class AstLiteralChar(value: Char) extends AstLiteral(TyCharImpl())
 case class AstLiteralInteger(value: Int) extends AstLiteral(TyIntegerImpl(Some(BitSize.B32), None))
 
 case class AstLiteralFloat(value: Double) extends AstLiteral(TyFloatImpl(Some(BitSize.B64)))

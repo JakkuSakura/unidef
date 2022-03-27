@@ -16,10 +16,10 @@ case class ScalaSchemaParser() {
   val logger: Logger = Logger[this.type]
   val common = JsonSchemaCommon(true)
 
-  def collectFields(ty: TypeBuilder, extra: Seq[String]): Set[TyField] = {
+  def collectFields(ty: Type, extra: Seq[String]): Set[TyField] = {
     ty.fields.toSet
   }
-  def collectFields(types: Seq[TypeBuilder], extra: Seq[String]): Set[TyField] = {
+  def collectFields(types: Seq[Type], extra: Seq[String]): Set[TyField] = {
     types
       .flatMap(x => collectFields(x, extra))
       .toSet
@@ -60,7 +60,7 @@ case class ScalaSchemaParser() {
       Seq(s"def get${TextTool.toPascalCase(field.name)}: Option[${valueType}]")
     ).setValue(KeyClassType, "trait")
   }
-  def generateScalaCompoundTrait(ty: TypeBuilder, extra: Seq[String]): AstClassDecl = {
+  def generateScalaCompoundTrait(ty: Type, extra: Seq[String]): AstClassDecl = {
     val scalaCommon = ScalaCommon()
     val fields = collectFields(ty, extra)
 
@@ -93,7 +93,7 @@ case class ScalaSchemaParser() {
     ).setValue(KeyClassType, "trait")
   }
 
-  def generateScalaCaseClass(ty: TypeBuilder, extra: Seq[String]): AstClassDecl = {
+  def generateScalaCaseClass(ty: Type, extra: Seq[String]): AstClassDecl = {
     val scalaCommon = ScalaCommon()
     val fields = collectFields(ty, extra)
 
@@ -115,55 +115,63 @@ case class ScalaSchemaParser() {
   }
 }
 object ScalaSchemaParser {
-  def getTypes: Map[String, TypeBuilder] =
-    Map(
-      "list" -> TypeBuilder("list")
+  def getTypes: Map[String, Type] =
+    Seq(
+      Type("list")
         .field("content", TyNode),
-      "string" -> TypeBuilder("string"),
-      "enum" -> TypeBuilder("enum")
-        .field("variants", TyListImpl(Some(TyStringImpl()))),
-      "tuple" -> TypeBuilder("tuple")
+      Type("string"),
+//      Type("enum")
+//        .field("variants", TyListImpl(Some(TyStringImpl()))),
+      Type("tuple")
         .field("values", TyListImpl(Some(TyNode))),
-      "option" -> TypeBuilder("optional")
+      Type("optional")
         .field("content", TyNode),
-      "result" -> TypeBuilder("result")
+      Type("result")
         .field("ok", TyNode)
         .field("err", TyNode),
-      "numeric" -> TypeBuilder("numeric"),
-      "integer" -> TypeBuilder("integer")
+      Type("numeric"),
+      Type("integer")
         .field("bit_size", TyNamed("bit_size"))
         .field("sized", TyBooleanImpl())
         .is(TyNamed("numeric")),
-      "real" -> TypeBuilder("real")
+      Type("real")
         .is(TyNamed("numeric")),
-      "decimal" -> TypeBuilder("decimal")
+      Type("decimal")
         .field("precision", TyIntegerImpl(None, None))
         .field("scale", TyIntegerImpl(None, None))
         .is(TyNamed("real")),
-      "float" -> TypeBuilder("float")
+      Type("float")
         .field("bit_size", TyNamed("bit_size"))
         .is(TyNamed("real")),
-      "class" -> TypeBuilder("class"),
-      "struct" -> TypeBuilder("struct")
+      Type("class"),
+      Type("struct")
         .field("name", TyStringImpl())
         .field("fields", TyListImpl(Some(TyNamed("TyField"))))
         .field("derives", TyListImpl(Some(TyStringImpl())))
         .field("attributes", TyListImpl(Some(TyStringImpl())))
         .is(TyNamed("class")),
-      "object" -> TypeBuilder("object"),
-      "dict" -> TypeBuilder("map")
+      Type("object"),
+      Type("map")
         .field("key", TyNode)
         .field("value", TyNode),
-      "set" -> TypeBuilder("set")
+      Type("set")
         .field("content", TyNode),
-      "byte" -> TypeBuilder("set")
+      Type("set")
         .field("content", TyNode)
         .is(TyIntegerImpl(Some(BitSize.B8), Some(false))),
-      "byte_array" -> TypeBuilder("byte_array")
+      Type("byte_array")
         .is(TyListImpl(Some(TyIntegerImpl(Some(BitSize.B8), Some(false))))),
-      "boolean" -> TypeBuilder("boolean"),
-      "record" -> TypeBuilder("record")
-    )
+      Type("boolean"),
+      Type("record"),
+      Type("null"),
+      Type("char"),
+      Type("any"),
+      Type("unit"),
+      Type("nothing"),
+      Type("undefined"),
+      Type("inet"),
+      Type("uuid")
+    ).map(x => x.name -> x).toMap
 
   def main(args: Array[String]): Unit = {
     val types = getTypes.values

@@ -15,24 +15,16 @@ import unidef.utils.ParseCodeException
 
 import scala.collection.mutable
 
-case class AstTypeRef(name: String) extends AstNode
-case class AstTypeApply(ty: AstTypeRef, args: Map[String, AstNode] = Map.empty) extends AstNode
-trait AstDecl extends AstNode
-
-case class AstTypeDecl(name: String, params: Map[String, AstTypeApply]) extends AstDecl {}
-case class AstEnumDecl(e: TyEnum) extends AstDecl
-case class AstBuiltin(name: String) extends AstDecl
-
-class TypeBuilder(val name: String) {
+class Type(val name: String) {
   val fields: mutable.ArrayBuffer[TyField] = mutable.ArrayBuffer.empty
   val equivalent: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
 
-  def field(name: String, ty: TyNode): TypeBuilder = {
+  def field(name: String, ty: TyNode): Type = {
     fields += TyField(name, ty)
     this
   }
 
-  def is(ty: TyNode): TypeBuilder = {
+  def is(ty: TyNode): Type = {
     equivalent += ty
     this
   }

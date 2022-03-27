@@ -50,20 +50,6 @@ case class TyJsonAny() extends Extendable with TyJson
 case object KeyIsBinary extends KeywordBoolean
 case object TyJsonObject extends TyJson // TyStruct(None)
 
-case object TyChar extends TyNode
-
-case object TyAny extends TyNode
-
-case object TyUnit extends TyNode
-
-case object TyNull extends TyNode
-case object TyNothing extends TyNode
-case object TyUnknown extends TyNode
-
-case object TyUndefined extends TyNode
-case object TyInet extends TyNode
-//TODO: ipv4/ipv6/ip/hostname/...
-case object TyUuid extends TyNode
 trait TyApplicable extends TyNode {
   def parameterType: TyNode
   def returnType: TyNode

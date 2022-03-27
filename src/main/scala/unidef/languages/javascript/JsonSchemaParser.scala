@@ -39,7 +39,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
             None
           )
       )
-      .getOrElse(TyUnit)
+      .getOrElse(TyUnitImpl())
 
     val node =
       common.AstFunctionDecl(AstLiteralString(name), parameters.toList, ret)
@@ -196,7 +196,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           getString(value, "type") match {
             case "object" => parseStruct(value)
             case "array" if options.extendedGrammar =>
-              TyListImpl(Some(value("items").map(parse).getOrElse(TyAny)))
+              TyListImpl(Some(value("items").map(parse).getOrElse(TyAnyImpl())))
             case "array" =>
               val items = getObject(value, "items")
               TyListImpl(Some(parse(Json.fromJsonObject(items))))

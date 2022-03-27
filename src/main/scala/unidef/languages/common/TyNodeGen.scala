@@ -1,22 +1,8 @@
 package unidef.languages.common
 
-trait HasFields extends TyNode {
-  def getFields: Option[List[TyField]]
-}
-
 trait TyObject extends TyNode {}
 
-trait HasSized extends TyNode {
-  def getSized: Option[Boolean]
-}
-
-trait TyDecimal extends TyNode with TyReal with HasPrecision with HasScale {
-
-  def getPrecision: Option[Int]
-
-  def getScale: Option[Int]
-
-}
+trait TyNull extends TyNode {}
 
 trait TyList extends TyNode with HasContent {
 
@@ -31,6 +17,14 @@ trait HasOk extends TyNode {
 trait TyBoolean extends TyNode {}
 
 trait TyString extends TyNode {}
+
+trait TyUuid extends TyNode {}
+
+trait HasFields extends TyNode {
+  def getFields: Option[List[TyField]]
+}
+
+trait TyNothing extends TyNode {}
 
 case object KeyDerives extends Keyword {
   override type V = List[String]
@@ -70,6 +64,8 @@ trait HasValues extends TyNode {
   def getValues: Option[List[TyNode]]
 }
 
+trait TyUnit extends TyNode {}
+
 trait TyInteger extends TyNode with TyNumeric with HasBitSize with HasSized {
 
   def getBitSize: Option[BitSize]
@@ -78,9 +74,13 @@ trait TyInteger extends TyNode with TyNumeric with HasBitSize with HasSized {
 
 }
 
+trait TyInet extends TyNode {}
+
 case object KeyBitSize extends Keyword {
   override type V = BitSize
 }
+
+case class TyNothingImpl() extends Extendable with TyNothing {}
 
 trait HasAttributes extends TyNode {
   def getAttributes: Option[List[String]]
@@ -94,19 +94,9 @@ case class TyFloatImpl(bit_size: Option[BitSize]) extends Extendable with TyFloa
 
 }
 
-//case class TyEnumImpl(variants: Option[List[String]]) extends Extendable with TyEnum {
-//
-//  override def getVariants: Option[List[String]] = {
-//    variants
-//  }
-//
-//}
+trait TyAny extends TyNode {}
 
 case object KeyScale extends KeywordInt {}
-
-case object KeyVariants extends Keyword {
-  override type V = List[String]
-}
 
 trait HasContent extends TyNode {
   def getContent: Option[TyNode]
@@ -192,6 +182,16 @@ case class TyResultImpl(ok: Option[TyNode], err: Option[TyNode]) extends Extenda
 
 }
 
+case class TyNullImpl() extends Extendable with TyNull {}
+
+case class TyUnitImpl() extends Extendable with TyUnit {}
+
+trait HasSized extends TyNode {
+  def getSized: Option[Boolean]
+}
+
+case class TyAnyImpl() extends Extendable with TyAny {}
+
 case class TyOptionalImpl(content: Option[TyNode]) extends Extendable with TyOptional {
 
   override def getContent: Option[TyNode] = {
@@ -199,6 +199,8 @@ case class TyOptionalImpl(content: Option[TyNode]) extends Extendable with TyOpt
   }
 
 }
+
+case class TyUndefinedImpl() extends Extendable with TyUndefined {}
 
 trait TyMap extends TyNode with HasKey with HasValue {
 
@@ -208,12 +210,6 @@ trait TyMap extends TyNode with HasKey with HasValue {
 
 }
 
-//trait TyEnum extends TyNode with HasVariants {
-//
-//  def getVariants: Option[List[String]]
-//
-//}
-
 trait TyFloat extends TyNode with TyReal with HasBitSize {
 
   def getBitSize: Option[BitSize]
@@ -221,6 +217,20 @@ trait TyFloat extends TyNode with TyReal with HasBitSize {
 }
 
 case class TyStringImpl() extends Extendable with TyString {}
+
+trait TyDecimal extends TyNode with TyReal with HasPrecision with HasScale {
+
+  def getPrecision: Option[Int]
+
+  def getScale: Option[Int]
+
+}
+
+trait TyUndefined extends TyNode {}
+
+case class TyInetImpl() extends Extendable with TyInet {}
+
+trait TyChar extends TyNode {}
 
 case object KeyErr extends Keyword {
   override type V = TyNode
@@ -304,14 +314,14 @@ trait HasPrecision extends TyNode {
   def getPrecision: Option[Int]
 }
 
+case class TyUuidImpl() extends Extendable with TyUuid {}
+
+case class TyCharImpl() extends Extendable with TyChar {}
+
 trait TyReal extends TyNode with TyNumeric {}
 
 trait HasName extends TyNode {
   def getName: Option[String]
-}
-
-trait HasVariants extends TyNode {
-  def getVariants: Option[List[String]]
 }
 
 case class TyNumericImpl() extends Extendable with TyNumeric {}

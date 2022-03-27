@@ -37,10 +37,10 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
 
       case l: TyList =>
         importManager.foreach(_ += AstImport("typing.Dict"))
-        convertType(l.getContent.getOrElse(TyAny), importManager).map(x => s"List[${x}]")
+        convertType(l.getContent.getOrElse(TyAnyImpl()), importManager).map(x => s"List[${x}]")
       case s: TySet =>
         importManager.foreach(_ += AstImport("typing.Set"))
-        convertType(s.getContent.getOrElse(TyAny), importManager).map(x => s"Set[${x}]")
+        convertType(s.getContent.getOrElse(TyAnyImpl()), importManager).map(x => s"Set[${x}]")
       case TyJsonAny() =>
         importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")
@@ -48,21 +48,21 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         importManager.foreach(_ += AstImport("typing.Any"))
         importManager.foreach(_ += AstImport("typing.Dict"))
         Some("Dict[str, Any]")
-      case TyUnit => Some("None")
+      case _: TyUnit => Some("None")
       case TyTimeStamp() =>
         importManager.foreach(_ += AstImport("datetime"))
         Some("datetime.datetime")
       case _: TyBoolean => Some("bool")
       case _: TyByteArray => Some("bytes")
-      case TyUuid =>
+      case _: TyUuid =>
         importManager.foreach(_ += AstImport("uuid"))
         Some("uuid.UUID")
-      case TyInet => Some("str") // FIXME: InetAddress
+      case _: TyInet => Some("str") // FIXME: InetAddress
       case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
         Some(naming.toClassName(x.getValue(KeyName).get))
       case TyEnum(_) =>
         Some("str") // TODO: use solid enum if possible
-      case TyAny =>
+      case _: TyAny =>
         importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")
       case _ => None
@@ -73,12 +73,12 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case "float" => Some(TyFloatImpl(Some(BitSize.Unlimited)))
       case "str" => Some(TyStringImpl())
       case "bool" => Some(TyBooleanImpl())
-      case "NoneType" | "None" => Some(TyUnit)
+      case "NoneType" | "None" => Some(TyUnitImpl())
       case "datetime.datetime" => Some(TyTimeStamp())
       case "Dict[str, Any]" => Some(TyJsonObject)
       case "List[Dict[str, Any]]" => Some(TyRecordImpl())
       case "bytes" => Some(TyByteArrayImpl())
-      case "uuid.UUID" | "UUID" => Some(TyUuid)
+      case "uuid.UUID" | "UUID" => Some(TyUuidImpl())
       case _ => None
     }
 

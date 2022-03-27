@@ -11,7 +11,7 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "boolean" => Some(TyBooleanImpl())
     case "number" => Some(TyNumericImpl())
     case "object" => Some(TyStructImpl(None, None, None, None))
-    case "null" => Some(TyNull)
+    case "null" => Some(TyNullImpl())
     case "int" | "i32" | "integer" if extended => Some(TyIntegerImpl(Some(BitSize.B32), Some(true)))
     case "uint" | "u32" if extended =>
       Some(TyIntegerImpl(Some(BitSize.B32), Some(false)))
@@ -29,13 +29,13 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "timestamptz" if extended =>
       Some(TyTimeStamp())
     // TODO really extended only?
-    case "array" | "list" if extended => Some(TyListImpl(Some(TyAny)))
-    case "option" | "optional" if extended => Some(TyOptionalImpl(Some(TyAny)))
+    case "array" | "list" if extended => Some(TyListImpl(Some(TyAnyImpl())))
+    case "option" | "optional" if extended => Some(TyOptionalImpl(Some(TyAnyImpl())))
     case "bytea" | "[u8]" if extended => Some(TyByteArrayImpl())
     case "bool" if extended => Some(TyBooleanImpl())
     case "dict" if extended => Some(TyStructImpl(None, None, None, None))
-    case "any" if extended => Some(TyAny)
-    case "void" | "unit" if extended => Some(TyUnit)
+    case "any" if extended => Some(TyAnyImpl())
+    case "void" | "unit" if extended => Some(TyUnitImpl())
     case _ => None
 
   }
