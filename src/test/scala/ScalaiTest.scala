@@ -4,10 +4,17 @@ import unidef.languages.common.*
 import unidef.languages.python.PythonCommon
 import unidef.scalai.ScalaiCompiler
 
+private object ScalaiTestHelper {
+  def compileAndLift(code: String): AstNode = {
+    val compiler = new ScalaiCompiler()
+    val lifted = compiler.compileAndLift(code)
+    println(lifted)
+    lifted
+  }
+}
 class ScalaiTest {
   @Test def test_hello_world(): Unit = {
-    val compiler = ScalaiCompiler()
-    val compiled = compiler.compileAndLift(
+    ScalaiTestHelper.compileAndLift(
       """
         |def main(): Unit = {
         |}
@@ -15,9 +22,7 @@ class ScalaiTest {
   }
 
   @Test def test_active_inlining(): Unit = {
-    val compiler = ScalaiCompiler()
-    // TODO: change to compile
-    val compiled = compiler.compileOnly(
+    ScalaiTestHelper.compileAndLift(
       """
         |import scala.io.StdIn.readInt
         |def foo(x: Int): Int = x * 2
@@ -27,9 +32,7 @@ class ScalaiTest {
         |""".stripMargin)
   }
   @Test def test_loop_unfolding(): Unit = {
-    val compiler = ScalaiCompiler()
-    // TODO: change to compile
-    val compiled = compiler.compileOnly(
+    ScalaiTestHelper.compileAndLift(
       """
         |def foo(xs: Seq[() => Int]): Unit = for(func <- xs) println(func)
         |def main(): Unit = {
@@ -43,9 +46,7 @@ class ScalaiTest {
   }
 
   @Test def test_specialization(): Unit = {
-    val compiler = ScalaiCompiler()
-    // TODO: change to compile
-    val compiled = compiler.compileOnly(
+    ScalaiTestHelper.compileAndLift(
       """
         |import scala.io.StdIn.readInt
         |@noinline
@@ -62,9 +63,7 @@ class ScalaiTest {
 
 
   def test_type_specialization1(): Unit = {
-    val compiler = ScalaiCompiler()
-    // TODO: change to compile
-    val compiled = compiler.compileOnly(
+    ScalaiTestHelper.compileAndLift(
       """
         |@noinline
         |def foo[T]() = {
@@ -83,9 +82,7 @@ class ScalaiTest {
   }
 
   @Test def test_type_specialization2(): Unit = {
-    val compiler = ScalaiCompiler()
-    // TODO: change to compile
-    val compiled = compiler.compileOnly(
+    ScalaiTestHelper.compileAndLift(
       """
         |type Type = Any
         |// This syntax is better

@@ -168,6 +168,7 @@ case object AstAnnotations extends AstNode with Keyword {
 case object AstComment extends AstNode with KeywordString {
   override def name: String = "comment"
 }
+case class AstProgram(statements: Seq[AstNode]) extends AstNode
 
 trait HasBody extends Extendable {
   def getBody: Option[AstNode] = getValue(KeyBody)
