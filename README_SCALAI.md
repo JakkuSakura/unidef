@@ -37,7 +37,7 @@ println({
 Unless the function is too big, inlining does not perform
 ## Loop unfolding
 ```scala
-def foo(xs: List[() => Int]): Int = for(func <- xs) println(func)
+def foo(xs: Seq[() => Int]): Unit = for(func <- xs) println(func)
 val x1 = () => 1
 val x2 = () => 2
 val x3 = () => 3

@@ -1,12 +1,14 @@
 package unidef.scalai
 
 import com.typesafe.scalalogging.Logger
+import unidef.languages.common.{AstNode, AstRawCode, AstUnit}
 
 import scala.quoted.*
 import scala.tasty.inspector.*
 
 class ScalaiTastyLifter extends Inspector {
   val logger = Logger[this.type]
+  def getAstNode: AstNode = AstUnit
   def inspect(using Quotes)(tastys: List[Tasty[quotes.type]]): Unit = {
     import quotes.reflect.*
     for (tasty <- tastys) {
