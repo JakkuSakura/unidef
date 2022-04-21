@@ -42,7 +42,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         fields += TyField(name, x)
     }
     fields += TyField("headers", TyConstTupleString(headers.toSeq))
-    fields += TyField("body", TyTupleImpl(Some(body_row.toList)))
+    fields += TyField("body", TyListImpl(Some(TyTupleImpl(Some(body_row.toList)))))
     // TODO: add header names and types
     TyStructImpl(None, Some(fields.toList), None, None)
   }
@@ -97,7 +97,14 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           )
         )
       case x: TyTuple =>
-        Some(jsonObjectOf("array", "items" -> Json.fromValues(x.getValues.get.map(generateType))))
+        Some(
+          jsonObjectOf(
+            "array",
+            "items" -> Json.fromValues(x.getValues.get.map(generateType)),
+            "minItems" -> Json.fromInt(x.getValues.get.size),
+            "maxItems" -> Json.fromInt(x.getValues.get.size)
+          )
+        )
 
       case x: TyList =>
         Some(jsonObjectOf("array", "items" -> generateType(x.getContent.get)))
