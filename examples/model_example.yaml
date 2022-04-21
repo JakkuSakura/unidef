@@ -114,3 +114,16 @@ fields:
     type: i64
   - name: close_t
     type: i64
+---
+type: object
+name: dataframe
+fields:
+  - name: foo
+    type: string
+
+  - name: bar
+    type: string[]
+
+  - name: baz
+    type: int[]
+dataframe: true

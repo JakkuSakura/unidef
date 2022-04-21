@@ -108,6 +108,9 @@ class VirtualFileSystem {
 }
 
 class FileList(openList: Seq[(String, OpenedFile)]) {
+  def flushFiles(): Unit = {
+    openList.foreach(f => f._2.writer.flush())
+  }
   def filterPath(predicate: String => Boolean): FileList = {
     FileList(openList.filter(x => predicate(x._1)))
   }
@@ -115,6 +118,7 @@ class FileList(openList: Seq[(String, OpenedFile)]) {
     openList.map(x => f(x._1))
   }
   def showAsString(writer: Writer): Unit = {
+    flushFiles()
     openList.foreach { (name, f) =>
       writer.write(s"====${name}====\n")
       val content = Files.readAllBytes(f.filePath)
@@ -124,6 +128,7 @@ class FileList(openList: Seq[(String, OpenedFile)]) {
     writer.flush()
   }
   def dumpAll(base: Path): Unit = {
+    flushFiles()
     openList.foreach { (name, f) =>
       val dest = base.resolve(name)
       if (dest.getParent != null)

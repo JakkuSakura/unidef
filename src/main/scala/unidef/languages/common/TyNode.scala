@@ -42,6 +42,8 @@ case class TyEnum(variants: Seq[TyVariant])
 case class TyField(name: String, value: TyNode) extends Extendable with TyNode
 
 case object KeyDataType extends KeywordBoolean
+// is row based dataframe type
+case object KeyDataframe extends KeywordBoolean
 
 case class TyDict(key: TyNode, value: TyNode) extends TyNode
 
@@ -78,6 +80,8 @@ case class TyReference(referee: TyNode) extends TyNode
 
 case class TyNamed(name: String) extends Extendable with TyNode
 
+case class TyConstTupleString(values: Seq[String]) extends TyNode
+
 case object Mutability extends KeywordBoolean
 
 // #[derive(Debug)] in Rust
@@ -89,3 +93,4 @@ case object KeyProperties extends KeywordOnly
 case object KeyType extends KeywordOnly
 
 case object KeySimpleEnum extends KeywordBoolean
+case object KeyComment extends KeywordString

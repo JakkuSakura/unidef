@@ -60,6 +60,11 @@ class Extendable(
     params += kv._1.name -> kv._2
     this
   }
+  
+  def copyExtended(other: Extendable): this.type = {
+    params ++= other.params
+    this
+  }
 }
 
 trait KeywordProvider {

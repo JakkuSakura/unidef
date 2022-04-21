@@ -21,13 +21,14 @@ import java.io.PrintWriter
 @main def main(filename: String): Unit = {
   val sqlCodegen = SqlCodeGen()
   val pyCodeGen = PythonCodeGen()
+  val json_schema = JsonSchemaCodeGen()
   val parser: JsonSchemaParser = JsonSchemaParser()
   parser.prepareForExtKeys(sqlCodegen)
   val yamlParser: YamlParser = YamlParser(parser)
   implicit val sqlResolver: TypeRegistry = TypeRegistry()
   val fs = new VirtualFileSystem()
   val fileContents = FileUtils.readFile(filename)
-  val parsed = if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
+  val parsed = Array.from(if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
     yamlParser.parseFile(fileContents)
   } else if (filename.endsWith(".sql")) {
     SqlParser.parse(fileContents)(sqlResolver)
@@ -36,12 +37,12 @@ import java.io.PrintWriter
     Seq(AstTyped(parsed))
   } else {
     throw new RuntimeException("Unsupported file type " + filename)
-  }
+  })
 
   val parsedWriter = fs.newWriterAt("parsed.txt")
-  parsedWriter.println(parsed)
-  for (ty <- parsed) {
-    ty match {
+  parsedWriter.println(parsed.mkString("\n"))
+  parsed
+    .foreach {
       case a @ AstClassDecl(name, fields, methods, derived) =>
         val code = sqlCodegen.generateTableDdl(a)
         fs.getWriterAt("AstClassDecl.txt").println(code)
@@ -51,6 +52,8 @@ import java.io.PrintWriter
           val code = sqlCodegen.generateTableDdl(struct)
           fs.getWriterAt("TyStruct.txt").println(code)
         }
+        val js = json_schema.generateType(struct)
+        fs.getWriterAt("JsonSchema.json").println(js.spaces2)
 
       case AstTyped(en: TyEnum) =>
         fs.getWriterAt("TyEnum.txt").println(en)
@@ -59,12 +62,11 @@ import java.io.PrintWriter
         fs.getWriterAt("AstFunctionDeclSqlCodeGen.txt").println(code)
 
         val importManager = ImportManager()
-        val code3 =
-          JsonSchemaCodeGen().generateFuncDecl(n)
-        fs.getWriterAt("AstFunctionDeclJsonSchemaCodeGen.txt").println(code3)
+        val js =
+          json_schema.generateFuncDecl(n)
+        fs.getWriterAt("JsonSchema.txt").println(js.spaces2)
 
     }
-  }
   fs.showAsString(new PrintWriter(System.out))
   fs.closeFiles()
 }
