@@ -25,6 +25,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   def generateFuncDecl(func: AstFunctionDecl): Json = {
     val struct = TyStructImpl(None, Some(func.parameters), None, None)
     struct.setValue(KeyIsMethodParameters, true)
+    struct.copyExtended(func)
     generateType(struct)
   }
 
