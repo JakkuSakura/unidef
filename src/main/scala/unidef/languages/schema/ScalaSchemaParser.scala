@@ -94,7 +94,6 @@ case class ScalaSchemaParser() {
   }
 
   def generateScalaCaseClass(ty: Type, extra: Seq[String]): AstClassDecl = {
-    val scalaCommon = ScalaCommon()
     val fields = collectFields(ty, extra)
 
     AstClassDecl(
@@ -117,9 +116,12 @@ case class ScalaSchemaParser() {
 object ScalaSchemaParser {
   def getTypes: Map[String, Type] =
     Seq(
-      Type("list")
-        .field("content", TyNode),
       Type("string"),
+      Type("field")
+        .field("name", TyStringImpl())
+        .field("value", TyNode),
+//      Type("list")
+//        .field("content", TyNode),
 //      Type("enum")
 //        .field("variants", TyListImpl(Some(TyStringImpl()))),
       Type("tuple")
