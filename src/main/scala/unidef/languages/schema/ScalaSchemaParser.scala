@@ -28,8 +28,8 @@ case class ScalaSchemaParser() {
     AstClassDecl(
       AstLiteralString(name),
       Nil,
-      methods.map(AstRawCode.apply),
-      Seq(AstClassIdent(derive))
+      methods.map(AstRawCode.apply).toList,
+      List(AstClassIdent(derive))
     )
   }
   def generateScalaKeyObject(field: TyField): AstClassDecl = {
@@ -75,8 +75,8 @@ case class ScalaSchemaParser() {
             Nil,
             TyOptionalImpl(Some(v))
           )
-        ),
-      Seq(AstClassIdent("TyNode"))
+        ).toList,
+      List(AstClassIdent("TyNode"))
         ++
           ty.equivalent
             .flatMap {
@@ -84,12 +84,13 @@ case class ScalaSchemaParser() {
               case _ => None // TODO: support other IS
             }
             .map(x => AstClassIdent(x))
+            .toList
           ++
           fields
             .map(x => x.name -> x.value)
             .map((k, v) => "Has" + TextTool.toPascalCase(k))
             .map(x => AstClassIdent(x))
-            .toSeq
+            .toList
     ).setValue(KeyClassType, "trait")
   }
 
@@ -108,8 +109,8 @@ case class ScalaSchemaParser() {
             TyOptionalImpl(Some(v))
           ).setValue(KeyBody, AstRawCode(s"${k}"))
             .setValue(KeyOverride, true)
-        ),
-      Seq(AstClassIdent("Extendable"), AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
+        ).toList,
+      List(AstClassIdent("Extendable"), AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
     )
   }
 }

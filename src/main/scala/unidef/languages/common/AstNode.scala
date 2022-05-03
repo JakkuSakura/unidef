@@ -23,7 +23,7 @@ case object AstUndefined extends AstStaticType(TyUndefinedImpl())
 
 case class AstTyped(ty: TyNode) extends AstStaticType(ty)
 
-case class AstBlock(nodes: Seq[AstNode], flatten: Boolean = false) extends AstNode
+case class AstBlock(nodes: List[AstNode], flatten: Boolean = false) extends AstNode
 
 case class AstStatement(node: AstNode) extends AstNode
 
@@ -53,11 +53,11 @@ case class AstLiteralFloat(value: Double) extends AstLiteral(TyFloatImpl(Some(Bi
 
 // TODO extends AstLiteral(TyFloat(BitSize.B32))
 // difference is from https://github.com/ron-rs/ron
-case class AstLiteralDict(values: Seq[(AstNode, AstNode)]) extends AstNode
+case class AstLiteralDict(values: List[(AstNode, AstNode)]) extends AstNode
 
-case class AstLiteralStruct(values: Seq[(AstNode, AstNode)]) extends AstNode
+case class AstLiteralStruct(values: List[(AstNode, AstNode)]) extends AstNode
 
-case class AstLiteralArray(values: Seq[AstNode]) extends AstNode
+case class AstLiteralArray(values: List[AstNode]) extends AstNode
 case class AstLiteralOptional(value: Option[AstNode]) extends AstNode
 case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBooleanImpl())
 
@@ -99,8 +99,8 @@ case class AstClassIdent(name: String) extends AstNode
 case class AstClassDecl(
     name: AstNode,
     fields: List[TyField],
-    methods: Seq[AstNode] = Nil,
-    derived: Seq[AstClassIdent] = Nil
+    methods: List[AstNode] = Nil,
+    derived: List[AstClassIdent] = Nil
 ) extends Extendable
     with AstNode
     with TyStruct {
@@ -135,7 +135,7 @@ object BinaryOperator {
 
 case class AstBinaryOperator(left: AstNode, right: AstNode, op: BinaryOperator) extends AstNode {
   def toFunctionApply: AstFunctionApply =
-    AstFunctionApply(AstFunctionIdent(op.toString), Seq(left, right), Map())
+    AstFunctionApply(AstFunctionIdent(op.toString), List(left, right), Map())
 
 }
 
@@ -143,10 +143,10 @@ case class AstFunctionIdent(name: String) extends AstNode
 
 case class AstFunctionApply(
     func: AstFunctionIdent,
-    args: Seq[AstNode],
+    args: List[AstNode],
     kwArgs: Map[String, AstNode],
-    applyArgs: Seq[AstNode] = Nil,
-    applyKwArgs: Seq[AstNode] = Nil
+    applyArgs: List[AstNode] = Nil,
+    applyKwArgs: List[AstNode] = Nil
 ) extends AstNode
 
 case class AstAwait(value: AstNode) extends AstNode
@@ -156,19 +156,19 @@ case class AstRawCode(raw: String) extends Extendable with AstNode
 case class AstAnnotation(value: AstNode) extends AstNode
 
 case object AstAnnotations extends AstNode with Keyword {
-  override type V = Seq[AstAnnotation]
+  override type V = List[AstAnnotation]
 
   override def name: String = "annotations"
   private val lsDecoder =
     deriveDecoder[List[String]]
       .map(x => x.map(y => AstAnnotation(AstRawCode(y))))
-  override def decoder: Option[Decoder[Seq[AstAnnotation]]] =
+  override def decoder: Option[Decoder[List[AstAnnotation]]] =
     Some(lsDecoder.map(_.toSeq))
 }
 case object AstComment extends AstNode with KeywordString {
   override def name: String = "comment"
 }
-case class AstProgram(statements: Seq[AstNode]) extends AstNode
+case class AstProgram(statements: List[AstNode]) extends AstNode
 
 trait HasBody extends Extendable {
   def getBody: Option[AstNode] = getValue(KeyBody)
