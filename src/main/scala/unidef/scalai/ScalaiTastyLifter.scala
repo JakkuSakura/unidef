@@ -6,24 +6,12 @@ import unidef.languages.common.*
 import scala.collection.mutable
 import scala.quoted.*
 import scala.tasty.inspector.*
+class ScalaiLifterImpl(using val quotes: Quotes) {
+  import quotes.reflect.*
 
-class ScalaiTastyLifter extends Inspector {
   val logger = Logger[this.type]
-  val stmts = mutable.ArrayBuffer[AstNode]()
-  def getAstNode: AstProgram = {
-    val ast = AstProgram(stmts.toList)
-    stmts.clear()
-    ast
-  }
-  def inspect(using Quotes)(tastys: List[Tasty[quotes.type]]): Unit = {
-    import quotes.reflect.*
-    for (tasty <- tastys) {
-      val tree = tasty.ast
-      stmts ++= liftPackageClause(tree.asInstanceOf[quotes.reflect.PackageClause])
-    }
-  }
-  def liftPackageClause(using Quotes)(tree: quotes.reflect.PackageClause): List[AstNode] = {
-    import quotes.reflect.*
+
+  def liftPackageClause(tree: PackageClause): List[AstNode] = {
     val stmts = mutable.ArrayBuffer[AstNode]()
 
     tree match {
@@ -34,22 +22,19 @@ class ScalaiTastyLifter extends Inspector {
     }
     stmts.toList
   }
-  def liftImport(using Quotes)(tree: quotes.reflect.Import): AstImport = {
-    import quotes.reflect.*
+  def liftImport(tree: Import): AstImport = {
     tree match {
       case Import(expr, List(name)) =>
         AstImport(expr.show + "." + name)
     }
   }
-  def liftValDef(using Quotes)(tree: quotes.reflect.ValDef): AstRawCode = {
-    import quotes.reflect.*
+  def liftValDef(tree: ValDef): AstRawCode = {
     tree match {
       case ValDef(name, tpt, rhs) =>
         AstRawCode(s"val $name: ${tpt.show} = ${rhs}")
     }
   }
-  def liftStmt(using Quotes)(tree: quotes.reflect.Statement): AstNode = {
-    import quotes.reflect.*
+  def liftStmt(tree: Statement): AstNode = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
       case i @ Import(_, _) => liftImport(i)
@@ -63,8 +48,7 @@ class ScalaiTastyLifter extends Inspector {
         AstRawCode(x.show)
     }
   }
-  def liftParameter(using Quotes)(tree: quotes.reflect.ValDef): TyField = {
-    import quotes.reflect.*
+  def liftParameter(tree: ValDef): TyField = {
     logger.debug(tree.toString)
 
     tree match {
@@ -74,35 +58,30 @@ class ScalaiTastyLifter extends Inspector {
     }
   }
   // TODO support currying
-  def extractParams(using Quotes)(params: List[quotes.reflect.ParamClause]):
-      (List[quotes.reflect.TypeDef], List[quotes.reflect.ValDef]) = {
+  def extractParams(params: List[ParamClause]):
+  (List[TypeDef], List[ValDef]) = {
     val (tyParams, dynParams) = params match {
       case Nil => (Nil, Nil)
-      case quotes.reflect.TypeParamClause(ts) :: Nil => (ts, Nil, Nil)
-      case quotes.reflect.TypeParamClause(ts) :: quotes.reflect.TermParamClause(pr) :: Nil => (ts, pr)
-      case quotes.reflect.TermParamClause(pr) :: Nil => (Nil, pr)
+      case TypeParamClause(ts) :: Nil => (ts, Nil, Nil)
+      case TypeParamClause(ts) :: TermParamClause(pr) :: Nil => (ts, pr)
+      case TermParamClause(pr) :: Nil => (Nil, pr)
       case _ => throw Exception(s"Illegal parameter list specification " + params)
     }
     (tyParams, dynParams)
   }
 
-  def liftType(using Quotes)(tree: quotes.reflect.TypeTree): TyNode = {
-    import quotes.reflect.*
+  def liftType(tree: TypeTree): TyNode = {
     // TODO
     TyAnyImpl()
   }
-  def liftMethodDef(using Quotes)(name: String, params: List[quotes.reflect.ParamClause], ty: quotes.reflect.TypeTree, term: Option[quotes.reflect.Term]): AstFunctionDecl = {
-    import quotes.reflect.*
+  def liftMethodDef(name: String, params: List[ParamClause], ty: TypeTree, term: Option[Term]): AstFunctionDecl = {
     val (tys, paramss) =  extractParams(params)
-
+    // TODO
     val retType = liftType(ty)
     val body = term.map(liftStmt)
     AstFunctionDecl(AstLiteralString(name), paramss.map(liftParameter), retType).trySetValue(KeyBody, body)
   }
-  def liftClassBodyStmt(using
-      Quotes
-  )(tree: quotes.reflect.Statement): Option[AstFunctionDecl] = {
-    import quotes.reflect.*
+  def liftClassBodyStmt(tree: Statement): Option[AstFunctionDecl] = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
       case DefDef(name, param, ty, term) =>
@@ -111,27 +90,22 @@ class ScalaiTastyLifter extends Inspector {
         None
     }
   }
-  def liftClassDefHeadFields(using Quotes)(tree: quotes.reflect.DefDef): List[TyField] = {
-    import quotes.reflect.*
+  def liftClassDefHeadFields(tree: DefDef): List[TyField] = {
     // TODO
     Nil
   }
-  def liftClassDefParents(using Quotes)(tree: List[quotes.reflect.Tree]): List[AstClassIdent] = {
-    import quotes.reflect.*
+  def liftClassDefParents(tree: List[Tree]): List[AstClassIdent] = {
     // TODO
     Nil
   }
 
-  def liftClassDef(using
-      Quotes
-  )(
-      name: String,
-      head: quotes.reflect.DefDef,
-      parents: List[quotes.reflect.Tree],
-      sefl: Option[quotes.reflect.ValDef],
-      body: List[quotes.reflect.Statement]
-  ): AstClassDecl = {
-    import quotes.reflect.*
+  def liftClassDef(
+                    name: String,
+                    head: DefDef,
+                    parents: List[Tree],
+                    sefl: Option[ValDef],
+                    body: List[Statement]
+                  ): AstClassDecl = {
     logger.debug("name " + name)
     logger.debug("head " + head)
     logger.debug("parents " + parents)
@@ -148,4 +122,20 @@ class ScalaiTastyLifter extends Inspector {
       derived
     )
   }
+}
+class ScalaiTastyLifter extends Inspector {
+  val stmts = mutable.ArrayBuffer[AstNode]()
+  def getAstNode: AstProgram = {
+    val ast = AstProgram(stmts.toList)
+    stmts.clear()
+    ast
+  }
+  def inspect(using Quotes)(tastys: List[Tasty[quotes.type]]): Unit = {
+    val lifter = ScalaiLifterImpl()
+    for (tasty <- tastys) {
+      val tree = tasty.ast
+      stmts ++= lifter.liftPackageClause(tree.asInstanceOf[lifter.quotes.reflect.PackageClause])
+    }
+  }
+
 }
