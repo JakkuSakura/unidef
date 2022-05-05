@@ -31,13 +31,9 @@ def liftImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): AstNode = {
   value
 }
 
-class AstNodeToExpr extends quoted.ToExpr[AstNode] {
-  def apply(x: AstNode)(using Quotes): Expr[AstNode] = ???
-  // TODO: serialize and deserialize
-}
 def liftQuotedImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): Expr[AstNode] = {
-  val toExpr = AstNodeToExpr()
-  toExpr(liftImpl(x))
+  given ToExpr[AstNode] = AstNodeToExpr
+  Expr(liftImpl(x))
 }
 
 def unliftImpl[T](x: AstNode)(using Quotes, quoted.Type[T]): Expr[T] = {

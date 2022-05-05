@@ -21,12 +21,12 @@ private object ScalaiTestHelper {
 
 }
 class ScalaiTest {
-  @Test def test_hello_world(): Unit = {
-    ScalaiTestHelper.lift {
-      def main(): Unit = {
-      }
-    }
-  }
+//  @Test def test_hello_world(): Unit = {
+//    ScalaiTestHelper.lift {
+//      def main(): Unit = {
+//      }
+//    }
+//  }
 
   @Test def test_active_inlining(): Unit = {
     ScalaiTestHelper.compileAndLift(
