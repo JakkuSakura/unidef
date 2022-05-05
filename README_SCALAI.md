@@ -19,7 +19,7 @@ https://internals.rust-lang.org/t/can-we-make-a-rusty-effect-system/11697
 
 - Some Rust ideas: Ref, MutRef
 
-## Active Inlining
+## Constant evaluation
 ```scala
 import scala.io.StdIn.readInt
 def foo(x: Int): Int = x * 2
@@ -28,10 +28,9 @@ println(foo(1) + foo(readInt()))
 gives
 ```scala
 import scala.io.StdIn.readInt
-println({
-  val v = readInt()
-  v * 2 + 2
-})
+def foo(x: Int): Int = x * 2
+println(2 + foo(readInt())) 
+
 ```
 
 Unless the function is too big, inlining does not perform
@@ -53,10 +52,8 @@ println(3)
 ## Specialization
 ```scala
 import scala.io.StdIn.readInt
-@noinline
 def foo(a: Int)(b: Int): Int = a + b
 foo(1)(readInt())
-@noinline
 def bar(a: Int, b: Int): Int = a + b 
 bar(2, readInt()) // auto currying and specialization
 bar(readInt(), 3)
@@ -72,20 +69,10 @@ bar_1(readInt())
 bar_2(readInt())
 ```
 ## Type specialization
+This is much like transparent inlining in scala3
 ```scala
-@noinline
-def foo[T]() = {
-  if (T == Boolean) {
-    true
-  } else {
-    "not a boolean"
-  }
-}
-foo[Boolean]
-foo[Int]
 class Type
 // This syntax is better
-@noinline
 def bar(t: Type) = {
   if (t == Boolean) {
     true
