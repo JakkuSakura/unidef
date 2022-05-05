@@ -23,14 +23,17 @@ class ScalaiCompiler {
     val path = compileOnly(code)
     val tasty = path.getAbsolutePath.replace(".scala", "$package.tasty")
     val tastyFiles = List(tasty)
-    val lifter = ScalaiTastyLifter()
+    val lifter = ScalaiTastyHelper()
     TastyInspector.inspectTastyFiles(tastyFiles)(lifter)
     lifter.getAstNode
   }
-  inline def lift[T](inline code: T): T = ${ liftImpl('code)  }
+  inline def lift[T](inline code: T): T = {
+    ${
+      liftAndUnlift('code)
+    }
+  }
 
 }
-
 
 object ScalaiCompiler {
   def main(args: Array[String]): Unit =

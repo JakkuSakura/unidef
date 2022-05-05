@@ -4,14 +4,14 @@ import com.typesafe.scalalogging.Logger
 import unidef.languages.common.*
 
 import scala.collection.mutable
-import scala.quoted.*
-import scala.tasty.inspector.*
+import scala.quoted.Quotes
+
 class ScalaiLifterImpl(using val quotes: Quotes) {
   import quotes.reflect.*
 
   val logger = Logger[this.type]
 
-  def liftTree(value: Tree): Tree = ???
+  def liftTree(value: Tree): AstNode = ???
 
   def liftPackageClause(tree: PackageClause): List[AstNode] = {
     val stmts = mutable.ArrayBuffer[AstNode]()
@@ -129,28 +129,4 @@ class ScalaiLifterImpl(using val quotes: Quotes) {
       derived
     )
   }
-}
-class ScalaiTastyLifter extends Inspector {
-  val stmts = mutable.ArrayBuffer[AstNode]()
-  def getAstNode: AstProgram = {
-    val ast = AstProgram(stmts.toList)
-    stmts.clear()
-    ast
-  }
-  def inspect(using Quotes)(tastys: List[Tasty[quotes.type]]): Unit = {
-    val lifter = ScalaiLifterImpl()
-    for (tasty <- tastys) {
-      val tree = tasty.ast
-      stmts ++= lifter.liftPackageClause(tree.asInstanceOf[lifter.quotes.reflect.PackageClause])
-    }
-  }
-
-}
-def liftImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): Expr[T] = {
-  import quotes.reflect.*
-  val tree: Term = x.asTerm
-  val lifter = ScalaiLifterImpl()
-  val value = lifter.liftTree(tree.asInstanceOf[lifter.quotes.reflect.Tree])
-  val expr: Expr[T] = tree.asExprOf[T]
-  expr
 }
