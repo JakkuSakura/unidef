@@ -31,6 +31,15 @@ def liftImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): AstNode = {
   value
 }
 
+class AstNodeToExpr extends quoted.ToExpr[AstNode] {
+  def apply(x: AstNode)(using Quotes): Expr[AstNode] = ???
+  // TODO: serialize and deserialize
+}
+def liftQuotedImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): Expr[AstNode] = {
+  val toExpr = AstNodeToExpr()
+  toExpr(liftImpl(x))
+}
+
 def unliftImpl[T](x: AstNode)(using Quotes, quoted.Type[T]): Expr[T] = {
   import quotes.reflect.*
   val unlifter = ScalaiUnlifterImpl()
@@ -39,7 +48,7 @@ def unliftImpl[T](x: AstNode)(using Quotes, quoted.Type[T]): Expr[T] = {
   value
 }
 
-def liftAndUnlift[T](x: Expr[T])(using Quotes, quoted.Type[T]): Expr[T] = {
+def liftAndUnliftImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): Expr[T] = {
   val ast = liftImpl(x)
   val unlifted = unliftImpl(ast)
   unlifted

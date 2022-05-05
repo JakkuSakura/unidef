@@ -11,14 +11,21 @@ private object ScalaiTestHelper {
     println(lifted)
     lifted
   }
+
+  inline def lift[T](inline code: T): AstNode = {
+    val compiler = new ScalaiCompiler()
+    val lifted = compiler.lift(code)
+    println(lifted)
+    lifted
+  }
+
 }
 class ScalaiTest {
   @Test def test_hello_world(): Unit = {
-    ScalaiTestHelper.compileAndLift(
-      """
-        |def main(): Unit = {
-        |}
-        |""".stripMargin)
+    ScalaiTestHelper.lift {
+      def main(): Unit = {
+      }
+    }
   }
 
   @Test def test_active_inlining(): Unit = {

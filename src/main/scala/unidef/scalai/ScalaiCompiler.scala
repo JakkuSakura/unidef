@@ -5,6 +5,7 @@ import unidef.utils.FileUtils
 
 import java.io.{File, FileWriter}
 import scala.io.Source
+import scala.quoted.{Expr, Quotes}
 import scala.tasty.inspector.TastyInspector
 
 class ScalaiCompiler {
@@ -27,12 +28,17 @@ class ScalaiCompiler {
     TastyInspector.inspectTastyFiles(tastyFiles)(lifter)
     lifter.getAstNode
   }
-  inline def lift[T](inline code: T): T = {
+  transparent inline def lift[T](inline code: T): AstNode = {
     ${
-      liftAndUnlift('code)
+      liftQuotedImpl('code)
     }
   }
 
+  transparent inline def liftandUnlift[T](inline code: T): T = {
+    ${
+      liftAndUnliftImpl('code)
+    }
+  }
 }
 
 object ScalaiCompiler {
