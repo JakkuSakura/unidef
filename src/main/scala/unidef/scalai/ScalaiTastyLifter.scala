@@ -11,6 +11,8 @@ class ScalaiLifterImpl(using val quotes: Quotes) {
 
   val logger = Logger[this.type]
 
+  def liftTree(value: Tree): Tree = ???
+
   def liftPackageClause(tree: PackageClause): List[AstNode] = {
     val stmts = mutable.ArrayBuffer[AstNode]()
 
@@ -58,8 +60,7 @@ class ScalaiLifterImpl(using val quotes: Quotes) {
     }
   }
   // TODO support currying
-  def extractParams(params: List[ParamClause]):
-  (List[TypeDef], List[ValDef]) = {
+  def extractParams(params: List[ParamClause]): (List[TypeDef], List[ValDef]) = {
     val (tyParams, dynParams) = params match {
       case Nil => (Nil, Nil)
       case TypeParamClause(ts) :: Nil => (ts, Nil, Nil)
@@ -74,12 +75,18 @@ class ScalaiLifterImpl(using val quotes: Quotes) {
     // TODO
     TyAnyImpl()
   }
-  def liftMethodDef(name: String, params: List[ParamClause], ty: TypeTree, term: Option[Term]): AstFunctionDecl = {
-    val (tys, paramss) =  extractParams(params)
+  def liftMethodDef(
+      name: String,
+      params: List[ParamClause],
+      ty: TypeTree,
+      term: Option[Term]
+  ): AstFunctionDecl = {
+    val (tys, paramss) = extractParams(params)
     // TODO
     val retType = liftType(ty)
     val body = term.map(liftStmt)
-    AstFunctionDecl(AstLiteralString(name), paramss.map(liftParameter), retType).trySetValue(KeyBody, body)
+    AstFunctionDecl(AstLiteralString(name), paramss.map(liftParameter), retType)
+      .trySetValue(KeyBody, body)
   }
   def liftClassBodyStmt(tree: Statement): Option[AstFunctionDecl] = {
     logger.debug(tree.show(using Printer.TreeStructure))
@@ -100,12 +107,12 @@ class ScalaiLifterImpl(using val quotes: Quotes) {
   }
 
   def liftClassDef(
-                    name: String,
-                    head: DefDef,
-                    parents: List[Tree],
-                    sefl: Option[ValDef],
-                    body: List[Statement]
-                  ): AstClassDecl = {
+      name: String,
+      head: DefDef,
+      parents: List[Tree],
+      sefl: Option[ValDef],
+      body: List[Statement]
+  ): AstClassDecl = {
     logger.debug("name " + name)
     logger.debug("head " + head)
     logger.debug("parents " + parents)
@@ -138,4 +145,12 @@ class ScalaiTastyLifter extends Inspector {
     }
   }
 
+}
+def liftImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): Expr[T] = {
+  import quotes.reflect.*
+  val tree: Term = x.asTerm
+  val lifter = ScalaiLifterImpl()
+  val value = lifter.liftTree(tree.asInstanceOf[lifter.quotes.reflect.Tree])
+  val expr: Expr[T] = tree.asExprOf[T]
+  expr
 }

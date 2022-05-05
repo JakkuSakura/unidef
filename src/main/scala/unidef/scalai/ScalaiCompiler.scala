@@ -27,6 +27,8 @@ class ScalaiCompiler {
     TastyInspector.inspectTastyFiles(tastyFiles)(lifter)
     lifter.getAstNode
   }
+  inline def lift[T](inline code: T): T = ${ liftImpl('code)  }
+
 }
 
 
