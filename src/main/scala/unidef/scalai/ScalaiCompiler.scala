@@ -34,7 +34,7 @@ class ScalaiCompiler {
     }
   }
 
-  transparent inline def liftandUnlift[T](inline code: T): T = {
+  transparent inline def liftAndUnlift[T](inline code: T): T = {
     ${
       liftAndUnliftImpl('code)
     }
