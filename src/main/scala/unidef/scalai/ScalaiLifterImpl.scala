@@ -11,8 +11,13 @@ class ScalaiLifterImpl(using val quotes: Quotes) {
 
   val logger = Logger[this.type]
 
-  def liftTree(value: Tree): AstNode = ???
+  def liftTree(tree: Tree): AstNode = {
+    logger.debug(tree.show(using Printer.TreeStructure))
+    tree match {
+      case Inlined(_, _, Literal(IntConstant(v))) => AstLiteralInteger(v)
 
+    }
+  }
   def liftPackageClause(tree: PackageClause): List[AstNode] = {
     val stmts = mutable.ArrayBuffer[AstNode]()
 

@@ -20,6 +20,7 @@ class AstNodeToExprImpl(using val quotes: Quotes) {
       case AstUnit => '{ AstUnit }
       case AstNull => '{ AstNull }
       case AstUndefined => '{ AstUndefined }
+      case AstLiteralInteger(v) => '{ AstLiteralInteger(${ Expr(v) }) }
       case AstTyped(typed) => '{ AstTyped(${ toExprType(typed) }) }
     }
   }

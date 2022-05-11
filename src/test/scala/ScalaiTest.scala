@@ -21,6 +21,14 @@ private object ScalaiTestHelper {
 
 }
 class ScalaiTest {
+  @Test def test_math(): Unit = {
+    ScalaiTestHelper.lift {
+      1
+    }
+    ScalaiTestHelper.lift {
+      1 + 1
+    }
+  }
 //  @Test def test_hello_world(): Unit = {
 //    ScalaiTestHelper.lift {
 //      def main(): Unit = {
