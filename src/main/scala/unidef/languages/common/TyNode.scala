@@ -2,9 +2,22 @@ package unidef.languages.common
 
 import java.util.TimeZone
 
+import scala.quoted.{Expr, Quotes}
+
 trait TyNode
 
-case object TyNode extends TyNode
+def exprOption[T](exp: Option[T])(using quotes: Quotes, toExpr: quoted.ToExpr[T], t: quoted.Type[T]): Expr[Option[T]] = {
+  import quotes.reflect.*
+  exp match
+    case Some(value) => '{ Some(${Expr(value)}) }
+    case None => '{None }
+}
+case object TyNode extends TyNode with quoted.ToExpr[TyNode] {
+  def apply(ty: TyNode)(using quotes: Quotes): Expr[TyNode] = {
+    import quotes.reflect.*
+    ???
+  }
+}
 case class TyApp(ty: TyNode, tyArgs: List[TyNode]) extends TyNode
 
 // everything is generic

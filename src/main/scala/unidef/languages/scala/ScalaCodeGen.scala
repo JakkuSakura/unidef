@@ -94,4 +94,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     )
     CodeGen.render(TEMPLATE_ENUM, context)
   }
+  def generateRaw(code: AstRawCode): String = {
+    code.raw
+  }
 }
