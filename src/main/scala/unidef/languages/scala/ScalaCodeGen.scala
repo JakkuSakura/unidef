@@ -6,6 +6,10 @@ import unidef.utils.{CodeGen, TextTool, TypeEncodeException}
 import scala.jdk.CollectionConverters.*
 
 class ScalaCodeGen(naming: NamingConvention) {
+  def renderMethod(override_a: String, name: String, params: String, ret: String, body: Option[String]): String = {
+    // TODO: replace velocity template engine
+    ???
+  }
   val TEMPLATE_METHOD: String =
     """
       |${override}def $name$params: $return#if($body) = {
