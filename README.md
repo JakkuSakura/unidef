@@ -87,3 +87,4 @@ I try to implement the tasty version to
 - [ ] Simple SVN for code generated files
 - [ ] Support most of what python version can do: Rust structs, FIX, sql ddl, python peewee/pydantic model, etc
 - [ ] Workflow: Generic AST + Extendable <=> Specific AST with static type <=> Source code
+- [ ] Deprecate Velocity with simple Scala interpolation
