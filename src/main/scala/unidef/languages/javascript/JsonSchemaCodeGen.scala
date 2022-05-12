@@ -35,10 +35,10 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     val body_row = mutable.ArrayBuffer[TyNode]()
 
     struct0.getFields.get.foreach {
-      case TyField(name, x: TyList) =>
+      case TyField(name, x: TyList, _) =>
         headers += name
         body_row += x.getContent.get
-      case TyField(name, x) =>
+      case TyField(name, x, _) =>
         fields += TyField(name, x)
     }
     fields += TyField("headers", TyConstTupleString(headers.toSeq))
@@ -75,7 +75,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
             "string",
             "format" -> Json.fromString("timestamp"),
             "unit" -> t
-              .getValue(KeyTimeUnit)
+              .timeUnit
               .map(_.toString)
               .map(Json.fromString)
               .getOrElse(Json.Null)
@@ -109,7 +109,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case x: TyList =>
         Some(jsonObjectOf("array", "items" -> generateType(x.getContent.get)))
 
-      case x @ TyEnum(variants) if x.getValue(KeyName).isDefined =>
+      case x @ TyEnum(variants, _) if x.getValue(KeyName).isDefined =>
         Some(
           Json.obj(
             "enum" -> Json
@@ -122,7 +122,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
             "name" -> Json.fromString(options.naming.toClassName(x.getValue(KeyName).get))
           )
         )
-      case _ @TyEnum(variants) =>
+      case _ @ TyEnum(variants, _) =>
         Some(
           Json.obj(
             "enum" -> Json
@@ -195,10 +195,10 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case _ => None
     }
     ty match {
-      case ty: Extendable if ty.getValue(KeyComment).isDefined =>
+      case ty: TyCommentable if ty.getComment.isDefined =>
         coded
           .flatMap(x => x.asObject)
-          .map(x => x.add("$comment", Json.fromString(ty.getValue(KeyComment).get)))
+          .map(x => x.add("$comment", Json.fromString(ty.getComment.get)))
           .map(Json.fromJsonObject)
       case _ => coded
     }

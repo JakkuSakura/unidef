@@ -1,7 +1,7 @@
 package unidef.languages.sql
 
 import com.typesafe.scalalogging.Logger
-import unidef.languages.common.*
+import unidef.languages.common.{TyTimeStamp, *}
 import unidef.languages.sql.{KeyNullable, KeyPrimary}
 import unidef.utils.TypeEncodeException
 
@@ -48,16 +48,16 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case t: TyReal => Some(convertReal(t))
     case t: TyInteger with Extendable if t.getValue(KeyOid).contains(true) => Some("oid")
     case t: TyInteger => Some(convertInt(t))
-    case t: TyTimeStamp if t.getValue(KeyHasTimeZone).contains(true) =>
+    case t: TyTimeStamp if t.hasTimeZone.contains(true) =>
       Some("timestamp with time zone")
     // case TimeStampType(_, false) => "timestamp without time zone"
-    case TyTimeStamp() => Some("timestamp")
+    case _: TyTimeStamp => Some("timestamp")
     case _: TyString => Some("text")
     case _: TyStruct => Some("jsonb")
-    case x @ TyEnum(_) if x.getValue(KeySimpleEnum).contains(false) => Some("jsonb")
-    case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
+    case x @ TyEnum(_, _) if x.simpleEnum.contains(false) => Some("jsonb")
+    case x @ TyEnum(_, _) if x.getName.isDefined =>
       x.getValue(KeyName)
-    case TyEnum(_) => Some("text")
+    case _: TyEnum => Some("text")
     case TyJsonObject => Some("jsonb")
     case t: TyJsonAny if !t.getValue(KeyIsBinary).contains(false) => Some("jsonb")
     case t: TyJsonAny => Some("json")
@@ -82,15 +82,11 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       case "decimal" | "numeric" => Some(TyDecimalImpl(None, None))
       case "timestamp" | "timestamp without time zone" =>
         Some(
-          TyTimeStamp()
-            .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
-            .setValue(KeyHasTimeZone, false)
+          TyTimeStamp(timeUnit = Some(TimeUnit.MILLISECONDS), hasTimeZone = Some(false))
         )
       case "timestamp with time zone" =>
         Some(
-          TyTimeStamp()
-            .setValue(KeyTimeUnit, TimeUnit.MILLISECONDS)
-            .setValue(KeyHasTimeZone, true)
+          TyTimeStamp(timeUnit = Some(TimeUnit.MILLISECONDS), hasTimeZone = Some(true))
         )
       case "text" | "varchar" => Some(TyStringImpl())
       case "jsonb" => Some(TyJsonAny().setValue(KeyIsBinary, true))

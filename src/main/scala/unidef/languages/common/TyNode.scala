@@ -5,12 +5,18 @@ import java.util.TimeZone
 import scala.quoted.{Expr, Quotes}
 
 trait TyNode
+trait TyCommentable extends TyNode {
+  def getComment: Option[String]
+  def setComment(comment: Option[String]): this.type
+}
 
-def exprOption[T](exp: Option[T])(using quotes: Quotes, toExpr: quoted.ToExpr[T], t: quoted.Type[T]): Expr[Option[T]] = {
+def exprOption[T](
+    exp: Option[T]
+)(using quotes: Quotes, toExpr: quoted.ToExpr[T], t: quoted.Type[T]): Expr[Option[T]] = {
   import quotes.reflect.*
   exp match
-    case Some(value) => '{ Some(${Expr(value)}) }
-    case None => '{None }
+    case Some(value) => '{ Some(${ Expr(value) }) }
+    case None => '{ None }
 }
 case object TyNode extends TyNode with quoted.ToExpr[TyNode] {
   def apply(ty: TyNode)(using quotes: Quotes): Expr[TyNode] = {
@@ -43,7 +49,7 @@ object BitSize {
 // rust: enum with multiple names
 case class TyVariant(names: Seq[String], code: Option[Int] = None) extends Extendable with TyNode
 
-case class TyEnum(variants: Seq[TyVariant])
+case class TyEnum(variants: Seq[TyVariant], simpleEnum: Option[Boolean] = None)
     extends Extendable
     with TyNode
     with HasName
@@ -52,7 +58,7 @@ case class TyEnum(variants: Seq[TyVariant])
   override def getValue: Option[TyNode] = getValue(KeyValue)
 }
 
-case class TyField(name: String, value: TyNode) extends Extendable with TyNode
+case class TyField(name: String, value: TyNode, mutability: Option[Boolean]=None) extends Extendable with TyNode
 
 case object KeyDataType extends KeywordBoolean
 // is row based dataframe type
@@ -78,14 +84,11 @@ object TyFunction {
     TyLambda(TyTupleImpl(Some(params)), ret)
 }
 
-case class TyTimeStamp() extends Extendable with TyNode
+case class TyTimeStamp(
+    hasTimeZone: Option[Boolean] = None,
+    timeUnit: Option[java.util.concurrent.TimeUnit] = None
+) extends TyNode
 case class TyUnion(types: Seq[TyNode]) extends TyNode
-
-case object KeyTimeUnit extends Keyword {
-  override type V = java.util.concurrent.TimeUnit
-}
-
-case object KeyHasTimeZone extends KeywordBoolean
 
 case class TyDateTime(timezone: Option[TimeZone]) extends TyNode
 
@@ -95,8 +98,6 @@ case class TyNamed(name: String) extends Extendable with TyNode
 
 case class TyConstTupleString(values: Seq[String]) extends TyNode
 
-case object Mutability extends KeywordBoolean
-
 // #[derive(Debug)] in Rust
 case object KeyDerive extends Keyword {
   override type V = Array[String]
@@ -104,6 +105,3 @@ case object KeyDerive extends Keyword {
 
 case object KeyProperties extends KeywordOnly
 case object KeyType extends KeywordOnly
-
-case object KeySimpleEnum extends KeywordBoolean
-case object KeyComment extends KeywordString

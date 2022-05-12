@@ -49,7 +49,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         importManager.foreach(_ += AstImport("typing.Dict"))
         Some("Dict[str, Any]")
       case _: TyUnit => Some("None")
-      case TyTimeStamp() =>
+      case _: TyTimeStamp =>
         importManager.foreach(_ += AstImport("datetime"))
         Some("datetime.datetime")
       case _: TyBoolean => Some("bool")
@@ -58,9 +58,9 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         importManager.foreach(_ += AstImport("uuid"))
         Some("uuid.UUID")
       case _: TyInet => Some("str") // FIXME: InetAddress
-      case x @ TyEnum(_) if x.getValue(KeyName).isDefined =>
+      case x: TyEnum if x.getValue(KeyName).isDefined =>
         Some(naming.toClassName(x.getValue(KeyName).get))
-      case TyEnum(_) =>
+      case _: TyEnum =>
         Some("str") // TODO: use solid enum if possible
       case _: TyAny =>
         importManager.foreach(_ += AstImport("typing.Any"))
