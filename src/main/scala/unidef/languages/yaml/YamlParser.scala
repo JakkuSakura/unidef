@@ -40,17 +40,15 @@ case class YamlParser(jsParser: JsonSchemaParser) {
           throw ParseCodeException("Invalid doc. Object only: " + o, null)
         case Left(err) => throw err
       }
-      .map(x => {
+      .map { x =>
         val ty = jsParser.parse(Json.fromJsonObject(x))
         ty match {
           case y: TyStructImpl =>
             val name = x("name").flatMap(_.asString)
-            val copied = y.copy(name = name)
-            copied.copyExtended(y)
-            copied
+            y.copy(name = name)
           case _ => ty
         }
-      })
+      }
       .map {
         case a: AstNode => a
         case t: TyNode => AstTyped(t)

@@ -43,11 +43,10 @@ import java.io.PrintWriter
   parsedWriter.println(parsed.mkString("\n"))
   parsed
     .foreach {
-      case a @ AstClassDecl(name, fields, methods, derived) =>
+      case a : AstClassDecl =>
         val code = sqlCodegen.generateTableDdl(a)
         fs.getWriterAt("AstClassDecl.txt").println(code)
-      case AstTyped(n) if n.isInstanceOf[TyStruct with Extendable] =>
-        val struct = n.asInstanceOf[TyStruct with Extendable]
+      case AstTyped(struct: TyStruct) =>
         if (struct.getName.isDefined) {
           val code = sqlCodegen.generateTableDdl(struct)
           fs.getWriterAt("TyStruct.txt").println(code)

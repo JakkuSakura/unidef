@@ -65,11 +65,11 @@ class SqlCodeGen(
        |);
        |""".stripMargin
 
-  def generateTableDdl(node: TyStruct with Extendable): String = {
+  def generateTableDdl(node: TyStruct): String = {
     val context = CodeGen.createContext
     context.put("name", naming.toFunctionName(node.getName.get))
     context.put("fields", node.getFields.get.map(sqlCommon.convertToSqlField).asJava)
-    context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
+    context.put("schema", node.getSchema.fold("")(x => s"$x."))
     CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)
   }
 

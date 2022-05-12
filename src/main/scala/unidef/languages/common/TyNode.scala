@@ -88,7 +88,7 @@ case class TyTimeStamp(
     hasTimeZone: Option[Boolean] = None,
     timeUnit: Option[java.util.concurrent.TimeUnit] = None
 ) extends TyNode
-case class TyUnion(types: Seq[TyNode]) extends TyNode
+case class TyUnion(types: List[TyNode]) extends TyNode
 
 case class TyDateTime(timezone: Option[TimeZone]) extends TyNode
 
@@ -96,7 +96,7 @@ case class TyReference(referee: TyNode) extends TyNode
 
 case class TyNamed(name: String) extends Extendable with TyNode
 
-case class TyConstTupleString(values: Seq[String]) extends TyNode
+case class TyConstTupleString(values: List[String]) extends TyNode
 
 // #[derive(Debug)] in Rust
 case object KeyDerive extends Keyword {

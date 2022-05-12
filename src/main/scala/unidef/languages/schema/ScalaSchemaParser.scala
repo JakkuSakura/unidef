@@ -112,7 +112,8 @@ case class ScalaSchemaParser() {
             .setValue(KeyOverride, true)
         )
         .toList,
-      List(AstClassIdent("Extendable"), AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
+      List(AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
+        ++ (if (ty.commentable) List(AstClassIdent("TyCommentable")) else List())
     )
   }
 
@@ -134,8 +135,7 @@ case class ScalaSchemaParser() {
       |    }
       |  }
       |}
-      |""".stripMargin
-    )
+      |""".stripMargin)
   }
 }
 object ScalaSchemaParser {
@@ -145,8 +145,8 @@ object ScalaSchemaParser {
       Type("field")
         .field("name", TyStringImpl())
         .field("value", TyNode),
-//      Type("list")
-//        .field("content", TyNode),
+      Type("list")
+        .field("content", TyNode),
 //      Type("enum")
 //        .field("variants", TyListImpl(Some(TyStringImpl()))),
       Type("tuple")
@@ -176,7 +176,10 @@ object ScalaSchemaParser {
         .field("fields", TyListImpl(Some(TyNamed("TyField"))))
         .field("derives", TyListImpl(Some(TyStringImpl())))
         .field("attributes", TyListImpl(Some(TyStringImpl())))
-        .is(TyNamed("class")),
+        .field("dataframe", TyBooleanImpl())
+        .field("schema", TyStringImpl())
+        .is(TyNamed("class"))
+        .setCommentable(true),
       Type("object"),
       Type("map")
         .field("key", TyNode)
@@ -227,12 +230,14 @@ object ScalaSchemaParser {
     val scalaTypeToExpr = parser.generateScalaTypeToExpr(types)
     val scalaCodegen = ScalaCodeGen(NoopNamingConvention)
     val scalaCode =
-      (keyObjects.map(scalaCodegen.generateClass)
-        ++ hasTraits.map(scalaCodegen.generateClass)
-        ++ caseClasses.map(scalaCodegen.generateClass)
-        ++ compoundTraits.map(scalaCodegen.generateClass)
-        + scalaCodegen.generateRaw(scalaTypeToExpr)
-        ).mkString("\n")
+      (
+//        keyObjects.map(scalaCodegen.generateClass)
+//        ++
+        hasTraits.map(scalaCodegen.generateClass)
+          ++ caseClasses.map(scalaCodegen.generateClass)
+          ++ compoundTraits.map(scalaCodegen.generateClass)
+//        + scalaCodegen.generateRaw(scalaTypeToExpr)
+      ).mkString("\n")
 
     println(scalaCode)
     val writer = new PrintWriter("target/TyNodeGen.scala")

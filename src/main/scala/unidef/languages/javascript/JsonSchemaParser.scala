@@ -72,7 +72,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         .getOrElse(Nil)
 
     val node = TyStructImpl(None, Some(fields.toList), None, None)
-    collectExtKeys(value, extKeysForClassDecl.toList).foreach(node.setValue)
+//    collectExtKeys(value, extKeysForClassDecl.toList).foreach(node.setValue)
 
     node
   }
@@ -170,9 +170,9 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
       override def onObject(value: JsonObject): TyNode = {
         if (value("type").exists(_.isArray)) {
           // probably map(parseType) is enough
-          TyUnion(getList(value, "type").map(parse))
+          TyUnion(getList(value, "type").toList.map(parse))
         } else if (value("anyOf").isDefined) {
-          TyUnion(getList(value, "anyOf").map(parse))
+          TyUnion(getList(value, "anyOf").toList.map(parse))
         } else if (value("enum").exists(_.isArray)) {
           TyEnum(
             getList(value, "enum")

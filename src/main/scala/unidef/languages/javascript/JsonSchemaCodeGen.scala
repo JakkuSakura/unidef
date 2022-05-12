@@ -7,11 +7,6 @@ import unidef.utils.{ParseCodeException, TypeEncodeException}
 
 import scala.collection.mutable
 
-// meant for private use
-case object KeyRequired extends KeywordBoolean
-case object KeyAdditionalProperties extends KeywordBoolean
-case object KeyIsMethodParameters extends KeywordBoolean
-
 class JsonSchemaCodeGenOption(
     val naming: NamingConvention = JsonNamingConvention,
     val useListForJsonAny: Boolean = false,
@@ -23,13 +18,11 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): Json = {
-    val struct = TyStructImpl(None, Some(func.parameters), None, None)
-    struct.setValue(KeyIsMethodParameters, true)
-    struct.copyExtended(func)
-    generateType(struct)
+    val struct = TyStructImpl(func.getName, Some(func.parameters), None, None)
+    generateType(struct, isMethodParameters = true)
   }
 
-  def convertToMatrix(struct0: TyStruct): TyStructImpl = {
+  def convertToMatrix(struct0: TyStruct, isMethodParameters: Boolean=false): TyStructImpl = {
     val fields = mutable.ArrayBuffer[TyField]()
     val headers = mutable.ArrayBuffer[String]()
     val body_row = mutable.ArrayBuffer[TyNode]()
@@ -41,7 +34,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case TyField(name, x, _) =>
         fields += TyField(name, x)
     }
-    fields += TyField("headers", TyConstTupleString(headers.toSeq))
+    fields += TyField("headers", TyConstTupleString(headers.toList))
     fields += TyField("body", TyListImpl(Some(TyTupleImpl(Some(body_row.toList)))))
     // TODO: add header names and types
     TyStructImpl(None, Some(fields.toList), None, None)
@@ -100,12 +93,19 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         Some(
           jsonObjectOf(
             "array",
-            "items" -> Json.fromValues(x.getValues.get.map(generateType)),
+            "items" -> Json.fromValues(x.getValues.get.map(generateType(_))),
             "minItems" -> Json.fromInt(x.getValues.get.size),
             "maxItems" -> Json.fromInt(x.getValues.get.size)
           )
         )
+      case x: TyUnion if x.types.map(x => x.isInstanceOf[TyStruct]).forall(identity) =>
+        Some(jsonObjectOf("object", "oneOf" -> Json.fromValues(x.types.map(generateType(_)))))
+      case x: TyUnion if !x.types.map(x => x.isInstanceOf[TyStruct]).exists(identity) =>
+        Some(Json.obj("type" -> Json.fromValues(x.types.map(generateType(_)))))
 
+      case x: TyUnion =>
+        logger.warn("Failed to encode union: " + x.types)
+        Some(Json.obj())
       case x: TyList =>
         Some(jsonObjectOf("array", "items" -> generateType(x.getContent.get)))
 
@@ -135,10 +135,12 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           )
         )
 
-      case x: TyStruct with Extendable if x.getFields.isDefined =>
-        x.setValue(KeyRequired, true)
-        x.setValue(KeyAdditionalProperties, false)
-        val naming = if (x.getValue(KeyIsMethodParameters).contains(true)) {
+      case x: TyStruct if x.getFields.isDefined =>
+        // TODO: pass parameters here
+        val keyRequired = true
+        val keyAdditionalProperties = false
+        val isMethodParameters = true
+        val naming = if (isMethodParameters) {
           options.naming.toFunctionParameterName
         } else {
           options.naming.toFieldName
@@ -153,10 +155,10 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           )
         )
 
-        if (x.getValue(KeyAdditionalProperties).contains(false)) {
+        if (keyAdditionalProperties) {
           others += "additionalProperties" -> Json.False
         }
-        if (x.getValue(KeyRequired).contains(true)) {
+        if (keyRequired) {
           others += "required" -> Json.fromValues(
             x.getFields.get
               .filterNot(f => f.value.isInstanceOf[TyOptional])
@@ -192,6 +194,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         )
       case _: TyInet => Some(jsonObjectOf("string", "format" -> Json.fromString("hostname")))
       case _: TyUuid => Some(jsonObjectOf("string", "format" -> Json.fromString("uuid")))
+      case _: TyNull => Some(jsonObjectOf("null"))
       case _ => None
     }
     ty match {
@@ -203,10 +206,10 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case _ => coded
     }
   }
-  def generateType(ty: TyNode): Json = {
+  def generateType(ty: TyNode, isMethodParameters: Boolean=false): Json = {
     val new_ty = ty match {
-      case x: TyStructImpl if x.getValue(KeyDataframe).contains(true) =>
-        convertToMatrix(x)
+      case x: TyStructImpl if x.dataframe.contains(true) =>
+        convertToMatrix(x, isMethodParameters)
       case x => x
     }
     encodeOrThrow(new_ty, "json schema")

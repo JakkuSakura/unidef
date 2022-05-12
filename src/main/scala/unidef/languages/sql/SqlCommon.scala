@@ -14,14 +14,15 @@ object SqlCommon {
   case object KeySchema extends KeywordString
 }
 
+class TyOid extends TyInteger {
+  def getBitSize: Option[BitSize] = Some(BitSize.B32)
+
+  def getSized: Option[Boolean] = Some(false)
+
+}
 class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     extends TypeDecoder[String]
     with TypeEncoder[String] {
-
-  case object KeyOid extends KeywordBoolean {
-    def get: TyInteger =
-      TyIntegerImpl(Some(BitSize.B32), Some(false)).setValue(KeyOid, true)
-  }
 
   def convertReal(ty: TyReal): String = ty match {
     case x: TyDecimal if x.getPrecision.isDefined && x.getScale.isDefined =>
@@ -46,7 +47,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   override def encode(ty: TyNode): Option[String] = ty match {
     case t: TyOptional if t.getContent.isDefined => encode(t.getContent.get).map(s => s"$s = NULL")
     case t: TyReal => Some(convertReal(t))
-    case t: TyInteger with Extendable if t.getValue(KeyOid).contains(true) => Some("oid")
+    case t: TyOid => Some("oid")
     case t: TyInteger => Some(convertInt(t))
     case t: TyTimeStamp if t.hasTimeZone.contains(true) =>
       Some("timestamp with time zone")
@@ -92,7 +93,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       case "jsonb" => Some(TyJsonAny().setValue(KeyIsBinary, true))
       case "json" => Some(TyJsonAny().setValue(KeyIsBinary, false))
       case "void" => Some(TyUnitImpl())
-      case "oid" => Some(KeyOid.get)
+      case "oid" => Some(TyOid())
       case "bool" | "boolean" => Some(TyBooleanImpl())
       case "bytea" => Some(TyByteArrayImpl())
       case "inet" => Some(TyInetImpl())
