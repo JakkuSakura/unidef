@@ -109,12 +109,12 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case x: TyList =>
         Some(jsonObjectOf("array", "items" -> generateType(x.getContent.get)))
 
-      case x @ TyEnum(variants, _) if x.getValue(KeyName).isDefined =>
+      case x: TyEnum if x.getName.isDefined =>
         Some(
           Json.obj(
             "enum" -> Json
               .fromValues(
-                variants
+                x.variants
                   .map(_.names.head)
                   .map(options.naming.toEnumValueName)
                   .map(Json.fromString)
@@ -122,12 +122,12 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
             "name" -> Json.fromString(options.naming.toClassName(x.getValue(KeyName).get))
           )
         )
-      case _ @ TyEnum(variants, _) =>
+      case x: TyEnum =>
         Some(
           Json.obj(
             "enum" -> Json
               .fromValues(
-                variants
+                x.variants
                   .map(_.names.head)
                   .map(options.naming.toEnumValueName)
                   .map(Json.fromString)

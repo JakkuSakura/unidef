@@ -6,7 +6,13 @@ import unidef.utils.{CodeGen, TextTool, TypeEncodeException}
 import scala.jdk.CollectionConverters.*
 
 class ScalaCodeGen(naming: NamingConvention) {
-  def renderMethod(override_a: String, name: String, params: String, ret: String, body: Option[String]): String = {
+  def renderMethod(
+      override_a: String,
+      name: String,
+      params: String,
+      ret: String,
+      body: Option[String]
+  ): String = {
     // TODO: replace velocity template engine
     ???
   }
@@ -26,7 +32,7 @@ class ScalaCodeGen(naming: NamingConvention) {
       context.put(
         "params",
         "(" + method.parameters
-          .map(x => x.name + ": " + ScalaCommon().encode(x).get)
+          .map(x => x.name + ": " + ScalaCommon().encodeOrThrow(x.value, "param"))
           .mkString(", ") + ")"
       )
 
@@ -54,17 +60,24 @@ class ScalaCodeGen(naming: NamingConvention) {
   def generateClass(trt: AstClassDecl): String = {
     val context = CodeGen.createContext
     val cls = trt.getValue(KeyClassType).getOrElse("case class")
-    context.put("cls", trt.getValue(KeyClassType).getOrElse("case class"))
+    def mapParam(x: TyField): String = {
+      val modifier = if (cls == "case class") {
+        ""
+      } else if (x.mutability.contains(true)) {
+        "var "
+      } else {
+        "val "
+      }
+      modifier + x.name + ": " + ScalaCommon()
+        .encode(x.value)
+        .getOrElse(throw TypeEncodeException("Scala", x))
+    }
+
+    context.put("cls", cls)
     context.put("name", naming.toClassName(trt.getName.get))
     context.put(
       "params",
-      trt.fields
-        .map(x =>
-          x.name + ": " + ScalaCommon()
-            .encode(x.value)
-            .getOrElse(throw TypeEncodeException("Scala", x))
-        )
-        .mkString(", ")
+      trt.fields.map(mapParam).mkString(", ")
     )
     context.put(
       "hasParams",

@@ -74,18 +74,18 @@ object SqlParser {
           .split(",")
           .map(StringUtils.strip(_, " '"))
           .map(variantName =>
-            TyVariant(Seq(variantName))
+            TyVariant(List(variantName))
               .setValue(KeyName, variantName)
           )
       }
       .map {
         case (s"$schema.$name", v) =>
-          TyEnum(v.toSeq)
+          TyEnum(v.toList)
             .setValue(KeySchema, schema)
             .setValue(KeyName, name)
             .setValue(KeyValue, TyStringImpl())
         case (enumName, v) =>
-          TyEnum(v.toSeq)
+          TyEnum(v.toList)
             .setValue(KeyName, enumName)
             .setValue(KeyValue, TyStringImpl())
       }

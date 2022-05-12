@@ -179,12 +179,13 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
               .map(_.asString.get)
               .map(x =>
                 TyVariant(
-                  Seq(x),
+                  List(x),
                   if (options.extendedGrammar && value("number").isDefined)
                     Some(value("number").get.asNumber.get.toInt.get)
                   else None
                 )
               )
+              .toList
           ).trySetValue(
             KeyReturn,
             value("int_enum").map(x =>

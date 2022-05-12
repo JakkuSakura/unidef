@@ -55,8 +55,8 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case _: TyTimeStamp => Some("timestamp")
     case _: TyString => Some("text")
     case _: TyStruct => Some("jsonb")
-    case x @ TyEnum(_, _) if x.simpleEnum.contains(false) => Some("jsonb")
-    case x @ TyEnum(_, _) if x.getName.isDefined =>
+    case x : TyEnum if x.simpleEnum.contains(false) => Some("jsonb")
+    case x : TyEnum if x.getName.isDefined =>
       x.getValue(KeyName)
     case _: TyEnum => Some("text")
     case TyJsonObject => Some("jsonb")

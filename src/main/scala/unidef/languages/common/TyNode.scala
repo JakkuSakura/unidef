@@ -7,7 +7,7 @@ import scala.quoted.{Expr, Quotes}
 trait TyNode
 trait TyCommentable extends TyNode {
   def getComment: Option[String]
-  def setComment(comment: Option[String]): this.type
+  def setComment(comment: String): this.type
 }
 
 def exprOption[T](
@@ -47,15 +47,15 @@ object BitSize {
 }
 
 // rust: enum with multiple names
-case class TyVariant(names: Seq[String], code: Option[Int] = None) extends Extendable with TyNode
+case class TyVariant(names: List[String], code: Option[Int] = None) extends Extendable with TyNode
 
-case class TyEnum(variants: Seq[TyVariant], simpleEnum: Option[Boolean] = None)
+case class TyEnum(variants: List[TyVariant], simpleEnum: Option[Boolean] = None, name: Option[String] = None, value: Option[TyNode] = None)
     extends Extendable
     with TyNode
     with HasName
     with HasValue {
-  override def getName: Option[String] = getValue(KeyName)
-  override def getValue: Option[TyNode] = getValue(KeyValue)
+  override def getName: Option[String] = name
+  override def getValue: Option[TyNode] = value
 }
 
 case class TyField(name: String, value: TyNode, mutability: Option[Boolean]=None) extends Extendable with TyNode

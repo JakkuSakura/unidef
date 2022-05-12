@@ -16,15 +16,15 @@ case class ScalaSchemaParser() {
   val logger: Logger = Logger[this.type]
   val common = JsonSchemaCommon(true)
 
-  def collectFields(ty: Type, extra: Seq[String]): Set[TyField] = {
+  def collectFields(ty: Type, extra: List[String]): Set[TyField] = {
     ty.fields.toSet
   }
-  def collectFields(types: Seq[Type], extra: Seq[String]): Set[TyField] = {
+  def collectFields(types: List[Type], extra: List[String]): Set[TyField] = {
     types
       .flatMap(x => collectFields(x, extra))
       .toSet
   }
-  def scalaField(name: String, derive: String, methods: Seq[String]): AstClassDecl = {
+  def scalaField(name: String, derive: String, methods: List[String]): AstClassDecl = {
     AstClassDecl(
       AstLiteralString(name),
       Nil,
@@ -43,7 +43,7 @@ case class ScalaSchemaParser() {
         val scalaCommon = ScalaCommon()
         val valueType =
           scalaCommon.encodeOrThrow(field.value, "scala")
-        scalaField(traitName, "Keyword", Seq(s"override type V = ${valueType}"))
+        scalaField(traitName, "Keyword", List(s"override type V = ${valueType}"))
     }
     cls.setValue(KeyClassType, "case object")
   }
@@ -57,10 +57,10 @@ case class ScalaSchemaParser() {
     scalaField(
       traitName,
       "TyNode",
-      Seq(s"def get${TextTool.toPascalCase(field.name)}: Option[${valueType}]")
+      List(s"def get${TextTool.toPascalCase(field.name)}: Option[${valueType}]")
     ).setValue(KeyClassType, "trait")
   }
-  def generateScalaCompoundTrait(ty: Type, extra: Seq[String]): AstClassDecl = {
+  def generateScalaCompoundTrait(ty: Type, extra: List[String]): AstClassDecl = {
     val scalaCommon = ScalaCommon()
     val fields = collectFields(ty, extra)
 
@@ -95,26 +95,31 @@ case class ScalaSchemaParser() {
     ).setValue(KeyClassType, "trait")
   }
 
-  def generateScalaCaseClass(ty: Type, extra: Seq[String]): AstClassDecl = {
-    val fields = collectFields(ty, extra)
+  def generateScalaCaseClass(ty: Type, extra: List[String]): AstClassDecl = {
+    val fields = collectFields(ty, extra) ++ (if (ty.commentable) List(TyField("comment", TyStringImpl(), Some(true))) else Nil)
 
     AstClassDecl(
       AstLiteralString("Ty" + TextTool.toPascalCase(ty.name) + "Impl"),
       fields.map(x => TyField(x.name, TyOptionalImpl(Some(x.value)))).toList,
-      fields.toSeq
-        .map(x => x.name -> x.value)
-        .map((k, v) =>
+      fields
+        .map(x =>
           AstFunctionDecl(
-            AstLiteralString("get" + TextTool.toPascalCase(k)),
+            AstLiteralString("get" + TextTool.toPascalCase(x.name)),
             Nil,
-            TyOptionalImpl(Some(v))
-          ).setValue(KeyBody, AstRawCode(s"${k}"))
+            TyOptionalImpl(Some(x.value))
+          ).setValue(KeyBody, AstRawCode(x.name))
             .setValue(KeyOverride, true)
         )
-        .toList,
+        .toList
+      ++ (if (ty.commentable) List( AstFunctionDecl(
+        AstLiteralString("setComment"),
+        List(TyField("comment", TyStringImpl())),
+        TyNamed("this.type")
+      ).setValue(KeyBody, AstRawCode(s"this.comment = comment"))
+        .setValue(KeyOverride, true)) else Nil),
       List(AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
-        ++ (if (ty.commentable) List(AstClassIdent("TyCommentable")) else List())
-    )
+        ++ (if (ty.commentable) List(AstClassIdent("TyCommentable")) else Nil)
+    ).setValue(KeyClassType, "class")
   }
 
   def generateScalaTypeToExpr(ty: Seq[Type]): AstRawCode = {
@@ -212,7 +217,7 @@ object ScalaSchemaParser {
     println("Parsed types")
     println(types.mkString("\n"))
 
-    val fields = parser.collectFields(types, extra.toSeq)
+    val fields = parser.collectFields(types, extra.toList)
     println("Parsed fields")
     println(fields.mkString("\n"))
     val keyObjects = fields.map(parser.generateScalaKeyObject)
@@ -221,10 +226,10 @@ object ScalaSchemaParser {
     val hasTraits = fields.map(parser.generateScalaHasTrait)
     println("Generated has traits")
     println(hasTraits.mkString("\n"))
-    val caseClasses = types.map(parser.generateScalaCaseClass(_, extra.toSeq))
+    val caseClasses = types.map(parser.generateScalaCaseClass(_, extra.toList))
     println("Generated case classes")
     println(caseClasses.mkString("\n"))
-    val compoundTraits = types.map(parser.generateScalaCompoundTrait(_, extra.toSeq))
+    val compoundTraits = types.map(parser.generateScalaCompoundTrait(_, extra.toList))
     println("Generated compound traits")
     println(compoundTraits.mkString("\n"))
     val scalaTypeToExpr = parser.generateScalaTypeToExpr(types)

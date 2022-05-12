@@ -356,7 +356,7 @@ trait TyStruct
   def getDerives: Option[List[String]]
 
   def getAttributes: Option[List[String]]
-  
+
   def getSchema: Option[String]
 
 }
