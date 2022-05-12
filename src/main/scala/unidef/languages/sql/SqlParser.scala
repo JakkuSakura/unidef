@@ -26,7 +26,7 @@ object SqlParser {
     val collected = ArrayBuffer[AstNode]()
     val enums = extractEnums(sql)
     enums.foreach { x =>
-      x.getValue(KeyName).foreach { nm =>
+      x.getName.foreach { nm =>
         resolver.add(nm, x, "sql")
         collected += AstTyped(x)
       }
@@ -74,20 +74,16 @@ object SqlParser {
           .split(",")
           .map(StringUtils.strip(_, " '"))
           .map(variantName =>
-            TyVariant(List(variantName))
-              .setValue(KeyName, variantName)
+            TyVariant(List(variantName), None, Some(variantName))
           )
       }
       .map {
         case (s"$schema.$name", v) =>
-          TyEnum(v.toList)
-            .setValue(KeySchema, schema)
-            .setValue(KeyName, name)
-            .setValue(KeyValue, TyStringImpl())
+          TyEnum(v.toList, None, Some(name), Some(TyStringImpl()))
+//         TODO:   .setValue(KeySchema, schema)
         case (enumName, v) =>
-          TyEnum(v.toList)
-            .setValue(KeyName, enumName)
-            .setValue(KeyValue, TyStringImpl())
+          TyEnum(v.toList, None, Some(enumName), Some(TyStringImpl()))
+
       }
       .toSeq
   }

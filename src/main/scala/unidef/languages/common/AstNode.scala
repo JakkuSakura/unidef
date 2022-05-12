@@ -101,7 +101,8 @@ case class AstClassDecl(
     fields: List[TyField],
     methods: List[AstNode] = Nil,
     derived: List[AstClassIdent] = Nil,
-    schema: Option[String] = None
+    schema: Option[String] = None,
+    dataframe: Option[Boolean] = None
 ) extends Extendable
     with AstNode
     with TyStruct {
@@ -118,6 +119,11 @@ case class AstClassDecl(
   override def getDerives: Option[List[String]] = Some(derived.map(_.name).toList)
 
   override def getSchema: Option[String] = schema
+
+  override def getDataframe: Option[Boolean] = {
+    dataframe
+  }
+
 }
 
 object AstClassDecl {

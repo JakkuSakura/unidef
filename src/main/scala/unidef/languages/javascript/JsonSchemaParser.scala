@@ -77,20 +77,18 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
     node
   }
   private val extKeysForField =
-    mutable.HashSet[Keyword](KeyName, KeyType, KeyFields)
+    mutable.HashSet[Keyword](KeyType)
   private val extKeysForFuncDecl =
     mutable
       .HashSet[Keyword](
-        KeyName,
         KeyType,
         KeyBody,
         KeyLanguage,
         KeyParameters,
-        KeyReturn,
-        KeyDataframe
+        KeyReturn
       )
   private val extKeysForClassDecl =
-    mutable.HashSet[Keyword](KeyName, KeyType, KeyFields, KeyProperties, KeyDataframe)
+    mutable.HashSet[Keyword]( KeyType, KeyProperties)
 
   def prepareForExtKeys(obj: KeywordProvider): Unit = {
     extKeysForField ++= obj.keysOnField

@@ -20,8 +20,8 @@ class Type(val name: String) {
   val equivalent: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
   var commentable: Boolean = false
 
-  def field(name: String, ty: TyNode): Type = {
-    fields += TyField(name, ty)
+  def field(name: String, ty: TyNode, defaultNone: Boolean=false): Type = {
+    fields += TyField(name, ty, None, Some(defaultNone))
     this
   }
   def setCommentable(commentable: Boolean): Type = {

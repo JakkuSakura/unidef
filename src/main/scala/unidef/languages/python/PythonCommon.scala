@@ -58,8 +58,8 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         importManager.foreach(_ += AstImport("uuid"))
         Some("uuid.UUID")
       case _: TyInet => Some("str") // FIXME: InetAddress
-      case x: TyEnum if x.getValue(KeyName).isDefined =>
-        Some(naming.toClassName(x.getValue(KeyName).get))
+      case x: TyEnum if x.getName.isDefined =>
+        Some(naming.toClassName(x.getName.get))
       case _: TyEnum =>
         Some("str") // TODO: use solid enum if possible
       case _: TyAny =>

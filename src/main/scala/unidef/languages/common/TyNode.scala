@@ -47,7 +47,9 @@ object BitSize {
 }
 
 // rust: enum with multiple names
-case class TyVariant(names: List[String], code: Option[Int] = None) extends Extendable with TyNode
+case class TyVariant(names: List[String], code: Option[Int] = None, name: Option[String] = None) extends Extendable with TyNode with HasName {
+  override def getName: Option[String] = name
+}
 
 case class TyEnum(variants: List[TyVariant], simpleEnum: Option[Boolean] = None, name: Option[String] = None, value: Option[TyNode] = None)
     extends Extendable
@@ -58,11 +60,9 @@ case class TyEnum(variants: List[TyVariant], simpleEnum: Option[Boolean] = None,
   override def getValue: Option[TyNode] = value
 }
 
-case class TyField(name: String, value: TyNode, mutability: Option[Boolean]=None) extends Extendable with TyNode
+case class TyField(name: String, value: TyNode, mutability: Option[Boolean]=None, defaultNone: Option[Boolean]=None) extends Extendable with TyNode
 
 case object KeyDataType extends KeywordBoolean
-// is row based dataframe type
-case object KeyDataframe extends KeywordBoolean
 
 case class TyDict(key: TyNode, value: TyNode) extends TyNode
 

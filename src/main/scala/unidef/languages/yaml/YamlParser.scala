@@ -45,7 +45,7 @@ case class YamlParser(jsParser: JsonSchemaParser) {
         ty match {
           case y: TyStructImpl =>
             val name = x("name").flatMap(_.asString)
-            y.copy(name = name)
+            TyStructImpl(name, y.fields, y.derives, y.attributes, y.dataframe, y.schema)
           case _ => ty
         }
       }

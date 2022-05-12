@@ -17,6 +17,7 @@ case class ScalaSchemaParser() {
   val common = JsonSchemaCommon(true)
 
   def collectFields(ty: Type, extra: List[String]): Set[TyField] = {
+    // FIXME: it doesn't preserve orders
     ty.fields.toSet
   }
   def collectFields(types: List[Type], extra: List[String]): Set[TyField] = {
@@ -28,7 +29,7 @@ case class ScalaSchemaParser() {
     AstClassDecl(
       AstLiteralString(name),
       Nil,
-      methods.map(AstRawCode.apply).toList,
+      methods.map(AstRawCode.apply),
       List(AstClassIdent(derive))
     )
   }
@@ -62,7 +63,7 @@ case class ScalaSchemaParser() {
   }
   def generateScalaCompoundTrait(ty: Type, extra: List[String]): AstClassDecl = {
     val scalaCommon = ScalaCommon()
-    val fields = collectFields(ty, extra)
+    val fields = ty.fields.toList
 
     AstClassDecl(
       AstLiteralString("Ty" + TextTool.toPascalCase(ty.name)),
@@ -78,7 +79,7 @@ case class ScalaSchemaParser() {
         )
         .toList,
       List(AstClassIdent("TyNode"))
-        ++
+        :::
           ty.equivalent
             .flatMap {
               case TyNamed(x) => Some("Ty" + TextTool.toPascalCase(x))
@@ -86,7 +87,7 @@ case class ScalaSchemaParser() {
             }
             .map(x => AstClassIdent(x))
             .toList
-          ++
+          :::
           fields
             .map(x => x.name -> x.value)
             .map((k, v) => "Has" + TextTool.toPascalCase(k))
@@ -96,11 +97,11 @@ case class ScalaSchemaParser() {
   }
 
   def generateScalaCaseClass(ty: Type, extra: List[String]): AstClassDecl = {
-    val fields = collectFields(ty, extra) ++ (if (ty.commentable) List(TyField("comment", TyStringImpl(), Some(true))) else Nil)
+    val fields = ty.fields.toList ::: (if (ty.commentable) List(TyField("comment", TyStringImpl(), Some(true))) else Nil)
 
     AstClassDecl(
       AstLiteralString("Ty" + TextTool.toPascalCase(ty.name) + "Impl"),
-      fields.map(x => TyField(x.name, TyOptionalImpl(Some(x.value)))).toList,
+      fields.map(x => TyField(x.name, TyOptionalImpl(Some(x.value)))),
       fields
         .map(x =>
           AstFunctionDecl(
@@ -110,15 +111,14 @@ case class ScalaSchemaParser() {
           ).setValue(KeyBody, AstRawCode(x.name))
             .setValue(KeyOverride, true)
         )
-        .toList
-      ++ (if (ty.commentable) List( AstFunctionDecl(
+      ::: (if (ty.commentable) List( AstFunctionDecl(
         AstLiteralString("setComment"),
         List(TyField("comment", TyStringImpl())),
         TyNamed("this.type")
-      ).setValue(KeyBody, AstRawCode(s"this.comment = comment"))
+      ).setValue(KeyBody, AstRawCode(s"this.comment = Some(comment)\n this"))
         .setValue(KeyOverride, true)) else Nil),
       List(AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
-        ++ (if (ty.commentable) List(AstClassIdent("TyCommentable")) else Nil)
+        ::: (if (ty.commentable) List(AstClassIdent("TyCommentable")) else Nil)
     ).setValue(KeyClassType, "class")
   }
 
@@ -181,8 +181,8 @@ object ScalaSchemaParser {
         .field("fields", TyListImpl(Some(TyNamed("TyField"))))
         .field("derives", TyListImpl(Some(TyStringImpl())))
         .field("attributes", TyListImpl(Some(TyStringImpl())))
-        .field("dataframe", TyBooleanImpl())
-        .field("schema", TyStringImpl())
+        .field("dataframe", TyBooleanImpl(), true)
+        .field("schema", TyStringImpl(), true)
         .is(TyNamed("class"))
         .setCommentable(true),
       Type("object"),
@@ -237,10 +237,10 @@ object ScalaSchemaParser {
     val scalaCode =
       (
 //        keyObjects.map(scalaCodegen.generateClass)
-//        ++
-        hasTraits.map(scalaCodegen.generateClass)
-          ++ caseClasses.map(scalaCodegen.generateClass)
-          ++ compoundTraits.map(scalaCodegen.generateClass)
+//        :::
+        hasTraits.map(scalaCodegen.generateClass).toList
+          ::: caseClasses.map(scalaCodegen.generateClass)
+          ::: compoundTraits.map(scalaCodegen.generateClass)
 //        + scalaCodegen.generateRaw(scalaTypeToExpr)
       ).mkString("\n")
 

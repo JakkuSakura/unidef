@@ -1,26 +1,105 @@
 package unidef.languages.common
 
-trait TyObject extends TyNode {}
+
+
+trait HasOk extends TyNode {
+  def getOk: Option[TyNode]
+}
+
+
+trait HasFields extends TyNode {
+  def getFields: Option[List[TyField]]
+}
+
+
+trait HasKey extends TyNode {
+  def getKey: Option[TyNode]
+}
+
+
+trait HasValues extends TyNode {
+  def getValues: Option[List[TyNode]]
+}
+
 
 trait HasAttributes extends TyNode {
   def getAttributes: Option[List[String]]
 }
 
+
+trait HasContent extends TyNode {
+  def getContent: Option[TyNode]
+}
+
+
+trait HasDataframe extends TyNode {
+  def getDataframe: Option[Boolean]
+}
+
+
 trait HasSized extends TyNode {
   def getSized: Option[Boolean]
 }
 
-case class TyInetImpl() extends TyInet {}
 
-trait TyFloat extends TyNode with TyReal with HasBitSize {
+trait HasSchema extends TyNode {
+  def getSchema: Option[String]
+}
 
+
+trait HasDerives extends TyNode {
+  def getDerives: Option[List[String]]
+}
+
+
+trait HasErr extends TyNode {
+  def getErr: Option[TyNode]
+}
+
+
+trait HasPrecision extends TyNode {
+  def getPrecision: Option[Int]
+}
+
+
+trait HasName extends TyNode {
+  def getName: Option[String]
+}
+
+
+trait HasValue extends TyNode {
+  def getValue: Option[TyNode]
+}
+
+
+trait HasScale extends TyNode {
+  def getScale: Option[Int]
+}
+
+
+trait HasBitSize extends TyNode {
   def getBitSize: Option[BitSize]
+}
+
+
+class TyAnyImpl() extends TyAny {
+}
+
+
+class TyRealImpl() extends TyReal {
+}
+
+
+class TyFloatImpl(val bit_size: Option[BitSize]) extends TyFloat {
+
+  override def getBitSize: Option[BitSize] = {
+    bit_size
+  }
 
 }
 
-trait TyChar extends TyNode {}
 
-case class TySetImpl(content: Option[TyNode]) extends TySet {
+class TySetImpl(val content: Option[TyNode]) extends TySet {
 
   override def getContent: Option[TyNode] = {
     content
@@ -28,33 +107,47 @@ case class TySetImpl(content: Option[TyNode]) extends TySet {
 
 }
 
-case object KeyName extends KeywordString {}
 
-trait HasErr extends TyNode {
-  def getErr: Option[TyNode]
+class TyOptionalImpl(val content: Option[TyNode]) extends TyOptional {
+
+  override def getContent: Option[TyNode] = {
+    content
+  }
+
 }
 
-trait HasOk extends TyNode {
-  def getOk: Option[TyNode]
+
+class TyStringImpl() extends TyString {
 }
 
-trait TyBoolean extends TyNode {}
 
-trait TyString extends TyNode {}
-
-trait TyUuid extends TyNode {}
-
-trait HasFields extends TyNode {
-  def getFields: Option[List[TyField]]
+class TyObjectImpl() extends TyObject {
 }
 
-trait TyNothing extends TyNode {}
 
-case object KeyDerives extends Keyword {
-  override type V = List[String]
+class TyDecimalImpl(val precision: Option[Int], val scale: Option[Int]) extends TyDecimal {
+
+  override def getPrecision: Option[Int] = {
+    precision
+  }
+
+
+  override def getScale: Option[Int] = {
+    scale
+  }
+
 }
 
-case class TyTupleImpl(values: Option[List[TyNode]]) extends TyTuple {
+
+class TyByteArrayImpl() extends TyByteArray {
+}
+
+
+class TyInetImpl() extends TyInet {
+}
+
+
+class TyTupleImpl(val values: Option[List[TyNode]]) extends TyTuple {
 
   override def getValues: Option[List[TyNode]] = {
     values
@@ -62,63 +155,131 @@ case class TyTupleImpl(values: Option[List[TyNode]]) extends TyTuple {
 
 }
 
-trait HasScale extends TyNode {
-  def getScale: Option[Int]
+
+class TyStructImpl(val name: Option[String], val fields: Option[List[TyField]], val derives: Option[List[String]], val attributes: Option[List[String]], val dataframe: Option[Boolean] = None, val schema: Option[String] = None, var comment: Option[String] = None) extends TyStruct with TyCommentable {
+
+  override def getName: Option[String] = {
+    name
+  }
+
+
+  override def getFields: Option[List[TyField]] = {
+    fields
+  }
+
+
+  override def getDerives: Option[List[String]] = {
+    derives
+  }
+
+
+  override def getAttributes: Option[List[String]] = {
+    attributes
+  }
+
+
+  override def getDataframe: Option[Boolean] = {
+    dataframe
+  }
+
+
+  override def getSchema: Option[String] = {
+    schema
+  }
+
+
+  override def getComment: Option[String] = {
+    comment
+  }
+
+
+  override def setComment(comment: String): this.type = {
+    this.comment = Some(comment)
+    this
+  }
+
 }
 
-trait HasBitSize extends TyNode {
-  def getBitSize: Option[BitSize]
+
+class TyClassImpl() extends TyClass {
 }
 
-case class TyNullImpl() extends TyNull {}
 
-trait TyByteArray extends TyNode {}
-
-case object KeyValue extends Keyword {
-  override type V = TyNode
+class TyRecordImpl() extends TyRecord {
 }
 
-case object KeySized extends KeywordBoolean {}
 
-case object KeyAttributes extends Keyword {
-  override type V = List[String]
-}
+class TyMapImpl(val key: Option[TyNode], val value: Option[TyNode]) extends TyMap {
 
-trait HasKey extends TyNode {
-  def getKey: Option[TyNode]
-}
+  override def getKey: Option[TyNode] = {
+    key
+  }
 
-case object KeyOk extends Keyword {
-  override type V = TyNode
-}
 
-trait HasValues extends TyNode {
-  def getValues: Option[List[TyNode]]
-}
-
-trait TyUnit extends TyNode {}
-
-trait TyInteger extends TyNode with TyNumeric with HasBitSize with HasSized {
-
-  def getBitSize: Option[BitSize]
-
-  def getSized: Option[Boolean]
+  override def getValue: Option[TyNode] = {
+    value
+  }
 
 }
 
-case class TyNumericImpl() extends TyNumeric {}
 
-case class TyCharImpl() extends TyChar {}
-
-trait TyInet extends TyNode {}
-
-case object KeyBitSize extends Keyword {
-  override type V = BitSize
+class TyUuidImpl() extends TyUuid {
 }
 
-trait TyAny extends TyNode {}
 
-case class TyListImpl(content: Option[TyNode]) extends TyList {
+class TyResultImpl(val ok: Option[TyNode], val err: Option[TyNode]) extends TyResult {
+
+  override def getOk: Option[TyNode] = {
+    ok
+  }
+
+
+  override def getErr: Option[TyNode] = {
+    err
+  }
+
+}
+
+
+class TyCharImpl() extends TyChar {
+}
+
+
+class TyNullImpl() extends TyNull {
+}
+
+
+class TyNothingImpl() extends TyNothing {
+}
+
+
+class TyBooleanImpl() extends TyBoolean {
+}
+
+
+class TyNumericImpl() extends TyNumeric {
+}
+
+
+class TyIntegerImpl(val bit_size: Option[BitSize], val sized: Option[Boolean]) extends TyInteger {
+
+  override def getBitSize: Option[BitSize] = {
+    bit_size
+  }
+
+
+  override def getSized: Option[Boolean] = {
+    sized
+  }
+
+}
+
+
+class TyUnitImpl() extends TyUnit {
+}
+
+
+class TyListImpl(val content: Option[TyNode]) extends TyList {
 
   override def getContent: Option[TyNode] = {
     content
@@ -126,15 +287,25 @@ case class TyListImpl(content: Option[TyNode]) extends TyList {
 
 }
 
-case object KeyScale extends KeywordInt {}
 
-trait HasContent extends TyNode {
-  def getContent: Option[TyNode]
+class TyUndefinedImpl() extends TyUndefined {
 }
 
-case object KeyContent extends Keyword {
-  override type V = TyNode
+
+trait TyAny extends TyNode {
 }
+
+
+trait TyReal extends TyNode with TyNumeric {
+}
+
+
+trait TyFloat extends TyNode with TyReal with HasBitSize {
+
+  def getBitSize: Option[BitSize]
+
+}
+
 
 trait TySet extends TyNode with HasContent {
 
@@ -143,139 +314,38 @@ trait TySet extends TyNode with HasContent {
 }
 
 
-case class TyUuidImpl() extends TyUuid {}
+trait TyOptional extends TyNode with HasContent {
 
-case class TyObjectImpl() extends TyObject {}
-
-case class TyByteArrayImpl() extends TyByteArray {}
-
-trait TyNumeric extends TyNode {}
-
-trait TyResult extends TyNode with HasOk with HasErr {
-
-  def getOk: Option[TyNode]
-
-  def getErr: Option[TyNode]
+  def getContent: Option[TyNode]
 
 }
 
-case class TyRecordImpl() extends TyRecord {}
 
-case class TyRealImpl() extends TyReal {}
-
-case class TyResultImpl(ok: Option[TyNode], err: Option[TyNode]) extends TyResult {
-
-  override def getOk: Option[TyNode] = {
-    ok
-  }
-
-  override def getErr: Option[TyNode] = {
-    err
-  }
-
+trait TyString extends TyNode {
 }
 
-trait TyMap extends TyNode with HasKey with HasValue {
 
-  def getKey: Option[TyNode]
-
-  def getValue: Option[TyNode]
-
+trait TyObject extends TyNode {
 }
+
 
 trait TyDecimal extends TyNode with TyReal with HasPrecision with HasScale {
 
   def getPrecision: Option[Int]
 
+
   def getScale: Option[Int]
 
 }
 
-trait TyUndefined extends TyNode {}
 
-case class TyDecimalImpl(precision: Option[Int], scale: Option[Int]) extends TyDecimal {
-
-  override def getPrecision: Option[Int] = {
-    precision
-  }
-
-  override def getScale: Option[Int] = {
-    scale
-  }
-
+trait TyByteArray extends TyNode {
 }
 
-case class TyIntegerImpl(bit_size: Option[BitSize], sized: Option[Boolean]) extends TyInteger {
 
-  override def getBitSize: Option[BitSize] = {
-    bit_size
-  }
-
-  override def getSized: Option[Boolean] = {
-    sized
-  }
-
+trait TyInet extends TyNode {
 }
 
-trait TyNull extends TyNode {}
-
-case object KeyErr extends Keyword {
-  override type V = TyNode
-}
-
-case class TyFloatImpl(bit_size: Option[BitSize]) extends TyFloat {
-
-  override def getBitSize: Option[BitSize] = {
-    bit_size
-  }
-
-}
-
-trait TyClass extends TyNode {}
-
-case object KeyValues extends Keyword {
-  override type V = List[TyNode]
-}
-
-trait TyRecord extends TyNode {}
-
-
-trait HasDerives extends TyNode {
-  def getDerives: Option[List[String]]
-}
-
-case class TyStructImpl(
-    name: Option[String],
-    fields: Option[List[TyField]],
-    derives: Option[List[String]],
-    attributes: Option[List[String]],
-    dataframe: Option[Boolean] = None,
-    schema: Option[String] = None
-) extends TyStruct {
-
-  override def getName: Option[String] = {
-    name
-  }
-
-  override def getFields: Option[List[TyField]] = {
-    fields
-  }
-
-  override def getDerives: Option[List[String]] = {
-    derives
-  }
-
-  override def getAttributes: Option[List[String]] = {
-    attributes
-  }
-
-  override def getSchema: Option[String] = {
-    schema
-  }
-
-}
-
-case class TyNothingImpl() extends TyNothing {}
 
 trait TyTuple extends TyNode with HasValues {
 
@@ -283,31 +353,95 @@ trait TyTuple extends TyNode with HasValues {
 
 }
 
-case object KeyFields extends Keyword {
-  override type V = List[TyField]
+
+trait TyStruct extends TyNode with TyClass with HasName with HasFields with HasDerives with HasAttributes with HasDataframe with HasSchema {
+
+  def getName: Option[String]
+
+
+  def getFields: Option[List[TyField]]
+
+
+  def getDerives: Option[List[String]]
+
+
+  def getAttributes: Option[List[String]]
+
+
+  def getDataframe: Option[Boolean]
+
+
+  def getSchema: Option[String]
+
 }
 
-trait TyOptional extends TyNode with HasContent {
 
-  def getContent: Option[TyNode]
+trait TyClass extends TyNode {
+}
+
+
+trait TyRecord extends TyNode {
+}
+
+
+
+trait TyMap extends TyNode with HasKey with HasValue {
+
+  def getKey: Option[TyNode]
+
+
+  def getValue: Option[TyNode]
 
 }
 
-case class TyMapImpl(key: Option[TyNode], value: Option[TyNode]) extends TyMap {
 
-  override def getKey: Option[TyNode] = {
-    key
-  }
+trait TyUuid extends TyNode {
+}
 
-  override def getValue: Option[TyNode] = {
-    value
-  }
+
+trait TyResult extends TyNode with HasOk with HasErr {
+
+  def getOk: Option[TyNode]
+
+
+  def getErr: Option[TyNode]
 
 }
 
-case class TyAnyImpl() extends TyAny {}
 
-case class TyUnitImpl() extends TyUnit {}
+trait TyChar extends TyNode {
+}
+
+
+trait TyNull extends TyNode {
+}
+
+
+trait TyNothing extends TyNode {
+}
+
+
+trait TyBoolean extends TyNode {
+}
+
+
+trait TyNumeric extends TyNode {
+}
+
+
+trait TyInteger extends TyNode with TyNumeric with HasBitSize with HasSized {
+
+  def getBitSize: Option[BitSize]
+
+
+  def getSized: Option[Boolean]
+
+}
+
+
+trait TyUnit extends TyNode {
+}
+
 
 trait TyList extends TyNode with HasContent {
 
@@ -315,58 +449,6 @@ trait TyList extends TyNode with HasContent {
 
 }
 
-case object KeyPrecision extends KeywordInt {}
 
-trait HasPrecision extends TyNode {
-  def getPrecision: Option[Int]
-}
-
-case class TyClassImpl() extends TyClass {}
-
-case class TyOptionalImpl(content: Option[TyNode]) extends TyOptional {
-
-  override def getContent: Option[TyNode] = {
-    content
-  }
-
-}
-
-trait TyReal extends TyNode with TyNumeric {}
-
-trait HasName extends TyNode {
-  def getName: Option[String]
-}
-
-case class TyBooleanImpl() extends TyBoolean {}
-
-case class TyUndefinedImpl() extends TyUndefined {}
-
-trait TyStruct
-    extends TyNode
-    with TyClass
-    with HasName
-    with HasFields
-    with HasDerives
-    with HasAttributes {
-
-  def getName: Option[String]
-
-  def getFields: Option[List[TyField]]
-
-  def getDerives: Option[List[String]]
-
-  def getAttributes: Option[List[String]]
-
-  def getSchema: Option[String]
-
-}
-
-case class TyStringImpl() extends TyString {}
-
-trait HasValue extends TyNode {
-  def getValue: Option[TyNode]
-}
-
-case object KeyKey extends Keyword {
-  override type V = TyNode
+trait TyUndefined extends TyNode {
 }

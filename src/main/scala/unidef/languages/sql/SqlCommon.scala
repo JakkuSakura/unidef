@@ -57,7 +57,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case _: TyStruct => Some("jsonb")
     case x : TyEnum if x.simpleEnum.contains(false) => Some("jsonb")
     case x : TyEnum if x.getName.isDefined =>
-      x.getValue(KeyName)
+      x.getName
     case _: TyEnum => Some("text")
     case TyJsonObject => Some("jsonb")
     case t: TyJsonAny if !t.getValue(KeyIsBinary).contains(false) => Some("jsonb")

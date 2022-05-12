@@ -22,17 +22,17 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     generateType(struct, isMethodParameters = true)
   }
 
-  def convertToMatrix(struct0: TyStruct, isMethodParameters: Boolean=false): TyStructImpl = {
+  def convertToMatrix(struct0: TyStruct): TyStructImpl = {
     val fields = mutable.ArrayBuffer[TyField]()
     val headers = mutable.ArrayBuffer[String]()
     val body_row = mutable.ArrayBuffer[TyNode]()
 
     struct0.getFields.get.foreach {
-      case TyField(name, x: TyList, _) =>
+      case TyField(name, x: TyList, _, _) =>
         headers += name
         body_row += x.getContent.get
-      case TyField(name, x, _) =>
-        fields += TyField(name, x)
+      case x: TyField =>
+        fields += x
     }
     fields += TyField("headers", TyConstTupleString(headers.toList))
     fields += TyField("body", TyListImpl(Some(TyTupleImpl(Some(body_row.toList)))))
@@ -119,7 +119,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
                   .map(options.naming.toEnumValueName)
                   .map(Json.fromString)
               ),
-            "name" -> Json.fromString(options.naming.toClassName(x.getValue(KeyName).get))
+            "name" -> Json.fromString(options.naming.toClassName(x.getName.get))
           )
         )
       case x: TyEnum =>
@@ -209,7 +209,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   def generateType(ty: TyNode, isMethodParameters: Boolean=false): Json = {
     val new_ty = ty match {
       case x: TyStructImpl if x.dataframe.contains(true) =>
-        convertToMatrix(x, isMethodParameters)
+        convertToMatrix(x)
       case x => x
     }
     encodeOrThrow(new_ty, "json schema")
