@@ -94,3 +94,53 @@ def bar_2(): String = "not a boolean"
 bar_1()
 bar_2()
 ```
+
+## Multiple patterns of arguments
+We want to support multiple patterns of arguments
+
+Basic cases
+
+```scala
+def foo = ??? // Function(Ident("foo"), Nil)
+foo // FunctionApply(Ident("foo"), Nil)
+def bar() = ??? // Function(Ident("foo"), List(Params()))
+bar() // FunctionApply(Ident("bar"), List(List())
+def baz(a: Int) = ??? // Function(Ident("foo"), List(Params(a: Int)))
+baz(1) // FunctionApply(Ident("baz"), List(Args(1)))
+```
+
+With typed arguments
+
+```scala
+def foo[T] = ???
+foo[T] // FunctionApply(Ident("foo"), List(Args(T)))
+def bar[T, U] = ???
+bar[T, U] // FunctionApply(Ident("bar"), List(Args(T, U)))
+```
+
+With named arguments
+
+```scala
+def foo(a: Int) = ???
+foo(a=1) // FunctionApply(Ident("foo"), List(Args(a=1)))
+```
+
+With default arguments
+
+```scala
+def foo(a: Int=2) = ???
+foo() // FunctionApply(Ident("foo"), List(Args(a=Default)))
+```
+
+With multiple arguments and currying
+
+```scala
+def foo(a: Int)(b: Int) = ???
+// Function(Ident("foo"), List(Params(a: Int), Params(b: Int)))
+foo(1)
+// FunctionApply(Ident("foo"), List(Args(1)))
+foo(1)(2)
+// FunctionApply(Ident("foo"), List(Args(1), Args(2)))
+// FunctionApply(FunctionApply(Ident("foo"), List(Args(1))), List(Args(2)))
+```
+
