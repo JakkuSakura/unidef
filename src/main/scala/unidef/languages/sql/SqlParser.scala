@@ -79,8 +79,7 @@ object SqlParser {
       }
       .map {
         case (s"$schema.$name", v) =>
-          TyEnum(v.toList, None, Some(name), Some(TyStringImpl()))
-//         TODO:   .setValue(KeySchema, schema)
+          TyEnum(v.toList, None, Some(name), Some(TyStringImpl()), Some(schema))
         case (enumName, v) =>
           TyEnum(v.toList, None, Some(enumName), Some(TyStringImpl()))
 

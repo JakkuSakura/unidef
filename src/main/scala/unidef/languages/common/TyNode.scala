@@ -51,7 +51,7 @@ case class TyVariant(names: List[String], code: Option[Int] = None, name: Option
   override def getName: Option[String] = name
 }
 
-case class TyEnum(variants: List[TyVariant], simpleEnum: Option[Boolean] = None, name: Option[String] = None, value: Option[TyNode] = None)
+case class TyEnum(variants: List[TyVariant], simpleEnum: Option[Boolean] = None, name: Option[String] = None, value: Option[TyNode] = None, schema: Option[String] = None)
     extends Extendable
     with TyNode
     with HasName
