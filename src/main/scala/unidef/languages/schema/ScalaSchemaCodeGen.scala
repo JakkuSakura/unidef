@@ -12,7 +12,7 @@ import unidef.utils.{ParseCodeException, TextTool, TypeDecodeException, TypeEnco
 import java.io.PrintWriter
 import scala.collection.mutable
 
-case class ScalaSchemaParser() {
+case class ScalaSchemaCodeGen() {
   val logger: Logger = Logger[this.type]
   val common = JsonSchemaCommon(true)
 
@@ -143,7 +143,7 @@ case class ScalaSchemaParser() {
       |""".stripMargin)
   }
 }
-object ScalaSchemaParser {
+object ScalaSchemaCodeGen {
   def getTypes: Map[String, Type] =
     Seq(
       Type("string"),
@@ -211,7 +211,7 @@ object ScalaSchemaParser {
   def main(args: Array[String]): Unit = {
     val types = getTypes.values.toList
 
-    val parser = ScalaSchemaParser()
+    val parser = ScalaSchemaCodeGen()
     val extra = mutable.ArrayBuffer[String]()
 
     println("Parsed types")
