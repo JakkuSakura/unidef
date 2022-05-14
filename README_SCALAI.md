@@ -144,3 +144,14 @@ foo(1)(2)
 // FunctionApply(FunctionApply(Ident("foo"), List(Args(1))), List(Args(2)))
 ```
 
+## TODO
+generate similar Encoder/Decoder for BaseNode
+```scala
+object Test {
+  val encoder = new Encoder[TyNode] {
+    final def apply(x: TyNode): Json = x match {
+      case TyNamed(x) => Json.obj("type" -> Json.fromString("TyNamed"), "value" -> Encoder[String].apply(x))
+    }
+  }
+}
+```

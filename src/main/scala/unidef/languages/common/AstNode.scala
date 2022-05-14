@@ -8,7 +8,7 @@ import io.circe.generic.semiauto._
   * languages It should expose minimal interface while keep its original information Rules:
   * everything is an expression
   */
-trait AstNode
+trait AstNode extends BaseNode
 
 class AstStaticType(ty: TyNode) extends AstNode
 

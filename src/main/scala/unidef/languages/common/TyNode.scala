@@ -1,10 +1,12 @@
 package unidef.languages.common
 
-import java.util.TimeZone
+import io.circe.{Encoder, Json}
 
+import java.util.TimeZone
 import scala.quoted.{Expr, Quotes}
 
-trait TyNode
+trait TyNode extends BaseNode
+
 trait TyCommentable extends TyNode {
   def getComment: Option[String]
   def setComment(comment: String): this.type
