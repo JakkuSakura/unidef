@@ -1,6 +1,18 @@
 # SCALAI
 
-ScalaI is an experiment for some high level optimization, borrowing the syntax of scala
+The language provides a minimal set of orthogonal beautiful syntax, but generates high performance optimized human-readable source code of a general purpose programming language.
+The language utilized Scala3 as the frontend, and tries to keep the semantics whenever possible. 
+With this language, you can write performance-critical business logic in an expression form, without worrying about the runtime cost of abstractions, as abstractions are reduced to a minimal set of primitives.
+
+For example, you may want to write declarative business logic, and along with an interpreter/template/generics/polymorphism/codegen/meteprogramming
+
+- interpreter is slow
+- template is fastest, but with weird syntax
+- generics doesn't provide much runtime performance benefit
+- polymorphism involves calling dynamic dispatched methods, which involves a runtime cost
+- codegen requires an external tool, and writing such tool involves much work
+
+The ideal solution is this language, which specialize the interpreter against the declarative business logic during comptime, to achieve the best performance just like template
 
 ## Effects and Contexts
 https://boats.gitlab.io/blog/post/the-problem-of-effects/
