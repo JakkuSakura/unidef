@@ -1,4 +1,4 @@
-package unidef.scalai
+package unidef.languages.shll
 
 import com.typesafe.scalalogging.Logger
 import unidef.languages.common.*
@@ -6,7 +6,7 @@ import unidef.languages.common.*
 import scala.collection.mutable
 import scala.quoted.Quotes
 
-class ScalaiLifterImpl(using val quotes: Quotes) {
+class LifterImpl(using val quotes: Quotes) {
   import quotes.reflect.*
 
   val logger = Logger[this.type]

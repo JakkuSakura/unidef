@@ -121,27 +121,6 @@ case class ScalaSchemaCodeGen() {
         ::: (if (ty.commentable) List(AstClassIdent("TyCommentable")) else Nil)
     ).setValue(KeyClassType, "class")
   }
-
-  def generateScalaTypeToExpr(ty: Seq[Type]): AstRawCode = {
-    def names(t: Type): String = t.fields.map(_.name).mkString(", ")
-    def spliced_names(t: Type): String = t.fields
-      .map(x => '$' + s"{ exprOption(${x.name}) }")
-      .mkString(", ")
-    def typeName(t: Type) = "Ty" + TextTool.toPascalCase(t.name) + "Impl"
-    val cases = ty.map { t =>
-      s"case ${typeName(t)}(${names(t)}) => '{ ${typeName(t)}(${spliced_names(t)}) }"
-    }
-    AstRawCode(s"""
-      |object TyNode extends quoted.ToExpr[TyNode] {
-      |  def apply(ty: TyNode)(using quotes: Quotes): Expr[TyNode] = {
-      |    import quotes.reflect.*
-      |    ty match {
-      |      ${TextTool.indent(cases.mkString("\n"), 6)}
-      |    }
-      |  }
-      |}
-      |""".stripMargin)
-  }
 }
 object ScalaSchemaCodeGen {
   def getTypes: Map[String, Type] =
@@ -232,7 +211,6 @@ object ScalaSchemaCodeGen {
     val compoundTraits = types.map(parser.generateScalaCompoundTrait(_, extra.toList))
     println("Generated compound traits")
     println(compoundTraits.mkString("\n"))
-    val scalaTypeToExpr = parser.generateScalaTypeToExpr(types)
     val scalaCodegen = ScalaCodeGen(NoopNamingConvention)
     val scalaCode =
       (
@@ -241,7 +219,6 @@ object ScalaSchemaCodeGen {
         hasTraits.map(scalaCodegen.generateClass).toList
           ::: caseClasses.map(scalaCodegen.generateClass)
           ::: compoundTraits.map(scalaCodegen.generateClass)
-//        + scalaCodegen.generateRaw(scalaTypeToExpr)
       ).mkString("\n")
 
     println(scalaCode)

@@ -2,20 +2,27 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import unidef.languages.common.*
 import unidef.languages.python.PythonCommon
-import unidef.scalai.ScalaiCompiler
+import unidef.languages.shll.Compiler
 
 private object ScalaiTestHelper {
   def compileAndLift(code: String): AstNode = {
-    val compiler = new ScalaiCompiler()
+    val compiler = new Compiler()
     val lifted = compiler.compileAndLift(code)
     println(lifted)
     lifted
   }
 
   inline def lift[T](inline code: T): AstNode = {
-    val compiler = new ScalaiCompiler()
-    val lifted = compiler.lift(code)
+    val compiler = new Compiler()
+    val staged = compiler.stage(code)
+    val lifted = compiler.compileAndLift(
+      s"""
+        |def main() = {
+        |  $staged
+        |}
+        |""".stripMargin)
     println(lifted)
+    // TODO: extract expression code
     lifted
   }
 
@@ -29,12 +36,12 @@ class ScalaiTest {
       1 + 1
     }
   }
-//  @Test def test_hello_world(): Unit = {
-//    ScalaiTestHelper.lift {
-//      def main(): Unit = {
-//      }
-//    }
-//  }
+  @Test def test_hello_world(): Unit = {
+    ScalaiTestHelper.lift {
+      def main(): Unit = {
+      }
+    }
+  }
 
   @Test def test_active_inlining(): Unit = {
     ScalaiTestHelper.compileAndLift(

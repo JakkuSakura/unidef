@@ -89,4 +89,3 @@ I try to implement the tasty version to
 - [ ] Workflow: Generic AST + Extendable <=> Specific AST with static type <=> Source code
 - [ ] Deprecate Velocity with simple Scala interpolation
 - [ ] Replace SQLParser with Druid SQL parser, since the latter is most performant and feature complete
-- [ ] Write JSON codegen to help use with scala macro
