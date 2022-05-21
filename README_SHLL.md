@@ -1,4 +1,4 @@
-# SCALAI
+# SHLL: Simple High Level Language
 
 The language provides a minimal set of orthogonal beautiful syntax, but generates high performance optimized human-readable source code of a general purpose programming language.
 The language utilized Scala3 as the frontend, and tries to keep the semantics whenever possible. 
@@ -13,6 +13,15 @@ For example, you may want to write declarative business logic, and along with an
 - codegen requires an external tool, and writing such tool involves much work
 
 The ideal solution is this language, which specialize the interpreter against the declarative business logic during comptime, to achieve the best performance just like template
+
+Our goal is a simple high-level language that gives you confident of high-level real zero cost abstraction
+
+## Implementation
+
+The frontend is implemented with scala 3 compiler, including lexing, parsing, type inference.
+The language is then optimized and transpiled into a target language(scala/rust), very like Haxe, but with experimental support for optimization.
+
+The language aims to provide multiple language frontend and multiple language backend.
 
 ## Effects and Contexts
 https://boats.gitlab.io/blog/post/the-problem-of-effects/
