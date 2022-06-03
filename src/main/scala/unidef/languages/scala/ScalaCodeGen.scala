@@ -9,59 +9,51 @@ import unidef.utils.{CodeGen, TextTool, TypeEncodeException}
 import scala.jdk.CollectionConverters.*
 
 class ScalaCodeGen(naming: NamingConvention) {
+  val common = ScalaCommon()
   def renderMethod(
       override_a: String,
       name: String,
       params: String,
-      ret: String,
+      ret: Option[String],
       body: Option[String]
   ): String = {
-    // TODO: replace velocity template engine
-    ???
+    s"${override_a}def $name$params" +
+      ret.map(r => s": $r").getOrElse("") +
+      body.map(b => s" = {\n${TextTool.indent_hard(b, 2)}\n}").getOrElse("")
   }
-  val TEMPLATE_METHOD: String =
-    """
-      |${override}def $name$params: $return#if($body) = {
-      |  $text.indent($body, 2)
-      |}#end
-    """.stripMargin
 
   def generateMethod(method: AstFunctionDecl): String = {
-    val context = CodeGen.createContext
-    context.put("name", naming.toMethodName(method.getName.get))
-    if (method.parameters.isEmpty && method.getName.get.startsWith("get"))
-      context.put("params", "")
+    val name = naming.toMethodName(method.getName.get)
+    val params = if (method.parameters.isEmpty && method.getName.get.startsWith("get"))
+      ""
     else
-      context.put(
-        "params",
-        "(" + method.parameters
-          .map(x => x.name + ": " + ScalaCommon().encodeOrThrow(x.value, "param"))
+      "(" + method.parameters
+          .map(x => x.name + ": " + common.encodeOrThrow(x.value, "param"))
           .mkString(", ") + ")"
-      )
 
-    context.put("body", method.getBody.map(_.asInstanceOf[AstRawCode].getCode.get).getOrElse(""))
-    context.put(
-      "override",
-      if (method.getValue(KeyOverride).getOrElse(false)) {
+
+    val body = method.getBody.map(_.asInstanceOf[AstRawCode].getCode.get)
+    val override_a = if (method.getValue(KeyOverride).getOrElse(false)) {
         "override "
       } else {
         ""
       }
-    )
-    context.put("return", ScalaCommon().encode(method.returnType).get)
-    CodeGen.render(TEMPLATE_METHOD, context)
+
+    val ret = common.encode(method.returnType)
+    renderMethod(override_a, name, params, ret, body)
+  }
+  def renderClass(cls: String, name: String, params: Option[List[String]], derive: List[String], methods: List[String]) = {
+    val params_a = params.map(x => x.mkString("(", ", ", ")")).getOrElse("")
+    val derive_a = if (derive.isEmpty) {
+      ""
+    } else {
+      s" extends ${derive.mkString(" with ")}"
+    }
+    val body_a = if(methods.isEmpty) "" else "{\n" + TextTool.indent_hard(methods.mkString("\n"), 2) + "\n}"
+    s"$cls $name$params_a$derive_a ${body_a}"
   }
 
-  val TEMPLATE_CLASS: String =
-    """
-      |$cls $name#if($hasParams)($params)#end #if($derive)extends #foreach($d in $derive)$d #if($foreach.hasNext)with #end#end#end{
-      |#foreach($m in $methods)
-      |  $text.indent($m, 2)
-      |#end
-      |}
-    """.stripMargin
   def generateClass(trt: AstClassDecl): String = {
-    val context = CodeGen.createContext
     val cls = trt.getValue(KeyClassType).getOrElse("case class")
     def mapParam(x: TyField): String = {
       val modifier = if (cls == "case class") {
@@ -71,48 +63,32 @@ class ScalaCodeGen(naming: NamingConvention) {
       } else {
         "val "
       }
-      modifier + x.name + ": " + ScalaCommon()
+      modifier + x.name + ": " + common
         .encode(x.value)
         .getOrElse(throw TypeEncodeException("Scala", x))
     }
 
-    context.put("cls", cls)
-    context.put("name", naming.toClassName(trt.getName.get))
-    context.put(
-      "params",
+    val name = naming.toClassName(trt.getName.get)
+    val params =
       trt.fields.map(mapParam).mkString(", ")
-    )
-    context.put(
-      "hasParams",
-      !cls.contains("object") && !(cls.contains("trait") && trt.fields.isEmpty)
-    )
-    context.put("derive", trt.derived.map(_.name).map(naming.toClassName).asJava)
-    context.put(
-      "methods",
-      trt.methods.map {
+    val hasParams = !cls.contains("object") && !(cls.contains("trait") && trt.fields.isEmpty)
+
+    val derive = trt.derived.map(_.name).map(naming.toClassName)
+    val methods = trt.methods.map {
         case x: AstFunctionDecl => generateMethod(x)
         case x: AstRawCode => x.getCode.get
-      }.asJava
-    )
-    CodeGen.render(TEMPLATE_CLASS, context)
+      }
+    renderClass(cls, name, if (hasParams) Some(List(params)) else None, derive, methods)
   }
-  val TEMPLATE_ENUM: String =
-    """
-      |sealed trait $name
-      |object $name {
-      |  #foreach($x in $variants)
-      |  case object $x extends $name
-      |  #end
-      |}
-    """.stripMargin
+  def renderEnum(name: String, variants: List[String]): String = {
+     s"sealed trait $name\n"
+    + variants.map(x => s"case object $x extends $name").mkString("\n")
+  }
+
   def generateScala2Enum(enm: TyEnum): String = {
-    val context = CodeGen.createContext
-    context.put("name", TextTool.toPascalCase(enm.getName.get))
-    context.put(
-      "variants",
-      enm.variants.map(x => x.names.head).map(TextTool.toScreamingSnakeCase).asJava
-    )
-    CodeGen.render(TEMPLATE_ENUM, context)
+    val name = TextTool.toPascalCase(enm.getName.get)
+    val variants =  enm.variants.map(x => x.names.head).map(TextTool.toScreamingSnakeCase)
+    renderEnum(name, variants)
   }
   def generateRaw(code: AstRawCode): String = {
     code.getCode.get

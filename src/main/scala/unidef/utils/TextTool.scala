@@ -3,6 +3,10 @@ package unidef.utils
 import org.apache.commons.lang3.StringUtils.{splitByCharacterTypeCamelCase, splitByWholeSeparator}
 
 object TextTool {
+  def indent_hard(text: String, indent: Int): String = {
+    val indentStr = " " * indent
+    text.split("\n").map(indentStr + _).mkString("\n")
+  }
   def indent(text: String, indent: Int): String = {
     val indentStr = " " * indent
     val spt = text.split("\n")

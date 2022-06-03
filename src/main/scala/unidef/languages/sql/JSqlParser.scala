@@ -18,7 +18,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.*
 import scala.util.matching.Regex
 
-object JSqlParser {
+class JSqlParser() {
   val logger: Logger = Logger[this.type]
   val sqlCommon: SqlCommon = SqlCommon()
   // does not support default value yet
