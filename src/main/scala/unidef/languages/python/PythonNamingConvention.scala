@@ -1,6 +1,6 @@
 package unidef.languages.python
 
-import unidef.languages.common.NamingConvention
+import unidef.common.NamingConvention
 import unidef.utils.TextTool
 
 case object PythonNamingConvention extends NamingConvention {

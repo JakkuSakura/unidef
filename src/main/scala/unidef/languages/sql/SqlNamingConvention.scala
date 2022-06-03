@@ -1,6 +1,6 @@
 package unidef.languages.sql
 
-import unidef.languages.common.NamingConvention
+import unidef.common.NamingConvention
 import unidef.utils.TextTool
 
 case object SqlNamingConvention extends NamingConvention {

@@ -1,8 +1,8 @@
 package unidef.languages.shll
 
 import com.typesafe.scalalogging.Logger
-import unidef.languages.common.*
-
+import unidef.common.ty.*
+import unidef.common.ast.*
 import scala.collection.mutable
 import scala.quoted.Quotes
 
@@ -14,7 +14,7 @@ class LifterImpl(using val quotes: Quotes) {
   def liftTree(tree: Tree): AstNode = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
-      case Inlined(_, _, Literal(IntConstant(v))) => AstLiteralInteger(v)
+      case Inlined(_, _, Literal(IntConstant(v))) => AstLiteralImpl(Some(v.toString), Some(TyIntegerImpl(Some(BitSize.B32), Some(true))))
 
     }
   }
@@ -38,7 +38,7 @@ class LifterImpl(using val quotes: Quotes) {
   def liftValDef(tree: ValDef): AstRawCode = {
     tree match {
       case ValDef(name, tpt, rhs) =>
-        AstRawCode(s"val $name: ${tpt.show} = ${rhs}")
+        AstRawCodeImpl(Some(s"val $name: ${tpt.show} = ${rhs}"), None)
     }
   }
   def liftStmt(tree: Statement): AstNode = {
@@ -49,10 +49,10 @@ class LifterImpl(using val quotes: Quotes) {
 
       case ClassDef(name, defDef, parents, sefl, body) =>
         liftClassDef(name, defDef, parents, sefl, body)
-
+      case Apply(fun, args) => ???
       case x =>
         logger.error(s"Unsupported statement: ${x.show}")
-        AstRawCode(x.show)
+        AstRawCodeImpl(Some(x.show), None)
     }
   }
   def liftParameter(tree: ValDef): TyField = {

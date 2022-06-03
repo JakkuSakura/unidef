@@ -1,6 +1,8 @@
 package unidef.languages.sql
 
-import unidef.languages.common.*
+import unidef.common.{Keyword, KeywordProvider, NamingConvention}
+import unidef.common.ty.*
+import unidef.common.ast.*
 import unidef.languages.sql.SqlCommon.*
 import unidef.languages.sql.{KeyAutoIncr, KeyNullable, KeyPrimary}
 import unidef.utils.CodeGen
@@ -113,10 +115,10 @@ class SqlCodeGen(
         .getValue(KeyBody)
         .get
         .asInstanceOf[AstRawCode]
-        .getValue(KeyLanguage)
+        .getLanguage
         .get
     )
-    context.put("body", node.getValue(KeyBody).get.asInstanceOf[AstRawCode].raw)
+    context.put("body", node.getValue(KeyBody).get.asInstanceOf[AstRawCode].getCode)
     context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
     node.returnType match {
       case x: TyStruct if x.getFields.isDefined =>

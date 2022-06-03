@@ -3,7 +3,9 @@ package unidef.languages.schema
 import com.typesafe.scalalogging.Logger
 import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject}
-import unidef.languages.common.*
+import unidef.common.ty.*
+import unidef.common.{NoopNamingConvention, ast}
+import unidef.common.ast.*
 import unidef.languages.javascript.{JsonSchemaCommon, JsonSchemaParser}
 import unidef.languages.scala.{ScalaCodeGen, ScalaCommon}
 import unidef.utils.FileUtils.readFile
@@ -11,16 +13,17 @@ import unidef.utils.{ParseCodeException, TextTool, TypeDecodeException, TypeEnco
 
 import java.io.PrintWriter
 import scala.collection.mutable
+def toAstClassName(s: String): String = "Ast" + TextTool.toPascalCase(s)
 
-case class ScalaSchemaCodeGen() {
+case class AstNodeCodeGen() {
   val logger: Logger = Logger[this.type]
   val common = JsonSchemaCommon(true)
 
-  def collectFields(ty: Type, extra: List[String]): Set[TyField] = {
+  def collectFields(ty: Ast, extra: List[String]): Set[TyField] = {
     // FIXME: it doesn't preserve orders
     ty.fields.toSet
   }
-  def collectFields(types: List[Type], extra: List[String]): Set[TyField] = {
+  def collectFields(types: List[Ast], extra: List[String]): Set[TyField] = {
     types
       .flatMap(x => collectFields(x, extra))
       .toSet
@@ -29,7 +32,7 @@ case class ScalaSchemaCodeGen() {
     AstClassDecl(
       AstLiteralString(name),
       Nil,
-      methods.map(AstRawCode.apply),
+      methods.map(x => AstRawCodeImpl(Some(x), None)),
       List(AstClassIdent(derive))
     )
   }
@@ -57,16 +60,16 @@ case class ScalaSchemaCodeGen() {
 
     scalaField(
       traitName,
-      "TyNode",
+      "AstNode",
       List(s"def get${TextTool.toPascalCase(field.name)}: Option[${valueType}]")
     ).setValue(KeyClassType, "trait")
   }
-  def generateScalaCompoundTrait(ty: Type, extra: List[String]): AstClassDecl = {
+  def generateScalaCompoundTrait(ty: Ast, extra: List[String]): AstClassDecl = {
     val scalaCommon = ScalaCommon()
     val fields = ty.fields.toList
 
     AstClassDecl(
-      AstLiteralString("Ty" + TextTool.toPascalCase(ty.name)),
+      AstLiteralString(toAstClassName(ty.name)),
       Nil,
       fields.toSeq
         .map(x => x.name -> x.value)
@@ -78,29 +81,29 @@ case class ScalaSchemaCodeGen() {
           )
         )
         .toList,
-      List(AstClassIdent("TyNode"))
+      List(AstClassIdent("AstNode"))
         :::
-          ty.equivalent
-            .flatMap {
-              case TyNamed(x) => Some("Ty" + TextTool.toPascalCase(x))
-              case _ => None // TODO: support other IS
-            }
-            .map(x => AstClassIdent(x))
-            .toList
-          :::
-          fields
-            .map(x => x.name -> x.value)
-            .map((k, v) => "Has" + TextTool.toPascalCase(k))
-            .map(x => AstClassIdent(x))
-            .toList
+        ty.equivalent
+          .flatMap {
+            case TyNamed(x) => Some(toAstClassName(x))
+            case _ => None // TODO: support other IS
+          }
+          .map(x => AstClassIdent(x))
+          .toList
+        :::
+        fields
+          .map(x => x.name -> x.value)
+          .map((k, v) => "Has" + TextTool.toPascalCase(k))
+          .map(x => AstClassIdent(x))
+          .toList
     ).setValue(KeyClassType, "trait")
   }
 
-  def generateScalaCaseClass(ty: Type, extra: List[String]): AstClassDecl = {
+  def generateScalaCaseClass(ty: Ast, extra: List[String]): AstClassDecl = {
     val fields = ty.fields.toList ::: (if (ty.commentable) List(TyField("comment", TyStringImpl(), Some(true))) else Nil)
 
     AstClassDecl(
-      AstLiteralString("Ty" + TextTool.toPascalCase(ty.name) + "Impl"),
+      AstLiteralString(toAstClassName(ty.name) + "Impl"),
       fields.map(x => TyField(x.name, TyOptionalImpl(Some(x.value)))),
       fields
         .map(x =>
@@ -108,89 +111,53 @@ case class ScalaSchemaCodeGen() {
             AstLiteralString("get" + TextTool.toPascalCase(x.name)),
             Nil,
             TyOptionalImpl(Some(x.value))
-          ).setValue(KeyBody, AstRawCode(x.name))
+          ).setValue(KeyBody, AstRawCodeImpl(Some(x.name), None))
             .setValue(KeyOverride, true)
         )
-      ::: (if (ty.commentable) List( AstFunctionDecl(
+        ::: (if (ty.commentable) List( AstFunctionDecl(
         AstLiteralString("setComment"),
         List(TyField("comment", TyStringImpl())),
         TyNamed("this.type")
-      ).setValue(KeyBody, AstRawCode(s"this.comment = Some(comment)\n this"))
+      ).setValue(KeyBody, AstRawCodeImpl(Some(s"this.comment = Some(comment)\n this"), None))
         .setValue(KeyOverride, true)) else Nil),
-      List(AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
+      List(AstClassIdent(toAstClassName(ty.name)))
         ::: (if (ty.commentable) List(AstClassIdent("TyCommentable")) else Nil)
     ).setValue(KeyClassType, "class")
   }
 }
-object ScalaSchemaCodeGen {
-  def getTypes: Map[String, Type] =
+object AstNodeCodeGen {
+  def getAsts: Map[String, Ast] =
     Seq(
-      Type("string"),
-      Type("field")
-        .field("name", TyStringImpl())
-        .field("value", TyNode),
-      Type("list")
-        .field("content", TyNode),
-//      Type("enum")
-//        .field("variants", TyListImpl(Some(TyStringImpl()))),
-      Type("tuple")
-        .field("values", TyListImpl(Some(TyNode))),
-      Type("optional")
-        .field("content", TyNode),
-      Type("result")
-        .field("ok", TyNode)
-        .field("err", TyNode),
-      Type("numeric"),
-      Type("integer")
-        .field("bit_size", TyNamed("bit_size"))
-        .field("sized", TyBooleanImpl())
-        .is(TyNamed("numeric")),
-      Type("real")
-        .is(TyNamed("numeric")),
-      Type("decimal")
-        .field("precision", TyIntegerImpl(None, None))
-        .field("scale", TyIntegerImpl(None, None))
-        .is(TyNamed("real")),
-      Type("float")
-        .field("bit_size", TyNamed("bit_size"))
-        .is(TyNamed("real")),
-      Type("class"),
-      Type("struct")
-        .field("name", TyStringImpl())
-        .field("fields", TyListImpl(Some(TyNamed("TyField"))))
-        .field("derives", TyListImpl(Some(TyStringImpl())))
-        .field("attributes", TyListImpl(Some(TyStringImpl())))
-        .field("dataframe", TyBooleanImpl(), true)
-        .field("schema", TyStringImpl(), true)
-        .is(TyNamed("class"))
-        .setCommentable(true),
-      Type("object"),
-      Type("map")
-        .field("key", TyNode)
-        .field("value", TyNode),
-      Type("set")
-        .field("content", TyNode),
-      Type("set")
-        .field("content", TyNode)
-        .is(TyIntegerImpl(Some(BitSize.B8), Some(false))),
-      Type("byte_array")
-        .is(TyListImpl(Some(TyIntegerImpl(Some(BitSize.B8), Some(false))))),
-      Type("boolean"),
-      Type("record"),
-      Type("null"),
-      Type("char"),
-      Type("any"),
-      Type("unit"),
-      Type("nothing"),
-      Type("undefined"),
-      Type("inet"),
-      Type("uuid")
+      Ast("unit"),
+      Ast("null"),
+        Ast("undefined"),
+      Ast("block")
+        .field("nodes", TyListImpl(Some(TyNamed("AstNode")))),
+      Ast("statement")
+        .field("expr", TyNamed("AstNode")),
+      Ast("if")
+        .field("test", TyNamed("AstNode"))
+        .field("consequent", TyNamed("AstNode"))
+        .field("alternative", TyNamed("AstNode")),
+      Ast("flow_control")
+        .field("flow", TyNamed("FlowControl"))
+        .field("value", TyNamed("AstNode")),
+      Ast("literal")
+        .field("literal_value", TyStringImpl()) // TODO: make subtypes of literal values?
+        .field("ty", TyNamed("TyNode")),
+      Ast("select")
+        .field("qualifier", TyNamed("AstNode"))
+        .field("symbol", TyStringImpl()),
+      Ast("await").field("expr", TyNamed("AstNode")),
+      Ast("raw_code")
+        .field("code", TyStringImpl())
+        .field("language", TyStringImpl())
     ).map(x => x.name -> x).toMap
 
   def main(args: Array[String]): Unit = {
-    val types = getTypes.values.toList
+    val types = getAsts.values.toList
 
-    val parser = ScalaSchemaCodeGen()
+    val parser = AstNodeCodeGen()
     val extra = mutable.ArrayBuffer[String]()
 
     println("Parsed types")
@@ -214,17 +181,16 @@ object ScalaSchemaCodeGen {
     val scalaCodegen = ScalaCodeGen(NoopNamingConvention)
     val scalaCode =
       (
-//        keyObjects.map(scalaCodegen.generateClass)
-//        :::
         hasTraits.map(scalaCodegen.generateClass).toList
           ::: caseClasses.map(scalaCodegen.generateClass)
           ::: compoundTraits.map(scalaCodegen.generateClass)
-      ).mkString("\n")
+        ).mkString("\n")
 
     println(scalaCode)
-    val writer = new PrintWriter("target/TyNodeGen.scala")
+    val writer = new PrintWriter("target/AstNodeGen.scala")
     writer.println("""
                      |package unidef.languages.common
+                     |import unidef.common.ty.*
                      |
                      |""".trim.stripMargin)
     writer.write(scalaCode)

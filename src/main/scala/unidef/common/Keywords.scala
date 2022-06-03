@@ -1,8 +1,10 @@
-package unidef.languages.common
+package unidef.common
 
 import io.circe.Decoder
-import unidef.utils.TextTool.toSnakeCase
+import unidef.common.ty.*
 import unidef.utils.TextTool
+import unidef.utils.TextTool.toSnakeCase
+
 import scala.collection.mutable
 
 // Assume TypedValue is always type checked.

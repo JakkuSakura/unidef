@@ -2,7 +2,9 @@ package unidef.languages.javascript
 
 import com.typesafe.scalalogging.Logger
 import io.circe.{Json, JsonObject}
-import unidef.languages.common.*
+import unidef.common.NamingConvention
+import unidef.common.ast.AstFunctionDecl
+import unidef.common.ty.*
 import unidef.utils.{ParseCodeException, TypeEncodeException}
 
 import scala.collection.mutable

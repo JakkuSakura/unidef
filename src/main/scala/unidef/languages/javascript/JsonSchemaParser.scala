@@ -2,8 +2,10 @@ package unidef.languages.javascript
 
 import io.circe.Json.Folder
 import io.circe.*
-import unidef.languages.common
-import unidef.languages.common.*
+import unidef.common.{Keyword, KeywordProvider}
+import unidef.common.ast.{AstFunctionDecl, AstLiteralString, AstRawCode, KeyBody, KeyLanguage, KeyParameters, KeyReturn}
+import unidef.common.ty.*
+import unidef.common.ast.*
 import unidef.utils.FileUtils.readFile
 import unidef.utils.JsonUtils.{getList, getObject, getString, iterateOver}
 import unidef.utils.{ParseCodeException, TypeDecodeException}
@@ -42,12 +44,12 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
       .getOrElse(TyUnitImpl())
 
     val node =
-      common.AstFunctionDecl(AstLiteralString(name), parameters.toList, ret)
+      AstFunctionDecl(AstLiteralString(name), parameters.toList, ret)
 
     if (content("language").isDefined && content("language").isDefined) {
       val language = getString(content, "language")
       val body = getString(content, "body")
-      node.setValue(KeyBody, AstRawCode(body).setValue(KeyLanguage, language))
+      node.setValue(KeyBody, AstRawCodeImpl(Some(body), Some(language)))
     }
 
     collectExtKeys(content, extKeysForFuncDecl.toList)

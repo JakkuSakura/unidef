@@ -6,8 +6,9 @@ import net.sf.jsqlparser.parser.{CCJSqlParserUtil, ParseException}
 import net.sf.jsqlparser.statement.create.function.CreateFunction
 import net.sf.jsqlparser.statement.create.table.{ColDataType, ColumnDefinition, CreateTable}
 import org.apache.commons.lang3.StringUtils
-import unidef.languages.common
-import unidef.languages.common.*
+import unidef.common
+import unidef.common.ty.*
+import unidef.common.ast.*
 import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
 import unidef.utils.TextTool.{finds, findss}
 import unidef.utils.{ParseCodeException, TypeDecodeException}
@@ -28,7 +29,7 @@ object SqlParser {
     enums.foreach { x =>
       x.getName.foreach { nm =>
         resolver.add(nm, x, "sql")
-        collected += AstTyped(x)
+        collected += common.ast.AstTyped(x)
       }
 
     }
@@ -73,9 +74,7 @@ object SqlParser {
         k -> v
           .split(",")
           .map(StringUtils.strip(_, " '"))
-          .map(variantName =>
-            TyVariant(List(variantName), None, Some(variantName))
-          )
+          .map(variantName => TyVariant(List(variantName), None, Some(variantName)))
       }
       .map {
         case (s"$schema.$name", v) =>
@@ -235,7 +234,7 @@ object SqlParser {
       else
         TyStructImpl(None, None, Some(Nil), None)
     ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
-    func.setValue(KeyBody, AstRawCode(body).setValue(KeyLanguage, language))
+    func.setValue(KeyBody, AstRawCodeImpl(Some(body), Some(language)))
     if (outputOnly.isEmpty)
       func.setValue(KeyRecords, true)
     logger.debug(
@@ -246,11 +245,10 @@ object SqlParser {
   def parseCreateTable(
       tbl: CreateTable
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
-    common
-      .AstClassDecl(
-        AstLiteralString(tbl.getTable.getName),
-        tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList
-      )
+    AstClassDecl(
+      AstLiteralString(tbl.getTable.getName),
+      tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList
+    )
       .trySetValue(KeySchema, Option(tbl.getTable.getSchemaName))
   }
   def parseParseColumn(

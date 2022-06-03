@@ -1,6 +1,6 @@
 package unidef.utils
 
-import unidef.languages.common.TyNode
+import unidef.common.ty.TyNode
 
 class ExceptionBase(msg: String, cause: Option[Throwable] = None)
     extends Exception(msg, cause.orNull)

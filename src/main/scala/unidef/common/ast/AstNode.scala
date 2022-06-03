@@ -1,9 +1,9 @@
-package unidef.languages.common
-import unidef.languages.common.*
+package unidef.common.ast
 
 import io.circe.Decoder
-import io.circe.generic.semiauto._
-
+import io.circe.generic.semiauto.*
+import unidef.common.{BaseNode, Extendable, Keyword, KeywordBoolean, KeywordOnly, KeywordString}
+import unidef.common.ty.*
 /** The following AST nodes describes a general language that tries to be compatible with other
   * languages It should expose minimal interface while keep its original information Rules:
   * everything is an expression
@@ -12,20 +12,7 @@ trait AstNode extends BaseNode
 
 class AstStaticType(ty: TyNode) extends AstNode
 
-// Unit is the bottom type
-case object AstUnit extends AstStaticType(TyUnitImpl())
-
-// Null is a null reference/pointer
-case object AstNull extends AstStaticType(TyNullImpl())
-
-// Undefined
-case object AstUndefined extends AstStaticType(TyUndefinedImpl())
-
 case class AstTyped(ty: TyNode) extends AstStaticType(ty)
-
-case class AstBlock(nodes: List[AstNode], flatten: Boolean = false) extends AstNode
-
-case class AstStatement(node: AstNode) extends AstNode
 
 case class AstExpression(node: AstNode) extends AstNode
 
@@ -40,26 +27,26 @@ object FlowControl {
   case object Throw extends FlowControl
 }
 
-case class AstFlowControl(flow: FlowControl, value: AstNode) extends AstNode
+def AstLiteralString(x: String): AstLiteral = AstLiteralImpl(Some(x), Some(TyStringImpl()))
+//class AstLiteral(ty: TyNode) extends AstStaticType(ty)
+//
+//case class AstLiteralString(value: String) extends AstLiteral(TyStringImpl())
+//
+//case class AstLiteralChar(value: Char) extends AstLiteral(TyCharImpl())
+//case class AstLiteralInteger(value: Int) extends AstLiteral(TyIntegerImpl(Some(BitSize.B32), None))
+//
+//case class AstLiteralFloat(value: Double) extends AstLiteral(TyFloatImpl(Some(BitSize.B64)))
+//
+//// TODO extends AstLiteral(TyFloat(BitSize.B32))
+//// difference is from https://github.com/ron-rs/ron
+//case class AstLiteralDict(values: List[(AstNode, AstNode)]) extends AstNode
+//
+//case class AstLiteralStruct(values: List[(AstNode, AstNode)]) extends AstNode
+//
+//case class AstLiteralArray(values: List[AstNode]) extends AstNode
+//case class AstLiteralOptional(value: Option[AstNode]) extends AstNode
+//case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBooleanImpl())
 
-class AstLiteral(ty: TyNode) extends AstStaticType(ty)
-
-case class AstLiteralString(value: String) extends AstLiteral(TyStringImpl())
-
-case class AstLiteralChar(value: Char) extends AstLiteral(TyCharImpl())
-case class AstLiteralInteger(value: Int) extends AstLiteral(TyIntegerImpl(Some(BitSize.B32), None))
-
-case class AstLiteralFloat(value: Double) extends AstLiteral(TyFloatImpl(Some(BitSize.B64)))
-
-// TODO extends AstLiteral(TyFloat(BitSize.B32))
-// difference is from https://github.com/ron-rs/ron
-case class AstLiteralDict(values: List[(AstNode, AstNode)]) extends AstNode
-
-case class AstLiteralStruct(values: List[(AstNode, AstNode)]) extends AstNode
-
-case class AstLiteralArray(values: List[AstNode]) extends AstNode
-case class AstLiteralOptional(value: Option[AstNode]) extends AstNode
-case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBooleanImpl())
 
 sealed trait AccessModifier
 
@@ -84,7 +71,7 @@ case class AstFunctionDecl(
   override def getName: Option[String] = literalName
   override def parameterType: TyNode = TyTupleImpl(Some(parameters))
   def literalName: Option[String] = name match {
-    case AstLiteralString(value) => Some(value)
+    case x: AstLiteral if x.getTy.exists(_.isInstanceOf[TyString]) => Some(x.getLiteralValue.get)
     case _ => None
 
   }
@@ -110,7 +97,7 @@ case class AstClassDecl(
   override def getName: Option[String] = literalName
   override def getFields: Option[List[TyField]] = Some(fields)
   def literalName: Option[String] = name match {
-    case AstLiteralString(value) => Some(value)
+    case x: AstLiteral if x.getTy.exists(_.isInstanceOf[TyString]) => Some(x.getLiteralValue.get)
     case _ => None
   }
 
@@ -158,10 +145,6 @@ case class AstFunctionApply(
     applyKwArgs: List[AstNode] = Nil
 ) extends AstNode
 
-case class AstAwait(value: AstNode) extends AstNode
-
-case class AstRawCode(raw: String) extends Extendable with AstNode
-
 case class AstAnnotation(value: AstNode) extends AstNode
 
 case object AstAnnotations extends AstNode with Keyword {
@@ -170,7 +153,7 @@ case object AstAnnotations extends AstNode with Keyword {
   override def name: String = "annotations"
   private val lsDecoder =
     deriveDecoder[List[String]]
-      .map(x => x.map(y => AstAnnotation(AstRawCode(y))))
+      .map(x => x.map(y => AstAnnotation(AstRawCodeImpl(Some(y), None))))
   override def decoder: Option[Decoder[List[AstAnnotation]]] =
     Some(lsDecoder.map(_.toSeq))
 }

@@ -1,6 +1,6 @@
 package unidef.languages.javascript
 
-import unidef.languages.common.NamingConvention
+import unidef.common.NamingConvention
 import unidef.utils.TextTool
 
 case object JsonNamingConvention extends NamingConvention {

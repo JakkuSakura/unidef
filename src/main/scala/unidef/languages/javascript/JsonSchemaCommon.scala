@@ -1,6 +1,6 @@
 package unidef.languages.javascript
 
-import unidef.languages.common.*
+import unidef.common.ty.*
 
 class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
   override def decode(name: String): Option[TyNode] = name.toLowerCase match {

@@ -1,6 +1,8 @@
 package unidef.languages.python
 
-import unidef.languages.common.*
+import unidef.common.{KeywordProvider, NamingConvention}
+import unidef.common.ty.*
+import unidef.common.ast.{AstImport, AstImportRaw, AstImportSimple, AstNode, AstRawCode, AstSourceFile, ImportManager}
 import unidef.utils.{CodeGen, CodegenException, ParseCodeException}
 
 import java.time.LocalDateTime
@@ -58,7 +60,7 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
   }
   def generateStatement(body: AstNode): String = {
     body match {
-      case AstRawCode(raw) => raw
+      case x : AstRawCode => x.getCode.get
       case _ => ???
     }
   }

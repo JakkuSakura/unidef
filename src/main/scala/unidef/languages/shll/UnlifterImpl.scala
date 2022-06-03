@@ -1,7 +1,7 @@
 package unidef.languages.shll
 
 import com.typesafe.scalalogging.Logger
-import unidef.languages.common.AstNode
+import unidef.common.ast.AstNode
 
 import scala.quoted.{Expr, Quotes}
 

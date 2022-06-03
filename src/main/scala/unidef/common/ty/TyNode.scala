@@ -1,6 +1,7 @@
-package unidef.languages.common
+package unidef.common.ty
 
 import io.circe.{Encoder, Json}
+import unidef.common.{BaseNode, Extendable, Keyword, KeywordBoolean, KeywordOnly}
 
 import java.util.TimeZone
 import scala.quoted.{Expr, Quotes}

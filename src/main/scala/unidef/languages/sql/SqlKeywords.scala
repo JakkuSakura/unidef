@@ -1,6 +1,6 @@
 package unidef.languages.sql
 
-import unidef.languages.common.KeywordBoolean
+import unidef.common.KeywordBoolean
 
 
 case object KeyPrimary extends KeywordBoolean

@@ -1,4 +1,4 @@
-package unidef.languages.common
+package unidef.common.ast
 
 import scala.collection.mutable
 

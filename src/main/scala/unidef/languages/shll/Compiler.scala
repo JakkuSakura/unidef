@@ -1,9 +1,9 @@
 package unidef.languages.shll
 
+import unidef.common.ast.{AstNode, AstUnit}
 import scala.sys.process.Process
-import unidef.languages.common.{AstNode, AstUnit}
 import unidef.utils.FileUtils
-
+import unidef.common.ast.*
 import java.io.{File, FileWriter}
 import scala.io.Source
 import scala.quoted.runtime.impl.QuotesImpl
@@ -21,7 +21,7 @@ class Compiler {
   }
   def compileAndLift(code: String): AstNode = {
     if (code.isEmpty) {
-      return AstUnit
+      return AstUnitImpl()
     }
     val path = compileOnly(code)
     val tasty = path.getAbsolutePath.replace(".scala", "$package.tasty")

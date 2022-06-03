@@ -1,6 +1,8 @@
 package unidef.languages.python
 
-import unidef.languages.common._
+import unidef.common.NamingConvention
+import unidef.common.ast.{AstImport, ImportManager}
+import unidef.common.ty.*
 
 class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
     extends TypeEncoder[String]

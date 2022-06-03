@@ -1,6 +1,9 @@
 package unidef.languages.scala
 
-import unidef.languages.common.*
+import unidef.common.NamingConvention
+import unidef.common.ty.{TyEnum, TyField}
+import unidef.common.ast.{AstClassDecl, AstFunctionDecl, AstRawCode, KeyClassType, KeyOverride}
+
 import unidef.utils.{CodeGen, TextTool, TypeEncodeException}
 
 import scala.jdk.CollectionConverters.*
@@ -36,7 +39,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           .mkString(", ") + ")"
       )
 
-    context.put("body", method.getBody.map(_.asInstanceOf[AstRawCode].raw).getOrElse(""))
+    context.put("body", method.getBody.map(_.asInstanceOf[AstRawCode].getCode.get).getOrElse(""))
     context.put(
       "override",
       if (method.getValue(KeyOverride).getOrElse(false)) {
@@ -88,7 +91,7 @@ class ScalaCodeGen(naming: NamingConvention) {
       "methods",
       trt.methods.map {
         case x: AstFunctionDecl => generateMethod(x)
-        case x: AstRawCode => x.raw
+        case x: AstRawCode => x.getCode.get
       }.asJava
     )
     CodeGen.render(TEMPLATE_CLASS, context)
@@ -112,6 +115,6 @@ class ScalaCodeGen(naming: NamingConvention) {
     CodeGen.render(TEMPLATE_ENUM, context)
   }
   def generateRaw(code: AstRawCode): String = {
-    code.raw
+    code.getCode.get
   }
 }

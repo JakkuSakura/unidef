@@ -3,7 +3,10 @@ package unidef.languages.yaml
 import com.typesafe.scalalogging.Logger
 import io.circe.yaml.parser
 import io.circe.Json
-import unidef.languages.common._
+import unidef.common.ty.{TyNode, TyStructImpl}
+import unidef.common.ast
+import unidef.common.ast.{AstNode, AstTyped}
+
 import unidef.languages.javascript.JsonSchemaParser
 import unidef.utils.ParseCodeException
 
@@ -51,7 +54,7 @@ case class YamlParser(jsParser: JsonSchemaParser) {
       }
       .map {
         case a: AstNode => a
-        case t: TyNode => AstTyped(t)
+        case t: TyNode => ast.AstTyped(t)
       }
       .toArray
   }

@@ -1,10 +1,10 @@
 package unidef.languages.sql
 
 import com.typesafe.scalalogging.Logger
-import unidef.languages.common.{TyTimeStamp, *}
+import unidef.common.{KeywordBoolean, KeywordString, NamingConvention}
+import unidef.common.ty.*
 import unidef.languages.sql.{KeyNullable, KeyPrimary}
 import unidef.utils.TypeEncodeException
-
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 object SqlCommon {
@@ -55,8 +55,8 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case _: TyTimeStamp => Some("timestamp")
     case _: TyString => Some("text")
     case _: TyStruct => Some("jsonb")
-    case x : TyEnum if x.simpleEnum.contains(false) => Some("jsonb")
-    case x : TyEnum if x.getName.isDefined =>
+    case x: TyEnum if x.simpleEnum.contains(false) => Some("jsonb")
+    case x: TyEnum if x.getName.isDefined =>
       x.getName
     case _: TyEnum => Some("text")
     case TyJsonObject => Some("jsonb")

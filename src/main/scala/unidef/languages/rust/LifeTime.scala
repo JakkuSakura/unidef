@@ -1,6 +1,6 @@
 package unidef.languages.rust
 
-import unidef.languages.common.Keyword
+import unidef.common.Keyword
 
 sealed trait LifeTime
 

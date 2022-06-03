@@ -1,6 +1,6 @@
 package unidef.languages.scala
 
-import unidef.languages.common.*
+import unidef.common.ty.{TyAny, TyBoolean, TyInteger, TyList, TyNamed, TyNode, TyOptional, TyString, TyUnit, TypeEncoder}
 import unidef.utils.TextTool
 
 class ScalaCommon() extends TypeEncoder[String] {

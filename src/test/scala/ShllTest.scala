@@ -1,6 +1,7 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import unidef.languages.common.*
+import unidef.common.ast.AstNode
+
 import unidef.languages.python.PythonCommon
 import unidef.languages.shll.Compiler
 

@@ -1,6 +1,4 @@
-package unidef.languages.common
-
-
+package unidef.common.ty
 
 trait HasOk extends TyNode {
   def getOk: Option[TyNode]

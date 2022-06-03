@@ -1,15 +1,8 @@
 package unidef
 
-import unidef.languages.common.{
-  AstClassDecl,
-  AstFunctionDecl,
-  AstTyped,
-  Extendable,
-  ImportManager,
-  TyEnum,
-  TyStruct,
-  TypeRegistry
-}
+import unidef.common.Extendable
+import unidef.common.ty.*
+import unidef.common.ast.{AstClassDecl, AstFunctionDecl, AstTyped, ImportManager}
 import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
 import unidef.languages.python.PythonCodeGen
 import unidef.languages.sql.{SqlCodeGen, SqlParser}
