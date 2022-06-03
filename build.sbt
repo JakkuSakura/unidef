@@ -1,6 +1,6 @@
 ThisBuild / scalaVersion := "3.1.1"
 ThisBuild / organization := "com.jeekrs"
-ThisBuild / version := "0.4.0-SNAPSHOT"
+ThisBuild / version := "0.4.1-SNAPSHOT"
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
@@ -34,6 +34,8 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"
 
 libraryDependencies += "com.github.jsqlparser" % "jsqlparser" % "4.3"
+// https://mvnrepository.com/artifact/com.alibaba/druid
+libraryDependencies += "com.alibaba" % "druid" % "1.2.10"
 
 // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.12.0"

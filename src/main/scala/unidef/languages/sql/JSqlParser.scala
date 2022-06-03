@@ -18,12 +18,12 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.*
 import scala.util.matching.Regex
 
-object SqlParser {
+object JSqlParser {
   val logger: Logger = Logger[this.type]
   val sqlCommon: SqlCommon = SqlCommon()
   // does not support default value yet
 
-  def parse(sql: String)(implicit resolver: TypeRegistry): Seq[AstNode] = {
+  def parse(sql: String)(implicit resolver: TypeRegistry): List[AstNode] = {
     val collected = ArrayBuffer[AstNode]()
     val enums = extractEnums(sql)
     enums.foreach { x =>
@@ -37,7 +37,7 @@ object SqlParser {
     val cleaned = stripUnsurpported(sql)
     if (isEmpty(cleaned)) return {
       logger.debug(s"No table or function declaration: ${sql.slice(0, 100)}")
-      collected.toSeq
+      collected.toList
     }
     val stmts =
       try {
@@ -64,7 +64,7 @@ object SqlParser {
         }
       case _ =>
     }
-    collected.toSeq
+    collected.toList
   }
   private def extractEnums(sql: String): Seq[TyEnum] = {
     new Regex("(CREATE|create)\\s+(TYPE|type)\\s+(.+)\\s+(AS|as)\\s+(ENUM|enum)\\s*\\((.+?)\\);")

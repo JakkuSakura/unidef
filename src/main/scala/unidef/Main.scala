@@ -5,7 +5,7 @@ import unidef.common.ty.*
 import unidef.common.ast.{AstClassDecl, AstFunctionDecl, AstTyped, ImportManager}
 import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
 import unidef.languages.python.PythonCodeGen
-import unidef.languages.sql.{SqlCodeGen, SqlParser}
+import unidef.languages.sql.{SqlCodeGen, JSqlParser, DruidSqlParser}
 import unidef.languages.yaml.YamlParser
 import unidef.utils.{FileUtils, VirtualFileSystem}
 
@@ -24,7 +24,7 @@ import java.io.PrintWriter
   val parsed = Array.from(if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
     yamlParser.parseFile(fileContents)
   } else if (filename.endsWith(".sql")) {
-    SqlParser.parse(fileContents)(sqlResolver)
+    JSqlParser().parse(fileContents)(sqlResolver)
   } else if (filename.endsWith(".json")) {
     val parsed = JsonSchemaParser().parse(io.circe.parser.parse(fileContents).toTry.get)
     Seq(AstTyped(parsed))

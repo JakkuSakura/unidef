@@ -2,8 +2,8 @@ package unidef.languages.schema
 
 import io.circe.{Json, JsonNumber, JsonObject}
 import io.circe.syntax.*
-import unidef.common.ty.{TyEnum, TyField, TyNode}
-import unidef.common.ast.{AstLiteral, AstLiteralBoolean, AstLiteralInteger, AstNode}
+import unidef.common.ty.*
+import unidef.common.ast.*
 import unidef.utils.ParseCodeException
 
 import scala.collection.mutable
