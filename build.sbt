@@ -1,6 +1,6 @@
 ThisBuild / scalaVersion := "3.1.1"
 ThisBuild / organization := "com.jeekrs"
-ThisBuild / version := "0.4.1-SNAPSHOT"
+ThisBuild / version := "0.4.2-SNAPSHOT"
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
@@ -25,10 +25,6 @@ val circeVersion = "0.14.1"
 libraryDependencies += "io.circe" %% "circe-yaml" % circeVersion
 libraryDependencies += "io.circe" %% "circe-parser" % circeVersion
 libraryDependencies += "io.circe" %% "circe-generic" % circeVersion
-
-// https://mvnrepository.com/artifact/org.apache.velocity/velocity-engine-core
-libraryDependencies += "org.apache.velocity" % "velocity-engine-core" % "2.3"
-libraryDependencies += "org.apache.velocity.tools" % "velocity-tools-generic" % "3.1"
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"

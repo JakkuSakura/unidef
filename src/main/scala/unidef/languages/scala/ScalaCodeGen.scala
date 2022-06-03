@@ -4,7 +4,7 @@ import unidef.common.NamingConvention
 import unidef.common.ty.{TyEnum, TyField}
 import unidef.common.ast.{AstClassDecl, AstFunctionDecl, AstRawCode, KeyClassType, KeyOverride}
 
-import unidef.utils.{CodeGen, TextTool, TypeEncodeException}
+import unidef.utils.{ TextTool, TypeEncodeException}
 
 import scala.jdk.CollectionConverters.*
 

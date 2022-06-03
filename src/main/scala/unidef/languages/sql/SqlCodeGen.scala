@@ -5,9 +5,7 @@ import unidef.common.ty.*
 import unidef.common.ast.*
 import unidef.languages.sql.SqlCommon.*
 import unidef.languages.sql.{KeyAutoIncr, KeyNullable, KeyPrimary}
-import unidef.utils.CodeGen
-
-import scala.jdk.CollectionConverters.*
+import unidef.utils.TextTool
 
 class SqlCodeGen(
     naming: NamingConvention = SqlNamingConvention,
@@ -17,137 +15,118 @@ class SqlCodeGen(
     Seq(KeyRecords, KeySchema, KeyBody)
 
   override def keysOnField: Seq[Keyword] = Seq(KeyPrimary, KeyAutoIncr, KeyNullable)
-
-  private val TEMPLATE_GENERATE_FUNCTION_CALL =
-    """|#if($percentage)
-       |#macro(generate_params)#foreach($param in $params)
-       |    $param => %s#if($foreach.hasNext), #end
-       |#end#end
-       |#else
-       |#macro(generate_params)#foreach($param in $params)
-       |    $param => ${esc.d}$foreach.count#if($foreach.hasNext), #end
-       |#end#end
-       |#end
-       |#if($table)
-       |SELECT * FROM $schema${db_func_name}(
-       |#generate_params()
-       |);
-       |#else
-       |SELECT $schema$db_func_name(
-       |#generate_params()
-       |) AS _value;
-       |#end
-       |""".stripMargin
-
-  def generateCallFunc(func: AstFunctionDecl, percentage: Boolean = false): String = {
-    val context = CodeGen.createContext
-
-    context.put("params", func.parameters.map(_.name).map(naming.toFunctionParameterName).asJava)
-    context.put("db_func_name", naming.toFunctionName(func.getName.get))
-    context.put("schema", func.getValue(KeySchema).fold("")(x => s"$x."))
-
-    val returnType = func.returnType
-    returnType match {
-      case _: TyRecord | _: TyStruct =>
-        context.put("table", true)
-      case _ =>
-        context.put("table", false)
-
+  def renderFunctionCall(
+      schema: String,
+      db_func_name: String,
+      args: List[String],
+      is_table: Boolean,
+      quote: String
+  ): String = {
+    if (is_table) {
+      s"SELECT * FROM $schema$db_func_name(\n"
+        + args.map(x => s"    $x => $quote").mkString(",\n")
+        + ");"
+    } else {
+      s"SELECT $schema$db_func_name(\n"
+        + args.map(x => s"    $x => $quote").mkString(",\n")
+        + ") AS AS _value;"
     }
-
-    context.put("percentage", percentage)
-    CodeGen.render(TEMPLATE_GENERATE_FUNCTION_CALL, context)
   }
+  def generateCallFunc(func: AstFunctionDecl, percentage: Boolean = false): String = {
 
-  private val TEMPLATE_GENERATE_TABLE_DDL: String =
-    """|CREATE TABLE IF NOT EXIST $schema$name (
-       |#foreach($field in $fields)
-       |   $field.name() $field.ty()$field.attributes()#if($foreach.hasNext),#end
-       |#end
-       |);
-       |""".stripMargin
+    val params = func.parameters.map(_.name).map(naming.toFunctionParameterName)
+    val db_func_name = naming.toFunctionName(func.getName.get)
+    val schema = func.getValue(KeySchema).fold("")(x => s"$x.")
+    val returnType = func.returnType
+    val is_table = returnType match {
+      case _: TyRecord | _: TyStruct =>
+        true
+      case _ =>
+        false
+    }
+    val quote = if (percentage) "%" else "$"
 
+    renderFunctionCall(schema, db_func_name, params, is_table, quote)
+  }
+  def renderTableDdl(schema: String, name: String, fields: List[SqlField]): String = {
+    s"CREATE TABLE IF NOT EXIST $schema$name (\n"
+      + fields.map(f => s"    ${f.name} ${f.ty}${f.attributes}").mkString(",\n")
+      + "\n);"
+  }
   def generateTableDdl(node: TyStruct): String = {
-    val context = CodeGen.createContext
-    context.put("name", naming.toFunctionName(node.getName.get))
-    context.put("fields", node.getFields.get.map(sqlCommon.convertToSqlField).asJava)
-    context.put("schema", node.getSchema.fold("")(x => s"$x."))
-    CodeGen.render(TEMPLATE_GENERATE_TABLE_DDL, context)
+    val name = naming.toFunctionName(node.getName.get)
+    val fields = node.getFields.get.map(sqlCommon.convertToSqlField)
+    val schema = node.getSchema.fold("")(x => s"$x.")
+    renderTableDdl(schema, name, fields)
   }
-
-  private val TEMPLATE_GENERATE_FUNCTION_DDL =
-    """|CREATE OR REPLACE FUNCTION $schema$name (
-       |#foreach($arg in $args)
-       |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
-       |#end
-       |)
-       |#if(!$return_type)
-       |RETURNS TABLE (
-       |#foreach($arg in $return_table)
-       |  $arg.name() $arg.ty()#if($foreach.hasNext),#end
-       |#end
-       |)
-       |#else
-       |RETURNS $return_type
-       |#end
-       |LANGUAGE $language
-       |AS $$
-       |$body
-       |$$;
-       |""".stripMargin
+  def renderFunctionDdl(
+      schema: String,
+      name: String,
+      params: List[SqlField],
+      returnType: String,
+      returnTable: List[SqlField],
+      language: String,
+      body: String
+  ): String =
+    s"""CREATE OR REPLACE FUNCTION $schema$name(\n"""
+      + params.map(f => s"    ${f.name} ${f.ty}${f.attributes}").mkString(",\n")
+      + ")\n"
+      + (if (returnType.isEmpty)
+           "RETURNS TABLE (\n" + returnTable
+             .map(x => s"  ${x.name} ${x.ty}")
+             .mkString("\n") + "\n)\n"
+         else s"RETURNS $returnType\n")
+      + s"LANGUAGE $language\n"
+      + s"AS $$\n"
+      + TextTool.indent_hard(body, 2)
+      + "\n$$;"
 
   def generateFunctionDdl(node: AstFunctionDecl): String = {
-    val context = CodeGen.createContext
-    context.put("name", naming.toFunctionName(node.getName.get))
-    context.put(
-      "args",
-      node.parameterType
-        .asInstanceOf[TyTuple]
-        .getValues
-        .get
-        .map(_.asInstanceOf[TyField])
-        .map(sqlCommon.convertToSqlField)
-        .asJava
-    )
-    context.put(
-      "language",
+    val name = naming.toFunctionName(node.getName.get)
+    val args = node.parameterType
+      .asInstanceOf[TyTuple]
+      .getValues
+      .get
+      .map(_.asInstanceOf[TyField])
+      .map(sqlCommon.convertToSqlField)
+
+    val language =
       node
         .getValue(KeyBody)
         .get
         .asInstanceOf[AstRawCode]
         .getLanguage
         .get
-    )
-    context.put("body", node.getValue(KeyBody).get.asInstanceOf[AstRawCode].getCode)
-    context.put("schema", node.getValue(KeySchema).fold("")(x => s"$x."))
+
+    val body = node.getValue(KeyBody).get.asInstanceOf[AstRawCode].getCode.get
+    val schema = node.getValue(KeySchema).fold("")(x => s"$x.")
+    var returnTable: List[SqlField] = Nil
+    var returnType = ""
     node.returnType match {
       case x: TyStruct if x.getFields.isDefined =>
-        context.put(
-          "return_table",
-          x.getFields.get.map(sqlCommon.convertToSqlField).asJava
-        )
+        returnTable = x.getFields.get.map(sqlCommon.convertToSqlField)
       case _: TyStruct =>
-        context.put("return_type", "record")
-      case a => context.put("return_type", sqlCommon.convertType(a))
+        returnType = "record"
+      case a => returnType = sqlCommon.convertType(a)
     }
+    renderFunctionDdl(schema, name, args, returnType, returnTable, language, body)
+  }
+  def renderFuncionConstant(schema: String, name: String, ty: String, value: String): String = {
+    s"CREATE OR REPLACE FUNCTION $schema$name()\n"
+      + s"RETURNS $ty\n"
+      + s"LANGUAGE SQL\n"
+      + s"AS $$\n"
+      + s"SELECT $value;\n"
+      + s"$$;"
 
-    CodeGen.render(TEMPLATE_GENERATE_FUNCTION_DDL, context)
   }
 
-  protected val TEMPLATE_GENERATE_FUNCTION_CONSTANT: String =
-    """|CREATE OR REPLACE FUNCTION $name ()
-       |RETURNS $return_type
-       |LANGUAGE SQL
-       |AS $$
-       |SELECT $value;
-       |$$;
-       |""".stripMargin
-
   def generateRawFunction(name: String, ret: TyNode, value: String): String = {
-    val context = CodeGen.createContext
-    context.put("name", name)
-    context.put("return_type", sqlCommon.convertType(ret))
-    context.put("value", value)
-    CodeGen.render(TEMPLATE_GENERATE_FUNCTION_CONSTANT, context)
+    renderFuncionConstant(
+      "",
+      name, //      naming.toFunctionName(name),
+      sqlCommon.convertType(ret),
+      value
+    )
   }
 }
