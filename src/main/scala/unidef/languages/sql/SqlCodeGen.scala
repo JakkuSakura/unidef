@@ -115,9 +115,9 @@ class SqlCodeGen(
     s"CREATE OR REPLACE FUNCTION $schema$name()\n"
       + s"RETURNS $ty\n"
       + s"LANGUAGE SQL\n"
-      + s"AS $$\n"
+      + "AS $$\n"
       + s"SELECT $value;\n"
-      + s"$$;"
+      + "$$;"
 
   }
 

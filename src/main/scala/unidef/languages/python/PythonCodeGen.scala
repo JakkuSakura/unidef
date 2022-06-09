@@ -17,7 +17,7 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
   def renderEnum(name: String, enum_type: Option[String], fields: List[PythonCodeGenField]): String =
     s"class $name" + enum_type.map(x => s"($x)").getOrElse("") + ":\n"
     + fields.map(f => s"    ${f.name} = ${f.orig_name}").mkString("\n")
-    + "\n    pass"
+    + (if (fields.isEmpty) "\n    pass" else "")
 
 
   def generateEnum(enm: TyEnum, importManager: Option[ImportManager] = None): String = {
