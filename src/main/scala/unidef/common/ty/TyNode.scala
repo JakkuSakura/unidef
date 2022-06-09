@@ -8,6 +8,7 @@ import scala.quoted.{Expr, Quotes}
 
 trait TyNode extends BaseNode
 
+// TODO: lift to BaseNode level and rename
 trait TyCommentable extends TyNode {
   def getComment: Option[String]
   def setComment(comment: String): this.type

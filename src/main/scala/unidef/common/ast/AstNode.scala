@@ -63,15 +63,19 @@ case class AstFunctionDecl(
     name: AstNode,
     parameters: List[TyField],
     override val returnType: TyNode,
-    dataframe: Option[Boolean] = None
+    dataframe: Option[Boolean] = None,
+    var comment: Option[String] = None
 ) extends Extendable
     with AstNode
     with TyApplicable
     with HasName
     with HasBody
-    with HasDataframe {
+    with HasDataframe
+    with TyCommentable {
   override def getName: Option[String] = literalName
+
   override def parameterType: TyNode = TyTupleImpl(Some(parameters))
+
   def literalName: Option[String] = name match {
     case x: AstLiteral if x.getTy.exists(_.isInstanceOf[TyString]) => Some(x.getLiteralValue.get)
     case _ => None
@@ -79,6 +83,13 @@ case class AstFunctionDecl(
   }
 
   override def getDataframe: Option[Boolean] = dataframe
+
+  override def getComment: Option[String] = comment
+
+  override def setComment(comment: String): AstFunctionDecl.this.type = {
+    this.comment = Some(comment)
+    this
+  }
 }
 
 case class AstLambdaDecl(parameters: List[TyField], returnType: TyNode, body: AstNode)
