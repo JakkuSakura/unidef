@@ -3,7 +3,15 @@ package unidef.languages.javascript
 import io.circe.Json.Folder
 import io.circe.*
 import unidef.common.{Keyword, KeywordProvider}
-import unidef.common.ast.{AstFunctionDecl, AstLiteralString, AstRawCode, KeyBody, KeyLanguage, KeyParameters, KeyReturn}
+import unidef.common.ast.{
+  AstFunctionDecl,
+  AstLiteralString,
+  AstRawCode,
+  KeyBody,
+  KeyLanguage,
+  KeyParameters,
+  KeyReturn
+}
 import unidef.common.ty.*
 import unidef.common.ast.*
 import unidef.utils.FileUtils.readFile
@@ -75,6 +83,9 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
 
     val node = TyStructImpl(None, Some(fields.toList), None, None)
 //    collectExtKeys(value, extKeysForClassDecl.toList).foreach(node.setValue)
+    val comment = value("comment").orElse(value("$comment"))
+    if (comment.isDefined)
+      node.setComment(getString(value, "comment"))
 
     node
   }
@@ -90,7 +101,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         KeyReturn
       )
   private val extKeysForClassDecl =
-    mutable.HashSet[Keyword]( KeyType, KeyProperties)
+    mutable.HashSet[Keyword](KeyType, KeyProperties)
 
   def prepareForExtKeys(obj: KeywordProvider): Unit = {
     extKeysForField ++= obj.keysOnField
