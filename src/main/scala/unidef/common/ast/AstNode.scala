@@ -172,9 +172,8 @@ case object AstAnnotations extends AstNode with Keyword {
   override def decoder: Option[Decoder[List[AstAnnotation]]] =
     Some(lsDecoder.map(_.toSeq))
 }
-case object AstComment extends AstNode with KeywordString {
-  override def name: String = "comment"
-}
+case class AstComment(comment: String) extends AstNode
+
 case class AstProgram(statements: List[AstNode]) extends AstNode
 
 trait HasBody extends Extendable {
