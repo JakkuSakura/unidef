@@ -3,7 +3,7 @@ package unidef.languages.javascript
 import com.typesafe.scalalogging.Logger
 import io.circe.{Json, JsonObject}
 import unidef.common.NamingConvention
-import unidef.common.ast.AstFunctionDecl
+import unidef.common.ast.{AstFunctionDecl, extractArgumentStruct}
 import unidef.common.ty.*
 import unidef.utils.{ParseCodeException, TypeEncodeException}
 
@@ -20,7 +20,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): Json = {
-    val struct = TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe)
+    val struct = extractArgumentStruct(func)
     generateType(struct, isMethodParameters = true)
   }
 

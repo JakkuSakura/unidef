@@ -58,7 +58,9 @@ object AccessModifier extends Keyword {
   case object Package extends AccessModifier
   case class Limited(path: String) extends AccessModifier
 }
-
+def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
+  TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe, comment = func.comment)
+}
 case class AstFunctionDecl(
     name: AstNode,
     parameters: List[TyField],
