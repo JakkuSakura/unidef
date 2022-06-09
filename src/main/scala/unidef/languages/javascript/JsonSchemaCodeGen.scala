@@ -20,7 +20,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   val logger: Logger = Logger[this.type]
 
   def generateFuncDecl(func: AstFunctionDecl): Json = {
-    val struct = TyStructImpl(func.getName, Some(func.parameters), None, None)
+    val struct = TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe)
     generateType(struct, isMethodParameters = true)
   }
 
@@ -157,7 +157,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           )
         )
 
-        if (keyAdditionalProperties) {
+        if (!keyAdditionalProperties) {
           others += "additionalProperties" -> Json.False
         }
         if (keyRequired) {
@@ -210,7 +210,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   }
   def generateType(ty: TyNode, isMethodParameters: Boolean=false): Json = {
     val new_ty = ty match {
-      case x: TyStructImpl if x.dataframe.contains(true) =>
+      case x: TyStruct if x.getDataframe.contains(true) =>
         convertToMatrix(x)
       case x => x
     }

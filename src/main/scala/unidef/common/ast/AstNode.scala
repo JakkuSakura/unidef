@@ -4,6 +4,7 @@ import io.circe.Decoder
 import io.circe.generic.semiauto.*
 import unidef.common.{BaseNode, Extendable, Keyword, KeywordBoolean, KeywordOnly, KeywordString}
 import unidef.common.ty.*
+
 /** The following AST nodes describes a general language that tries to be compatible with other
   * languages It should expose minimal interface while keep its original information Rules:
   * everything is an expression
@@ -47,7 +48,6 @@ def AstLiteralString(x: String): AstLiteral = AstLiteralImpl(Some(x), Some(TyStr
 //case class AstLiteralOptional(value: Option[AstNode]) extends AstNode
 //case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBooleanImpl())
 
-
 sealed trait AccessModifier
 
 object AccessModifier extends Keyword {
@@ -62,12 +62,14 @@ object AccessModifier extends Keyword {
 case class AstFunctionDecl(
     name: AstNode,
     parameters: List[TyField],
-    override val returnType: TyNode
+    override val returnType: TyNode,
+    dataframe: Option[Boolean] = None
 ) extends Extendable
     with AstNode
     with TyApplicable
     with HasName
-    with HasBody {
+    with HasBody
+    with HasDataframe {
   override def getName: Option[String] = literalName
   override def parameterType: TyNode = TyTupleImpl(Some(parameters))
   def literalName: Option[String] = name match {
@@ -75,6 +77,8 @@ case class AstFunctionDecl(
     case _ => None
 
   }
+
+  override def getDataframe: Option[Boolean] = dataframe
 }
 
 case class AstLambdaDecl(parameters: List[TyField], returnType: TyNode, body: AstNode)

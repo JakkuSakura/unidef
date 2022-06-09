@@ -1,6 +1,6 @@
 ThisBuild / scalaVersion := "3.1.1"
 ThisBuild / organization := "com.jeekrs"
-ThisBuild / version := "0.4.2-SNAPSHOT"
+ThisBuild / version := "0.4.3-SNAPSHOT"
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
