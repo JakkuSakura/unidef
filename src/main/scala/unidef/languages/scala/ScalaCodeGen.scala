@@ -2,9 +2,8 @@ package unidef.languages.scala
 
 import unidef.common.NamingConvention
 import unidef.common.ty.{TyEnum, TyField}
-import unidef.common.ast.{AstClassDecl, AstFunctionDecl, AstRawCode, KeyClassType, KeyOverride}
-
-import unidef.utils.{ TextTool, TypeEncodeException}
+import unidef.common.ast.{AstClassDecl, AstFunctionDecl, AstRawCode, AstValDef, KeyClassType, KeyOverride}
+import unidef.utils.{TextTool, TypeEncodeException}
 
 import scala.jdk.CollectionConverters.*
 
@@ -55,17 +54,17 @@ class ScalaCodeGen(naming: NamingConvention) {
 
   def generateClass(trt: AstClassDecl): String = {
     val cls = trt.getValue(KeyClassType).getOrElse("case class")
-    def mapParam(x: TyField): String = {
+    def mapParam(x: AstValDef): String = {
       val modifier = if (cls == "case class") {
         ""
-      } else if (x.mutability.contains(true)) {
+      } else if (x.getMutability.contains(true)) {
         "var "
       } else {
         "val "
       }
-      modifier + x.name + ": " + common
-        .encode(x.value)
-        .getOrElse(throw TypeEncodeException("Scala", x))
+      modifier + x.getName.get + ": " + common
+        .encode(x.getTy.get)
+        .getOrElse(throw TypeEncodeException("Scala", x.getTy.get))
     }
 
     val name = naming.toClassName(trt.getName.get)

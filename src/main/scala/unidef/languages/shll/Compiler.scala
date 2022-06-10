@@ -1,10 +1,13 @@
 package unidef.languages.shll
 
 import unidef.common.ast.{AstNode, AstUnit}
+
 import scala.sys.process.Process
 import unidef.utils.FileUtils
 import unidef.common.ast.*
+
 import java.io.{File, FileWriter}
+import java.nio.file.Files
 import scala.io.Source
 import scala.quoted.runtime.impl.QuotesImpl
 import scala.quoted.{Expr, Quotes}
@@ -12,7 +15,8 @@ import scala.tasty.inspector.TastyInspector
 
 class Compiler {
   def compileOnly(code: String): File = {
-    val path = File.createTempFile("scalai_", ".scala")
+    val tempDir = Files.createTempDirectory("shll").toFile
+    val path = File(tempDir, "main.scala")
     val writer = FileWriter(path)
     writer.write(code)
     writer.close()
@@ -24,8 +28,8 @@ class Compiler {
       return AstUnitImpl()
     }
     val path = compileOnly(code)
-    val tasty = path.getAbsolutePath.replace(".scala", "$package.tasty")
-    val tastyFiles = List(tasty)
+
+    val tastyFiles = path.getParentFile.listFiles((dir, name) => name.endsWith(".tasty")).map(_.getAbsolutePath).toList
     val lifter = TastyHelper()
     TastyInspector.inspectTastyFiles(tastyFiles)(lifter)
     lifter.getAstNode

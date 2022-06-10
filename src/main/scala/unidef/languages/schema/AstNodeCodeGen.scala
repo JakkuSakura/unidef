@@ -30,7 +30,7 @@ case class AstNodeCodeGen() {
   }
   def scalaField(name: String, derive: String, methods: List[String]): AstClassDecl = {
     AstClassDecl(
-      AstLiteralString(name),
+      name,
       Nil,
       methods.map(x => AstRawCodeImpl(Some(x), None)),
       List(AstClassIdent(derive))
@@ -69,9 +69,9 @@ case class AstNodeCodeGen() {
     val fields = ty.fields.toList
 
     AstClassDecl(
-      AstLiteralString(toAstClassName(ty.name)),
+      toAstClassName(ty.name),
       Nil,
-      fields.toSeq
+      fields
         .map(x => x.name -> x.value)
         .map((k, v) =>
           AstFunctionDecl(
@@ -103,8 +103,8 @@ case class AstNodeCodeGen() {
     val fields = ty.fields.toList ::: (if (ty.commentable) List(TyField("comment", TyStringImpl(), Some(true))) else Nil)
 
     AstClassDecl(
-      AstLiteralString(toAstClassName(ty.name) + "Impl"),
-      fields.map(x => TyField(x.name, TyOptionalImpl(Some(x.value)))),
+      toAstClassName(ty.name) + "Impl",
+      fields.map(x => AstValDefImpl(Some(x.name), Some(TyOptionalImpl(Some(x.value))), None, None)),
       fields
         .map(x =>
           AstFunctionDecl(
@@ -126,33 +126,44 @@ case class AstNodeCodeGen() {
   }
 }
 object AstNodeCodeGen {
-  def getAsts: Map[String, Ast] =
+  def getAsts: Map[String, Ast] = {
+    val astNode = TyNamed("AstNode")
     Seq(
       Ast("unit"),
       Ast("null"),
         Ast("undefined"),
       Ast("block")
-        .field("nodes", TyListImpl(Some(TyNamed("AstNode")))),
+        .field("nodes", TyListImpl(Some(astNode))),
       Ast("statement")
-        .field("expr", TyNamed("AstNode")),
+        .field("expr", astNode),
       Ast("if")
-        .field("test", TyNamed("AstNode"))
-        .field("consequent", TyNamed("AstNode"))
-        .field("alternative", TyNamed("AstNode")),
+        .field("test", astNode)
+        .field("consequent", astNode)
+        .field("alternative", astNode),
       Ast("flow_control")
         .field("flow", TyNamed("FlowControl"))
-        .field("value", TyNamed("AstNode")),
+        .field("value", astNode),
       Ast("literal")
         .field("literal_value", TyStringImpl()) // TODO: make subtypes of literal values?
         .field("ty", TyNamed("TyNode")),
       Ast("select")
-        .field("qualifier", TyNamed("AstNode"))
+        .field("qualifier", astNode)
         .field("symbol", TyStringImpl()),
-      Ast("await").field("expr", TyNamed("AstNode")),
+      Ast("await").field("expr", astNode),
       Ast("raw_code")
         .field("code", TyStringImpl())
-        .field("language", TyStringImpl())
+        .field("language", TyStringImpl()),
+      Ast("apply")
+        .field("applicable", astNode)
+        .field("arguments", TyListImpl(Some(astNode))),
+      Ast("val_def")
+        .field("name", TyStringImpl())
+        .field("ty", TyNamed("TyNode"))
+        .field("value", astNode)
+        .field("mutability", TyBooleanImpl()),
+
     ).map(x => x.name -> x).toMap
+  }
 
   def main(args: Array[String]): Unit = {
     val types = getAsts.values.toList
@@ -189,7 +200,7 @@ object AstNodeCodeGen {
     println(scalaCode)
     val writer = new PrintWriter("target/AstNodeGen.scala")
     writer.println("""
-                     |package unidef.languages.common
+                     |package unidef.common.ast
                      |import unidef.common.ty.*
                      |
                      |""".trim.stripMargin)

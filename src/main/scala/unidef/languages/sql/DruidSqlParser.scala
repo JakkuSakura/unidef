@@ -79,14 +79,14 @@ class DruidSqlParser {
 
   private def parseColumn(
                           arg: SQLColumnDefinition
-                        )(implicit resolver: TypeDecoder[String]): TyField = {
+                        )(implicit resolver: TypeDecoder[String]): AstValDef = {
     logger.debug("parseColumn: " + arg)
 
     val name = arg.getName.getSimpleName.replaceAll("\"", "")
     val tyName = arg.getDataType.getName
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
-    TyField(name, ty)
+    AstValDefImpl(Some(name), Some(ty), None, None)
   }
 
   private def parseParam(
@@ -114,7 +114,7 @@ class DruidSqlParser {
     val params = stmt.getParameters.asScala.map(parseParam).toList
 
     val inputs = params.filter(_._1 == ParameterType.IN).map(_._2)
-    val outputs = ArrayBuffer[TyField]()
+    val outputs = ArrayBuffer[AstValDef]()
     var outputOnly: Option[TyNode] = None
 
     val body = stmt.getBlock
@@ -130,7 +130,7 @@ class DruidSqlParser {
       AstLiteralString(name),
       inputs.toList,
       if (outputs.nonEmpty)
-        TyStructImpl(None, Some(outputs.toList), None, None)
+        TyStructImpl(None, Some(outputs.map(x => TyField(x.getName.get, x.getTy.get)).toList), None, None)
       else if (outputOnly.isDefined)
         outputOnly.get
       else
@@ -149,7 +149,7 @@ class DruidSqlParser {
       tbl: SQLCreateTableStatement
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
     AstClassDecl(
-      AstLiteralString(tbl.getTableName),
+      tbl.getTableName,
       tbl.getColumnDefinitions.asScala.map(parseColumn).toList
     )
       .trySetValue(KeySchema, Option(tbl.getSchema))

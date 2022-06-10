@@ -1,7 +1,6 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import unidef.common.ast.AstNode
-
+import unidef.common.ast.{AstClassDecl, AstNode, AstProgram}
 import unidef.languages.python.PythonCommon
 import unidef.languages.shll.Compiler
 
@@ -18,13 +17,14 @@ private object ScalaiTestHelper {
     val staged = compiler.stage(code)
     val lifted = compiler.compileAndLift(
       s"""
-        |def main() = {
-        |  $staged
+        |class Main {
+        |  val value = {
+        |    $staged
+        |  }
         |}
         |""".stripMargin)
-    println(lifted)
-    // TODO: extract expression code
-    lifted
+    val extracted = lifted.asInstanceOf[AstProgram].statements.head.asInstanceOf[AstClassDecl].fields.head.getValue.get
+    extracted
   }
 
 }

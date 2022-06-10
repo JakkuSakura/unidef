@@ -3,6 +3,7 @@ package unidef.languages.shll
 import com.typesafe.scalalogging.Logger
 import unidef.common.ty.*
 import unidef.common.ast.*
+
 import scala.collection.mutable
 import scala.quoted.Quotes
 
@@ -14,7 +15,17 @@ class LifterImpl(using val quotes: Quotes) {
   def liftTree(tree: Tree): AstNode = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
-      case Inlined(_, _, Literal(IntConstant(v))) => AstLiteralImpl(Some(v.toString), Some(TyIntegerImpl(Some(BitSize.B32), Some(true))))
+      case Inlined(_, _, Literal(IntConstant(v))) =>
+        AstLiteralImpl(Some(v.toString), Some(TyIntegerImpl(Some(BitSize.B32), Some(true))))
+
+    }
+  }
+  def liftTerm(tree: Term): AstNode = {
+    tree match {
+      case Block(Nil, x) => liftTerm(x)
+      case Literal(IntConstant(v)) =>
+        AstLiteralImpl(Some(v.toString), Some(TyIntegerImpl(Some(BitSize.B32), Some(true))))
+      case Literal(StringConstant(v)) => AstLiteralImpl(Some(v), Some(TyStringImpl()))
 
     }
   }
@@ -49,7 +60,7 @@ class LifterImpl(using val quotes: Quotes) {
 
       case ClassDef(name, defDef, parents, sefl, body) =>
         liftClassDef(name, defDef, parents, sefl, body)
-      case Apply(fun, args) => ???
+      case Apply(fun, args) => AstApplyImpl(Some(liftTree(fun)), Some(args.map(liftTree)))
       case x =>
         logger.error(s"Unsupported statement: ${x.show}")
         AstRawCodeImpl(Some(x.show), None)
@@ -93,16 +104,18 @@ class LifterImpl(using val quotes: Quotes) {
     AstFunctionDecl(AstLiteralString(name), paramss.map(liftParameter), retType)
       .trySetValue(KeyBody, body)
   }
-  def liftClassBodyStmt(tree: Statement): Option[AstFunctionDecl] = {
+  def liftClassBodyStmt(tree: Statement): Option[AstNode] = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
       case DefDef(name, param, ty, term) =>
         Some(liftMethodDef(name, param, ty, term))
+      case ValDef(name, ty, value) =>
+        Some(AstValDefImpl(Some(name), Some(liftType(ty)), None, value.map(liftTerm)))
       case t @ TypeDef(name, ty) =>
         None
     }
   }
-  def liftClassDefHeadFields(tree: DefDef): List[TyField] = {
+  def liftClassDefHeadFields(tree: DefDef): List[AstValDef] = {
     // TODO
     Nil
   }
@@ -123,14 +136,23 @@ class LifterImpl(using val quotes: Quotes) {
     logger.debug("parents " + parents)
     logger.debug("sefl " + sefl)
     logger.debug("body " + body)
-    val stmts: List[AstFunctionDecl] = body.flatMap(x => liftClassBodyStmt(x)).toList
+    val stmts = mutable.ArrayBuffer[AstFunctionDecl]()
+    val valDefs = mutable.ArrayBuffer[AstValDef]()
 
-    val fields = liftClassDefHeadFields(head)
+    body.flatMap(x => liftClassBodyStmt(x)).foreach {
+      case x: AstFunctionDecl => stmts += x
+      case x: AstValDef => valDefs += x
+    }
+
+    liftClassDefHeadFields(head).foreach{
+      case x: TyField => valDefs += x
+    }
+
     val derived = liftClassDefParents(parents)
     AstClassDecl(
-      AstLiteralString(name),
-      fields,
-      stmts,
+      name,
+      valDefs.toList,
+      stmts.toList,
       derived
     )
   }

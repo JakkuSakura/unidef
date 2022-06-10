@@ -101,8 +101,8 @@ case class AstLambdaDecl(parameters: List[TyField], returnType: TyNode, body: As
 case class AstClassIdent(name: String) extends AstNode
 
 case class AstClassDecl(
-    name: AstNode,
-    fields: List[TyField],
+    name: String,
+    fields: List[AstValDef],
     methods: List[AstNode] = Nil,
     derived: List[AstClassIdent] = Nil,
     schema: Option[String] = None,
@@ -111,12 +111,9 @@ case class AstClassDecl(
     with AstNode
     with TyStruct {
 
-  override def getName: Option[String] = literalName
-  override def getFields: Option[List[TyField]] = Some(fields)
-  def literalName: Option[String] = name match {
-    case x: AstLiteral if x.getTy.exists(_.isInstanceOf[TyString]) => Some(x.getLiteralValue.get)
-    case _ => None
-  }
+  override def getName: Option[String] = Some(name)
+  
+  override def getFields: Option[List[TyField]] = Some(fields.map(x => TyField(x.getName.get, x.getTy.get, ???, x.getValue.map(x => true))))
 
   override def getAttributes: Option[List[String]] = Some(Nil)
 

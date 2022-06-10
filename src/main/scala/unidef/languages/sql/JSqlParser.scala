@@ -246,21 +246,23 @@ class JSqlParser() {
       tbl: CreateTable
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
     AstClassDecl(
-      AstLiteralString(tbl.getTable.getName),
+      tbl.getTable.getName,
       tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList
     )
       .trySetValue(KeySchema, Option(tbl.getTable.getSchemaName))
   }
   def parseParseColumn(
       column: ColumnDefinition
-  )(implicit resolver: TypeDecoder[String]): TyField = {
+  )(implicit resolver: TypeDecoder[String]): AstValDef = {
     val ty = column.getColDataType
     val name = column.getColumnName
-    TyField(
-      name,
-      lookUpOrParseType(ty.getDataType).getOrElse(
+    AstValDefImpl(
+      Some(name),
+      Some(lookUpOrParseType(ty.getDataType).getOrElse(
         throw TypeDecodeException("Failed to parse type", ty.getDataType)
-      )
+      )),
+      None,
+      None
     )
   }
   def lookUpOrParseType(ty: String)(implicit resolver: TypeDecoder[String]): Option[TyNode] = {

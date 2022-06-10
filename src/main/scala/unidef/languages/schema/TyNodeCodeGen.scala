@@ -29,7 +29,7 @@ case class TyNodeCodeGen() {
   }
   def scalaField(name: String, derive: String, methods: List[String]): AstClassDecl = {
     AstClassDecl(
-      AstLiteralString(name),
+      name,
       Nil,
       methods.map(x => AstRawCodeImpl(Some(x), None)),
       List(AstClassIdent(derive))
@@ -68,7 +68,7 @@ case class TyNodeCodeGen() {
     val fields = ty.fields.toList
 
     AstClassDecl(
-      AstLiteralString("Ty" + TextTool.toPascalCase(ty.name)),
+      "Ty" + TextTool.toPascalCase(ty.name),
       Nil,
       fields.toSeq
         .map(x => x.name -> x.value)
@@ -104,8 +104,8 @@ case class TyNodeCodeGen() {
                             else Nil)
 
     AstClassDecl(
-      AstLiteralString("Ty" + TextTool.toPascalCase(ty.name) + "Impl"),
-      fields.map(x => TyField(x.name, TyOptionalImpl(Some(x.value)))),
+      "Ty" + TextTool.toPascalCase(ty.name) + "Impl",
+      fields.map(x => AstValDefImpl(Some(x.name), Some(TyOptionalImpl(Some(x.value))), None, None)),
       fields
         .map(x =>
           AstFunctionDecl(
@@ -232,7 +232,7 @@ object TyNodeCodeGen {
     println(scalaCode)
     val writer = new PrintWriter("target/TyNodeGen.scala")
     writer.println("""
-                     |package unidef.languages.common
+                     |package unidef.common.ty
                      |
                      |""".trim.stripMargin)
     writer.write(scalaCode)
