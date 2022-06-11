@@ -89,3 +89,4 @@ I try to implement the tasty version to
 - [ ] Workflow: Generic AST + Extendable <=> Specific AST with static type <=> Source code
 - [x] Deprecate Velocity with simple Scala interpolation
 - [x] Replace SQLParser with Druid SQL parser, since the latter is most performant and ~feature complete~(procedure function not supported)
+- [ ] Builder pattern codegen for TyNode and AstNode

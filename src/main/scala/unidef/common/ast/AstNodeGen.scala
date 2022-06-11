@@ -2,6 +2,7 @@ package unidef.common.ast
 
 import unidef.common.ty.*
 
+
 trait HasExpr extends AstNode {
   def getExpr: Option[AstNode]
 }
@@ -13,9 +14,6 @@ trait HasLanguage extends AstNode {
 }
 trait HasSymbol extends AstNode {
   def getSymbol: Option[String]
-}
-trait HasLiteralValue extends AstNode {
-  def getLiteralValue: Option[String]
 }
 trait HasNodes extends AstNode {
   def getNodes: Option[List[AstNode]]
@@ -41,6 +39,12 @@ trait HasName extends AstNode {
 trait HasCode extends AstNode {
   def getCode: Option[String]
 }
+trait HasLiteralValue extends AstNode {
+  def getLiteralValue: Option[String]
+}
+trait HasDecls extends AstNode {
+  def getDecls: Option[List[AstNode]]
+}
 trait HasQualifier extends AstNode {
   def getQualifier: Option[AstNode]
 }
@@ -58,11 +62,7 @@ class AstAwaitImpl(val expr: Option[AstNode]) extends AstAwait {
     expr
   }
 }
-class AstIfImpl(
-    val test: Option[AstNode],
-    val consequent: Option[AstNode],
-    val alternative: Option[AstNode]
-) extends AstIf {
+class AstIfImpl(val test: Option[AstNode], val consequent: Option[AstNode], val alternative: Option[AstNode]) extends AstIf {
   override def getTest: Option[AstNode] = {
     test
   }
@@ -73,8 +73,7 @@ class AstIfImpl(
     alternative
   }
 }
-class AstFlowControlImpl(val flow: Option[FlowControl], val value: Option[AstNode])
-    extends AstFlowControl {
+class AstFlowControlImpl(val flow: Option[FlowControl], val value: Option[AstNode]) extends AstFlowControl {
   override def getFlow: Option[FlowControl] = {
     flow
   }
@@ -87,7 +86,7 @@ class AstStatementImpl(val expr: Option[AstNode]) extends AstStatement {
     expr
   }
 }
-class AstNullImpl() extends AstNull
+class AstNullImpl() extends AstNull 
 class AstSelectImpl(val qualifier: Option[AstNode], val symbol: Option[String]) extends AstSelect {
   override def getQualifier: Option[AstNode] = {
     qualifier
@@ -101,13 +100,17 @@ class AstBlockImpl(val nodes: Option[List[AstNode]]) extends AstBlock {
     nodes
   }
 }
-class AstApplyImpl(val applicable: Option[AstNode], val arguments: Option[List[AstNode]])
-    extends AstApply {
+class AstApplyImpl(val applicable: Option[AstNode], val arguments: Option[List[AstNode]]) extends AstApply {
   override def getApplicable: Option[AstNode] = {
     applicable
   }
   override def getArguments: Option[List[AstNode]] = {
     arguments
+  }
+}
+class AstDeclsImpl(val decls: Option[List[AstNode]]) extends AstDecls {
+  override def getDecls: Option[List[AstNode]] = {
+    decls
   }
 }
 class AstLiteralImpl(val literal_value: Option[String], val ty: Option[TyNode]) extends AstLiteral {
@@ -118,24 +121,19 @@ class AstLiteralImpl(val literal_value: Option[String], val ty: Option[TyNode]) 
     ty
   }
 }
-class AstUnitImpl() extends AstUnit
-class AstValDefImpl(
-    val name: Option[String],
-    val ty: Option[TyNode],
-    val mutability: Option[Boolean],
-    val value: Option[AstNode]
-) extends AstValDef {
+class AstUnitImpl() extends AstUnit 
+class AstValDefImpl(val name: Option[String], val ty: Option[TyNode], val value: Option[AstNode], val mutability: Option[Boolean]) extends AstValDef {
   override def getName: Option[String] = {
     name
   }
   override def getTy: Option[TyNode] = {
     ty
   }
-  override def getMutability: Option[Boolean] = {
-    mutability
-  }
   override def getValue: Option[AstNode] = {
     value
+  }
+  override def getMutability: Option[Boolean] = {
+    mutability
   }
 }
 class AstRawCodeImpl(val code: Option[String], val language: Option[String]) extends AstRawCode {
@@ -146,7 +144,7 @@ class AstRawCodeImpl(val code: Option[String], val language: Option[String]) ext
     language
   }
 }
-class AstUndefinedImpl() extends AstUndefined
+class AstUndefinedImpl() extends AstUndefined 
 trait AstAwait extends AstNode with HasExpr {
   def getExpr: Option[AstNode]
 }
@@ -162,7 +160,7 @@ trait AstFlowControl extends AstNode with HasFlow with HasValue {
 trait AstStatement extends AstNode with HasExpr {
   def getExpr: Option[AstNode]
 }
-trait AstNull extends AstNode
+trait AstNull extends AstNode 
 trait AstSelect extends AstNode with HasQualifier with HasSymbol {
   def getQualifier: Option[AstNode]
   def getSymbol: Option[String]
@@ -174,19 +172,22 @@ trait AstApply extends AstNode with HasApplicable with HasArguments {
   def getApplicable: Option[AstNode]
   def getArguments: Option[List[AstNode]]
 }
+trait AstDecls extends AstNode with HasDecls {
+  def getDecls: Option[List[AstNode]]
+}
 trait AstLiteral extends AstNode with HasLiteralValue with HasTy {
   def getLiteralValue: Option[String]
   def getTy: Option[TyNode]
 }
-trait AstUnit extends AstNode
-trait AstValDef extends AstNode with HasName with HasTy with HasMutability with HasValue {
+trait AstUnit extends AstNode 
+trait AstValDef extends AstNode with HasName with HasTy with HasValue with HasMutability {
   def getName: Option[String]
   def getTy: Option[TyNode]
-  def getMutability: Option[Boolean]
   def getValue: Option[AstNode]
+  def getMutability: Option[Boolean]
 }
 trait AstRawCode extends AstNode with HasCode with HasLanguage {
   def getCode: Option[String]
   def getLanguage: Option[String]
 }
-trait AstUndefined extends AstNode
+trait AstUndefined extends AstNode 

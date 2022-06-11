@@ -26,9 +26,11 @@ class LifterImpl(using val quotes: Quotes) {
       case Literal(IntConstant(v)) =>
         AstLiteralImpl(Some(v.toString), Some(TyIntegerImpl(Some(BitSize.B32), Some(true))))
       case Literal(StringConstant(v)) => AstLiteralImpl(Some(v), Some(TyStringImpl()))
-
+      case Block(decls, Literal(UnitConstant())) => AstDeclsImpl(Some(decls.flatMap(liftDecl)))
     }
   }
+
+
   def liftPackageClause(tree: PackageClause): List[AstNode] = {
     val stmts = mutable.ArrayBuffer[AstNode]()
 
@@ -61,6 +63,7 @@ class LifterImpl(using val quotes: Quotes) {
       case ClassDef(name, defDef, parents, sefl, body) =>
         liftClassDef(name, defDef, parents, sefl, body)
       case Apply(fun, args) => AstApplyImpl(Some(liftTree(fun)), Some(args.map(liftTree)))
+      case Literal(UnitConstant()) => AstLiteralUnit()
       case x =>
         logger.error(s"Unsupported statement: ${x.show}")
         AstRawCodeImpl(Some(x.show), None)
@@ -104,13 +107,13 @@ class LifterImpl(using val quotes: Quotes) {
     AstFunctionDecl(AstLiteralString(name), paramss.map(liftParameter), retType)
       .trySetValue(KeyBody, body)
   }
-  def liftClassBodyStmt(tree: Statement): Option[AstNode] = {
+  def liftDecl(tree: Statement): Option[AstNode] = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
       case DefDef(name, param, ty, term) =>
         Some(liftMethodDef(name, param, ty, term))
       case ValDef(name, ty, value) =>
-        Some(AstValDefImpl(Some(name), Some(liftType(ty)), None, value.map(liftTerm)))
+        Some(AstValDefImpl(Some(name), Some(liftType(ty)), value.map(liftTerm), None))
       case t @ TypeDef(name, ty) =>
         None
     }
@@ -139,7 +142,7 @@ class LifterImpl(using val quotes: Quotes) {
     val stmts = mutable.ArrayBuffer[AstFunctionDecl]()
     val valDefs = mutable.ArrayBuffer[AstValDef]()
 
-    body.flatMap(x => liftClassBodyStmt(x)).foreach {
+    body.flatMap(x => liftDecl(x)).foreach {
       case x: AstFunctionDecl => stmts += x
       case x: AstValDef => valDefs += x
     }

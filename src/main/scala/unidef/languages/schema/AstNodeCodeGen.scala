@@ -36,22 +36,7 @@ case class AstNodeCodeGen() {
       List(AstClassIdent(derive))
     )
   }
-  def generateScalaKeyObject(field: TyField): AstClassDecl = {
-    val traitName = "Key" + TextTool.toPascalCase(field.name)
-    val cls = field.value match {
-      case _: TyInteger =>
-        scalaField(traitName, "KeywordInt", Nil)
-      case _: TyString => scalaField(traitName, "KeywordString", Nil)
-      case _: TyBoolean => scalaField(traitName, "KeywordBoolean", Nil)
-      case _ =>
-        val scalaCommon = ScalaCommon()
-        val valueType =
-          scalaCommon.encodeOrThrow(field.value, "scala")
-        scalaField(traitName, "Keyword", List(s"override type V = ${valueType}"))
-    }
-    cls.setValue(KeyClassType, "case object")
-  }
-
+  
   def generateScalaHasTrait(field: TyField): AstClassDecl = {
     val traitName = "Has" + TextTool.toPascalCase(field.name)
     val scalaCommon = ScalaCommon()
@@ -65,7 +50,6 @@ case class AstNodeCodeGen() {
     ).setValue(KeyClassType, "trait")
   }
   def generateScalaCompoundTrait(ty: Ast, extra: List[String]): AstClassDecl = {
-    val scalaCommon = ScalaCommon()
     val fields = ty.fields.toList
 
     AstClassDecl(
@@ -161,6 +145,8 @@ object AstNodeCodeGen {
         .field("ty", TyNamed("TyNode"))
         .field("value", astNode)
         .field("mutability", TyBooleanImpl()),
+      Ast("decls")
+        .field("decls", TyListImpl(Some(astNode))),
 
     ).map(x => x.name -> x).toMap
   }
@@ -177,9 +163,6 @@ object AstNodeCodeGen {
     val fields = parser.collectFields(types, extra.toList)
     println("Parsed fields")
     println(fields.mkString("\n"))
-    val keyObjects = fields.map(parser.generateScalaKeyObject)
-    println("Generated key objects")
-    println(keyObjects.mkString("\n"))
     val hasTraits = fields.map(parser.generateScalaHasTrait)
     println("Generated has traits")
     println(hasTraits.mkString("\n"))

@@ -29,6 +29,7 @@ object FlowControl {
 }
 
 def AstLiteralString(x: String): AstLiteral = AstLiteralImpl(Some(x), Some(TyStringImpl()))
+def AstLiteralUnit(): AstLiteral = AstLiteralImpl(Some("()"), Some(TyUnitImpl()))
 //class AstLiteral(ty: TyNode) extends AstStaticType(ty)
 //
 //case class AstLiteralString(value: String) extends AstLiteral(TyStringImpl())
