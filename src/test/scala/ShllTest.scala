@@ -2,7 +2,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import unidef.common.ast.{AstClassDecl, AstNode, AstProgram}
 import unidef.languages.python.PythonCommon
-import unidef.languages.shll.Compiler
+import unidef.languages.shll.{Compiler, PrettyPrinter}
 
 private object ScalaiTestHelper {
   def compileAndLift(code: String): AstNode = {
@@ -30,7 +30,7 @@ private object ScalaiTestHelper {
 }
 class ScalaiTest {
   @Test def test_math(): Unit = {
-    ScalaiTestHelper.lift {
+    val x = ScalaiTestHelper.lift {
       1
     }
     ScalaiTestHelper.lift {
