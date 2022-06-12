@@ -164,3 +164,12 @@ foo(1)(2)
 // FunctionApply(Ident("foo"), List(Args(1), Args(2)))
 // FunctionApply(FunctionApply(Ident("foo"), List(Args(1))), List(Args(2)))
 ```
+ 
+## Optimization
+
+- [ ] Perform Data flow analysis with runtime{} and comptime{} concept
+- [ ] Dead Code Elimination
+- [ ] Interpreter
+
+## CodeGen
+
