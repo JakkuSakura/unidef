@@ -173,3 +173,14 @@ foo(1)(2)
 
 ## CodeGen
 
+## Notes
+
+TyField(name: String, type: TyNode, default: Optional AstNode)
+AstParameter(name: String, type: TyNode, default: Optional AstNode)
+AstParameterList(params: List\[AstParameter])
+AstParameterLists(params: List\[AstParameterList])
+AstArgument(name: Option\[String], value: AstNode)
+AstArgumentList(args: List\[AstArgument])
+AstArgumentLists(args: List\[AstArgumentList])
+
+AstFunction(name: String, params: AstParamLists, body: AstNode)
