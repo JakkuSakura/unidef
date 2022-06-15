@@ -60,7 +60,7 @@ object AccessModifier extends Keyword {
   case class Limited(path: String) extends AccessModifier
 }
 def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
-  TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe, schema = None, comment = func.comment.getOrElse(""))
+  TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe, schema = None, comment = func.comment)
 }
 case class AstFunctionDecl(
     name: String,
@@ -120,6 +120,9 @@ case class AstClassDecl(
   override def getDataframe: Option[Boolean] = {
     dataframe
   }
+
+  override def getComment: Option[String] = ???
+
 
 }
 

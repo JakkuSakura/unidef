@@ -39,7 +39,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     fields += TyField("headers", TyConstTupleString(headers.toList))
     fields += TyField("body", TyListImpl(TyTupleImpl(body_row.toList)))
     // TODO: add header names and types
-    TyStructImpl(None, Some(fields.toList), None, None, None, None, "")
+    TyStructBuilder().fields(fields.toList).build()
   }
 
   def jsonObjectOf(ty: String, others: (String, Json)*): Json = {

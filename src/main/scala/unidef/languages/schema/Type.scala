@@ -11,15 +11,17 @@ import scala.collection.mutable
 class Type(val name: String) {
   val fields: mutable.ArrayBuffer[TyField] = mutable.ArrayBuffer.empty
   val equivalent: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
-  var commentable: Boolean = false
 
   def field(name: String, ty: TyNode, required: Boolean = false): Type = {
     fields += TyField(name, ty, None, Some(!required))
     this
   }
   def setCommentable(commentable: Boolean): Type = {
-    this.commentable = commentable
-    this
+    if (commentable) {
+      this.field("comment", TyStringImpl(), required = false)
+    } else {
+      this
+    }
   }
   def is(ty: TyNode): Type = {
     equivalent += ty

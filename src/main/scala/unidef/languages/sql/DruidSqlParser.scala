@@ -130,11 +130,11 @@ class DruidSqlParser {
       name,
       inputs.toList,
       if (outputs.nonEmpty)
-        TyStructImpl(None, Some(outputs.map(x => TyField(x.getName, x.getTy)).toList), None, None, None, None, "")
+        TyStructBuilder().fields(outputs.map(x => TyField(x.getName, x.getTy)).toList).build()
       else if (outputOnly.isDefined)
         outputOnly.get
       else
-        TyStructImpl(None, None, Some(Nil), None,  None, None, "")
+        TyStructBuilder().fields(Nil).build()
     ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
     func.setValue(KeyBody, AstRawCodeImpl(body.toString, Some(language)))
     if (outputOnly.isEmpty)

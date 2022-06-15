@@ -18,14 +18,11 @@ case class TyNodeCodeGen() {
   val logger: Logger = Logger[this.type]
   val common = JsonSchemaCommon(true)
 
-  def collectFields(ty: Type, extra: List[String]): Set[TyField] = {
-    // FIXME: it doesn't preserve orders
+  def collectFields(ty: Type): Set[TyField] = {
     ty.fields.toSet
   }
-  def collectFields(types: List[Type], extra: List[String]): Set[TyField] = {
-    types
-      .flatMap(x => collectFields(x, extra))
-      .toSet
+  def collectFields(types: List[Type]): Set[TyField] = {
+    types.flatMap(collectFields).toSet
   }
   def scalaField(name: String, derive: String, methods: List[String]): AstClassDecl = {
     AstClassDecl(
@@ -67,7 +64,7 @@ case class TyNodeCodeGen() {
       else List(s"def get${TextTool.toPascalCase(field.name)}: ${valueType}")
     ).setValue(KeyClassType, "trait")
   }
-  def generateScalaCompoundTrait(ty: Type, extra: List[String]): AstClassDecl = {
+  def generateScalaCompoundTrait(ty: Type): AstClassDecl = {
     val scalaCommon = ScalaCommon()
     val fields = ty.fields.toList
 
@@ -101,16 +98,23 @@ case class TyNodeCodeGen() {
             .toList
     ).setValue(KeyClassType, "trait")
   }
-
-  def generateScalaCaseClass(ty: Type, extra: List[String]): AstClassDecl = {
-    val fields =
-      ty.fields.toList ::: (if (ty.commentable)
-                              List(TyField("comment", TyStringImpl(), Some(true), Some(false)))
-                            else Nil)
+  def generateScalaBuilder(ty: Type): AstClassDecl = {
+    val fields = ty.fields
+      .map(x => x.copy(name = TextTool.toCamelCase(x.name), value = tryWrapValue(x)))
+      .toList
+    val codegen = ScalaCodeGen(NoopNamingConvention)
+    codegen.generateBuilder(
+      "Ty" + TextTool.toPascalCase(ty.name) + "Builder",
+      "Ty" + TextTool.toPascalCase(ty.name) + "Impl",
+      fields
+    )
+  }
+  def generateScalaCaseClass(ty: Type): AstClassDecl = {
+    val fields = ty.fields.map(x => x.copy(name = TextTool.toCamelCase(x.name)))
 
     AstClassDecl(
       "Ty" + TextTool.toPascalCase(ty.name) + "Impl",
-      fields.map(x => AstValDefImpl(x.name, tryWrapValue(x), None, None)),
+      fields.map(x => AstValDefImpl(x.name, tryWrapValue(x), None, None)).toList,
       Nil,
       fields
         .map(x =>
@@ -120,19 +124,8 @@ case class TyNodeCodeGen() {
             tryWrapValue(x)
           ).setValue(KeyBody, AstRawCodeImpl(x.name, None))
             .setValue(KeyOverride, true)
-        )
-        ::: (if (ty.commentable)
-               List(
-                 AstFunctionDecl(
-                   "setComment",
-                   List(TyField("comment", TyStringImpl())),
-                   TyNamed("this.type")
-                 ).setValue(KeyBody, AstRawCodeImpl(s"this.comment = comment\n this", None))
-                   .setValue(KeyOverride, true)
-               )
-             else Nil),
+        ).toList,
       List(AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
-        ::: (if (ty.commentable) List(AstClassIdent("TyCommentable")) else Nil)
     ).setValue(KeyClassType, "class")
   }
 }
@@ -207,12 +200,11 @@ object TyNodeCodeGen {
     val types = getTypes.values.toList
 
     val parser = TyNodeCodeGen()
-    val extra = mutable.ArrayBuffer[String]()
 
     println("Parsed types")
     println(types.mkString("\n"))
 
-    val fields = parser.collectFields(types, extra.toList)
+    val fields = parser.collectFields(types)
     println("Parsed fields")
     println(fields.mkString("\n"))
     val keyObjects = fields.map(parser.generateScalaKeyObject)
@@ -221,12 +213,13 @@ object TyNodeCodeGen {
     val hasTraits = fields.map(parser.generateScalaHasTrait)
     println("Generated has traits")
     println(hasTraits.mkString("\n"))
-    val caseClasses = types.map(parser.generateScalaCaseClass(_, extra.toList))
+    val caseClasses = types.map(parser.generateScalaCaseClass)
     println("Generated case classes")
     println(caseClasses.mkString("\n"))
-    val compoundTraits = types.map(parser.generateScalaCompoundTrait(_, extra.toList))
+    val compoundTraits = types.map(parser.generateScalaCompoundTrait)
     println("Generated compound traits")
     println(compoundTraits.mkString("\n"))
+    val builders = types.map(parser.generateScalaBuilder)
     val scalaCodegen = ScalaCodeGen(NoopNamingConvention)
     val scalaCode =
       (
@@ -235,6 +228,7 @@ object TyNodeCodeGen {
         hasTraits.map(scalaCodegen.generateClass).toList
           ::: caseClasses.map(scalaCodegen.generateClass)
           ::: compoundTraits.map(scalaCodegen.generateClass)
+          ::: builders.map(scalaCodegen.generateClass)
       ).mkString("\n")
 
     println(scalaCode)

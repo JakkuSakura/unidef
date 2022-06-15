@@ -1,10 +1,14 @@
 package unidef.common.ty
 
-trait HasValue() extends TyNode {
-  def getValue: TyNode
+
+trait HasFields() extends TyNode {
+  def getFields: Option[List[TyField]]
 }
 trait HasPrecision() extends TyNode {
   def getPrecision: Option[Int]
+}
+trait HasComment() extends TyNode {
+  def getComment: Option[String]
 }
 trait HasAttributes() extends TyNode {
   def getAttributes: Option[List[String]]
@@ -12,14 +16,20 @@ trait HasAttributes() extends TyNode {
 trait HasErr() extends TyNode {
   def getErr: TyNode
 }
+trait HasScale() extends TyNode {
+  def getScale: Option[Int]
+}
 trait HasDerives() extends TyNode {
   def getDerives: Option[List[String]]
 }
-trait HasContent() extends TyNode {
-  def getContent: TyNode
-}
 trait HasValues() extends TyNode {
   def getValues: List[TyNode]
+}
+trait HasValue() extends TyNode {
+  def getValue: TyNode
+}
+trait HasSchema() extends TyNode {
+  def getSchema: Option[String]
 }
 trait HasKey() extends TyNode {
   def getKey: TyNode
@@ -30,29 +40,23 @@ trait HasBitSize() extends TyNode {
 trait HasOk() extends TyNode {
   def getOk: TyNode
 }
-trait HasFields() extends TyNode {
-  def getFields: Option[List[TyField]]
-}
-trait HasDataframe() extends TyNode {
-  def getDataframe: Option[Boolean]
-}
 trait HasName() extends TyNode {
   def getName: Option[String]
 }
 trait HasSized() extends TyNode {
   def getSized: Option[Boolean]
 }
-trait HasSchema() extends TyNode {
-  def getSchema: Option[String]
+trait HasDataframe() extends TyNode {
+  def getDataframe: Option[Boolean]
 }
-trait HasScale() extends TyNode {
-  def getScale: Option[Int]
+trait HasContent() extends TyNode {
+  def getContent: TyNode
 }
 class TyAnyImpl() extends TyAny
 class TyRealImpl() extends TyReal
-class TyFloatImpl(val bit_size: Option[BitSize]) extends TyFloat {
+class TyFloatImpl(val bitSize: Option[BitSize]) extends TyFloat {
   override def getBitSize: Option[BitSize] = {
-    bit_size
+    bitSize
   }
 }
 class TySetImpl(val content: TyNode) extends TySet {
@@ -82,16 +86,7 @@ class TyTupleImpl(val values: List[TyNode]) extends TyTuple {
     values
   }
 }
-class TyStructImpl(
-    val name: Option[String],
-    val fields: Option[List[TyField]],
-    val derives: Option[List[String]],
-    val attributes: Option[List[String]],
-    val dataframe: Option[Boolean],
-    val schema: Option[String],
-    var comment: String
-) extends TyStruct
-    with TyCommentable {
+class TyStructImpl(val name: Option[String], val fields: Option[List[TyField]], val derives: Option[List[String]], val attributes: Option[List[String]], val dataframe: Option[Boolean], val schema: Option[String], val comment: Option[String]) extends TyStruct {
   override def getName: Option[String] = {
     name
   }
@@ -110,12 +105,8 @@ class TyStructImpl(
   override def getSchema: Option[String] = {
     schema
   }
-  override def getComment: String = {
+  override def getComment: Option[String] = {
     comment
-  }
-  override def setComment(comment: String): this.type = {
-    this.comment = comment
-    this
   }
 }
 class TyClassImpl() extends TyClass
@@ -142,9 +133,9 @@ class TyNullImpl() extends TyNull
 class TyNothingImpl() extends TyNothing
 class TyBooleanImpl() extends TyBoolean
 class TyNumericImpl() extends TyNumeric
-class TyIntegerImpl(val bit_size: Option[BitSize], val sized: Option[Boolean]) extends TyInteger {
+class TyIntegerImpl(val bitSize: Option[BitSize], val sized: Option[Boolean]) extends TyInteger {
   override def getBitSize: Option[BitSize] = {
-    bit_size
+    bitSize
   }
   override def getSized: Option[Boolean] = {
     sized
@@ -179,21 +170,14 @@ trait TyInet() extends TyNode
 trait TyTuple() extends TyNode with HasValues {
   def getValues: List[TyNode]
 }
-trait TyStruct()
-    extends TyNode
-    with TyClass
-    with HasName
-    with HasFields
-    with HasDerives
-    with HasAttributes
-    with HasDataframe
-    with HasSchema {
+trait TyStruct() extends TyNode with TyClass with HasName with HasFields with HasDerives with HasAttributes with HasDataframe with HasSchema with HasComment {
   def getName: Option[String]
   def getFields: Option[List[TyField]]
   def getDerives: Option[List[String]]
   def getAttributes: Option[List[String]]
   def getDataframe: Option[Boolean]
   def getSchema: Option[String]
+  def getComment: Option[String]
 }
 trait TyClass() extends TyNode
 trait TyRecord() extends TyNode
@@ -220,3 +204,233 @@ trait TyList() extends TyNode with HasContent {
   def getContent: TyNode
 }
 trait TyUndefined() extends TyNode
+class TyAnyBuilder() {
+  def build(): TyAnyImpl = {
+    TyAnyImpl()
+  }
+}
+class TyRealBuilder() {
+  def build(): TyRealImpl = {
+    TyRealImpl()
+  }
+}
+class TyFloatBuilder() {
+  var bitSize: Option[BitSize] = None
+  def bitSize(bitSize: BitSize): TyFloatBuilder = {
+    this.bitSize = Some(bitSize)
+    this
+  }
+  def build(): TyFloatImpl = {
+    TyFloatImpl(bitSize)
+  }
+}
+class TySetBuilder() {
+  var content: Option[TyNode] = None
+  def content(content: TyNode): TySetBuilder = {
+    this.content = Some(content)
+    this
+  }
+  def build(): TySetImpl = {
+    TySetImpl(content.get)
+  }
+}
+class TyOptionalBuilder() {
+  var content: Option[TyNode] = None
+  def content(content: TyNode): TyOptionalBuilder = {
+    this.content = Some(content)
+    this
+  }
+  def build(): TyOptionalImpl = {
+    TyOptionalImpl(content.get)
+  }
+}
+class TyStringBuilder() {
+  def build(): TyStringImpl = {
+    TyStringImpl()
+  }
+}
+class TyObjectBuilder() {
+  def build(): TyObjectImpl = {
+    TyObjectImpl()
+  }
+}
+class TyDecimalBuilder() {
+  var precision: Option[Int] = None
+  var scale: Option[Int] = None
+  def precision(precision: Int): TyDecimalBuilder = {
+    this.precision = Some(precision)
+    this
+  }
+  def scale(scale: Int): TyDecimalBuilder = {
+    this.scale = Some(scale)
+    this
+  }
+  def build(): TyDecimalImpl = {
+    TyDecimalImpl(precision, scale)
+  }
+}
+class TyByteArrayBuilder() {
+  def build(): TyByteArrayImpl = {
+    TyByteArrayImpl()
+  }
+}
+class TyInetBuilder() {
+  def build(): TyInetImpl = {
+    TyInetImpl()
+  }
+}
+class TyTupleBuilder() {
+  var values: Option[List[TyNode]] = None
+  def values(values: List[TyNode]): TyTupleBuilder = {
+    this.values = Some(values)
+    this
+  }
+  def build(): TyTupleImpl = {
+    TyTupleImpl(values.get)
+  }
+}
+class TyStructBuilder() {
+  var name: Option[String] = None
+  var fields: Option[List[TyField]] = None
+  var derives: Option[List[String]] = None
+  var attributes: Option[List[String]] = None
+  var dataframe: Option[Boolean] = None
+  var schema: Option[String] = None
+  var comment: Option[String] = None
+  def name(name: String): TyStructBuilder = {
+    this.name = Some(name)
+    this
+  }
+  def fields(fields: List[TyField]): TyStructBuilder = {
+    this.fields = Some(fields)
+    this
+  }
+  def derives(derives: List[String]): TyStructBuilder = {
+    this.derives = Some(derives)
+    this
+  }
+  def attributes(attributes: List[String]): TyStructBuilder = {
+    this.attributes = Some(attributes)
+    this
+  }
+  def dataframe(dataframe: Boolean): TyStructBuilder = {
+    this.dataframe = Some(dataframe)
+    this
+  }
+  def schema(schema: String): TyStructBuilder = {
+    this.schema = Some(schema)
+    this
+  }
+  def comment(comment: String): TyStructBuilder = {
+    this.comment = Some(comment)
+    this
+  }
+  def build(): TyStructImpl = {
+    TyStructImpl(name, fields, derives, attributes, dataframe, schema, comment)
+  }
+}
+class TyClassBuilder() {
+  def build(): TyClassImpl = {
+    TyClassImpl()
+  }
+}
+class TyRecordBuilder() {
+  def build(): TyRecordImpl = {
+    TyRecordImpl()
+  }
+}
+class TyMapBuilder() {
+  var key: Option[TyNode] = None
+  var value: Option[TyNode] = None
+  def key(key: TyNode): TyMapBuilder = {
+    this.key = Some(key)
+    this
+  }
+  def value(value: TyNode): TyMapBuilder = {
+    this.value = Some(value)
+    this
+  }
+  def build(): TyMapImpl = {
+    TyMapImpl(key.get, value.get)
+  }
+}
+class TyUuidBuilder() {
+  def build(): TyUuidImpl = {
+    TyUuidImpl()
+  }
+}
+class TyResultBuilder() {
+  var ok: Option[TyNode] = None
+  var err: Option[TyNode] = None
+  def ok(ok: TyNode): TyResultBuilder = {
+    this.ok = Some(ok)
+    this
+  }
+  def err(err: TyNode): TyResultBuilder = {
+    this.err = Some(err)
+    this
+  }
+  def build(): TyResultImpl = {
+    TyResultImpl(ok.get, err.get)
+  }
+}
+class TyCharBuilder() {
+  def build(): TyCharImpl = {
+    TyCharImpl()
+  }
+}
+class TyNullBuilder() {
+  def build(): TyNullImpl = {
+    TyNullImpl()
+  }
+}
+class TyNothingBuilder() {
+  def build(): TyNothingImpl = {
+    TyNothingImpl()
+  }
+}
+class TyBooleanBuilder() {
+  def build(): TyBooleanImpl = {
+    TyBooleanImpl()
+  }
+}
+class TyNumericBuilder() {
+  def build(): TyNumericImpl = {
+    TyNumericImpl()
+  }
+}
+class TyIntegerBuilder() {
+  var bitSize: Option[BitSize] = None
+  var sized: Option[Boolean] = None
+  def bitSize(bitSize: BitSize): TyIntegerBuilder = {
+    this.bitSize = Some(bitSize)
+    this
+  }
+  def sized(sized: Boolean): TyIntegerBuilder = {
+    this.sized = Some(sized)
+    this
+  }
+  def build(): TyIntegerImpl = {
+    TyIntegerImpl(bitSize, sized)
+  }
+}
+class TyUnitBuilder() {
+  def build(): TyUnitImpl = {
+    TyUnitImpl()
+  }
+}
+class TyListBuilder() {
+  var content: Option[TyNode] = None
+  def content(content: TyNode): TyListBuilder = {
+    this.content = Some(content)
+    this
+  }
+  def build(): TyListImpl = {
+    TyListImpl(content.get)
+  }
+}
+class TyUndefinedBuilder() {
+  def build(): TyUndefinedImpl = {
+    TyUndefinedImpl()
+  }
+}

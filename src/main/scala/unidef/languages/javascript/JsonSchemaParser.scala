@@ -37,20 +37,12 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         if (x.isString)
           jsonSchemaCommon.decodeOrThrow(x.asString.get)
         else
-          TyStructImpl(
-            None,
-            Some(
-              iterateOver(x, "name", "type").map { (name, json) =>
-                val ty = parse(Json.fromJsonObject(json))
-                TyField(name, ty)
-              }.toList
-            ),
-            None,
-            None,
-            None,
-            None,
-            ""
-          )
+          TyStructBuilder()
+            .fields(iterateOver(x, "name", "type").map { (name, json) =>
+              val ty = parse(Json.fromJsonObject(json))
+              TyField(name, ty)
+            }.toList)
+            .build()
       )
       .getOrElse(TyUnitImpl())
 
@@ -84,13 +76,13 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         // TODO TyNamed or TyStruct?
         .getOrElse(Nil)
 
-    val node = TyStructImpl(None, Some(fields.toList), None, None, None, None, "")
+    val node = TyStructBuilder().fields(fields.toList)
 //    collectExtKeys(value, extKeysForClassDecl.toList).foreach(node.setValue)
     val comment = value("comment").orElse(value("$comment"))
     if (comment.isDefined)
-      node.setComment(getString(value, "comment"))
+      node.comment(getString(value, "comment"))
 
-    node
+    node.build()
   }
   private val extKeysForField =
     mutable.HashSet[Keyword](KeyType)

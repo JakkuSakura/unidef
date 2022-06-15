@@ -115,7 +115,9 @@ class ScalaCodeGen(naming: NamingConvention) {
 
   def generateBuilder(builderName: String, target: String, fields: List[TyField]): AstClassDecl = {
     def expandField(field: TyField): String = {
-      field.name + (field.value match {
+      val fieldName = naming.toFieldName(field.name)
+
+      fieldName + (field.value match {
         case _: TyOptional => ""
         case _ => ".get"
       })
@@ -134,27 +136,35 @@ class ScalaCodeGen(naming: NamingConvention) {
             case x => TyOptionalImpl(x)
         }
     }
+    def unwrapOptional(x: TyNode): TyNode = {
+      x match {
+        case x: TyOptional => x.getContent
+        case x => x
+      }
+    }
 
     def setFieldMethod(x: TyField): AstFunctionDecl = {
+      val fieldName = naming.toFieldName(x.name)
       AstFunctionDecl(
-        name = x.name,
+        name = fieldName,
         returnType = TyNamed(builderName),
         parameters = List(
           TyField(
-            name = x.name,
-            value = x.value
+            name = fieldName,
+            value = unwrapOptional(x.value)
           )
         )
       ).setValue(
         KeyBody,
-        AstRawCodeImpl(s"this.${x.name} = Some(${x.name})\nthis", None)
+        AstRawCodeImpl(s"this.${fieldName} = Some(${fieldName})\nthis", None)
       )
     }
     AstClassDecl(
       name = builderName,
       parameters = Nil,
       fields = fields.map(x =>
-        AstValDefImpl(x.name, ensureOptional(x.value), mutability = Some(true), value = Some(AstRawCodeImpl("None", None)))
+        val fieldName = naming.toFieldName(x.name)
+        AstValDefImpl(fieldName, ensureOptional(x.value), mutability = Some(true), value = Some(AstRawCodeImpl("None", None)))
       ),
       methods = fields.map(setFieldMethod) :+ buildMethod
     ).setValue(KeyClassType, "class")

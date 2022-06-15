@@ -227,12 +227,13 @@ class JSqlParser() {
     val func = AstFunctionDecl(
       name,
       inputs.toList,
+
       if (outputs.nonEmpty)
-        TyStructImpl(None, Some(outputs.toList), None, None,  None, None, "")
+        TyStructBuilder().fields(outputs.toList).build()
       else if (outputOnly.isDefined)
         outputOnly.get
       else
-        TyStructImpl(None, None, Some(Nil), None, None, None, "")
+        TyStructBuilder().fields(Nil).build()
     ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
     func.setValue(KeyBody, AstRawCodeImpl(body, Some(language)))
     if (outputOnly.isEmpty)

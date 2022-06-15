@@ -11,7 +11,7 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "string" => Some(TyStringImpl())
     case "boolean" => Some(TyBooleanImpl())
     case "number" => Some(TyNumericImpl())
-    case "object" => Some(TyStructImpl(None, None, None, None, None, None, ""))
+    case "object" => Some(TyStructBuilder().build())
     case "null" => Some(TyNullImpl())
     case "int" | "i32" | "integer" if extended => Some(TyIntegerImpl(Some(BitSize.B32), Some(true)))
     case "uint" | "u32" if extended =>
@@ -34,7 +34,7 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "option" | "optional" if extended => Some(TyOptionalImpl(TyAnyImpl()))
     case "bytea" | "[u8]" if extended => Some(TyByteArrayImpl())
     case "bool" if extended => Some(TyBooleanImpl())
-    case "dict" if extended => Some(TyStructImpl(None, None, None, None, None, None, ""))
+    case "dict" if extended => Some(TyStructBuilder().build())
     case "any" if extended => Some(TyAnyImpl())
     case "void" | "unit" if extended => Some(TyUnitImpl())
     case _ => None
