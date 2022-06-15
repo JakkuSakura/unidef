@@ -84,6 +84,21 @@ case class AstNodeCodeGen() {
       List(AstClassIdent(toAstClassName(ty.name)))
     ).setValue(KeyClassType, "class")
   }
+  def generateScalaBuilder(ty: Ast): AstClassDecl = {
+    val fields = ty.fields
+      .map(x =>
+        x.name(TextTool.toCamelCase(x.name.get))
+          .value(tryWrapValue(x.build()))
+          .build()
+      )
+      .toList
+    val codegen = ScalaCodeGen(NoopNamingConvention)
+    codegen.generateBuilder(
+      "Ast" + TextTool.toPascalCase(ty.name) + "Builder",
+      "Ast" + TextTool.toPascalCase(ty.name) + "Impl",
+      fields
+    )
+  }
 }
 object AstNodeCodeGen {
   def getAsts: Map[String, Ast] = {
@@ -150,12 +165,14 @@ object AstNodeCodeGen {
     val compoundTraits = types.map(parser.generateScalaCompoundTrait)
     println("Generated compound traits")
     println(compoundTraits.mkString("\n"))
+    val builders = types.map(parser.generateScalaBuilder)
     val scalaCodegen = ScalaCodeGen(NoopNamingConvention)
     val scalaCode =
       (
         hasTraits.map(scalaCodegen.generateClass).toList
           ::: caseClasses.map(scalaCodegen.generateClass)
           ::: compoundTraits.map(scalaCodegen.generateClass)
+            ::: builders.map(scalaCodegen.generateClass)
       ).mkString("\n")
 
     println(scalaCode)
