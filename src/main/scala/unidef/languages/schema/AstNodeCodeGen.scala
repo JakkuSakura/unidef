@@ -18,7 +18,7 @@ def toAstClassName(s: String): String = "Ast" + TextTool.toPascalCase(s)
 case class AstNodeCodeGen() {
   val logger: Logger = Logger[this.type]
   val common = JsonSchemaCommon(true)
-
+  val scalaCommon = ScalaCommon()
   def collectFields(ty: Ast): Set[TyField] = {
     ty.fields.map(_.build()).toSet
   }
@@ -46,7 +46,7 @@ case class AstNodeCodeGen() {
     scalaField(
       traitName,
       "AstNode",
-      List(s"def get${TextTool.toPascalCase(field.name.get)}: ${valueType}")
+      List(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}")
     ).setValue(KeyClassType, "trait")
   }
   def generateScalaCompoundTrait(ty: Ast): AstClassDecl = {
@@ -57,16 +57,15 @@ case class AstNodeCodeGen() {
       Nil,
       Nil,
       fields
-        .map(x =>
-          AstFunctionDecl(
-          TextTool.toCamelCase(x.name.get),
-            Nil,
-            tryWrapValue(x)
-          )
+        .map(field =>
+          val valueType =
+            scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
+
+          AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}", None)
         )
         .toList,
       List(AstClassIdent("AstNode"))
-          :::
+        :::
           fields
             .map(x => "Has" + TextTool.toPascalCase(x.name.get))
             .map(x => AstClassIdent(x))
@@ -79,18 +78,9 @@ case class AstNodeCodeGen() {
       ty.fields.map(_.build()).toList
     AstClassDecl(
       toAstClassName(ty.name) + "Impl",
-      fields.map(x => AstValDefImpl(x.name.get, tryWrapValue(x), None, None)),
+      fields.map(x => AstValDefImpl(TextTool.toCamelCase(x.name.get), tryWrapValue(x), None, None)),
       Nil,
-      fields
-        .map(x =>
-          AstFunctionDecl(
-            TextTool.toCamelCase(x.name.get),
-            Nil,
-            tryWrapValue(x)
-          ).setValue(KeyBody, AstRawCodeImpl(x.name.get, None))
-            .setValue(KeyOverride, true)
-        )
-      ,
+      Nil,
       List(AstClassIdent(toAstClassName(ty.name)))
     ).setValue(KeyClassType, "class")
   }
