@@ -127,7 +127,7 @@ class DruidSqlParser {
     }
 
     val func = AstFunctionDecl(
-      AstLiteralString(name),
+      name,
       inputs.toList,
       if (outputs.nonEmpty)
         TyStructImpl(None, Some(outputs.map(x => TyField(x.getName.get, x.getTy.get)).toList), None, None)
@@ -150,7 +150,8 @@ class DruidSqlParser {
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
     AstClassDecl(
       tbl.getTableName,
-      tbl.getColumnDefinitions.asScala.map(parseColumn).toList
+      tbl.getColumnDefinitions.asScala.map(parseColumn).toList,
+      Nil
     )
       .trySetValue(KeySchema, Option(tbl.getSchema))
   }

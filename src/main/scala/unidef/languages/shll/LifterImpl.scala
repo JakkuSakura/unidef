@@ -104,7 +104,7 @@ class LifterImpl(using val quotes: Quotes) {
     // TODO
     val retType = liftType(ty)
     val body = term.map(liftStmt)
-    AstFunctionDecl(AstLiteralString(name), paramss.map(liftParameter), retType)
+    AstFunctionDecl(name, paramss.map(liftParameter), retType)
       .trySetValue(KeyBody, body)
   }
   def liftDecl(tree: Statement): Option[AstNode] = {
@@ -154,6 +154,7 @@ class LifterImpl(using val quotes: Quotes) {
     val derived = liftClassDefParents(parents)
     AstClassDecl(
       name,
+      Nil,
       valDefs.toList,
       stmts.toList,
       derived

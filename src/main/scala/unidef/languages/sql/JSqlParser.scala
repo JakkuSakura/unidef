@@ -225,7 +225,7 @@ class JSqlParser() {
     }
 
     val func = AstFunctionDecl(
-      AstLiteralString(name),
+      name,
       inputs.toList,
       if (outputs.nonEmpty)
         TyStructImpl(None, Some(outputs.toList), None, None)
@@ -247,7 +247,8 @@ class JSqlParser() {
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
     AstClassDecl(
       tbl.getTable.getName,
-      tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList
+      tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList,
+      Nil
     )
       .trySetValue(KeySchema, Option(tbl.getTable.getSchemaName))
   }

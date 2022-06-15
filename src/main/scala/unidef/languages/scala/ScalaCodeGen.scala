@@ -1,14 +1,15 @@
 package unidef.languages.scala
 
 import unidef.common.NamingConvention
-import unidef.common.ty.{TyEnum, TyField}
-import unidef.common.ast.{AstClassDecl, AstFunctionDecl, AstRawCode, AstValDef, KeyClassType, KeyOverride}
+import unidef.common.ty.*
+import unidef.common.ast.*
 import unidef.utils.{TextTool, TypeEncodeException}
 
 import scala.jdk.CollectionConverters.*
 
 class ScalaCodeGen(naming: NamingConvention) {
   val common = ScalaCommon()
+
   def renderMethod(
       override_a: String,
       name: String,
@@ -23,37 +24,52 @@ class ScalaCodeGen(naming: NamingConvention) {
 
   def generateMethod(method: AstFunctionDecl): String = {
     val name = naming.toMethodName(method.getName.get)
-    val params = if (method.parameters.isEmpty && method.getName.get.startsWith("get"))
-      ""
-    else
-      "(" + method.parameters
+    val params =
+      if (method.parameters.isEmpty && method.getName.get.startsWith("get"))
+        ""
+      else
+        "(" + method.parameters
           .map(x => x.name + ": " + common.encodeOrThrow(x.value, "param"))
           .mkString(", ") + ")"
 
-
     val body = method.getBody.map(_.asInstanceOf[AstRawCode].getCode.get)
     val override_a = if (method.getValue(KeyOverride).getOrElse(false)) {
-        "override "
-      } else {
-        ""
-      }
+      "override "
+    } else {
+      ""
+    }
 
     val ret = common.encode(method.returnType)
     renderMethod(override_a, name, params, ret, body)
   }
-  def renderClass(cls: String, name: String, params: Option[List[String]], derive: List[String], methods: List[String]) = {
-    val params_a = params.map(x => x.mkString("(", ", ", ")")).getOrElse("")
+
+  def renderClass(
+      cls: String,
+      name: String,
+      params: List[String],
+      fields: List[String],
+      derive: List[String],
+      methods: List[String]
+  ) = {
+    val params_a = params.mkString("(", ", ", ")")
     val derive_a = if (derive.isEmpty) {
       ""
     } else {
       s" extends ${derive.mkString(" with ")}"
     }
-    val body_a = if(methods.isEmpty) "" else "{\n" + TextTool.indent_hard(methods.mkString("\n"), 2) + "\n}"
-    s"$cls $name$params_a$derive_a ${body_a}"
+    val body_a =
+      if (fields.isEmpty && methods.isEmpty) ""
+      else
+        "{\n" +
+          (fields ++ methods).map(TextTool.indent_hard(_, 2)).mkString("\n") +
+          "\n}"
+
+    s"$cls $name$params_a$derive_a $body_a"
   }
 
-  def generateClass(trt: AstClassDecl): String = {
-    val cls = trt.getValue(KeyClassType).getOrElse("case class")
+  def generateClass(c: AstClassDecl): String = {
+    val cls = c.getValue(KeyClassType).getOrElse("case class")
+
     def mapParam(x: AstValDef): String = {
       val modifier = if (cls == "case class") {
         ""
@@ -62,34 +78,86 @@ class ScalaCodeGen(naming: NamingConvention) {
       } else {
         "val "
       }
+      val default = x.getValue.map {
+        case x: AstRawCode => " = " + x.getCode.get
+      }.getOrElse("")
       modifier + x.getName.get + ": " + common
         .encode(x.getTy.get)
         .getOrElse(throw TypeEncodeException("Scala", x.getTy.get))
+      + default
     }
 
-    val name = naming.toClassName(trt.getName.get)
-    val params =
-      trt.fields.map(mapParam).mkString(", ")
-    val hasParams = !cls.contains("object") && !(cls.contains("trait") && trt.fields.isEmpty)
-
-    val derive = trt.derived.map(_.name).map(naming.toClassName)
-    val methods = trt.methods.map {
-        case x: AstFunctionDecl => generateMethod(x)
-        case x: AstRawCode => x.getCode.get
-      }
-    renderClass(cls, name, if (hasParams) Some(List(params)) else None, derive, methods)
+    val name = naming.toClassName(c.getName.get)
+    val params = c.parameters.map(mapParam)
+    val fields = c.fields.map(mapParam)
+    val derive = c.derived.map(_.name).map(naming.toClassName)
+    val methods = c.methods.map {
+      case x: AstFunctionDecl => generateMethod(x)
+      case x: AstRawCode => x.getCode.get
+    }
+    renderClass(cls, name, params, fields, derive, methods)
   }
+
   def renderEnum(name: String, variants: List[String]): String = {
-     s"sealed trait $name\n"
-    + variants.map(x => s"case object $x extends $name").mkString("\n")
+    s"sealed trait $name\n"
+      + variants.map(x => s"case object $x extends $name").mkString("\n")
   }
 
   def generateScala2Enum(enm: TyEnum): String = {
     val name = TextTool.toPascalCase(enm.getName.get)
-    val variants =  enm.variants.map(x => x.names.head).map(TextTool.toScreamingSnakeCase)
+    val variants = enm.variants.map(x => x.names.head).map(TextTool.toScreamingSnakeCase)
     renderEnum(name, variants)
   }
+
   def generateRaw(code: AstRawCode): String = {
     code.getCode.get
   }
+
+  def generateBuilder(builderName: String, target: String, fields: List[TyField]): AstClassDecl = {
+    def expandField(field: TyField): String = {
+      field.name + (field.value match {
+        case _: TyOptional => ""
+        case _ => ".get"
+      })
+    }
+    val buildMethod = AstFunctionDecl(
+      name = "build",
+      returnType = TyNamed(target),
+      parameters = Nil
+    ).setValue(
+      KeyBody,
+      AstRawCodeImpl(Some(s"$target(${fields.map(expandField).mkString(", ")})"), None)
+    )
+    def ensureOptional(x: TyNode): TyNode = {
+        x match {
+            case x: TyOptional => x
+            case x => TyOptionalImpl(Some(x))
+        }
+    }
+
+    def setFieldMethod(x: TyField): AstFunctionDecl = {
+      AstFunctionDecl(
+        name = x.name,
+        returnType = TyNamed(builderName),
+        parameters = List(
+          TyField(
+            name = x.name,
+            value = x.value
+          )
+        )
+      ).setValue(
+        KeyBody,
+        AstRawCodeImpl(Some(s"this.${x.name} = Some(${x.name})\nthis"), None)
+      )
+    }
+    AstClassDecl(
+      name = builderName,
+      parameters = Nil,
+      fields = fields.map(x =>
+        AstValDefImpl(Some(x.name), Some(ensureOptional(x.value)), mutability = Some(true), value = Some(AstRawCodeImpl(Some("None"), None)))
+      ),
+      methods = fields.map(setFieldMethod) :+ buildMethod
+    ).setValue(KeyClassType, "class")
+  }
+
 }

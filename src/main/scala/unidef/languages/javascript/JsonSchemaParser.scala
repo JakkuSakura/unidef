@@ -52,7 +52,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
       .getOrElse(TyUnitImpl())
 
     val node =
-      AstFunctionDecl(AstLiteralString(name), parameters.toList, ret)
+      AstFunctionDecl(name, parameters.toList, ret)
 
     if (content("language").isDefined && content("language").isDefined) {
       val language = getString(content, "language")

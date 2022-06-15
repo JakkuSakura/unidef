@@ -32,6 +32,7 @@ case class AstNodeCodeGen() {
     AstClassDecl(
       name,
       Nil,
+      Nil,
       methods.map(x => AstRawCodeImpl(Some(x), None)),
       List(AstClassIdent(derive))
     )
@@ -55,11 +56,12 @@ case class AstNodeCodeGen() {
     AstClassDecl(
       toAstClassName(ty.name),
       Nil,
+      Nil,
       fields
         .map(x => x.name -> x.value)
         .map((k, v) =>
           AstFunctionDecl(
-            AstLiteralString("get" + TextTool.toPascalCase(k)),
+            "get" + TextTool.toPascalCase(k),
             Nil,
             TyOptionalImpl(Some(v))
           )
@@ -89,17 +91,18 @@ case class AstNodeCodeGen() {
     AstClassDecl(
       toAstClassName(ty.name) + "Impl",
       fields.map(x => AstValDefImpl(Some(x.name), Some(TyOptionalImpl(Some(x.value))), None, None)),
+      Nil,
       fields
         .map(x =>
           AstFunctionDecl(
-            AstLiteralString("get" + TextTool.toPascalCase(x.name)),
+            "get" + TextTool.toPascalCase(x.name),
             Nil,
             TyOptionalImpl(Some(x.value))
           ).setValue(KeyBody, AstRawCodeImpl(Some(x.name), None))
             .setValue(KeyOverride, true)
         )
         ::: (if (ty.commentable) List( AstFunctionDecl(
-        AstLiteralString("setComment"),
+        "setComment",
         List(TyField("comment", TyStringImpl())),
         TyNamed("this.type")
       ).setValue(KeyBody, AstRawCodeImpl(Some(s"this.comment = Some(comment)\n this"), None))

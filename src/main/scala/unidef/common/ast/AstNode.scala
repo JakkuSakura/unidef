@@ -63,7 +63,7 @@ def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
   TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe, comment = func.comment)
 }
 case class AstFunctionDecl(
-    name: AstNode,
+    name: String,
     parameters: List[TyField],
     override val returnType: TyNode,
     dataframe: Option[Boolean] = None,
@@ -75,15 +75,9 @@ case class AstFunctionDecl(
     with HasBody
     with HasDataframe
     with TyCommentable {
-  override def getName: Option[String] = literalName
+  override def getName: Option[String] = Some(name)
 
   override def parameterType: TyNode = TyTupleImpl(Some(parameters))
-
-  def literalName: Option[String] = name match {
-    case x: AstLiteral if x.getTy.exists(_.isInstanceOf[TyString]) => Some(x.getLiteralValue.get)
-    case _ => None
-
-  }
 
   override def getDataframe: Option[Boolean] = dataframe
 
@@ -103,6 +97,7 @@ case class AstClassIdent(name: String) extends AstNode
 
 case class AstClassDecl(
     name: String,
+    parameters: List[AstValDef],
     fields: List[AstValDef],
     methods: List[AstNode] = Nil,
     derived: List[AstClassIdent] = Nil,
