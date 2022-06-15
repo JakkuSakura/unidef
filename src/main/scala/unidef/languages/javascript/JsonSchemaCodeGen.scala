@@ -30,14 +30,14 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     val body_row = mutable.ArrayBuffer[TyNode]()
 
     struct0.getFields.get.foreach {
-      case TyField(name, x: TyList, _, _) =>
-        headers += name
-        body_row += x.getContent
+      case f: TyField if f.getValue.isInstanceOf[TyList] =>
+        headers += f.getName.get
+        body_row += f.getValue.asInstanceOf[TyList].getContent
       case x: TyField =>
         fields += x
     }
-    fields += TyField("headers", TyConstTupleString(headers.toList))
-    fields += TyField("body", TyListImpl(TyTupleImpl(body_row.toList)))
+    fields += TyFieldBuilder().name("headers").value(TyConstTupleString(headers.toList)).build()
+    fields += TyFieldBuilder().name("body").value(TyListImpl(TyTupleImpl(body_row.toList))).build()
     // TODO: add header names and types
     TyStructBuilder().fields(fields.toList).build()
   }
@@ -150,7 +150,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         val others: mutable.Map[String, Json] = mutable.Map.empty
         others += "properties" -> Json.fromFields(
           x.getFields.get.map(f =>
-            naming(f.name) -> generateType(f.value match {
+            naming(f.getName.get) -> generateType(f.getValue match {
               case opt: TyOptional => opt.getContent
               case x => x
             })
@@ -163,8 +163,8 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         if (keyRequired) {
           others += "required" -> Json.fromValues(
             x.getFields.get
-              .filterNot(f => f.value.isInstanceOf[TyOptional])
-              .map(f => naming(f.name))
+              .filterNot(f => f.getValue.isInstanceOf[TyOptional])
+              .map(f => naming(f.getName.get))
               .map(Json.fromString)
           )
 

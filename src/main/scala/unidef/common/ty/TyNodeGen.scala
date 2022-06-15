@@ -1,6 +1,5 @@
 package unidef.common.ty
 
-
 trait HasFields() extends TyNode {
   def getFields: Option[List[TyField]]
 }
@@ -15,6 +14,12 @@ trait HasAttributes() extends TyNode {
 }
 trait HasErr() extends TyNode {
   def getErr: TyNode
+}
+trait HasDefaultNone() extends TyNode {
+  def getDefaultNone: Option[Boolean]
+}
+trait HasMutability() extends TyNode {
+  def getMutability: Option[Boolean]
 }
 trait HasScale() extends TyNode {
   def getScale: Option[Int]
@@ -52,8 +57,8 @@ trait HasDataframe() extends TyNode {
 trait HasContent() extends TyNode {
   def getContent: TyNode
 }
-class TyAnyImpl() extends TyAny
-class TyRealImpl() extends TyReal
+class TyAnyImpl() extends TyAny 
+class TyRealImpl() extends TyReal 
 class TyFloatImpl(val bitSize: Option[BitSize]) extends TyFloat {
   override def getBitSize: Option[BitSize] = {
     bitSize
@@ -69,8 +74,8 @@ class TyOptionalImpl(val content: TyNode) extends TyOptional {
     content
   }
 }
-class TyStringImpl() extends TyString
-class TyObjectImpl() extends TyObject
+class TyStringImpl() extends TyString 
+class TyObjectImpl() extends TyObject 
 class TyDecimalImpl(val precision: Option[Int], val scale: Option[Int]) extends TyDecimal {
   override def getPrecision: Option[Int] = {
     precision
@@ -79,8 +84,8 @@ class TyDecimalImpl(val precision: Option[Int], val scale: Option[Int]) extends 
     scale
   }
 }
-class TyByteArrayImpl() extends TyByteArray
-class TyInetImpl() extends TyInet
+class TyByteArrayImpl() extends TyByteArray 
+class TyInetImpl() extends TyInet 
 class TyTupleImpl(val values: List[TyNode]) extends TyTuple {
   override def getValues: List[TyNode] = {
     values
@@ -109,8 +114,22 @@ class TyStructImpl(val name: Option[String], val fields: Option[List[TyField]], 
     comment
   }
 }
-class TyClassImpl() extends TyClass
-class TyRecordImpl() extends TyRecord
+class TyClassImpl() extends TyClass 
+class TyRecordImpl() extends TyRecord 
+class TyFieldImpl(val name: Option[String], val value: TyNode, val mutability: Option[Boolean], val defaultNone: Option[Boolean]) extends TyField {
+  override def getName: Option[String] = {
+    name
+  }
+  override def getValue: TyNode = {
+    value
+  }
+  override def getMutability: Option[Boolean] = {
+    mutability
+  }
+  override def getDefaultNone: Option[Boolean] = {
+    defaultNone
+  }
+}
 class TyMapImpl(val key: TyNode, val value: TyNode) extends TyMap {
   override def getKey: TyNode = {
     key
@@ -119,7 +138,7 @@ class TyMapImpl(val key: TyNode, val value: TyNode) extends TyMap {
     value
   }
 }
-class TyUuidImpl() extends TyUuid
+class TyUuidImpl() extends TyUuid 
 class TyResultImpl(val ok: TyNode, val err: TyNode) extends TyResult {
   override def getOk: TyNode = {
     ok
@@ -128,11 +147,11 @@ class TyResultImpl(val ok: TyNode, val err: TyNode) extends TyResult {
     err
   }
 }
-class TyCharImpl() extends TyChar
-class TyNullImpl() extends TyNull
-class TyNothingImpl() extends TyNothing
-class TyBooleanImpl() extends TyBoolean
-class TyNumericImpl() extends TyNumeric
+class TyCharImpl() extends TyChar 
+class TyNullImpl() extends TyNull 
+class TyNothingImpl() extends TyNothing 
+class TyBooleanImpl() extends TyBoolean 
+class TyNumericImpl() extends TyNumeric 
 class TyIntegerImpl(val bitSize: Option[BitSize], val sized: Option[Boolean]) extends TyInteger {
   override def getBitSize: Option[BitSize] = {
     bitSize
@@ -141,15 +160,15 @@ class TyIntegerImpl(val bitSize: Option[BitSize], val sized: Option[Boolean]) ex
     sized
   }
 }
-class TyUnitImpl() extends TyUnit
+class TyUnitImpl() extends TyUnit 
 class TyListImpl(val content: TyNode) extends TyList {
   override def getContent: TyNode = {
     content
   }
 }
-class TyUndefinedImpl() extends TyUndefined
-trait TyAny() extends TyNode
-trait TyReal() extends TyNode with TyNumeric
+class TyUndefinedImpl() extends TyUndefined 
+trait TyAny() extends TyNode 
+trait TyReal() extends TyNode with TyNumeric 
 trait TyFloat() extends TyNode with TyReal with HasBitSize {
   def getBitSize: Option[BitSize]
 }
@@ -159,14 +178,14 @@ trait TySet() extends TyNode with HasContent {
 trait TyOptional() extends TyNode with HasContent {
   def getContent: TyNode
 }
-trait TyString() extends TyNode
-trait TyObject() extends TyNode
+trait TyString() extends TyNode 
+trait TyObject() extends TyNode 
 trait TyDecimal() extends TyNode with TyReal with HasPrecision with HasScale {
   def getPrecision: Option[Int]
   def getScale: Option[Int]
 }
-trait TyByteArray() extends TyNode
-trait TyInet() extends TyNode
+trait TyByteArray() extends TyNode 
+trait TyInet() extends TyNode 
 trait TyTuple() extends TyNode with HasValues {
   def getValues: List[TyNode]
 }
@@ -179,31 +198,37 @@ trait TyStruct() extends TyNode with TyClass with HasName with HasFields with Ha
   def getSchema: Option[String]
   def getComment: Option[String]
 }
-trait TyClass() extends TyNode
-trait TyRecord() extends TyNode
+trait TyClass() extends TyNode 
+trait TyRecord() extends TyNode 
+trait TyField() extends TyNode with HasName with HasValue with HasMutability with HasDefaultNone {
+  def getName: Option[String]
+  def getValue: TyNode
+  def getMutability: Option[Boolean]
+  def getDefaultNone: Option[Boolean]
+}
 trait TyMap() extends TyNode with HasKey with HasValue {
   def getKey: TyNode
   def getValue: TyNode
 }
-trait TyUuid() extends TyNode
+trait TyUuid() extends TyNode 
 trait TyResult() extends TyNode with HasOk with HasErr {
   def getOk: TyNode
   def getErr: TyNode
 }
-trait TyChar() extends TyNode
-trait TyNull() extends TyNode
-trait TyNothing() extends TyNode
-trait TyBoolean() extends TyNode
-trait TyNumeric() extends TyNode
+trait TyChar() extends TyNode 
+trait TyNull() extends TyNode 
+trait TyNothing() extends TyNode 
+trait TyBoolean() extends TyNode 
+trait TyNumeric() extends TyNode 
 trait TyInteger() extends TyNode with TyNumeric with HasBitSize with HasSized {
   def getBitSize: Option[BitSize]
   def getSized: Option[Boolean]
 }
-trait TyUnit() extends TyNode
+trait TyUnit() extends TyNode 
 trait TyList() extends TyNode with HasContent {
   def getContent: TyNode
 }
-trait TyUndefined() extends TyNode
+trait TyUndefined() extends TyNode 
 class TyAnyBuilder() {
   def build(): TyAnyImpl = {
     TyAnyImpl()
@@ -337,6 +362,31 @@ class TyClassBuilder() {
 class TyRecordBuilder() {
   def build(): TyRecordImpl = {
     TyRecordImpl()
+  }
+}
+class TyFieldBuilder() {
+  var name: Option[String] = None
+  var value: Option[TyNode] = None
+  var mutability: Option[Boolean] = None
+  var defaultNone: Option[Boolean] = None
+  def name(name: String): TyFieldBuilder = {
+    this.name = Some(name)
+    this
+  }
+  def value(value: TyNode): TyFieldBuilder = {
+    this.value = Some(value)
+    this
+  }
+  def mutability(mutability: Boolean): TyFieldBuilder = {
+    this.mutability = Some(mutability)
+    this
+  }
+  def defaultNone(defaultNone: Boolean): TyFieldBuilder = {
+    this.defaultNone = Some(defaultNone)
+    this
+  }
+  def build(): TyFieldImpl = {
+    TyFieldImpl(name, value.get, mutability, defaultNone)
   }
 }
 class TyMapBuilder() {

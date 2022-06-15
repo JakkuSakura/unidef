@@ -100,9 +100,9 @@ class DruidSqlParser {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (arg.getParamType, TyField(name, TyOptionalImpl(ty)))
+      (arg.getParamType, TyFieldBuilder().name(name).value(TyOptionalImpl(ty)).build())
     else
-      (arg.getParamType, TyField(name, ty))
+      (arg.getParamType, TyFieldBuilder().name(name).value(ty).build())
   }
 
   def parseCreateFunction(
@@ -128,9 +128,9 @@ class DruidSqlParser {
 
     val func = AstFunctionDecl(
       name,
-      inputs.toList,
+      inputs,
       if (outputs.nonEmpty)
-        TyStructBuilder().fields(outputs.map(x => TyField(x.getName, x.getTy)).toList).build()
+        TyStructBuilder().fields(outputs.map(x => TyFieldBuilder().name(x.getName).value(x.getTy).build()).toList).build()
       else if (outputOnly.isDefined)
         outputOnly.get
       else

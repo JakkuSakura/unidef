@@ -61,8 +61,6 @@ case class TyEnum(variants: List[TyVariant], simpleEnum: Option[Boolean] = None,
   def getName: Option[String] = name
   def getValue: Option[TyNode] = value
 }
-// rename it
-case class TyField(name: String, value: TyNode, mutability: Option[Boolean]=None, defaultNone: Option[Boolean]=None) extends Extendable with TyNode
 
 case object KeyDataType extends KeywordBoolean
 

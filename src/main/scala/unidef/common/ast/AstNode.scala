@@ -60,7 +60,15 @@ object AccessModifier extends Keyword {
   case class Limited(path: String) extends AccessModifier
 }
 def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
-  TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe, schema = None, comment = func.comment)
+  TyStructImpl(
+    func.getName,
+    Some(func.parameters),
+    None,
+    None,
+    dataframe = func.getDataframe,
+    schema = None,
+    comment = func.comment
+  )
 }
 case class AstFunctionDecl(
     name: String,
@@ -108,8 +116,12 @@ case class AstClassDecl(
     with TyStruct {
 
   override def getName: Option[String] = Some(name)
-  
-  override def getFields: Option[List[TyField]] = Some(fields.map(x => TyField(x.getName, x.getTy, ???, x.getValue.map(x => true))))
+
+  override def getFields: Option[List[TyField]] = Some(
+    fields.map(x =>
+      TyFieldBuilder().name(x.getName).value(x.getTy).defaultNone(x.getValue.isDefined).build()
+    )
+  )
 
   override def getAttributes: Option[List[String]] = Some(Nil)
 
@@ -122,7 +134,6 @@ case class AstClassDecl(
   }
 
   override def getComment: Option[String] = ???
-
 
 }
 

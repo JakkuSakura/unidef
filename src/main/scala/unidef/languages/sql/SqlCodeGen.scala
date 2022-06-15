@@ -34,7 +34,7 @@ class SqlCodeGen(
   }
   def generateCallFunc(func: AstFunctionDecl, percentage: Boolean = false): String = {
 
-    val params = func.parameters.map(_.name).map(naming.toFunctionParameterName)
+    val params = func.parameters.map(_.getName.get).map(naming.toFunctionParameterName)
     val db_func_name = naming.toFunctionName(func.getName.get)
     val schema = func.getValue(KeySchema).fold("")(x => s"$x.")
     val returnType = func.returnType

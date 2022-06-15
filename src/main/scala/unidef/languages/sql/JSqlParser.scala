@@ -144,9 +144,10 @@ class JSqlParser() {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (input, TyField(name, TyOptionalImpl(ty)))
+      (input,  TyFieldBuilder().name(name).value(TyOptionalImpl(ty)).build())
     else
-      (input, TyField(name, ty))
+      (input, TyFieldBuilder().name(name).value(ty).build())
+
   }
 
   def parseCreateFunction(

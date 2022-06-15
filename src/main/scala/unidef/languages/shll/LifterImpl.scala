@@ -75,7 +75,7 @@ class LifterImpl(using val quotes: Quotes) {
     tree match {
       case ValDef(name, tpt, rhs) =>
         // TODO: process tpt and rhs
-        TyField(name, TyNamed(tpt.toString))
+        TyFieldBuilder().name(name).value(TyNamed(tpt.toString)).build()
     }
   }
   // TODO support currying

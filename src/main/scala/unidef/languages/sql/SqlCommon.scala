@@ -105,14 +105,14 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
 
   def convertToSqlField(node: TyField): SqlField = {
     val attributes = new mutable.StringBuilder()
-    if (node.getValue(KeyPrimary).contains(true))
-      attributes ++= " PRIMARY KEY"
-    if (!node.getValue(KeyNullable).contains(true))
-      attributes ++= " NOT NULL"
+//    if (node.getValue(KeyPrimary).contains(true))
+//      attributes ++= " PRIMARY KEY"
+//    if (!node.getValue(KeyNullable).contains(true))
+//      attributes ++= " NOT NULL"
     // TODO auto incr
     SqlField(
-      naming.toFieldName(node.name),
-      convertType(node.value),
+      naming.toFieldName(node.getName.get),
+      convertType(node.getValue),
       attributes.toString
     )
   }

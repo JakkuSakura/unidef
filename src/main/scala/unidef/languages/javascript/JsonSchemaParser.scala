@@ -40,7 +40,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           TyStructBuilder()
             .fields(iterateOver(x, "name", "type").map { (name, json) =>
               val ty = parse(Json.fromJsonObject(json))
-              TyField(name, ty)
+              TyFieldBuilder().name(name).value(ty).build()
             }.toList)
             .build()
       )
@@ -70,7 +70,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           iterateOver(x, "name", "type")
             .map { (name, json) =>
               val ty = parse(Json.fromJsonObject(json))
-              TyField(name, ty)
+              TyFieldBuilder().name(name).value(ty).build()
             }
         )
         // TODO TyNamed or TyStruct?
@@ -108,7 +108,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
     js.foldWith(new Json.Folder[TyField] {
 
       override def onString(value: String): TyField =
-        TyField("unnamed", jsonSchemaCommon.decodeOrThrow(value))
+        TyFieldBuilder().value(jsonSchemaCommon.decodeOrThrow(value)).build()
 
       override def onArray(value: Vector[Json]): TyField =
         throw ParseCodeException("Field should not be array", null)
@@ -117,19 +117,19 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         val field = if (value("name").isDefined && value("type").isDefined) {
           val name = getString(value, "name")
           val ty = jsonSchemaCommon.decodeOrThrow(getString(value, "type"))
-          TyField(name, ty)
+          TyFieldBuilder().name(name).value(ty).build()
         } else if (value.size == 1) {
           val name = value.keys.head
           val ty = jsonSchemaCommon.decodeOrThrow(getString(value, name))
-          TyField(name, ty)
+          TyFieldBuilder().name(name).value(ty).build()
         } else {
           throw ParseCodeException(
             "FieldType must be either: has fields `name` and `type`, has the form of `name: type`. Got " + value
           )
         }
         // TODO: handle list and object recursively
-        if (value("name").isDefined)
-          collectExtKeys(value, extKeysForField.toList).foreach(field.setValue)
+//        if (value("name").isDefined)
+//          collectExtKeys(value, extKeysForField.toList).foreach(field.setValue)
 
         field
       }

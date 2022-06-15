@@ -19,7 +19,7 @@ case class TyNodeCodeGen() {
   val common = JsonSchemaCommon(true)
 
   def collectFields(ty: Type): Set[TyField] = {
-    ty.fields.toSet
+    ty.fields.map(_.build()).toSet
   }
   def collectFields(types: List[Type]): Set[TyField] = {
     types.flatMap(collectFields).toSet
@@ -33,11 +33,12 @@ case class TyNodeCodeGen() {
       List(AstClassIdent(derive))
     )
   }
-  def tryWrapValue(x: TyField): TyNode = if (x.defaultNone.get) TyOptionalImpl(x.value) else x.value
+  def tryWrapValue(x: TyField): TyNode =
+    if (x.getDefaultNone.get) TyOptionalImpl(x.getValue) else x.getValue
 
   def generateScalaKeyObject(field: TyField): AstClassDecl = {
-    val traitName = "Key" + TextTool.toPascalCase(field.name)
-    val cls = field.value match {
+    val traitName = "Key" + TextTool.toPascalCase(field.getName.get)
+    val cls = field.getValue match {
       case _: TyInteger =>
         scalaField(traitName, "KeywordInt", Nil)
       case _: TyString => scalaField(traitName, "KeywordString", Nil)
@@ -45,14 +46,14 @@ case class TyNodeCodeGen() {
       case _ =>
         val scalaCommon = ScalaCommon()
         val valueType =
-          scalaCommon.encodeOrThrow(field.value, "scala")
+          scalaCommon.encodeOrThrow(field.getValue, "scala")
         scalaField(traitName, "Keyword", List(s"override type V = ${valueType}"))
     }
     cls.setValue(KeyClassType, "case object")
   }
 
   def generateScalaHasTrait(field: TyField): AstClassDecl = {
-    val traitName = "Has" + TextTool.toPascalCase(field.name)
+    val traitName = "Has" + TextTool.toPascalCase(field.getName.get)
     val scalaCommon = ScalaCommon()
     val valueType =
       scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
@@ -60,13 +61,14 @@ case class TyNodeCodeGen() {
     scalaField(
       traitName,
       "TyNode",
-      if (field.defaultNone.get) List(s"def get${TextTool.toPascalCase(field.name)}: ${valueType}")
-      else List(s"def get${TextTool.toPascalCase(field.name)}: ${valueType}")
+      if (field.getDefaultNone.get)
+        List(s"def get${TextTool.toPascalCase(field.getName.get)}: ${valueType}")
+      else List(s"def get${TextTool.toPascalCase(field.getName.get)}: ${valueType}")
     ).setValue(KeyClassType, "trait")
   }
   def generateScalaCompoundTrait(ty: Type): AstClassDecl = {
     val scalaCommon = ScalaCommon()
-    val fields = ty.fields.toList
+    val fields = ty.fields.map(_.build()).toList
 
     AstClassDecl(
       "Ty" + TextTool.toPascalCase(ty.name),
@@ -75,7 +77,7 @@ case class TyNodeCodeGen() {
       fields
         .map(x =>
           AstFunctionDecl(
-            "get" + TextTool.toPascalCase(x.name),
+            "get" + TextTool.toPascalCase(x.getName.get),
             Nil,
             tryWrapValue(x)
           )
@@ -92,7 +94,7 @@ case class TyNodeCodeGen() {
             .toList
           :::
           fields
-            .map(x => x.name -> x.value)
+            .map(x => x.getName.get -> x.getValue)
             .map((k, v) => "Has" + TextTool.toPascalCase(k))
             .map(x => AstClassIdent(x))
             .toList
@@ -100,7 +102,11 @@ case class TyNodeCodeGen() {
   }
   def generateScalaBuilder(ty: Type): AstClassDecl = {
     val fields = ty.fields
-      .map(x => x.copy(name = TextTool.toCamelCase(x.name), value = tryWrapValue(x)))
+      .map(x =>
+        x.name(TextTool.toCamelCase(x.name.get))
+          .value(tryWrapValue(x.build()))
+          .build()
+      )
       .toList
     val codegen = ScalaCodeGen(NoopNamingConvention)
     codegen.generateBuilder(
@@ -110,21 +116,22 @@ case class TyNodeCodeGen() {
     )
   }
   def generateScalaCaseClass(ty: Type): AstClassDecl = {
-    val fields = ty.fields.map(x => x.copy(name = TextTool.toCamelCase(x.name)))
+    val fields = ty.fields.map(x => x.name(TextTool.toCamelCase(x.name.get)).build())
 
     AstClassDecl(
       "Ty" + TextTool.toPascalCase(ty.name) + "Impl",
-      fields.map(x => AstValDefImpl(x.name, tryWrapValue(x), None, None)).toList,
+      fields.map(x => AstValDefImpl(x.getName.get, tryWrapValue(x), None, None)).toList,
       Nil,
       fields
         .map(x =>
           AstFunctionDecl(
-            "get" + TextTool.toPascalCase(x.name),
+            "get" + TextTool.toPascalCase(x.getName.get),
             Nil,
             tryWrapValue(x)
-          ).setValue(KeyBody, AstRawCodeImpl(x.name, None))
+          ).setValue(KeyBody, AstRawCodeImpl(x.getName.get, None))
             .setValue(KeyOverride, true)
-        ).toList,
+        )
+        .toList,
       List(AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
     ).setValue(KeyClassType, "class")
   }
@@ -135,7 +142,9 @@ object TyNodeCodeGen {
       Type("string"),
       Type("field")
         .field("name", TyStringImpl())
-        .field("value", TyNode, required = true),
+        .field("value", TyNode, required = true)
+        .field("mutability", TyBooleanImpl())
+        .field("defaultNone", TyBooleanImpl()),
       Type("list")
         .field("content", TyNode, required = true),
 //      Type("enum")
