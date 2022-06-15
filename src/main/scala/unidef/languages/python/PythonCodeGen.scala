@@ -51,7 +51,7 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
   }
   def generateStatement(body: AstNode): String = {
     body match {
-      case x : AstRawCode => x.getCode
+      case x : AstRawCode => x.code
       case _ => ???
     }
   }

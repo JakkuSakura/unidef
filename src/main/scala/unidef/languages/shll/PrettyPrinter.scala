@@ -6,7 +6,7 @@ class PrettyPrinter {
   def print(n: AstNode): String = {
     n match {
       case n: AstLiteral =>
-        n.getLiteralValue
+        n.literalValue
     }
   }
 }

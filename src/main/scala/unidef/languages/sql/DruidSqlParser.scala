@@ -130,7 +130,7 @@ class DruidSqlParser {
       name,
       inputs,
       if (outputs.nonEmpty)
-        TyStructBuilder().fields(outputs.map(x => TyFieldBuilder().name(x.getName).value(x.getTy).build()).toList).build()
+        TyStructBuilder().fields(outputs.map(x => TyFieldBuilder().name(x.name).value(x.ty).build()).toList).build()
       else if (outputOnly.isDefined)
         outputOnly.get
       else

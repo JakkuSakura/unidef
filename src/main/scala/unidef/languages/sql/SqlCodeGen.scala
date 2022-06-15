@@ -98,10 +98,10 @@ class SqlCodeGen(
         .getValue(KeyBody)
         .get
         .asInstanceOf[AstRawCode]
-        .getLanguage
+        .language
         .get
 
-    val body = node.getValue(KeyBody).get.asInstanceOf[AstRawCode].getCode
+    val body = node.getValue(KeyBody).get.asInstanceOf[AstRawCode].code
     val schema = node.getValue(KeySchema).fold("")(x => s"$x.")
     var returnTable: List[SqlField] = Nil
     var returnType = ""

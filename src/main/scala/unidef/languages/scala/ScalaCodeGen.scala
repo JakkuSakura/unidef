@@ -32,7 +32,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           .map(x => x.name.get + ": " + common.encodeOrThrow(x.value, "param"))
           .mkString(", ") + ")"
 
-    val body = method.getBody.map(_.asInstanceOf[AstRawCode].getCode)
+    val body = method.getBody.map(_.asInstanceOf[AstRawCode].code)
     val override_a = if (method.getValue(KeyOverride).getOrElse(false)) {
       "override "
     } else {
@@ -73,19 +73,19 @@ class ScalaCodeGen(naming: NamingConvention) {
     def mapParam(x: AstValDef): String = {
       val modifier = if (cls == "case class") {
         ""
-      } else if (x.getMutability.contains(true)) {
+      } else if (x.mutability.contains(true)) {
         "var "
       } else {
         "val "
       }
-      val default = x.getValue
+      val default = x.value
         .map { case x: AstRawCode =>
-          " = " + x.getCode
+          " = " + x.code
         }
         .getOrElse("")
-      modifier + x.getName + ": " + common
-        .encode(x.getTy)
-        .getOrElse(throw TypeEncodeException("Scala", x.getTy))
+      modifier + x.name + ": " + common
+        .encode(x.ty)
+        .getOrElse(throw TypeEncodeException("Scala", x.ty))
         + default
     }
 
@@ -95,7 +95,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     val derive = c.derived.map(_.name).map(naming.toClassName)
     val methods = c.methods.map {
       case x: AstFunctionDecl => generateMethod(x)
-      case x: AstRawCode => x.getCode
+      case x: AstRawCode => x.code
     }
     renderClass(cls, name, params, fields, derive, methods)
   }
@@ -112,7 +112,7 @@ class ScalaCodeGen(naming: NamingConvention) {
   }
 
   def generateRaw(code: AstRawCode): String = {
-    code.getCode
+    code.code
   }
 
   def generateBuilder(builderName: String, target: String, fields: List[TyField]): AstClassDecl = {

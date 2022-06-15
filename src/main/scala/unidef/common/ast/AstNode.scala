@@ -97,7 +97,7 @@ case class AstClassDecl(
     with AstNode {
   def getFields: List[TyField] =
     fields.map(x =>
-      TyFieldBuilder().name(x.getName).value(x.getTy).defaultNone(x.getValue.isDefined).build()
+      TyFieldBuilder().name(x.name).value(x.ty).defaultNone(x.value.isDefined).build()
     )
 }
 

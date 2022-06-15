@@ -23,7 +23,7 @@ private object ScalaiTestHelper {
         |  }
         |}
         |""".stripMargin)
-    val extracted = lifted.asInstanceOf[AstProgram].statements.head.asInstanceOf[AstClassDecl].fields.head.getValue.get
+    val extracted = lifted.asInstanceOf[AstProgram].statements.head.asInstanceOf[AstClassDecl].fields.head.value.get
     extracted
   }
 

@@ -41,14 +41,12 @@ case class AstNodeCodeGen() {
     val traitName = "Has" + TextTool.toPascalCase(field.name.get)
     val scalaCommon = ScalaCommon()
     val valueType =
-      scalaCommon.encodeOrThrow(field.value, "Scala")
+      scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
 
     scalaField(
       traitName,
       "AstNode",
-      if (field.defaultNone.get)
-        List(s"def get${TextTool.toPascalCase(field.name.get)}: Option[${valueType}]")
-      else List(s"def get${TextTool.toPascalCase(field.name.get)}: ${valueType}")
+      List(s"def get${TextTool.toPascalCase(field.name.get)}: ${valueType}")
     ).setValue(KeyClassType, "trait")
   }
   def generateScalaCompoundTrait(ty: Ast): AstClassDecl = {
@@ -61,7 +59,7 @@ case class AstNodeCodeGen() {
       fields
         .map(x =>
           AstFunctionDecl(
-            "get" + TextTool.toPascalCase(x.name.get),
+          TextTool.toCamelCase(x.name.get),
             Nil,
             tryWrapValue(x)
           )
@@ -86,7 +84,7 @@ case class AstNodeCodeGen() {
       fields
         .map(x =>
           AstFunctionDecl(
-            "get" + TextTool.toPascalCase(x.name.get),
+            TextTool.toCamelCase(x.name.get),
             Nil,
             tryWrapValue(x)
           ).setValue(KeyBody, AstRawCodeImpl(x.name.get, None))
