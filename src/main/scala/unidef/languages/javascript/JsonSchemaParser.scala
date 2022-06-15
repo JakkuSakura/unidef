@@ -25,7 +25,7 @@ class JsonSchemaParserOption(
 class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption()) {
   val jsonSchemaCommon: JsonSchemaCommon = JsonSchemaCommon(options.extendedGrammar)
 
-  def parseFunction(content: JsonObject): TyApplicable = {
+  def parseFunction(content: JsonObject): TyNode = {
     val name = getString(content, "name")
     val parameters = content("parameters")
       .map(_ => getList(content, "parameters"))

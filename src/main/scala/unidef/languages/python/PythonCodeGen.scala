@@ -22,8 +22,8 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
 
   def generateEnum(enm: TyEnum, importManager: Option[ImportManager] = None): String = {
     importManager.foreach(_ += AstImport("enum"))
-    val name = naming.toClassName(enm.getName.get)
-    val enum_type = enm.getValue.getOrElse(TyStringImpl()) match {
+    val name = naming.toClassName(enm.name.get)
+    val enum_type = enm.value.getOrElse(TyStringImpl()) match {
       case _: TyString => "str, enum.Enum"
       case _: TyInteger => "enum.IntEnum"
     }
@@ -35,7 +35,7 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
           counter += 1
           PythonCodeGenField(
             naming.toEnumKeyName(name),
-            enm.getValue match {
+            enm.value match {
               case Some(x: TyString) => s"'$name'"
               case Some(_: TyInteger) => s"${code.getOrElse(counter)}"
               case None => s"'${naming.toEnumValueName(name)}'"

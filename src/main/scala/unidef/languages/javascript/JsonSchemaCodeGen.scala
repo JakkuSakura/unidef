@@ -29,10 +29,10 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     val headers = mutable.ArrayBuffer[String]()
     val body_row = mutable.ArrayBuffer[TyNode]()
 
-    struct0.getFields.get.foreach {
-      case f: TyField if f.getValue.isInstanceOf[TyList] =>
-        headers += f.getName.get
-        body_row += f.getValue.asInstanceOf[TyList].getContent
+    struct0.fields.get.foreach {
+      case f: TyField if f.value.isInstanceOf[TyList] =>
+        headers += f.name.get
+        body_row += f.value.asInstanceOf[TyList].content
       case x: TyField =>
         fields += x
     }
@@ -95,9 +95,9 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         Some(
           jsonObjectOf(
             "array",
-            "items" -> Json.fromValues(x.getValues.map(generateType(_))),
-            "minItems" -> Json.fromInt(x.getValues.size),
-            "maxItems" -> Json.fromInt(x.getValues.size)
+            "items" -> Json.fromValues(x.values.map(generateType(_))),
+            "minItems" -> Json.fromInt(x.values.size),
+            "maxItems" -> Json.fromInt(x.values.size)
           )
         )
       case x: TyUnion if x.types.map(x => x.isInstanceOf[TyStruct]).forall(identity) =>
@@ -109,9 +109,9 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         logger.warn("Failed to encode union: " + x.types)
         Some(Json.obj())
       case x: TyList =>
-        Some(jsonObjectOf("array", "items" -> generateType(x.getContent)))
+        Some(jsonObjectOf("array", "items" -> generateType(x.content)))
 
-      case x: TyEnum if x.getName.isDefined =>
+      case x: TyEnum if x.name.isDefined =>
         Some(
           Json.obj(
             "enum" -> Json
@@ -121,7 +121,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
                   .map(options.naming.toEnumValueName)
                   .map(Json.fromString)
               ),
-            "name" -> Json.fromString(options.naming.toClassName(x.getName.get))
+            "name" -> Json.fromString(options.naming.toClassName(x.name.get))
           )
         )
       case x: TyEnum =>
@@ -137,7 +137,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           )
         )
 
-      case x: TyStruct if x.getFields.isDefined =>
+      case x: TyStruct if x.fields.isDefined =>
         // TODO: pass parameters here
         val keyRequired = true
         val keyAdditionalProperties = false
@@ -149,9 +149,9 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         }
         val others: mutable.Map[String, Json] = mutable.Map.empty
         others += "properties" -> Json.fromFields(
-          x.getFields.get.map(f =>
-            naming(f.getName.get) -> generateType(f.getValue match {
-              case opt: TyOptional => opt.getContent
+          x.fields.get.map(f =>
+            naming(f.name.get) -> generateType(f.value match {
+              case opt: TyOptional => opt.content
               case x => x
             })
           )
@@ -162,9 +162,9 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         }
         if (keyRequired) {
           others += "required" -> Json.fromValues(
-            x.getFields.get
-              .filterNot(f => f.getValue.isInstanceOf[TyOptional])
-              .map(f => naming(f.getName.get))
+            x.fields.get
+              .filterNot(f => f.value.isInstanceOf[TyOptional])
+              .map(f => naming(f.name.get))
               .map(Json.fromString)
           )
 
@@ -210,7 +210,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
   }
   def generateType(ty: TyNode, isMethodParameters: Boolean=false): Json = {
     val new_ty = ty match {
-      case x: TyStruct if x.getDataframe.contains(true) =>
+      case x: TyStruct if x.dataframe.contains(true) =>
         convertToMatrix(x)
       case x => x
     }

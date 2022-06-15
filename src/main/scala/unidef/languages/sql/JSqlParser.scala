@@ -27,7 +27,7 @@ class JSqlParser() {
     val collected = ArrayBuffer[AstNode]()
     val enums = extractEnums(sql)
     enums.foreach { x =>
-      x.getName.foreach { nm =>
+      x.name.foreach { nm =>
         resolver.add(nm, x, "sql")
         collected += common.ast.AstTyped(x)
       }
@@ -240,7 +240,7 @@ class JSqlParser() {
     if (outputOnly.isEmpty)
       func.setValue(KeyRecords, true)
     logger.debug(
-      s"Parsed function: ${func.getName.get}(${func.parameters})->${func.returnType}"
+      s"Parsed function: ${func.name}(${func.parameters})->${func.returnType}"
     )
     Some((func, end))
   }

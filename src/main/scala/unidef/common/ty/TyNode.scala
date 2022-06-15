@@ -9,6 +9,7 @@ import scala.quoted.{Expr, Quotes}
 trait TyNode extends BaseNode
 
 // TODO: lift to BaseNode level and rename
+@deprecated
 trait TyCommentable extends TyNode {
   def getComment: String
   def setComment(comment: String): this.type
@@ -52,14 +53,11 @@ object BitSize {
 
 // rust: enum with multiple names
 case class TyVariant(names: List[String], code: Option[Int] = None, name: Option[String] = None) extends Extendable with TyNode with HasName {
-  override def getName: Option[String] = name
 }
 
 case class TyEnum(variants: List[TyVariant], simpleEnum: Option[Boolean] = None, name: Option[String] = None, value: Option[TyNode] = None, schema: Option[String] = None)
     extends Extendable
     with TyNode {
-  def getName: Option[String] = name
-  def getValue: Option[TyNode] = value
 }
 
 case object KeyDataType extends KeywordBoolean

@@ -11,7 +11,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
     node match {
       // handle unknown case
       case x: TyOptional =>
-        convertType(x.getContent, importManager)
+        convertType(x.content, importManager)
           .map(s =>
             importManager.foreach(_ += AstImport("typing.Optional"))
             s"Optional[$s]"
@@ -20,8 +20,8 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case _: TyReal => Some("float")
       case _: TyString => Some("str")
       // case TyChar => Some("str")
-      case t: TyStruct if t.getName.isDefined =>
-        Some(naming.toStructName(t.getName.get))
+      case t: TyStruct if t.name.isDefined =>
+        Some(naming.toStructName(t.name.get))
       case _: TyStruct =>
         importManager.foreach(_ += AstImport("typing.Dict"))
         Some("Dict[str, Any]")
@@ -41,11 +41,11 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case l: TyList =>
         importManager.foreach(_ += AstImport("typing.Dict"))
         // handle unknown case
-        convertType(l.getContent, importManager).map(x => s"List[${x}]")
+        convertType(l.content, importManager).map(x => s"List[${x}]")
       case s: TySet =>
         importManager.foreach(_ += AstImport("typing.Set"))
         // handle unknown case
-        convertType(s.getContent, importManager).map(x => s"Set[${x}]")
+        convertType(s.content, importManager).map(x => s"Set[${x}]")
       case TyJsonAny() =>
         importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")
@@ -63,8 +63,8 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         importManager.foreach(_ += AstImport("uuid"))
         Some("uuid.UUID")
       case _: TyInet => Some("str") // FIXME: InetAddress
-      case x: TyEnum if x.getName.isDefined =>
-        Some(naming.toClassName(x.getName.get))
+      case x: TyEnum if x.name.isDefined =>
+        Some(naming.toClassName(x.name.get))
       case _: TyEnum =>
         Some("str") // TODO: use solid enum if possible
       case _: TyAny =>

@@ -38,17 +38,17 @@ case class AstNodeCodeGen() {
   }
 
   def generateScalaHasTrait(field: TyField): AstClassDecl = {
-    val traitName = "Has" + TextTool.toPascalCase(field.getName.get)
+    val traitName = "Has" + TextTool.toPascalCase(field.name.get)
     val scalaCommon = ScalaCommon()
     val valueType =
-      scalaCommon.encodeOrThrow(field.getValue, "Scala")
+      scalaCommon.encodeOrThrow(field.value, "Scala")
 
     scalaField(
       traitName,
       "AstNode",
-      if (field.getDefaultNone.get)
-        List(s"def get${TextTool.toPascalCase(field.getName.get)}: Option[${valueType}]")
-      else List(s"def get${TextTool.toPascalCase(field.getName.get)}: ${valueType}")
+      if (field.defaultNone.get)
+        List(s"def get${TextTool.toPascalCase(field.name.get)}: Option[${valueType}]")
+      else List(s"def get${TextTool.toPascalCase(field.name.get)}: ${valueType}")
     ).setValue(KeyClassType, "trait")
   }
   def generateScalaCompoundTrait(ty: Ast): AstClassDecl = {
@@ -70,26 +70,26 @@ case class AstNodeCodeGen() {
       List(AstClassIdent("AstNode"))
           :::
           fields
-            .map(x => "Has" + TextTool.toPascalCase(x.getName.get))
+            .map(x => "Has" + TextTool.toPascalCase(x.name.get))
             .map(x => AstClassIdent(x))
             .toList
     ).setValue(KeyClassType, "trait")
   }
-  def tryWrapValue(x: TyField): TyNode = if (x.getDefaultNone.get) TyOptionalImpl(x.getValue) else x.getValue
+  def tryWrapValue(x: TyField): TyNode = if (x.defaultNone.get) TyOptionalImpl(x.value) else x.value
   def generateScalaCaseClass(ty: Ast): AstClassDecl = {
     val fields =
       ty.fields.map(_.build()).toList
     AstClassDecl(
       toAstClassName(ty.name) + "Impl",
-      fields.map(x => AstValDefImpl(x.getName.get, tryWrapValue(x), None, None)),
+      fields.map(x => AstValDefImpl(x.name.get, tryWrapValue(x), None, None)),
       Nil,
       fields
         .map(x =>
           AstFunctionDecl(
-            "get" + TextTool.toPascalCase(x.getName.get),
+            "get" + TextTool.toPascalCase(x.name.get),
             Nil,
             tryWrapValue(x)
-          ).setValue(KeyBody, AstRawCodeImpl(x.getName.get, None))
+          ).setValue(KeyBody, AstRawCodeImpl(x.name.get, None))
             .setValue(KeyOverride, true)
         )
       ,

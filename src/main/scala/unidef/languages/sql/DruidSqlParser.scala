@@ -30,7 +30,7 @@ class DruidSqlParser {
     val collected = ArrayBuffer[AstNode]()
 
     enums.foreach { x =>
-      x.getName.foreach { nm =>
+      x.name.foreach { nm =>
         resolver.add(nm, x, "sql")
         collected += AstTyped(x)
       }
@@ -140,7 +140,7 @@ class DruidSqlParser {
     if (outputOnly.isEmpty)
       func.setValue(KeyRecords, true)
     logger.debug(
-      s"Parsed function: ${func.getName.get}(${func.parameters})->${func.returnType}"
+      s"Parsed function: ${func.name}(${func.parameters})->${func.returnType}"
     )
 
     func

@@ -40,7 +40,7 @@ import java.io.PrintWriter
         val code = sqlCodegen.generateTableDdl(a)
         fs.getWriterAt("AstClassDecl.txt").println(code)
       case AstTyped(struct: TyStruct) =>
-        if (struct.getName.isDefined) {
+        if (struct.name.isDefined) {
           val code = sqlCodegen.generateTableDdl(struct)
           fs.getWriterAt("TyStruct.txt").println(code)
         }

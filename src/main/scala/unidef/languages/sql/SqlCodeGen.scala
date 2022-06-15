@@ -34,8 +34,8 @@ class SqlCodeGen(
   }
   def generateCallFunc(func: AstFunctionDecl, percentage: Boolean = false): String = {
 
-    val params = func.parameters.map(_.getName.get).map(naming.toFunctionParameterName)
-    val db_func_name = naming.toFunctionName(func.getName.get)
+    val params = func.parameters.map(_.name.get).map(naming.toFunctionParameterName)
+    val db_func_name = naming.toFunctionName(func.name)
     val schema = func.getValue(KeySchema).fold("")(x => s"$x.")
     val returnType = func.returnType
     val is_table = returnType match {
@@ -53,10 +53,17 @@ class SqlCodeGen(
       + fields.map(f => s"    ${f.name} ${f.ty}${f.attributes}").mkString(",\n")
       + "\n);"
   }
+
+  def generateTableDdl(node: AstClassDecl): String = {
+    val name = naming.toFunctionName(node.name)
+    val fields = node.getFields.map(sqlCommon.convertToSqlField)
+    val schema = node.schema.fold("")(x => s"$x.")
+    renderTableDdl(schema, name, fields)
+  }
   def generateTableDdl(node: TyStruct): String = {
-    val name = naming.toFunctionName(node.getName.get)
-    val fields = node.getFields.get.map(sqlCommon.convertToSqlField)
-    val schema = node.getSchema.fold("")(x => s"$x.")
+    val name = naming.toFunctionName(node.name.get)
+    val fields = node.fields.get.map(sqlCommon.convertToSqlField)
+    val schema = node.schema.fold("")(x => s"$x.")
     renderTableDdl(schema, name, fields)
   }
   def renderFunctionDdl(
@@ -82,11 +89,8 @@ class SqlCodeGen(
       + "\n$$;"
 
   def generateFunctionDdl(node: AstFunctionDecl): String = {
-    val name = naming.toFunctionName(node.getName.get)
-    val args = node.parameterType
-      .asInstanceOf[TyTuple]
-      .getValues
-      .map(_.asInstanceOf[TyField])
+    val name = naming.toFunctionName(node.name)
+    val args = node.parameters
       .map(sqlCommon.convertToSqlField)
 
     val language =
@@ -102,8 +106,8 @@ class SqlCodeGen(
     var returnTable: List[SqlField] = Nil
     var returnType = ""
     node.returnType match {
-      case x: TyStruct if x.getFields.isDefined =>
-        returnTable = x.getFields.get.map(sqlCommon.convertToSqlField)
+      case x: TyStruct if x.fields.isDefined =>
+        returnTable = x.fields.get.map(sqlCommon.convertToSqlField)
       case _: TyStruct =>
         returnType = "record"
       case a => returnType = sqlCommon.convertType(a)

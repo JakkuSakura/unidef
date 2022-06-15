@@ -15,9 +15,9 @@ object SqlCommon {
 }
 
 class TyOid extends TyInteger {
-  def getBitSize: Option[BitSize] = Some(BitSize.B32)
+  def bitSize: Option[BitSize] = Some(BitSize.B32)
 
-  def getSized: Option[Boolean] = Some(false)
+  def sized: Option[Boolean] = Some(false)
 
 }
 class SqlCommon(naming: NamingConvention = SqlNamingConvention)
@@ -25,14 +25,14 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     with TypeEncoder[String] {
 
   def convertReal(ty: TyReal): String = ty match {
-    case x: TyDecimal if x.getPrecision.isDefined && x.getScale.isDefined =>
-      s"decimal(${x.getPrecision.get}, ${x.getScale.get})"
+    case x: TyDecimal if x.precision.isDefined && x.scale.isDefined =>
+      s"decimal(${x.precision.get}, ${x.scale.get})"
     case _: TyDecimal => s"decimal"
-    case x: TyFloat if x.getBitSize.contains(BitSize.B32) => "real"
-    case x: TyFloat if x.getBitSize.contains(BitSize.B64) => "float" // "double precision"
+    case x: TyFloat if x.bitSize.contains(BitSize.B32) => "real"
+    case x: TyFloat if x.bitSize.contains(BitSize.B64) => "float" // "double precision"
   }
 
-  def convertInt(ty: TyInteger): String = ty.getBitSize match {
+  def convertInt(ty: TyInteger): String = ty.bitSize match {
     case Some(BitSize.B16) => "smallint"
     case Some(BitSize.B64) => "bigint"
     case Some(x) if x != BitSize.B32 => s"integer($x)"
@@ -45,7 +45,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   }
 
   override def encode(ty: TyNode): Option[String] = ty match {
-    case t: TyOptional => encode(t.getContent).map(s => s"$s = NULL")
+    case t: TyOptional => encode(t.content).map(s => s"$s = NULL")
     case t: TyReal => Some(convertReal(t))
     case t: TyOid => Some("oid")
     case t: TyInteger => Some(convertInt(t))
@@ -56,8 +56,8 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case _: TyString => Some("text")
     case _: TyStruct => Some("jsonb")
     case x: TyEnum if x.simpleEnum.contains(false) => Some("jsonb")
-    case x: TyEnum if x.getName.isDefined =>
-      x.getName
+    case x: TyEnum if x.name.isDefined =>
+      x.name
     case _: TyEnum => Some("text")
     case TyJsonObject => Some("jsonb")
     case t: TyJsonAny if !t.getValue(KeyIsBinary).contains(false) => Some("jsonb")
@@ -68,7 +68,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case _: TyInet => Some("inet")
     case _: TyUuid => Some("uuid")
     case _: TyRecord => Some("record")
-    case t: TyList => encode(t.getContent).map(x => s"${x}[]")
+    case t: TyList => encode(t.content).map(x => s"${x}[]")
     case _ => None
   }
 
@@ -111,8 +111,8 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
 //      attributes ++= " NOT NULL"
     // TODO auto incr
     SqlField(
-      naming.toFieldName(node.getName.get),
-      convertType(node.getValue),
+      naming.toFieldName(node.name.get),
+      convertType(node.value),
       attributes.toString
     )
   }

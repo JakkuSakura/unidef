@@ -60,42 +60,25 @@ object AccessModifier extends Keyword {
   case class Limited(path: String) extends AccessModifier
 }
 def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
-  TyStructImpl(
-    func.getName,
-    Some(func.parameters),
-    None,
-    None,
-    dataframe = func.getDataframe,
-    schema = None,
-    comment = func.comment
-  )
+  TyStructBuilder()
+    .name(func.name)
+    .fields(func.parameters)
+    // TODO: !!!!!!!!
+//    .dataframe(func.dataframe)
+//    .comment(func.comment)
+    .build()
+
 }
 case class AstFunctionDecl(
     name: String,
     parameters: List[TyField],
-    override val returnType: TyNode,
+    returnType: TyNode,
     dataframe: Option[Boolean] = None,
     var comment: Option[String] = None
 ) extends Extendable
     with AstNode
-    with TyApplicable
-    with HasName
     with HasBody
-    with HasDataframe
-    with TyCommentable {
-  override def getName: Option[String] = Some(name)
-
-  override def parameterType: TyNode = TyTupleImpl(parameters)
-
-  override def getDataframe: Option[Boolean] = dataframe
-
-  override def getComment: String = comment.getOrElse("")
-
-  override def setComment(comment: String): AstFunctionDecl.this.type = {
-    this.comment = Some(comment)
-    this
-  }
-}
+    with HasDataframe {}
 
 case class AstLambdaDecl(parameters: List[TyField], returnType: TyNode, body: AstNode)
     extends Extendable
@@ -112,29 +95,11 @@ case class AstClassDecl(
     schema: Option[String] = None,
     dataframe: Option[Boolean] = None
 ) extends Extendable
-    with AstNode
-    with TyStruct {
-
-  override def getName: Option[String] = Some(name)
-
-  override def getFields: Option[List[TyField]] = Some(
+    with AstNode {
+  def getFields: List[TyField] =
     fields.map(x =>
       TyFieldBuilder().name(x.getName).value(x.getTy).defaultNone(x.getValue.isDefined).build()
     )
-  )
-
-  override def getAttributes: Option[List[String]] = Some(Nil)
-
-  override def getDerives: Option[List[String]] = Some(derived.map(_.name).toList)
-
-  override def getSchema: Option[String] = schema
-
-  override def getDataframe: Option[Boolean] = {
-    dataframe
-  }
-
-  override def getComment: Option[String] = ???
-
 }
 
 object AstClassDecl {
