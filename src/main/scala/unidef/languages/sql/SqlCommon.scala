@@ -45,7 +45,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   }
 
   override def encode(ty: TyNode): Option[String] = ty match {
-    case t: TyOptional if t.getContent.isDefined => encode(t.getContent.get).map(s => s"$s = NULL")
+    case t: TyOptional => encode(t.getContent).map(s => s"$s = NULL")
     case t: TyReal => Some(convertReal(t))
     case t: TyOid => Some("oid")
     case t: TyInteger => Some(convertInt(t))
@@ -68,13 +68,13 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case _: TyInet => Some("inet")
     case _: TyUuid => Some("uuid")
     case _: TyRecord => Some("record")
-    case t: TyList if t.getContent.isDefined => encode(t.getContent.get).map(x => s"${x}[]")
+    case t: TyList => encode(t.getContent).map(x => s"${x}[]")
     case _ => None
   }
 
   override def decode(ty: String): Option[TyNode] = {
     ty match {
-      case s"$ty[]" => decode(ty).map(x => TyListImpl(Some(x)))
+      case s"$ty[]" => decode(ty).map(x => TyListImpl(x))
       case "bigint" | "bigserial" => Some(TyIntegerImpl(Some(BitSize.B64), Some(true)))
       case "integer" | "int" | "serial" => Some(TyIntegerImpl(Some(BitSize.B32), Some(true)))
       case "smallint" => Some(TyIntegerImpl(Some(BitSize.B16), Some(true)))

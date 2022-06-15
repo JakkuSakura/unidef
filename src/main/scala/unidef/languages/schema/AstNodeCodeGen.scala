@@ -33,11 +33,11 @@ case class AstNodeCodeGen() {
       name,
       Nil,
       Nil,
-      methods.map(x => AstRawCodeImpl(Some(x), None)),
+      methods.map(x => AstRawCodeImpl(x, None)),
       List(AstClassIdent(derive))
     )
   }
-  
+
   def generateScalaHasTrait(field: TyField): AstClassDecl = {
     val traitName = "Has" + TextTool.toPascalCase(field.name)
     val scalaCommon = ScalaCommon()
@@ -47,7 +47,8 @@ case class AstNodeCodeGen() {
     scalaField(
       traitName,
       "AstNode",
-      List(s"def get${TextTool.toPascalCase(field.name)}: Option[${valueType}]")
+      if (field.defaultNone.get) List(s"def get${TextTool.toPascalCase(field.name)}: Option[${valueType}]")
+      else List(s"def get${TextTool.toPascalCase(field.name)}: ${valueType}")
     ).setValue(KeyClassType, "trait")
   }
   def generateScalaCompoundTrait(ty: Ast, extra: List[String]): AstClassDecl = {
@@ -58,12 +59,11 @@ case class AstNodeCodeGen() {
       Nil,
       Nil,
       fields
-        .map(x => x.name -> x.value)
-        .map((k, v) =>
+        .map(x =>
           AstFunctionDecl(
-            "get" + TextTool.toPascalCase(k),
+            "get" + TextTool.toPascalCase(x.name),
             Nil,
-            TyOptionalImpl(Some(v))
+            tryWrapValue(x)
           )
         )
         .toList,
@@ -84,28 +84,28 @@ case class AstNodeCodeGen() {
           .toList
     ).setValue(KeyClassType, "trait")
   }
-
+  def tryWrapValue(x: TyField): TyNode = if (x.defaultNone.get) TyOptionalImpl(x.value) else x.value
   def generateScalaCaseClass(ty: Ast, extra: List[String]): AstClassDecl = {
     val fields = ty.fields.toList ::: (if (ty.commentable) List(TyField("comment", TyStringImpl(), Some(true))) else Nil)
 
     AstClassDecl(
       toAstClassName(ty.name) + "Impl",
-      fields.map(x => AstValDefImpl(Some(x.name), Some(TyOptionalImpl(Some(x.value))), None, None)),
+      fields.map(x => AstValDefImpl(x.name, tryWrapValue(x), None, None)),
       Nil,
       fields
         .map(x =>
           AstFunctionDecl(
             "get" + TextTool.toPascalCase(x.name),
             Nil,
-            TyOptionalImpl(Some(x.value))
-          ).setValue(KeyBody, AstRawCodeImpl(Some(x.name), None))
+            tryWrapValue(x)
+          ).setValue(KeyBody, AstRawCodeImpl(x.name, None))
             .setValue(KeyOverride, true)
         )
         ::: (if (ty.commentable) List( AstFunctionDecl(
         "setComment",
         List(TyField("comment", TyStringImpl())),
         TyNamed("this.type")
-      ).setValue(KeyBody, AstRawCodeImpl(Some(s"this.comment = Some(comment)\n this"), None))
+      ).setValue(KeyBody, AstRawCodeImpl(s"this.comment = Some(comment)\n this", None))
         .setValue(KeyOverride, true)) else Nil),
       List(AstClassIdent(toAstClassName(ty.name)))
         ::: (if (ty.commentable) List(AstClassIdent("TyCommentable")) else Nil)
@@ -120,9 +120,9 @@ object AstNodeCodeGen {
       Ast("null"),
         Ast("undefined"),
       Ast("block")
-        .field("nodes", TyListImpl(Some(astNode))),
+        .field("nodes", TyListImpl(astNode)),
       Ast("statement")
-        .field("expr", astNode),
+        .field("expr", astNode, required = true),
       Ast("if")
         .field("test", astNode)
         .field("consequent", astNode)
@@ -131,25 +131,25 @@ object AstNodeCodeGen {
         .field("flow", TyNamed("FlowControl"))
         .field("value", astNode),
       Ast("literal")
-        .field("literal_value", TyStringImpl()) // TODO: make subtypes of literal values?
-        .field("ty", TyNamed("TyNode")),
+        .field("literal_value", TyStringImpl(), required = true) // TODO: make subtypes of literal values?
+        .field("ty", TyNamed("TyNode"), required = true),
       Ast("select")
-        .field("qualifier", astNode)
-        .field("symbol", TyStringImpl()),
-      Ast("await").field("expr", astNode),
+        .field("qualifier", astNode, required = true)
+        .field("symbol", TyStringImpl(), required = true),
+      Ast("await").field("expr", astNode, required = true),
       Ast("raw_code")
-        .field("code", TyStringImpl())
+        .field("code", TyStringImpl(), required = true)
         .field("language", TyStringImpl()),
       Ast("apply")
-        .field("applicable", astNode)
-        .field("arguments", TyListImpl(Some(astNode))),
+        .field("applicable", astNode, required = true)
+        .field("arguments", TyListImpl(astNode), required = true),
       Ast("val_def")
-        .field("name", TyStringImpl())
-        .field("ty", TyNamed("TyNode"))
+        .field("name", TyStringImpl(), required = true)
+        .field("ty", TyNamed("TyNode"), required = true)
         .field("value", astNode)
         .field("mutability", TyBooleanImpl()),
       Ast("decls")
-        .field("decls", TyListImpl(Some(astNode))),
+        .field("decls", TyListImpl(astNode), required = true),
 
     ).map(x => x.name -> x).toMap
   }

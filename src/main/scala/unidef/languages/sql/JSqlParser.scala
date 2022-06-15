@@ -144,7 +144,7 @@ class JSqlParser() {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (input, TyField(name, TyOptionalImpl(Some(ty))))
+      (input, TyField(name, TyOptionalImpl(ty)))
     else
       (input, TyField(name, ty))
   }
@@ -228,13 +228,13 @@ class JSqlParser() {
       name,
       inputs.toList,
       if (outputs.nonEmpty)
-        TyStructImpl(None, Some(outputs.toList), None, None)
+        TyStructImpl(None, Some(outputs.toList), None, None,  None, None, "")
       else if (outputOnly.isDefined)
         outputOnly.get
       else
-        TyStructImpl(None, None, Some(Nil), None)
+        TyStructImpl(None, None, Some(Nil), None, None, None, "")
     ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
-    func.setValue(KeyBody, AstRawCodeImpl(Some(body), Some(language)))
+    func.setValue(KeyBody, AstRawCodeImpl(body, Some(language)))
     if (outputOnly.isEmpty)
       func.setValue(KeyRecords, true)
     logger.debug(
@@ -258,10 +258,10 @@ class JSqlParser() {
     val ty = column.getColDataType
     val name = column.getColumnName
     AstValDefImpl(
-      Some(name),
-      Some(lookUpOrParseType(ty.getDataType).getOrElse(
+      name,
+      lookUpOrParseType(ty.getDataType).getOrElse(
         throw TypeDecodeException("Failed to parse type", ty.getDataType)
-      )),
+      ),
       None,
       None
     )

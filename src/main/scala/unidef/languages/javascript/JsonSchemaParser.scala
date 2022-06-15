@@ -46,7 +46,10 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
               }.toList
             ),
             None,
-            None
+            None,
+            None,
+            None,
+            ""
           )
       )
       .getOrElse(TyUnitImpl())
@@ -57,7 +60,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
     if (content("language").isDefined && content("language").isDefined) {
       val language = getString(content, "language")
       val body = getString(content, "body")
-      node.setValue(KeyBody, AstRawCodeImpl(Some(body), Some(language)))
+      node.setValue(KeyBody, AstRawCodeImpl(body, Some(language)))
     }
 
     collectExtKeys(content, extKeysForFuncDecl.toList)
@@ -81,7 +84,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         // TODO TyNamed or TyStruct?
         .getOrElse(Nil)
 
-    val node = TyStructImpl(None, Some(fields.toList), None, None)
+    val node = TyStructImpl(None, Some(fields.toList), None, None, None, None, "")
 //    collectExtKeys(value, extKeysForClassDecl.toList).foreach(node.setValue)
     val comment = value("comment").orElse(value("$comment"))
     if (comment.isDefined)
@@ -209,10 +212,10 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           getString(value, "type") match {
             case "object" => parseStruct(value)
             case "array" if options.extendedGrammar =>
-              TyListImpl(Some(value("items").map(parse).getOrElse(TyAnyImpl())))
+              TyListImpl(value("items").map(parse).getOrElse(TyAnyImpl()))
             case "array" =>
               val items = getObject(value, "items")
-              TyListImpl(Some(parse(Json.fromJsonObject(items))))
+              TyListImpl(parse(Json.fromJsonObject(items)))
             case "function" if options.extendedGrammar => parseFunction(value)
             case ty => jsonSchemaCommon.decodeOrThrow(ty)
           }

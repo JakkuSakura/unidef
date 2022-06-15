@@ -10,7 +10,7 @@ trait TyNode extends BaseNode
 
 // TODO: lift to BaseNode level and rename
 trait TyCommentable extends TyNode {
-  def getComment: Option[String]
+  def getComment: String
   def setComment(comment: String): this.type
 }
 
@@ -57,13 +57,11 @@ case class TyVariant(names: List[String], code: Option[Int] = None, name: Option
 
 case class TyEnum(variants: List[TyVariant], simpleEnum: Option[Boolean] = None, name: Option[String] = None, value: Option[TyNode] = None, schema: Option[String] = None)
     extends Extendable
-    with TyNode
-    with HasName
-    with HasValue {
-  override def getName: Option[String] = name
-  override def getValue: Option[TyNode] = value
+    with TyNode {
+  def getName: Option[String] = name
+  def getValue: Option[TyNode] = value
 }
-
+// rename it
 case class TyField(name: String, value: TyNode, mutability: Option[Boolean]=None, defaultNone: Option[Boolean]=None) extends Extendable with TyNode
 
 case object KeyDataType extends KeywordBoolean
@@ -85,7 +83,7 @@ case class TyLambda(override val parameterType: TyNode, override val returnType:
 
 object TyFunction {
   def apply(params: List[TyNode], ret: TyNode): TyLambda =
-    TyLambda(TyTupleImpl(Some(params)), ret)
+    TyLambda(TyTupleImpl(params), ret)
 }
 
 case class TyTimeStamp(

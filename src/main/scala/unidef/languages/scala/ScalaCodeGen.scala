@@ -32,7 +32,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           .map(x => x.name + ": " + common.encodeOrThrow(x.value, "param"))
           .mkString(", ") + ")"
 
-    val body = method.getBody.map(_.asInstanceOf[AstRawCode].getCode.get)
+    val body = method.getBody.map(_.asInstanceOf[AstRawCode].getCode)
     val override_a = if (method.getValue(KeyOverride).getOrElse(false)) {
       "override "
     } else {
@@ -79,11 +79,11 @@ class ScalaCodeGen(naming: NamingConvention) {
         "val "
       }
       val default = x.getValue.map {
-        case x: AstRawCode => " = " + x.getCode.get
+        case x: AstRawCode => " = " + x.getCode
       }.getOrElse("")
-      modifier + x.getName.get + ": " + common
-        .encode(x.getTy.get)
-        .getOrElse(throw TypeEncodeException("Scala", x.getTy.get))
+      modifier + x.getName + ": " + common
+        .encode(x.getTy)
+        .getOrElse(throw TypeEncodeException("Scala", x.getTy))
       + default
     }
 
@@ -93,7 +93,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     val derive = c.derived.map(_.name).map(naming.toClassName)
     val methods = c.methods.map {
       case x: AstFunctionDecl => generateMethod(x)
-      case x: AstRawCode => x.getCode.get
+      case x: AstRawCode => x.getCode
     }
     renderClass(cls, name, params, fields, derive, methods)
   }
@@ -110,7 +110,7 @@ class ScalaCodeGen(naming: NamingConvention) {
   }
 
   def generateRaw(code: AstRawCode): String = {
-    code.getCode.get
+    code.getCode
   }
 
   def generateBuilder(builderName: String, target: String, fields: List[TyField]): AstClassDecl = {
@@ -126,12 +126,12 @@ class ScalaCodeGen(naming: NamingConvention) {
       parameters = Nil
     ).setValue(
       KeyBody,
-      AstRawCodeImpl(Some(s"$target(${fields.map(expandField).mkString(", ")})"), None)
+      AstRawCodeImpl(s"$target(${fields.map(expandField).mkString(", ")})", None)
     )
     def ensureOptional(x: TyNode): TyNode = {
         x match {
             case x: TyOptional => x
-            case x => TyOptionalImpl(Some(x))
+            case x => TyOptionalImpl(x)
         }
     }
 
@@ -147,14 +147,14 @@ class ScalaCodeGen(naming: NamingConvention) {
         )
       ).setValue(
         KeyBody,
-        AstRawCodeImpl(Some(s"this.${x.name} = Some(${x.name})\nthis"), None)
+        AstRawCodeImpl(s"this.${x.name} = Some(${x.name})\nthis", None)
       )
     }
     AstClassDecl(
       name = builderName,
       parameters = Nil,
       fields = fields.map(x =>
-        AstValDefImpl(Some(x.name), Some(ensureOptional(x.value)), mutability = Some(true), value = Some(AstRawCodeImpl(Some("None"), None)))
+        AstValDefImpl(x.name, ensureOptional(x.value), mutability = Some(true), value = Some(AstRawCodeImpl("None", None)))
       ),
       methods = fields.map(setFieldMethod) :+ buildMethod
     ).setValue(KeyClassType, "class")

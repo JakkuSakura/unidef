@@ -28,8 +28,8 @@ object FlowControl {
   case object Throw extends FlowControl
 }
 
-def AstLiteralString(x: String): AstLiteral = AstLiteralImpl(Some(x), Some(TyStringImpl()))
-def AstLiteralUnit(): AstLiteral = AstLiteralImpl(Some("()"), Some(TyUnitImpl()))
+def AstLiteralString(x: String): AstLiteral = AstLiteralImpl(x, TyStringImpl())
+def AstLiteralUnit(): AstLiteral = AstLiteralImpl("()", TyUnitImpl())
 //class AstLiteral(ty: TyNode) extends AstStaticType(ty)
 //
 //case class AstLiteralString(value: String) extends AstLiteral(TyStringImpl())
@@ -60,7 +60,7 @@ object AccessModifier extends Keyword {
   case class Limited(path: String) extends AccessModifier
 }
 def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
-  TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe, comment = func.comment)
+  TyStructImpl(func.getName, Some(func.parameters), None, None, dataframe = func.getDataframe, schema = None, comment = func.comment.getOrElse(""))
 }
 case class AstFunctionDecl(
     name: String,
@@ -77,11 +77,11 @@ case class AstFunctionDecl(
     with TyCommentable {
   override def getName: Option[String] = Some(name)
 
-  override def parameterType: TyNode = TyTupleImpl(Some(parameters))
+  override def parameterType: TyNode = TyTupleImpl(parameters)
 
   override def getDataframe: Option[Boolean] = dataframe
 
-  override def getComment: Option[String] = comment
+  override def getComment: String = comment.getOrElse("")
 
   override def setComment(comment: String): AstFunctionDecl.this.type = {
     this.comment = Some(comment)
@@ -109,7 +109,7 @@ case class AstClassDecl(
 
   override def getName: Option[String] = Some(name)
   
-  override def getFields: Option[List[TyField]] = Some(fields.map(x => TyField(x.getName.get, x.getTy.get, ???, x.getValue.map(x => true))))
+  override def getFields: Option[List[TyField]] = Some(fields.map(x => TyField(x.getName, x.getTy, ???, x.getValue.map(x => true))))
 
   override def getAttributes: Option[List[String]] = Some(Nil)
 
@@ -163,7 +163,7 @@ case object AstAnnotations extends AstNode with Keyword {
   override def name: String = "annotations"
   private val lsDecoder =
     deriveDecoder[List[String]]
-      .map(x => x.map(y => AstAnnotation(AstRawCodeImpl(Some(y), None))))
+      .map(x => x.map(y => AstAnnotation(AstRawCodeImpl(y, None))))
   override def decoder: Option[Decoder[List[AstAnnotation]]] =
     Some(lsDecoder.map(_.toSeq))
 }

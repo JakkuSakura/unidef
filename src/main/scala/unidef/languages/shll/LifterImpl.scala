@@ -11,12 +11,12 @@ class LifterImpl(using val quotes: Quotes) {
   import quotes.reflect.*
 
   val logger = Logger[this.type]
-
+  val tyInt = TyIntegerImpl(Some(BitSize.B32), Some(true))
   def liftTree(tree: Tree): AstNode = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
       case Inlined(_, _, Literal(IntConstant(v))) =>
-        AstLiteralImpl(Some(v.toString), Some(TyIntegerImpl(Some(BitSize.B32), Some(true))))
+        AstLiteralImpl(v.toString, tyInt)
 
     }
   }
@@ -24,9 +24,9 @@ class LifterImpl(using val quotes: Quotes) {
     tree match {
       case Block(Nil, x) => liftTerm(x)
       case Literal(IntConstant(v)) =>
-        AstLiteralImpl(Some(v.toString), Some(TyIntegerImpl(Some(BitSize.B32), Some(true))))
-      case Literal(StringConstant(v)) => AstLiteralImpl(Some(v), Some(TyStringImpl()))
-      case Block(decls, Literal(UnitConstant())) => AstDeclsImpl(Some(decls.flatMap(liftDecl)))
+        AstLiteralImpl(v.toString, tyInt)
+      case Literal(StringConstant(v)) => AstLiteralImpl(v, TyStringImpl())
+      case Block(decls, Literal(UnitConstant())) => AstDeclsImpl(decls.flatMap(liftDecl))
     }
   }
 
@@ -51,7 +51,7 @@ class LifterImpl(using val quotes: Quotes) {
   def liftValDef(tree: ValDef): AstRawCode = {
     tree match {
       case ValDef(name, tpt, rhs) =>
-        AstRawCodeImpl(Some(s"val $name: ${tpt.show} = ${rhs}"), None)
+        AstRawCodeImpl(s"val $name: ${tpt.show} = ${rhs}", None)
     }
   }
   def liftStmt(tree: Statement): AstNode = {
@@ -62,11 +62,11 @@ class LifterImpl(using val quotes: Quotes) {
 
       case ClassDef(name, defDef, parents, sefl, body) =>
         liftClassDef(name, defDef, parents, sefl, body)
-      case Apply(fun, args) => AstApplyImpl(Some(liftTree(fun)), Some(args.map(liftTree)))
+      case Apply(fun, args) => AstApplyImpl(liftTree(fun), args.map(liftTree))
       case Literal(UnitConstant()) => AstLiteralUnit()
       case x =>
         logger.error(s"Unsupported statement: ${x.show}")
-        AstRawCodeImpl(Some(x.show), None)
+        AstRawCodeImpl(x.show, None)
     }
   }
   def liftParameter(tree: ValDef): TyField = {
@@ -113,7 +113,7 @@ class LifterImpl(using val quotes: Quotes) {
       case DefDef(name, param, ty, term) =>
         Some(liftMethodDef(name, param, ty, term))
       case ValDef(name, ty, value) =>
-        Some(AstValDefImpl(Some(name), Some(liftType(ty)), value.map(liftTerm), None))
+        Some(AstValDefImpl(name, liftType(ty), value.map(liftTerm), None))
       case t @ TypeDef(name, ty) =>
         None
     }

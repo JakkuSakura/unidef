@@ -86,7 +86,6 @@ class SqlCodeGen(
     val args = node.parameterType
       .asInstanceOf[TyTuple]
       .getValues
-      .get
       .map(_.asInstanceOf[TyField])
       .map(sqlCommon.convertToSqlField)
 
@@ -98,7 +97,7 @@ class SqlCodeGen(
         .getLanguage
         .get
 
-    val body = node.getValue(KeyBody).get.asInstanceOf[AstRawCode].getCode.get
+    val body = node.getValue(KeyBody).get.asInstanceOf[AstRawCode].getCode
     val schema = node.getValue(KeySchema).fold("")(x => s"$x.")
     var returnTable: List[SqlField] = Nil
     var returnType = ""

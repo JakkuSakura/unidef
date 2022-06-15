@@ -9,8 +9,9 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
     with TypeDecoder[String] {
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =
     node match {
-      case x: TyOptional if x.getContent.isDefined =>
-        convertType(x.getContent.get, importManager)
+      // handle unknown case
+      case x: TyOptional =>
+        convertType(x.getContent, importManager)
           .map(s =>
             importManager.foreach(_ += AstImport("typing.Optional"))
             s"Optional[$s]"
@@ -39,10 +40,12 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
 
       case l: TyList =>
         importManager.foreach(_ += AstImport("typing.Dict"))
-        convertType(l.getContent.getOrElse(TyAnyImpl()), importManager).map(x => s"List[${x}]")
+        // handle unknown case
+        convertType(l.getContent, importManager).map(x => s"List[${x}]")
       case s: TySet =>
         importManager.foreach(_ += AstImport("typing.Set"))
-        convertType(s.getContent.getOrElse(TyAnyImpl()), importManager).map(x => s"Set[${x}]")
+        // handle unknown case
+        convertType(s.getContent, importManager).map(x => s"Set[${x}]")
       case TyJsonAny() =>
         importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")

@@ -32,14 +32,14 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     struct0.getFields.get.foreach {
       case TyField(name, x: TyList, _, _) =>
         headers += name
-        body_row += x.getContent.get
+        body_row += x.getContent
       case x: TyField =>
         fields += x
     }
     fields += TyField("headers", TyConstTupleString(headers.toList))
-    fields += TyField("body", TyListImpl(Some(TyTupleImpl(Some(body_row.toList)))))
+    fields += TyField("body", TyListImpl(TyTupleImpl(body_row.toList)))
     // TODO: add header names and types
-    TyStructImpl(None, Some(fields.toList), None, None)
+    TyStructImpl(None, Some(fields.toList), None, None, None, None, "")
   }
 
   def jsonObjectOf(ty: String, others: (String, Json)*): Json = {
@@ -95,9 +95,9 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         Some(
           jsonObjectOf(
             "array",
-            "items" -> Json.fromValues(x.getValues.get.map(generateType(_))),
-            "minItems" -> Json.fromInt(x.getValues.get.size),
-            "maxItems" -> Json.fromInt(x.getValues.get.size)
+            "items" -> Json.fromValues(x.getValues.map(generateType(_))),
+            "minItems" -> Json.fromInt(x.getValues.size),
+            "maxItems" -> Json.fromInt(x.getValues.size)
           )
         )
       case x: TyUnion if x.types.map(x => x.isInstanceOf[TyStruct]).forall(identity) =>
@@ -109,7 +109,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         logger.warn("Failed to encode union: " + x.types)
         Some(Json.obj())
       case x: TyList =>
-        Some(jsonObjectOf("array", "items" -> generateType(x.getContent.get)))
+        Some(jsonObjectOf("array", "items" -> generateType(x.getContent)))
 
       case x: TyEnum if x.getName.isDefined =>
         Some(
@@ -151,7 +151,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         others += "properties" -> Json.fromFields(
           x.getFields.get.map(f =>
             naming(f.name) -> generateType(f.value match {
-              case opt: TyOptional if opt.getContent.isDefined => opt.getContent.get
+              case opt: TyOptional => opt.getContent
               case x => x
             })
           )
@@ -200,10 +200,10 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case _ => None
     }
     ty match {
-      case ty: TyCommentable if ty.getComment.isDefined =>
+      case ty: TyCommentable if ty.getComment != "" =>
         coded
           .flatMap(x => x.asObject)
-          .map(x => x.add("$comment", Json.fromString(ty.getComment.get)))
+          .map(x => x.add("$comment", Json.fromString(ty.getComment)))
           .map(Json.fromJsonObject)
       case _ => coded
     }

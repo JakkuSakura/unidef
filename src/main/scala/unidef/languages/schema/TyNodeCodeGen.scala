@@ -32,10 +32,12 @@ case class TyNodeCodeGen() {
       name,
       Nil,
       Nil,
-      methods.map(x => AstRawCodeImpl(Some(x), None)),
+      methods.map(x => AstRawCodeImpl(x, None)),
       List(AstClassIdent(derive))
     )
   }
+  def tryWrapValue(x: TyField): TyNode = if (x.defaultNone.get) TyOptionalImpl(x.value) else x.value
+
   def generateScalaKeyObject(field: TyField): AstClassDecl = {
     val traitName = "Key" + TextTool.toPascalCase(field.name)
     val cls = field.value match {
@@ -56,12 +58,13 @@ case class TyNodeCodeGen() {
     val traitName = "Has" + TextTool.toPascalCase(field.name)
     val scalaCommon = ScalaCommon()
     val valueType =
-      scalaCommon.encodeOrThrow(field.value, "Scala")
+      scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
 
     scalaField(
       traitName,
       "TyNode",
-      List(s"def get${TextTool.toPascalCase(field.name)}: Option[${valueType}]")
+      if (field.defaultNone.get) List(s"def get${TextTool.toPascalCase(field.name)}: ${valueType}")
+      else List(s"def get${TextTool.toPascalCase(field.name)}: ${valueType}")
     ).setValue(KeyClassType, "trait")
   }
   def generateScalaCompoundTrait(ty: Type, extra: List[String]): AstClassDecl = {
@@ -72,13 +75,12 @@ case class TyNodeCodeGen() {
       "Ty" + TextTool.toPascalCase(ty.name),
       Nil,
       Nil,
-      fields.toSeq
-        .map(x => x.name -> x.value)
-        .map((k, v) =>
+      fields
+        .map(x =>
           AstFunctionDecl(
-            "get" + TextTool.toPascalCase(k),
+            "get" + TextTool.toPascalCase(x.name),
             Nil,
-            TyOptionalImpl(Some(v))
+            tryWrapValue(x)
           )
         )
         .toList,
@@ -102,20 +104,21 @@ case class TyNodeCodeGen() {
 
   def generateScalaCaseClass(ty: Type, extra: List[String]): AstClassDecl = {
     val fields =
-      ty.fields.toList ::: (if (ty.commentable) List(TyField("comment", TyStringImpl(), Some(true)))
+      ty.fields.toList ::: (if (ty.commentable)
+                              List(TyField("comment", TyStringImpl(), Some(true), Some(false)))
                             else Nil)
 
     AstClassDecl(
       "Ty" + TextTool.toPascalCase(ty.name) + "Impl",
-      fields.map(x => AstValDefImpl(Some(x.name), Some(TyOptionalImpl(Some(x.value))), None, None)),
+      fields.map(x => AstValDefImpl(x.name, tryWrapValue(x), None, None)),
       Nil,
       fields
         .map(x =>
           AstFunctionDecl(
             "get" + TextTool.toPascalCase(x.name),
             Nil,
-            TyOptionalImpl(Some(x.value))
-          ).setValue(KeyBody, AstRawCodeImpl(Some(x.name), None))
+            tryWrapValue(x)
+          ).setValue(KeyBody, AstRawCodeImpl(x.name, None))
             .setValue(KeyOverride, true)
         )
         ::: (if (ty.commentable)
@@ -124,7 +127,7 @@ case class TyNodeCodeGen() {
                    "setComment",
                    List(TyField("comment", TyStringImpl())),
                    TyNamed("this.type")
-                 ).setValue(KeyBody, AstRawCodeImpl(Some(s"this.comment = Some(comment)\n this"), None))
+                 ).setValue(KeyBody, AstRawCodeImpl(s"this.comment = comment\n this", None))
                    .setValue(KeyOverride, true)
                )
              else Nil),
@@ -139,18 +142,18 @@ object TyNodeCodeGen {
       Type("string"),
       Type("field")
         .field("name", TyStringImpl())
-        .field("value", TyNode),
+        .field("value", TyNode, required = true),
       Type("list")
-        .field("content", TyNode),
+        .field("content", TyNode, required = true),
 //      Type("enum")
 //        .field("variants", TyListImpl(Some(TyStringImpl()))),
       Type("tuple")
-        .field("values", TyListImpl(Some(TyNode))),
+        .field("values", TyListImpl(TyNode), required = true),
       Type("optional")
-        .field("content", TyNode),
+        .field("content", TyNode, required = true),
       Type("result")
-        .field("ok", TyNode)
-        .field("err", TyNode),
+        .field("ok", TyNode, required = true)
+        .field("err", TyNode, required = true),
       Type("numeric"),
       Type("integer")
         .field("bit_size", TyNamed("bit_size"))
@@ -168,24 +171,24 @@ object TyNodeCodeGen {
       Type("class"),
       Type("struct")
         .field("name", TyStringImpl())
-        .field("fields", TyListImpl(Some(TyNamed("TyField"))))
-        .field("derives", TyListImpl(Some(TyStringImpl())))
-        .field("attributes", TyListImpl(Some(TyStringImpl())))
-        .field("dataframe", TyBooleanImpl(), true)
-        .field("schema", TyStringImpl(), true)
+        .field("fields", TyListImpl(TyNamed("TyField")))
+        .field("derives", TyListImpl(TyStringImpl()))
+        .field("attributes", TyListImpl(TyStringImpl()))
+        .field("dataframe", TyBooleanImpl())
+        .field("schema", TyStringImpl())
         .is(TyNamed("class"))
         .setCommentable(true),
       Type("object"),
       Type("map")
-        .field("key", TyNode)
-        .field("value", TyNode),
+        .field("key", TyNode, required = true)
+        .field("value", TyNode, required = true),
       Type("set")
-        .field("content", TyNode),
+        .field("content", TyNode, required = true),
       Type("set")
-        .field("content", TyNode)
+        .field("content", TyNode, required = true)
         .is(TyIntegerImpl(Some(BitSize.B8), Some(false))),
       Type("byte_array")
-        .is(TyListImpl(Some(TyIntegerImpl(Some(BitSize.B8), Some(false))))),
+        .is(TyListImpl(TyIntegerImpl(Some(BitSize.B8), Some(false)))),
       Type("boolean"),
       Type("record"),
       Type("null"),
@@ -196,7 +199,9 @@ object TyNodeCodeGen {
       Type("undefined"),
       Type("inet"),
       Type("uuid")
-    ).map(x => x.name -> x).toMap
+    )
+      .map(x => x.name -> x)
+      .toMap
 
   def main(args: Array[String]): Unit = {
     val types = getTypes.values.toList

@@ -86,7 +86,7 @@ class DruidSqlParser {
     val tyName = arg.getDataType.getName
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
-    AstValDefImpl(Some(name), Some(ty), None, None)
+    AstValDefImpl(name, ty, None, None)
   }
 
   private def parseParam(
@@ -100,7 +100,7 @@ class DruidSqlParser {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (arg.getParamType, TyField(name, TyOptionalImpl(Some(ty))))
+      (arg.getParamType, TyField(name, TyOptionalImpl(ty)))
     else
       (arg.getParamType, TyField(name, ty))
   }
@@ -130,13 +130,13 @@ class DruidSqlParser {
       name,
       inputs.toList,
       if (outputs.nonEmpty)
-        TyStructImpl(None, Some(outputs.map(x => TyField(x.getName.get, x.getTy.get)).toList), None, None)
+        TyStructImpl(None, Some(outputs.map(x => TyField(x.getName, x.getTy)).toList), None, None, None, None, "")
       else if (outputOnly.isDefined)
         outputOnly.get
       else
-        TyStructImpl(None, None, Some(Nil), None)
+        TyStructImpl(None, None, Some(Nil), None,  None, None, "")
     ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
-    func.setValue(KeyBody, AstRawCodeImpl(Some(body.toString), Some(language)))
+    func.setValue(KeyBody, AstRawCodeImpl(body.toString, Some(language)))
     if (outputOnly.isEmpty)
       func.setValue(KeyRecords, true)
     logger.debug(
