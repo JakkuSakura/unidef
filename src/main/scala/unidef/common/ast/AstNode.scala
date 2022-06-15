@@ -63,9 +63,8 @@ def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
   TyStructBuilder()
     .name(func.name)
     .fields(func.parameters)
-    // TODO: !!!!!!!!
-//    .dataframe(func.dataframe)
-//    .comment(func.comment)
+    .dataframe(func.dataframe)
+    .comment(func.comment)
     .build()
 
 }

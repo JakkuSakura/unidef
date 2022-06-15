@@ -162,6 +162,10 @@ class TyFloatBuilder() {
     this.bitSize = Some(bitSize)
     this
   }
+  def bitSize(bitSize: Option[BitSize]): TyFloatBuilder = {
+    this.bitSize = bitSize
+    this
+  }
   def build(): TyFloatImpl = {
     TyFloatImpl(bitSize)
   }
@@ -203,8 +207,16 @@ class TyDecimalBuilder() {
     this.precision = Some(precision)
     this
   }
+  def precision(precision: Option[Int]): TyDecimalBuilder = {
+    this.precision = precision
+    this
+  }
   def scale(scale: Int): TyDecimalBuilder = {
     this.scale = Some(scale)
+    this
+  }
+  def scale(scale: Option[Int]): TyDecimalBuilder = {
+    this.scale = scale
     this
   }
   def build(): TyDecimalImpl = {
@@ -243,28 +255,56 @@ class TyStructBuilder() {
     this.name = Some(name)
     this
   }
+  def name(name: Option[String]): TyStructBuilder = {
+    this.name = name
+    this
+  }
   def fields(fields: List[TyField]): TyStructBuilder = {
     this.fields = Some(fields)
+    this
+  }
+  def fields(fields: Option[List[TyField]]): TyStructBuilder = {
+    this.fields = fields
     this
   }
   def derives(derives: List[String]): TyStructBuilder = {
     this.derives = Some(derives)
     this
   }
+  def derives(derives: Option[List[String]]): TyStructBuilder = {
+    this.derives = derives
+    this
+  }
   def attributes(attributes: List[String]): TyStructBuilder = {
     this.attributes = Some(attributes)
+    this
+  }
+  def attributes(attributes: Option[List[String]]): TyStructBuilder = {
+    this.attributes = attributes
     this
   }
   def dataframe(dataframe: Boolean): TyStructBuilder = {
     this.dataframe = Some(dataframe)
     this
   }
+  def dataframe(dataframe: Option[Boolean]): TyStructBuilder = {
+    this.dataframe = dataframe
+    this
+  }
   def schema(schema: String): TyStructBuilder = {
     this.schema = Some(schema)
     this
   }
+  def schema(schema: Option[String]): TyStructBuilder = {
+    this.schema = schema
+    this
+  }
   def comment(comment: String): TyStructBuilder = {
     this.comment = Some(comment)
+    this
+  }
+  def comment(comment: Option[String]): TyStructBuilder = {
+    this.comment = comment
     this
   }
   def build(): TyStructImpl = {
@@ -290,6 +330,10 @@ class TyFieldBuilder() {
     this.name = Some(name)
     this
   }
+  def name(name: Option[String]): TyFieldBuilder = {
+    this.name = name
+    this
+  }
   def value(value: TyNode): TyFieldBuilder = {
     this.value = Some(value)
     this
@@ -298,8 +342,16 @@ class TyFieldBuilder() {
     this.mutability = Some(mutability)
     this
   }
+  def mutability(mutability: Option[Boolean]): TyFieldBuilder = {
+    this.mutability = mutability
+    this
+  }
   def defaultNone(defaultNone: Boolean): TyFieldBuilder = {
     this.defaultNone = Some(defaultNone)
+    this
+  }
+  def defaultNone(defaultNone: Option[Boolean]): TyFieldBuilder = {
+    this.defaultNone = defaultNone
     this
   }
   def build(): TyFieldImpl = {
@@ -373,8 +425,16 @@ class TyIntegerBuilder() {
     this.bitSize = Some(bitSize)
     this
   }
+  def bitSize(bitSize: Option[BitSize]): TyIntegerBuilder = {
+    this.bitSize = bitSize
+    this
+  }
   def sized(sized: Boolean): TyIntegerBuilder = {
     this.sized = Some(sized)
+    this
+  }
+  def sized(sized: Option[Boolean]): TyIntegerBuilder = {
+    this.sized = sized
     this
   }
   def build(): TyIntegerImpl = {

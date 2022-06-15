@@ -145,18 +145,34 @@ class ScalaCodeGen(naming: NamingConvention) {
       }
     }
 
-    def setFieldMethod(x: TyField): AstFunctionDecl = {
+    def setFieldMethod(x: TyField): List[AstFunctionDecl] = {
       val fieldName = naming.toFieldName(x.name.get)
-      AstFunctionDecl(
-        name = fieldName,
-        returnType = TyNamed(builderName),
-        parameters = List(
-          TyFieldBuilder().name(fieldName).value(unwrapOptional(x.value)).build()
+      List(
+        AstFunctionDecl(
+          name = fieldName,
+          returnType = TyNamed(builderName),
+          parameters = List(
+            TyFieldBuilder().name(fieldName).value(unwrapOptional(x.value)).build()
+          )
+        ).setValue(
+          KeyBody,
+          AstRawCodeImpl(s"this.${fieldName} = Some(${fieldName})\nthis", None)
         )
-      ).setValue(
-        KeyBody,
-        AstRawCodeImpl(s"this.${fieldName} = Some(${fieldName})\nthis", None)
-      )
+      ) :::
+        (if (x.value.isInstanceOf[TyOptional])
+           List(
+             AstFunctionDecl(
+               name = fieldName,
+               returnType = TyNamed(builderName),
+               parameters = List(
+                 TyFieldBuilder().name(fieldName).value(x.value).build()
+               )
+             ).setValue(
+               KeyBody,
+               AstRawCodeImpl(s"this.${fieldName} = ${fieldName}\nthis", None)
+             )
+           )
+         else Nil)
     }
     AstClassDecl(
       name = builderName,
@@ -170,7 +186,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           value = Some(AstRawCodeImpl("None", None))
         )
       ),
-      methods = fields.map(setFieldMethod) :+ buildMethod
+      methods = fields.flatMap(setFieldMethod) :+ buildMethod
     ).setValue(KeyClassType, "class")
   }
 
