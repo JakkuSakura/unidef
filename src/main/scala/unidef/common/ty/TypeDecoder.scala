@@ -27,9 +27,9 @@ case class TypeRegistry() extends TypeDecoder[String] {
   val logger: Logger = Logger[this.type]
   val mapping = new mutable.HashMap[String, TyNode]()
 
-  def add(s: String, ty: TyNode with Extendable, source_lang: String): Unit = {
+  def add(s: String, ty: TyNode, source_lang: String): Unit = {
     logger.debug(s"Add type $s from $source_lang")
-    mapping += TextTool.toSnakeCase(s) -> ty.setValue(KeyLanguage, source_lang)
+    mapping += TextTool.toSnakeCase(s) -> ty
   }
 
   override def decode(name: String): Option[TyNode] = {

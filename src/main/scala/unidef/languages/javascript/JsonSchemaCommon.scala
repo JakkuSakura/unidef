@@ -26,9 +26,9 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "str" | "varchar" | "text" if extended => Some(TyStringImpl())
     case "json" | "jsonb" => Some(TyJsonAny())
     case "timestamp" if extended =>
-      Some(TyTimeStamp())
+      Some(TyTimeStampBuilder().build())
     case "timestamptz" if extended =>
-      Some(TyTimeStamp())
+      Some(TyTimeStampBuilder().hasTimeZone(true).build())
     // TODO really extended only?
     case "array" | "list" if extended => Some(TyListImpl(TyAnyImpl()))
     case "option" | "optional" if extended => Some(TyOptionalImpl(TyAnyImpl()))

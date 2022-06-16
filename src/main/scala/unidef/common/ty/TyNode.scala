@@ -10,6 +10,8 @@ trait TyNode extends BaseNode
 
 case object TyNode extends TyNode
 
+trait TyUnknown extends TyNode
+case object TyUnknown extends TyUnknown
 sealed class BitSize(val bits: Int)
 
 object BitSize {
@@ -24,31 +26,11 @@ object BitSize {
   case object Unlimited extends BitSize(-1)
 }
 
-// rust: enum with multiple names
-case class TyVariant(names: List[String], code: Option[Int] = None, name: Option[String] = None)
-    extends Extendable
-    with TyNode
-    with HasName {}
-
-case class TyEnum(
-    variants: List[TyVariant],
-    simpleEnum: Option[Boolean] = None,
-    name: Option[String] = None,
-    value: Option[TyNode] = None,
-    schema: Option[String] = None
-) extends Extendable
-    with TyNode {}
-case class TyDict(key: TyNode, value: TyNode) extends TyNode
-
 trait TyJson extends TyNode
 case class TyJsonAny() extends Extendable with TyJson
 case object KeyIsBinary extends KeywordBoolean
 case object TyJsonObject extends TyJson // TyStruct(None)
 
-case class TyTimeStamp(
-    hasTimeZone: Option[Boolean] = None,
-    timeUnit: Option[java.util.concurrent.TimeUnit] = None
-) extends TyNode
 case class TyConstTupleString(values: List[String]) extends TyNode
 
 // #[derive(Debug)] in Rust

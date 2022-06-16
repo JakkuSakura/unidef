@@ -136,8 +136,15 @@ object TyNodeCodeGen {
         .field("defaultNone", TyBooleanImpl()),
       Type("list")
         .field("content", TyNode, required = true),
-//      Type("enum")
-//        .field("variants", TyListImpl(Some(TyStringImpl()))),
+      Type("variant")
+        .field("names", TyListImpl(TyStringImpl()), required = true)
+        .field("code", TyIntegerBuilder().build()),
+      Type("enum")
+        .field("variants", TyListImpl(TyNamedImpl("TyVariant")), required = true)
+        .field("simple_enum", TyBooleanImpl())
+        .field("name", TyStringImpl())
+        .field("value", TyNode, required = true)
+        .field("schema", TyStringImpl()),
       Type("tuple")
         .field("values", TyListImpl(TyNode), required = true),
       Type("optional")

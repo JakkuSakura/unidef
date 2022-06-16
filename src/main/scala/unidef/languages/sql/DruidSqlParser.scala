@@ -5,7 +5,11 @@ import com.typesafe.scalalogging.Logger
 import com.alibaba.druid.sql.SQLUtils
 import com.alibaba.druid.sql.ast.SQLParameter.ParameterType
 import com.alibaba.druid.sql.ast.{SQLParameter, SQLStatement, SQLTableDataType}
-import com.alibaba.druid.sql.ast.statement.{SQLColumnDefinition, SQLCreateFunctionStatement, SQLCreateTableStatement}
+import com.alibaba.druid.sql.ast.statement.{
+  SQLColumnDefinition,
+  SQLCreateFunctionStatement,
+  SQLCreateTableStatement
+}
 import com.alibaba.druid.util.JdbcConstants
 import unidef.common.ast.*
 import unidef.common.ty.*
@@ -55,14 +59,21 @@ class DruidSqlParser {
         k -> v
           .split(",")
           .map(StringUtils.strip(_, " '"))
-          .map(variantName => TyVariant(List(variantName), None, Some(variantName)))
       }
       .map {
         case (s"$schema.$name", v) =>
-          TyEnum(v.toList, None, Some(name), Some(TyStringImpl()), Some(schema))
+          TyEnumBuilder()
+            .variants(List(TyVariantBuilder().names(v.toList).build()))
+            .name(name)
+            .value(TyStringImpl())
+            .schema(schema)
+            .build()
         case (enumName, v) =>
-          TyEnum(v.toList, None, Some(enumName), Some(TyStringImpl()))
-
+          TyEnumBuilder()
+            .variants(List(TyVariantBuilder().names(v.toList).build()))
+            .name(enumName)
+            .value(TyStringImpl())
+            .build()
       }
       .toList
   }
@@ -76,10 +87,9 @@ class DruidSqlParser {
       .replaceAll("INITIALLY IMMEDIATE", "")
       .replaceAll("CREATE (UNIQUE)? INDEX(.|\\n)+?;", "")
 
-
   private def parseColumn(
-                          arg: SQLColumnDefinition
-                        )(implicit resolver: TypeDecoder[String]): AstValDef = {
+      arg: SQLColumnDefinition
+  )(implicit resolver: TypeDecoder[String]): AstValDef = {
     logger.debug("parseColumn: " + arg)
 
     val name = arg.getName.getSimpleName.replaceAll("\"", "")
@@ -90,7 +100,7 @@ class DruidSqlParser {
   }
 
   private def parseParam(
-                          arg: SQLParameter
+      arg: SQLParameter
   )(implicit resolver: TypeDecoder[String]): (ParameterType, TyField) = {
     logger.debug("parseParam: " + arg)
 
@@ -123,14 +133,20 @@ class DruidSqlParser {
       case x: SQLTableDataType =>
         outputs ++= x.getColumns.asScala.map(parseColumn)
       case x =>
-        outputOnly = Some(lookUpOrParseType(x.getName).getOrElse(throw TypeDecodeException(s"Failed to parse type", x.getName)))
+        outputOnly = Some(
+          lookUpOrParseType(x.getName).getOrElse(
+            throw TypeDecodeException(s"Failed to parse type", x.getName)
+          )
+        )
     }
 
     val func = AstFunctionDecl(
       name,
       inputs,
       if (outputs.nonEmpty)
-        TyStructBuilder().fields(outputs.map(x => TyFieldBuilder().name(x.name).value(x.ty).build()).toList).build()
+        TyStructBuilder()
+          .fields(outputs.map(x => TyFieldBuilder().name(x.name).value(x.ty).build()).toList)
+          .build()
       else if (outputOnly.isDefined)
         outputOnly.get
       else

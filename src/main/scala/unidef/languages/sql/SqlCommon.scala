@@ -83,11 +83,11 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       case "decimal" | "numeric" => Some(TyDecimalImpl(None, None))
       case "timestamp" | "timestamp without time zone" =>
         Some(
-          TyTimeStamp(timeUnit = Some(TimeUnit.MILLISECONDS), hasTimeZone = Some(false))
+          TyTimeStampBuilder().timeUnit(TimeUnit.MILLISECONDS).hasTimeZone(false).build()
         )
       case "timestamp with time zone" =>
         Some(
-          TyTimeStamp(timeUnit = Some(TimeUnit.MILLISECONDS), hasTimeZone = Some(true))
+          TyTimeStampBuilder().timeUnit(TimeUnit.MILLISECONDS).hasTimeZone(true).build()
         )
       case "text" | "varchar" => Some(TyStringImpl())
       case "jsonb" => Some(TyJsonAny().setValue(KeyIsBinary, true))

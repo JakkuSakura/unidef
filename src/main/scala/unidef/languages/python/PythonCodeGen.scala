@@ -2,8 +2,16 @@ package unidef.languages.python
 
 import unidef.common.{KeywordProvider, NamingConvention}
 import unidef.common.ty.*
-import unidef.common.ast.{AstImport, AstImportRaw, AstImportSimple, AstNode, AstRawCode, AstSourceFile, ImportManager}
-import unidef.utils.{ CodegenException, ParseCodeException}
+import unidef.common.ast.{
+  AstImport,
+  AstImportRaw,
+  AstImportSimple,
+  AstNode,
+  AstRawCode,
+  AstSourceFile,
+  ImportManager
+}
+import unidef.utils.{CodegenException, ParseCodeException}
 
 import java.time.LocalDateTime
 import scala.jdk.CollectionConverters.*
@@ -14,16 +22,19 @@ private case class PythonCodeGenField(
     ty: String
 )
 class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends KeywordProvider {
-  def renderEnum(name: String, enum_type: Option[String], fields: List[PythonCodeGenField]): String =
+  def renderEnum(
+      name: String,
+      enum_type: Option[String],
+      fields: List[PythonCodeGenField]
+  ): String =
     s"class $name" + enum_type.map(x => s"($x)").getOrElse("") + ":\n"
-    + fields.map(f => s"    ${f.name} = ${f.orig_name}").mkString("\n")
-    + (if (fields.isEmpty) "\n    pass" else "")
-
+      + fields.map(f => s"    ${f.name} = ${f.orig_name}").mkString("\n")
+      + (if (fields.isEmpty) "\n    pass" else "")
 
   def generateEnum(enm: TyEnum, importManager: Option[ImportManager] = None): String = {
     importManager.foreach(_ += AstImport("enum"))
     val name = naming.toClassName(enm.name.get)
-    val enum_type = enm.value.getOrElse(TyStringImpl()) match {
+    val enum_type = enm.value match {
       case _: TyString => "str, enum.Enum"
       case _: TyInteger => "enum.IntEnum"
     }
@@ -36,22 +47,21 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
           PythonCodeGenField(
             naming.toEnumKeyName(name),
             enm.value match {
-              case Some(x: TyString) => s"'$name'"
-              case Some(_: TyInteger) => s"${code.getOrElse(counter)}"
-              case None => s"'${naming.toEnumValueName(name)}'"
-              case Some(t) =>
+              case _: TyString => s"'$name'"
+              case _: TyInteger => s"${code.getOrElse(counter)}"
+              case _: TyUnknown => s"'${naming.toEnumValueName(name)}'"
+              case t =>
                 throw CodegenException(s"Does not support $t as enum value type")
             },
             null
           )
         }
 
-
     renderEnum(name, Some(enum_type), fields)
   }
   def generateStatement(body: AstNode): String = {
     body match {
-      case x : AstRawCode => x.code
+      case x: AstRawCode => x.code
       case _ => ???
     }
   }
@@ -73,7 +83,6 @@ class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends K
     |$imports
     |${stmt.mkString("\n")}
     """.stripMargin
-
 
   def generateFile(source: AstSourceFile): String = {
     val imports = generateImports(source.imports)

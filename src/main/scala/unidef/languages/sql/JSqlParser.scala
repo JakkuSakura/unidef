@@ -74,14 +74,22 @@ class JSqlParser() {
         k -> v
           .split(",")
           .map(StringUtils.strip(_, " '"))
-          .map(variantName => TyVariant(List(variantName), None, Some(variantName)))
+          .map(variantName => TyVariantBuilder().names(List(variantName)).build())
       }
       .map {
         case (s"$schema.$name", v) =>
-          TyEnum(v.toList, None, Some(name), Some(TyStringImpl()), Some(schema))
+          TyEnumBuilder()
+            .variants(v.toList)
+            .name(name)
+            .value(TyStringImpl())
+            .schema(schema)
+            .build()
         case (enumName, v) =>
-          TyEnum(v.toList, None, Some(enumName), Some(TyStringImpl()))
-
+          TyEnumBuilder()
+            .variants(v.toList)
+            .name(enumName)
+            .value(TyStringImpl())
+            .build()
       }
       .toSeq
   }
@@ -144,7 +152,7 @@ class JSqlParser() {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (input,  TyFieldBuilder().name(name).value(TyOptionalImpl(ty)).build())
+      (input, TyFieldBuilder().name(name).value(TyOptionalImpl(ty)).build())
     else
       (input, TyFieldBuilder().name(name).value(ty).build())
 
@@ -228,7 +236,6 @@ class JSqlParser() {
     val func = AstFunctionDecl(
       name,
       inputs.toList,
-
       if (outputs.nonEmpty)
         TyStructBuilder().fields(outputs.toList).build()
       else if (outputOnly.isDefined)

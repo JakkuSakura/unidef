@@ -31,7 +31,9 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         importManager.foreach(_ += AstImport("typing.List"))
         Some("List[Dict[str, Any]]")
 
-      case TyDict(k, v) =>
+      case m: TyMap =>
+        val k = m.key
+        val v = m.value
         importManager.foreach(_ += AstImport("typing.Dict"))
         (convertType(k, importManager), convertType(v, importManager)) match {
           case (Some(k), Some(v)) => Some(s"Dict[${}, ${}]")
@@ -79,7 +81,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case "str" => Some(TyStringImpl())
       case "bool" => Some(TyBooleanImpl())
       case "NoneType" | "None" => Some(TyUnitImpl())
-      case "datetime.datetime" => Some(TyTimeStamp())
+      case "datetime.datetime" => Some(TyTimeStampBuilder().build())
       case "Dict[str, Any]" => Some(TyJsonObject)
       case "List[Dict[str, Any]]" => Some(TyRecordImpl())
       case "bytes" => Some(TyByteArrayImpl())
