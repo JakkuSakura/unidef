@@ -174,15 +174,15 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
             others.toSeq: _*
           )
         )
-      case TyJsonObject => Some(jsonObjectOf("object"))
+      case _: TyJsonObject => Some(jsonObjectOf("object"))
       case _: TyStruct => Some(jsonObjectOf("object"))
-      case _: TyAny | TyJsonAny() if options.useListForJsonAny =>
+      case _: TyAny | _: TyJsonAny if options.useListForJsonAny =>
         Some(
           Json.fromValues(
             Seq("number", "string", "boolean", "object", "array", "null").map(Json.fromString)
           )
         )
-      case _: TyAny | TyJsonAny() if !options.useListForJsonAny =>
+      case _: TyAny | _: TyJsonAny if !options.useListForJsonAny =>
         Some(Json.fromJsonObject(JsonObject.empty))
       case x: TyNamed =>
         Some(jsonObjectOf("string", "name" -> Json.fromString(x.ref)))

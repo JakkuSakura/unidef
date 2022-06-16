@@ -26,6 +26,9 @@ trait HasContent() extends TyNode {
 trait HasAttributes() extends TyNode {
   def attributes: Option[List[String]]
 }
+trait HasIsBinary() extends TyNode {
+  def isBinary: Boolean
+}
 trait HasTimezone() extends TyNode {
   def timezone: Option[java.util.TimeZone]
 }
@@ -85,7 +88,6 @@ case class TyTimeStampImpl(
     hasTimeZone: Option[Boolean],
     timeUnit: Option[java.util.concurrent.TimeUnit]
 ) extends TyTimeStamp
-case class TyFloatImpl(bitSize: Option[BitSize]) extends TyFloat
 case class TySetImpl(content: TyNode) extends TySet
 case class TyDecimalImpl(precision: Option[Int], scale: Option[Int]) extends TyDecimal
 case class TyByteArrayImpl() extends TyByteArray
@@ -100,12 +102,15 @@ case class TyStructImpl(
     comment: Option[String]
 ) extends TyStruct
 case class TyClassImpl() extends TyClass
+case class TyJsonAnyImpl(isBinary: Boolean) extends TyJsonAny
 case class TyRecordImpl() extends TyRecord
 case class TyRealImpl() extends TyReal
 case class TyUnionImpl(values: List[TyNode]) extends TyUnion
 case class TyFieldImpl(name: Option[String], value: TyNode, mutability: Option[Boolean])
     extends TyField
 case class TyMapImpl(key: TyNode, value: TyNode) extends TyMap
+case class TyFloatImpl(bitSize: Option[BitSize]) extends TyFloat
+case class TyJsonImpl() extends TyJson
 case class TyUuidImpl() extends TyUuid
 case class TyResultImpl(ok: TyNode, err: TyNode) extends TyResult
 case class TyTypeVarImpl(name: Option[String]) extends TyTypeVar
@@ -133,13 +138,11 @@ case class TyIntegerImpl(bitSize: Option[BitSize], sized: Option[Boolean]) exten
 case class TyUnitImpl() extends TyUnit
 case class TyListImpl(content: TyNode) extends TyList
 case class TyUndefinedImpl() extends TyUndefined
+case class TyJsonObjectImpl(isBinary: Boolean) extends TyJsonObject
 trait TyAny() extends TyNode
 trait TyTimeStamp() extends TyNode with HasHasTimeZone with HasTimeUnit {
   def hasTimeZone: Option[Boolean]
   def timeUnit: Option[java.util.concurrent.TimeUnit]
-}
-trait TyFloat() extends TyNode with TyReal with HasBitSize {
-  def bitSize: Option[BitSize]
 }
 trait TySet() extends TyNode with HasContent {
   def content: TyNode
@@ -171,6 +174,9 @@ trait TyStruct()
   def comment: Option[String]
 }
 trait TyClass() extends TyNode
+trait TyJsonAny() extends TyNode with HasIsBinary {
+  def isBinary: Boolean
+}
 trait TyRecord() extends TyNode
 trait TyReal() extends TyNode with TyNumeric
 trait TyUnion() extends TyNode with HasValues {
@@ -185,6 +191,10 @@ trait TyMap() extends TyNode with HasKey with HasValue {
   def key: TyNode
   def value: TyNode
 }
+trait TyFloat() extends TyNode with TyReal with HasBitSize {
+  def bitSize: Option[BitSize]
+}
+trait TyJson() extends TyNode
 trait TyUuid() extends TyNode
 trait TyResult() extends TyNode with HasOk with HasErr {
   def ok: TyNode
@@ -240,6 +250,9 @@ trait TyList() extends TyNode with HasContent {
   def content: TyNode
 }
 trait TyUndefined() extends TyNode
+trait TyJsonObject() extends TyNode with HasIsBinary {
+  def isBinary: Boolean
+}
 class TyAnyBuilder() {
   def build(): TyAnyImpl = {
     TyAnyImpl()
@@ -266,20 +279,6 @@ class TyTimeStampBuilder() {
   }
   def build(): TyTimeStampImpl = {
     TyTimeStampImpl(hasTimeZone, timeUnit)
-  }
-}
-class TyFloatBuilder() {
-  var bitSize: Option[BitSize] = None
-  def bitSize(bitSize: BitSize): TyFloatBuilder = {
-    this.bitSize = Some(bitSize)
-    this
-  }
-  def bitSize(bitSize: Option[BitSize]): TyFloatBuilder = {
-    this.bitSize = bitSize
-    this
-  }
-  def build(): TyFloatImpl = {
-    TyFloatImpl(bitSize)
   }
 }
 class TySetBuilder() {
@@ -407,6 +406,16 @@ class TyClassBuilder() {
     TyClassImpl()
   }
 }
+class TyJsonAnyBuilder() {
+  var isBinary: Option[Boolean] = None
+  def isBinary(isBinary: Boolean): TyJsonAnyBuilder = {
+    this.isBinary = Some(isBinary)
+    this
+  }
+  def build(): TyJsonAnyImpl = {
+    TyJsonAnyImpl(isBinary.get)
+  }
+}
 class TyRecordBuilder() {
   def build(): TyRecordImpl = {
     TyRecordImpl()
@@ -472,6 +481,25 @@ class TyMapBuilder() {
   }
   def build(): TyMapImpl = {
     TyMapImpl(key.get, value.get)
+  }
+}
+class TyFloatBuilder() {
+  var bitSize: Option[BitSize] = None
+  def bitSize(bitSize: BitSize): TyFloatBuilder = {
+    this.bitSize = Some(bitSize)
+    this
+  }
+  def bitSize(bitSize: Option[BitSize]): TyFloatBuilder = {
+    this.bitSize = bitSize
+    this
+  }
+  def build(): TyFloatImpl = {
+    TyFloatImpl(bitSize)
+  }
+}
+class TyJsonBuilder() {
+  def build(): TyJsonImpl = {
+    TyJsonImpl()
   }
 }
 class TyUuidBuilder() {
@@ -707,5 +735,15 @@ class TyListBuilder() {
 class TyUndefinedBuilder() {
   def build(): TyUndefinedImpl = {
     TyUndefinedImpl()
+  }
+}
+class TyJsonObjectBuilder() {
+  var isBinary: Option[Boolean] = None
+  def isBinary(isBinary: Boolean): TyJsonObjectBuilder = {
+    this.isBinary = Some(isBinary)
+    this
+  }
+  def build(): TyJsonObjectImpl = {
+    TyJsonObjectImpl(isBinary.get)
   }
 }

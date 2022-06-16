@@ -48,10 +48,10 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         importManager.foreach(_ += AstImport("typing.Set"))
         // handle unknown case
         convertType(s.content, importManager).map(x => s"Set[${x}]")
-      case TyJsonAny() =>
+      case _: TyJsonAny =>
         importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")
-      case TyJsonObject =>
+      case _: TyJsonObject =>
         importManager.foreach(_ += AstImport("typing.Any"))
         importManager.foreach(_ += AstImport("typing.Dict"))
         Some("Dict[str, Any]")
@@ -82,7 +82,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case "bool" => Some(TyBooleanImpl())
       case "NoneType" | "None" => Some(TyUnitImpl())
       case "datetime.datetime" => Some(TyTimeStampBuilder().build())
-      case "Dict[str, Any]" => Some(TyJsonObject)
+      case "Dict[str, Any]" => Some(TyJsonObjectBuilder().build())
       case "List[Dict[str, Any]]" => Some(TyRecordImpl())
       case "bytes" => Some(TyByteArrayImpl())
       case "uuid.UUID" | "UUID" => Some(TyUuidImpl())

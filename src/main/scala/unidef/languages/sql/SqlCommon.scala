@@ -54,8 +54,9 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case x: TyEnum if x.name.isDefined =>
       x.name
     case _: TyEnum => Some("text")
-    case TyJsonObject => Some("jsonb")
-//    case t: TyJsonAny if !t.isBinary.contains(false) => Some("jsonb")
+    case x: TyJsonObject if x.isBinary => Some("jsonb")
+    case x: TyJsonObject => Some("json")
+    case t: TyJsonAny if t.isBinary => Some("jsonb")
     case t: TyJsonAny => Some("json")
     case _: TyUnit => Some("void")
     case _: TyBoolean => Some("boolean")

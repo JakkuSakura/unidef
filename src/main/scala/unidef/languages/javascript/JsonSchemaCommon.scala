@@ -24,9 +24,10 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "float" if extended => Some(TyFloatImpl(Some(BitSize.B32)))
     case "double" | "f64" if extended => Some(TyFloatImpl(Some(BitSize.B64)))
     case "str" | "varchar" | "text" if extended => Some(TyStringImpl())
-    case "json" | "jsonb" => Some(TyJsonAny())
+    case "json" => Some(TyJsonAnyBuilder().isBinary(false).build())
+    case "jsonb" => Some(TyJsonAnyBuilder().isBinary(true).build())
     case "timestamp" if extended =>
-      Some(TyTimeStampBuilder().build())
+      Some(TyTimeStampBuilder().hasTimeZone(false).build())
     case "timestamptz" if extended =>
       Some(TyTimeStampBuilder().hasTimeZone(true).build())
     // TODO really extended only?

@@ -1,7 +1,7 @@
 package unidef.common.ty
 
 import io.circe.{Encoder, Json}
-import unidef.common.{BaseNode}
+import unidef.common.BaseNode
 
 import java.util.TimeZone
 import scala.quoted.{Expr, Quotes}
@@ -25,9 +25,5 @@ object BitSize {
   case object Unknown extends BitSize(0)
   case object Unlimited extends BitSize(-1)
 }
-
-trait TyJson extends TyNode
-case class TyJsonAny() extends TyJson
-case object TyJsonObject extends TyJson
 
 case class TyConstTupleString(values: List[String]) extends TyNode

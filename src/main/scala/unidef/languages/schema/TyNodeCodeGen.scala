@@ -195,7 +195,12 @@ object TyNodeCodeGen {
         .field("name", TyStringImpl()),
       Type("key_value")
         .field("key", TyNode, required = true)
-        .field("value", TyNode, required = true)
+        .field("value", TyNode, required = true),
+      Type("json"),
+      Type("json_any")
+        .field("is_binary", TyBooleanImpl(), required = true),
+      Type("json_object")
+        .field("is_binary", TyBooleanImpl(), required = true)
     )
       .map(x => x.name -> x)
       .toMap
