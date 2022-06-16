@@ -248,8 +248,8 @@ class JSqlParser() {
       .body(AstRawCodeImpl(body, Some(language)))
       .schema(Option(schema).filterNot(_.isEmpty))
 
-    //    if (outputOnly.isEmpty)
-    //      func.records(true)
+    if (outputOnly.isEmpty)
+      func.records(true)
     logger.debug(
       s"Parsed function: ${func.name}(${func.parameters})->${func.returnType}"
     )

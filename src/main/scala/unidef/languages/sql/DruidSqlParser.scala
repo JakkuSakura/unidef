@@ -154,8 +154,8 @@ class DruidSqlParser {
       )
       .body(AstRawCodeImpl(body.toString, Some(language)))
       .schema(Option(schema).filter(_.nonEmpty))
-//    if (outputOnly.isEmpty)
-//      func.records(true)
+    if (outputOnly.isEmpty)
+      func.records(true)
     logger.debug(
       s"Parsed function: ${func.name}(${func.parameters})->${func.returnType}"
     )
