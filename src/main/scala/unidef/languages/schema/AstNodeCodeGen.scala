@@ -27,14 +27,19 @@ case class AstNodeCodeGen() {
       .flatMap(collectFields)
       .toSet
   }
-  def scalaField(name: String, derive: String, methods: List[String]): AstClassDecl = {
-    AstClassDecl(
-      name,
-      Nil,
-      Nil,
-      methods.map(x => AstRawCodeImpl(x, None)),
-      List(AstClassIdent(derive))
-    )
+  def scalaField(
+      name: String,
+      derive: String,
+      methods: List[String],
+      classType: Option[String]
+  ): AstClassDecl = {
+    AstClassDeclBuilder()
+      .name(name)
+      .methods(methods.map(x => AstRawCodeImpl(x, None)))
+      .derived(List(AstClassIdent(derive)))
+      .classType(classType)
+      .build()
+
   }
 
   def generateScalaHasTrait(field: TyField): AstClassDecl = {
@@ -46,43 +51,51 @@ case class AstNodeCodeGen() {
     scalaField(
       traitName,
       "AstNode",
-      List(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}")
-    ).setValue(KeyClassType, "trait")
+      List(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}"),
+      Some("trait")
+    )
   }
   def generateScalaCompoundTrait(ty: Ast): AstClassDecl = {
     val fields = ty.fields.map(_.build()).toList
 
-    AstClassDecl(
-      toAstClassName(ty.name),
-      Nil,
-      Nil,
-      fields
-        .map(field =>
-          val valueType =
-            scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
+    AstClassDeclBuilder()
+      .name(toAstClassName(ty.name))
+      .methods(
+        fields
+          .map(field =>
+            val valueType =
+              scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
 
-          AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}", None)
-        )
-        .toList,
-      List(AstClassIdent("AstNode"))
-        :::
-          fields
-            .map(x => "Has" + TextTool.toPascalCase(x.name.get))
-            .map(x => AstClassIdent(x))
-            .toList
-    ).setValue(KeyClassType, "trait")
+            AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}", None)
+          )
+      )
+      .derived(
+        List(AstClassIdent("AstNode"))
+          :::
+            fields
+              .map(x => "Has" + TextTool.toPascalCase(x.name.get))
+              .map(x => AstClassIdent(x))
+              .toList
+      )
+      .classType("trait")
+      .build()
   }
   def tryWrapValue(x: TyField): TyNode = if (x.defaultNone.get) TyOptionalImpl(x.value) else x.value
   def generateScalaCaseClass(ty: Ast): AstClassDecl = {
     val fields =
       ty.fields.map(_.build()).toList
-    AstClassDecl(
-      toAstClassName(ty.name) + "Impl",
-      fields.map(x => AstValDefImpl(TextTool.toCamelCase(x.name.get), tryWrapValue(x), None, None)),
-      Nil,
-      Nil,
-      List(AstClassIdent(toAstClassName(ty.name)))
-    ).setValue(KeyClassType, "class")
+    AstClassDeclBuilder()
+      .name(toAstClassName(ty.name) + "Impl")
+      .fields(
+        fields.map(x =>
+          AstValDefImpl(TextTool.toCamelCase(x.name.get), tryWrapValue(x), None, None)
+        )
+      )
+      .derived(
+        List(AstClassIdent(toAstClassName(ty.name)))
+      )
+      .classType("class")
+      .build()
   }
   def generateScalaBuilder(ty: Ast): AstClassDecl = {
     val fields = ty.fields
@@ -125,6 +138,13 @@ object AstNodeCodeGen {
           required = true
         ) // TODO: make subtypes of literal values?
         .field("ty", TyNode, required = true),
+      Ast("literal_string")
+        .field("literal_string", TyStringImpl(), required = true),
+      Ast("literal_int")
+        .field("literal_int", TyIntegerBuilder().build(), required = true),
+      Ast("literal_unit"),
+      Ast("literal_none"),
+      Ast("literal_null"),
       Ast("select")
         .field("qualifier", astNode, required = true)
         .field("symbol", TyStringImpl(), required = true),
@@ -141,7 +161,18 @@ object AstNodeCodeGen {
         .field("value", astNode)
         .field("mutability", TyBooleanImpl()),
       Ast("decls")
-        .field("decls", TyListImpl(astNode), required = true)
+        .field("decls", TyListImpl(astNode), required = true),
+      Ast("type")
+        .field("ty", TyNode, required = true),
+      Ast("class_decl")
+        .field("name", TyStringImpl(), required = true)
+        .field("parameters", TyListImpl(TyNamedImpl("AstValDef")))
+        .field("fields", TyListImpl(TyNamedImpl("AstValDef")))
+        .field("methods", TyListImpl(TyNamedImpl("AstNode")))
+        .field("derived", TyListImpl(TyNamedImpl("AstClassIdent")))
+        .field("schema", TyStringImpl())
+        .field("dataframe", TyBooleanImpl())
+        .field("class_type", TyStringImpl())
     ).map(x => x.name -> x).toMap
   }
 

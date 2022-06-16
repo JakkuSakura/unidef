@@ -56,7 +56,7 @@ class SqlCodeGen(
 
   def generateTableDdl(node: AstClassDecl): String = {
     val name = naming.toFunctionName(node.name)
-    val fields = node.getFields.map(sqlCommon.convertToSqlField)
+    val fields = getFields(node).map(sqlCommon.convertToSqlField)
     val schema = node.schema.fold("")(x => s"$x.")
     renderTableDdl(schema, name, fields)
   }

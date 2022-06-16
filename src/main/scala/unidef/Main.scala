@@ -2,7 +2,7 @@ package unidef
 
 import unidef.common.Extendable
 import unidef.common.ty.*
-import unidef.common.ast.{AstClassDecl, AstFunctionDecl, AstTyped, ImportManager}
+import unidef.common.ast.*
 import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
 import unidef.languages.python.PythonCodeGen
 import unidef.languages.sql.{SqlCodeGen, JSqlParser, DruidSqlParser}
@@ -27,7 +27,7 @@ import java.io.PrintWriter
     JSqlParser().parse(fileContents)(sqlResolver)
   } else if (filename.endsWith(".json")) {
     val parsed = JsonSchemaParser().parse(io.circe.parser.parse(fileContents).toTry.get)
-    Seq(AstTyped(parsed))
+    Seq(AstTypeImpl(parsed))
   } else {
     throw new RuntimeException("Unsupported file type " + filename)
   })
@@ -36,10 +36,11 @@ import java.io.PrintWriter
   parsedWriter.println(parsed.mkString("\n"))
   parsed
     .foreach {
-      case a : AstClassDecl =>
+      case a: AstClassDecl =>
         val code = sqlCodegen.generateTableDdl(a)
         fs.getWriterAt("AstClassDecl.txt").println(code)
-      case AstTyped(struct: TyStruct) =>
+      case a: AstType if a.ty.isInstanceOf[TyStruct] =>
+        val struct = a.ty.asInstanceOf[TyStruct]
         if (struct.name.isDefined) {
           val code = sqlCodegen.generateTableDdl(struct)
           fs.getWriterAt("TyStruct.txt").println(code)
@@ -47,7 +48,8 @@ import java.io.PrintWriter
         val js = json_schema.generateType(struct)
         fs.getWriterAt("JsonSchema.json").println(js.spaces2)
 
-      case AstTyped(en: TyEnum) =>
+      case x: AstTypeImpl if x.ty.isInstanceOf[TyEnum] =>
+        val en = x.ty.asInstanceOf[TyEnum]
         fs.getWriterAt("TyEnum.txt").println(en)
       case n: AstFunctionDecl =>
         val code = sqlCodegen.generateFunctionDdl(n)

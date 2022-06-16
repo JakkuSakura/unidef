@@ -15,15 +15,23 @@ private object ScalaiTestHelper {
   inline def lift[T](inline code: T): AstNode = {
     val compiler = new Compiler()
     val staged = compiler.stage(code)
-    val lifted = compiler.compileAndLift(
-      s"""
+    val lifted = compiler.compileAndLift(s"""
         |class Main {
         |  val value = {
         |    $staged
         |  }
         |}
         |""".stripMargin)
-    val extracted = lifted.asInstanceOf[AstProgram].statements.head.asInstanceOf[AstClassDecl].fields.head.value.get
+    val extracted = lifted
+      .asInstanceOf[AstProgram]
+      .statements
+      .head
+      .asInstanceOf[AstClassDecl]
+      .fields
+      .get
+      .head
+      .value
+      .get
     extracted
   }
 
@@ -39,14 +47,12 @@ class ScalaiTest {
   }
   @Test def test_hello_world(): Unit = {
     ScalaiTestHelper.lift {
-      def main(): Unit = {
-      }
+      def main(): Unit = {}
     }
   }
 
   @Test def test_active_inlining(): Unit = {
-    ScalaiTestHelper.compileAndLift(
-      """
+    ScalaiTestHelper.compileAndLift("""
         |import scala.io.StdIn.readInt
         |def foo(x: Int): Int = x * 2
         |def main(): Unit = {
@@ -55,8 +61,7 @@ class ScalaiTest {
         |""".stripMargin)
   }
   @Test def test_loop_unfolding(): Unit = {
-    ScalaiTestHelper.compileAndLift(
-      """
+    ScalaiTestHelper.compileAndLift("""
         |def foo(xs: Seq[() => Int]): Unit = for(func <- xs) println(func)
         |def main(): Unit = {
         |  val x1 = () => 1
@@ -69,8 +74,7 @@ class ScalaiTest {
   }
 
   @Test def test_specialization(): Unit = {
-    ScalaiTestHelper.compileAndLift(
-      """
+    ScalaiTestHelper.compileAndLift("""
         |import scala.io.StdIn.readInt
         |@noinline
         |def foo(a: Int)(b: Int): Int = a + b
@@ -84,10 +88,8 @@ class ScalaiTest {
         |""".stripMargin)
   }
 
-
   def test_type_specialization1(): Unit = {
-    ScalaiTestHelper.compileAndLift(
-      """
+    ScalaiTestHelper.compileAndLift("""
         |@noinline
         |def foo[T]() = {
         |  if (T ==  Boolean) {
@@ -105,8 +107,7 @@ class ScalaiTest {
   }
 
   @Test def test_type_specialization2(): Unit = {
-    ScalaiTestHelper.compileAndLift(
-      """
+    ScalaiTestHelper.compileAndLift("""
         |type Type = Any
         |// This syntax is better
         |@noinline
@@ -123,6 +124,5 @@ class ScalaiTest {
         |}
         |""".stripMargin)
   }
-
 
 }

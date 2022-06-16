@@ -33,10 +33,5 @@ case object TyJsonObject extends TyJson // TyStruct(None)
 
 case class TyConstTupleString(values: List[String]) extends TyNode
 
-// #[derive(Debug)] in Rust
-case object KeyDerive extends Keyword {
-  override type V = Array[String]
-}
-
 case object KeyProperties extends KeywordOnly
 case object KeyType extends KeywordOnly

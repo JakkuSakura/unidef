@@ -62,7 +62,7 @@ class LifterImpl(using val quotes: Quotes) {
       case ClassDef(name, defDef, parents, sefl, body) =>
         liftClassDef(name, defDef, parents, sefl, body)
       case Apply(fun, args) => AstApplyImpl(liftTree(fun), args.map(liftTree))
-      case Literal(UnitConstant()) => AstLiteralUnit()
+      case Literal(UnitConstant()) => AstLiteralUnitImpl()
       case x =>
         logger.error(s"Unsupported statement: ${x.show}")
         AstRawCodeImpl(x.show, None)
@@ -151,12 +151,12 @@ class LifterImpl(using val quotes: Quotes) {
     }
 
     val derived = liftClassDefParents(parents)
-    AstClassDecl(
-      name,
-      Nil,
-      valDefs.toList,
-      stmts.toList,
-      derived
-    )
+    AstClassDeclBuilder()
+      .name(name)
+      .fields(valDefs.toList)
+      .methods(stmts.toList)
+      .derived(derived)
+      .build()
+
   }
 }

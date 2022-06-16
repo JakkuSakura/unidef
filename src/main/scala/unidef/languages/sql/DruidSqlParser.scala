@@ -36,7 +36,7 @@ class DruidSqlParser {
     enums.foreach { x =>
       x.name.foreach { nm =>
         resolver.add(nm, x, "sql")
-        collected += AstTyped(x)
+        collected += AstTypeImpl(x)
       }
 
     }
@@ -164,12 +164,11 @@ class DruidSqlParser {
   def parseCreateTable(
       tbl: SQLCreateTableStatement
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
-    AstClassDecl(
-      tbl.getTableName,
-      tbl.getColumnDefinitions.asScala.map(parseColumn).toList,
-      Nil
-    )
-      .trySetValue(KeySchema, Option(tbl.getSchema))
+    AstClassDeclBuilder()
+      .name(tbl.getTableName)
+      .parameters(tbl.getColumnDefinitions.asScala.map(parseColumn).toList)
+      .schema(Option(tbl.getSchema))
+      .build()
   }
 
   def lookUpOrParseType(ty: String)(implicit resolver: TypeDecoder[String]): Option[TyNode] = {

@@ -11,14 +11,6 @@ import unidef.common.ty.*
   */
 trait AstNode extends BaseNode
 
-class AstStaticType(ty: TyNode) extends AstNode
-
-case class AstTyped(ty: TyNode) extends AstStaticType(ty)
-
-case class AstExpression(node: AstNode) extends AstNode
-
-case class ConditionalNode(test: AstNode, success: AstNode, failure: AstNode) extends AstNode
-
 sealed trait FlowControl
 object FlowControl {
   case object Next extends FlowControl
@@ -28,8 +20,6 @@ object FlowControl {
   case object Throw extends FlowControl
 }
 
-def AstLiteralString(x: String): AstLiteral = AstLiteralImpl(x, TyStringImpl())
-def AstLiteralUnit(): AstLiteral = AstLiteralImpl("()", TyUnitImpl())
 //class AstLiteral(ty: TyNode) extends AstStaticType(ty)
 //
 //case class AstLiteralString(value: String) extends AstLiteral(TyStringImpl())
@@ -85,25 +75,10 @@ case class AstLambdaDecl(parameters: List[TyField], returnType: TyNode, body: As
 
 case class AstClassIdent(name: String) extends AstNode
 
-case class AstClassDecl(
-    name: String,
-    parameters: List[AstValDef],
-    fields: List[AstValDef],
-    methods: List[AstNode] = Nil,
-    derived: List[AstClassIdent] = Nil,
-    schema: Option[String] = None,
-    dataframe: Option[Boolean] = None
-) extends Extendable
-    with AstNode {
-  def getFields: List[TyField] =
-    fields.map(x =>
-      TyFieldBuilder().name(x.name).value(x.ty).defaultNone(x.value.isDefined).build()
-    )
-}
-
-object AstClassDecl {
-  case object DataClass extends KeywordBoolean
-}
+def getFields(self: AstClassDecl): List[TyField] =
+  self.fields
+    .getOrElse(Nil)
+    .map(x => TyFieldBuilder().name(x.name).value(x.ty).defaultNone(x.value.isDefined).build())
 
 case class AstIdentifier(id: String) extends AstNode
 

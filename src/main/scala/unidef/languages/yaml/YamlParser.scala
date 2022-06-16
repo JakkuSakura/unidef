@@ -5,7 +5,7 @@ import io.circe.yaml.parser
 import io.circe.Json
 import unidef.common.ty.{TyNode, TyStructImpl}
 import unidef.common.ast
-import unidef.common.ast.{AstNode, AstTyped}
+import unidef.common.ast.{AstNode, AstTypeImpl}
 
 import unidef.languages.javascript.JsonSchemaParser
 import unidef.utils.ParseCodeException
@@ -54,7 +54,7 @@ case class YamlParser(jsParser: JsonSchemaParser) {
       }
       .map {
         case a: AstNode => a
-        case t: TyNode => ast.AstTyped(t)
+        case t: TyNode => ast.AstTypeImpl(t)
       }
       .toArray
   }

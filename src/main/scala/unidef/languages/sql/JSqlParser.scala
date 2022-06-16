@@ -29,7 +29,7 @@ class JSqlParser() {
     enums.foreach { x =>
       x.name.foreach { nm =>
         resolver.add(nm, x, "sql")
-        collected += common.ast.AstTyped(x)
+        collected += common.ast.AstTypeImpl(x)
       }
 
     }
@@ -254,12 +254,11 @@ class JSqlParser() {
   def parseCreateTable(
       tbl: CreateTable
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
-    AstClassDecl(
-      tbl.getTable.getName,
-      tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList,
-      Nil
-    )
-      .trySetValue(KeySchema, Option(tbl.getTable.getSchemaName))
+    AstClassDeclBuilder()
+      .name(tbl.getTable.getName)
+      .parameters(tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList)
+      .schema(Option(tbl.getTable.getSchemaName))
+      .build()
   }
   def parseParseColumn(
       column: ColumnDefinition

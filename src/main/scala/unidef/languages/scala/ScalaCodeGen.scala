@@ -68,7 +68,7 @@ class ScalaCodeGen(naming: NamingConvention) {
   }
 
   def generateClass(c: AstClassDecl): String = {
-    val cls = c.getValue(KeyClassType).getOrElse("case class")
+    val cls = c.classType.getOrElse("case class")
 
     def mapParam(x: AstValDef): String = {
       val modifier = if (cls == "case class") {
@@ -90,10 +90,10 @@ class ScalaCodeGen(naming: NamingConvention) {
     }
 
     val name = naming.toClassName(c.name)
-    val params = c.parameters.map(mapParam)
-    val fields = c.fields.map(mapParam)
-    val derive = c.derived.map(_.name).map(naming.toClassName)
-    val methods = c.methods.map {
+    val params = c.parameters.get.map(mapParam)
+    val fields = c.fields.get.map(mapParam)
+    val derive = c.derived.getOrElse(Nil).map(_.name).map(naming.toClassName)
+    val methods = c.methods.getOrElse(Nil).map {
       case x: AstFunctionDecl => generateMethod(x)
       case x: AstRawCode => x.code
     }
@@ -174,10 +174,10 @@ class ScalaCodeGen(naming: NamingConvention) {
            )
          else Nil)
     }
-    AstClassDecl(
-      name = builderName,
-      parameters = Nil,
-      fields = fields.map(x =>
+    AstClassDeclBuilder()
+      .name(builderName)
+      .parameters(Nil)
+      .fields(fields.map(x =>
         val fieldName = naming.toFieldName(x.name.get)
         AstValDefImpl(
           fieldName,
@@ -185,9 +185,10 @@ class ScalaCodeGen(naming: NamingConvention) {
           mutability = Some(true),
           value = Some(AstRawCodeImpl("None", None))
         )
-      ),
-      methods = fields.flatMap(setFieldMethod) :+ buildMethod
-    ).setValue(KeyClassType, "class")
+      ))
+      .methods(fields.flatMap(setFieldMethod) :+ buildMethod)
+      .classType("class")
+      .build()
   }
 
 }
