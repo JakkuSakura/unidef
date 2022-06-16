@@ -5,6 +5,9 @@ import scala.collection.mutable
 trait HasValues() extends TyNode {
   def values: List[TyNode]
 }
+trait HasDerives() extends TyNode {
+  def derives: Option[List[String]]
+}
 trait HasOk() extends TyNode {
   def ok: TyNode
 }
@@ -23,17 +26,8 @@ trait HasContent() extends TyNode {
 trait HasAttributes() extends TyNode {
   def attributes: Option[List[String]]
 }
-trait HasDefaultNone() extends TyNode {
-  def defaultNone: Option[Boolean]
-}
 trait HasTimezone() extends TyNode {
   def timezone: Option[java.util.TimeZone]
-}
-trait HasTys() extends TyNode {
-  def tys: List[TyNode]
-}
-trait HasDerives() extends TyNode {
-  def derives: Option[List[String]]
 }
 trait HasScale() extends TyNode {
   def scale: Option[Int]
@@ -108,13 +102,9 @@ case class TyStructImpl(
 case class TyClassImpl() extends TyClass
 case class TyRecordImpl() extends TyRecord
 case class TyRealImpl() extends TyReal
-case class TyUnionImpl(tys: List[TyNode]) extends TyUnion
-case class TyFieldImpl(
-    name: Option[String],
-    value: TyNode,
-    mutability: Option[Boolean],
-    defaultNone: Option[Boolean]
-) extends TyField
+case class TyUnionImpl(values: List[TyNode]) extends TyUnion
+case class TyFieldImpl(name: Option[String], value: TyNode, mutability: Option[Boolean])
+    extends TyField
 case class TyMapImpl(key: TyNode, value: TyNode) extends TyMap
 case class TyUuidImpl() extends TyUuid
 case class TyResultImpl(ok: TyNode, err: TyNode) extends TyResult
@@ -183,14 +173,13 @@ trait TyStruct()
 trait TyClass() extends TyNode
 trait TyRecord() extends TyNode
 trait TyReal() extends TyNode with TyNumeric
-trait TyUnion() extends TyNode with HasTys {
-  def tys: List[TyNode]
+trait TyUnion() extends TyNode with HasValues {
+  def values: List[TyNode]
 }
-trait TyField() extends TyNode with HasName with HasValue with HasMutability with HasDefaultNone {
+trait TyField() extends TyNode with HasName with HasValue with HasMutability {
   def name: Option[String]
   def value: TyNode
   def mutability: Option[Boolean]
-  def defaultNone: Option[Boolean]
 }
 trait TyMap() extends TyNode with HasKey with HasValue {
   def key: TyNode
@@ -263,12 +252,12 @@ class TyTimeStampBuilder() {
     this.hasTimeZone = Some(hasTimeZone)
     this
   }
-  def hasTimeZone(hasTimeZone: Option[Boolean]): TyTimeStampBuilder = {
-    this.hasTimeZone = hasTimeZone
-    this
-  }
   def timeUnit(timeUnit: java.util.concurrent.TimeUnit): TyTimeStampBuilder = {
     this.timeUnit = Some(timeUnit)
+    this
+  }
+  def hasTimeZone(hasTimeZone: Option[Boolean]): TyTimeStampBuilder = {
+    this.hasTimeZone = hasTimeZone
     this
   }
   def timeUnit(timeUnit: Option[java.util.concurrent.TimeUnit]): TyTimeStampBuilder = {
@@ -310,12 +299,12 @@ class TyDecimalBuilder() {
     this.precision = Some(precision)
     this
   }
-  def precision(precision: Option[Int]): TyDecimalBuilder = {
-    this.precision = precision
-    this
-  }
   def scale(scale: Int): TyDecimalBuilder = {
     this.scale = Some(scale)
+    this
+  }
+  def precision(precision: Option[Int]): TyDecimalBuilder = {
+    this.precision = precision
     this
   }
   def scale(scale: Option[Int]): TyDecimalBuilder = {
@@ -357,52 +346,52 @@ class TyStructBuilder() {
     this.name = Some(name)
     this
   }
-  def name(name: Option[String]): TyStructBuilder = {
-    this.name = name
-    this
-  }
   def fields(fields: List[TyField]): TyStructBuilder = {
     this.fields = Some(fields)
-    this
-  }
-  def fields(fields: Option[List[TyField]]): TyStructBuilder = {
-    this.fields = fields
     this
   }
   def derives(derives: List[String]): TyStructBuilder = {
     this. derives = Some(derives)
     this
   }
-  def derives(derives: Option[List[String]]): TyStructBuilder = {
-    this. derives = derives
-    this
-  }
   def attributes(attributes: List[String]): TyStructBuilder = {
     this.attributes = Some(attributes)
-    this
-  }
-  def attributes(attributes: Option[List[String]]): TyStructBuilder = {
-    this.attributes = attributes
     this
   }
   def dataframe(dataframe: Boolean): TyStructBuilder = {
     this.dataframe = Some(dataframe)
     this
   }
-  def dataframe(dataframe: Option[Boolean]): TyStructBuilder = {
-    this.dataframe = dataframe
-    this
-  }
   def schema(schema: String): TyStructBuilder = {
     this.schema = Some(schema)
     this
   }
-  def schema(schema: Option[String]): TyStructBuilder = {
-    this.schema = schema
-    this
-  }
   def comment(comment: String): TyStructBuilder = {
     this.comment = Some(comment)
+    this
+  }
+  def name(name: Option[String]): TyStructBuilder = {
+    this.name = name
+    this
+  }
+  def fields(fields: Option[List[TyField]]): TyStructBuilder = {
+    this.fields = fields
+    this
+  }
+  def derives(derives: Option[List[String]]): TyStructBuilder = {
+    this. derives = derives
+    this
+  }
+  def attributes(attributes: Option[List[String]]): TyStructBuilder = {
+    this.attributes = attributes
+    this
+  }
+  def dataframe(dataframe: Option[Boolean]): TyStructBuilder = {
+    this.dataframe = dataframe
+    this
+  }
+  def schema(schema: Option[String]): TyStructBuilder = {
+    this.schema = schema
     this
   }
   def comment(comment: Option[String]): TyStructBuilder = {
@@ -429,30 +418,25 @@ class TyRealBuilder() {
   }
 }
 class TyUnionBuilder() {
-  var tys: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
-  def tys(tys: List[TyNode]): TyUnionBuilder = {
-    this.tys ++= tys
+  var values: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
+  def values(values: List[TyNode]): TyUnionBuilder = {
+    this.values ++= values
     this
   }
-  def ty(ty: TyNode): TyUnionBuilder = {
-    this.tys += ty
+  def value(value: TyNode): TyUnionBuilder = {
+    this.values += value
     this
   }
   def build(): TyUnionImpl = {
-    TyUnionImpl(tys.toList)
+    TyUnionImpl(values.toList)
   }
 }
 class TyFieldBuilder() {
   var name: Option[String] = None
   var value: Option[TyNode] = None
   var mutability: Option[Boolean] = None
-  var defaultNone: Option[Boolean] = None
   def name(name: String): TyFieldBuilder = {
     this.name = Some(name)
-    this
-  }
-  def name(name: Option[String]): TyFieldBuilder = {
-    this.name = name
     this
   }
   def value(value: TyNode): TyFieldBuilder = {
@@ -463,20 +447,16 @@ class TyFieldBuilder() {
     this.mutability = Some(mutability)
     this
   }
+  def name(name: Option[String]): TyFieldBuilder = {
+    this.name = name
+    this
+  }
   def mutability(mutability: Option[Boolean]): TyFieldBuilder = {
     this.mutability = mutability
     this
   }
-  def defaultNone(defaultNone: Boolean): TyFieldBuilder = {
-    this.defaultNone = Some(defaultNone)
-    this
-  }
-  def defaultNone(defaultNone: Option[Boolean]): TyFieldBuilder = {
-    this.defaultNone = defaultNone
-    this
-  }
   def build(): TyFieldImpl = {
-    TyFieldImpl(name, value.get, mutability, defaultNone)
+    TyFieldImpl(name, value.get, mutability)
   }
 }
 class TyMapBuilder() {
@@ -545,16 +525,16 @@ class TyVariantBuilder() {
     this.names ++= names
     this
   }
-  def name(name: String): TyVariantBuilder = {
-    this.names += name
-    this
-  }
   def code(code: Int): TyVariantBuilder = {
     this.code = Some(code)
     this
   }
   def code(code: Option[Int]): TyVariantBuilder = {
     this.code = code
+    this
+  }
+  def name(name: String): TyVariantBuilder = {
+    this.names += name
     this
   }
   def build(): TyVariantImpl = {
@@ -611,24 +591,12 @@ class TyEnumBuilder() {
     this.variants ++= variants
     this
   }
-  def variant(variant: TyVariant): TyEnumBuilder = {
-    this.variants += variant
-    this
-  }
   def simpleEnum(simpleEnum: Boolean): TyEnumBuilder = {
     this.simpleEnum = Some(simpleEnum)
     this
   }
-  def simpleEnum(simpleEnum: Option[Boolean]): TyEnumBuilder = {
-    this.simpleEnum = simpleEnum
-    this
-  }
   def name(name: String): TyEnumBuilder = {
     this.name = Some(name)
-    this
-  }
-  def name(name: Option[String]): TyEnumBuilder = {
-    this.name = name
     this
   }
   def value(value: TyNode): TyEnumBuilder = {
@@ -639,8 +607,20 @@ class TyEnumBuilder() {
     this.schema = Some(schema)
     this
   }
+  def simpleEnum(simpleEnum: Option[Boolean]): TyEnumBuilder = {
+    this.simpleEnum = simpleEnum
+    this
+  }
+  def name(name: Option[String]): TyEnumBuilder = {
+    this.name = name
+    this
+  }
   def schema(schema: Option[String]): TyEnumBuilder = {
     this.schema = schema
+    this
+  }
+  def variant(variant: TyVariant): TyEnumBuilder = {
+    this.variants += variant
     this
   }
   def build(): TyEnumImpl = {
@@ -693,12 +673,12 @@ class TyIntegerBuilder() {
     this.bitSize = Some(bitSize)
     this
   }
-  def bitSize(bitSize: Option[BitSize]): TyIntegerBuilder = {
-    this.bitSize = bitSize
-    this
-  }
   def sized(sized: Boolean): TyIntegerBuilder = {
     this.sized = Some(sized)
+    this
+  }
+  def bitSize(bitSize: Option[BitSize]): TyIntegerBuilder = {
+    this.bitSize = bitSize
     this
   }
   def sized(sized: Option[Boolean]): TyIntegerBuilder = {

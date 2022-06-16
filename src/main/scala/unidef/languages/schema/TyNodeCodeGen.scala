@@ -118,8 +118,7 @@ object TyNodeCodeGen {
       Type("field")
         .field("name", TyStringImpl())
         .field("value", TyNode, required = true)
-        .field("mutability", TyBooleanImpl())
-        .field("defaultNone", TyBooleanImpl()),
+        .field("mutability", TyBooleanImpl()),
       Type("list")
         .field("content", TyNode, required = true),
       Type("variant")

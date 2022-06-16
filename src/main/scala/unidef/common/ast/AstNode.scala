@@ -61,7 +61,8 @@ def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
 case class AstClassIdent(name: String) extends AstNode
 
 def getField(x: AstValDef): TyField =
-  TyFieldBuilder().name(x.name).value(x.ty).defaultNone(x.value.isDefined).build()
+  TyFieldBuilder().name(x.name).value(x.ty).build()
+
 def getFields(self: AstClassDecl): List[TyField] =
   self.fields.map(getField)
 

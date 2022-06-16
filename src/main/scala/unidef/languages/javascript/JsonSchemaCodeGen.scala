@@ -99,13 +99,13 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
             "maxItems" -> Json.fromInt(x.values.size)
           )
         )
-      case x: TyUnion if x.tys.map(x => x.isInstanceOf[TyStruct]).forall(identity) =>
-        Some(jsonObjectOf("object", "oneOf" -> Json.fromValues(x.tys.map(generateType(_)))))
-      case x: TyUnion if !x.tys.map(x => x.isInstanceOf[TyStruct]).exists(identity) =>
-        Some(Json.obj("type" -> Json.fromValues(x.tys.map(generateType(_)))))
+      case x: TyUnion if x.values.map(x => x.isInstanceOf[TyStruct]).forall(identity) =>
+        Some(jsonObjectOf("object", "oneOf" -> Json.fromValues(x.values.map(generateType(_)))))
+      case x: TyUnion if !x.values.map(x => x.isInstanceOf[TyStruct]).exists(identity) =>
+        Some(Json.obj("type" -> Json.fromValues(x.values.map(generateType(_)))))
 
       case x: TyUnion =>
-        logger.warn("Failed to encode union: " + x.tys)
+        logger.warn("Failed to encode union: " + x.values)
         Some(Json.obj())
       case x: TyList =>
         Some(jsonObjectOf("array", "items" -> generateType(x.content)))
