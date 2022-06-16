@@ -1,13 +1,21 @@
 package unidef.languages.schema
 
-import unidef.common.ty.{TyField, TyFieldBuilder, TyNode}
+import unidef.common.ast.*
+import unidef.common.ty.*
+import unidef.utils.TextTool
 
 import scala.collection.mutable
 
 class Ast(val name: String) {
-  val fields: mutable.ArrayBuffer[TyFieldBuilder] = mutable.ArrayBuffer.empty
+  val fields: mutable.ArrayBuffer[AstValDefBuilder] = mutable.ArrayBuffer.empty
   def field(name: String, ty: TyNode, required: Boolean = false): Ast = {
-    fields += TyFieldBuilder().name(name).value(ty).defaultNone(!required)
+    val builder = AstValDefBuilder().name(TextTool.toCamelCase(name))
+    if (!required) {
+      builder.ty(TyOptionalImpl(ty))
+    } else {
+      builder.ty(ty)
+    }
+    fields += builder
     this
   }
 

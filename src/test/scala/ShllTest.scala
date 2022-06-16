@@ -28,7 +28,6 @@ private object ScalaiTestHelper {
       .head
       .asInstanceOf[AstClassDecl]
       .fields
-      .get
       .head
       .value
       .get

@@ -4,16 +4,23 @@ import io.circe.{Json, JsonNumber, JsonObject}
 import io.circe.syntax.*
 import unidef.common.ty.*
 import unidef.common.ast.*
-import unidef.utils.ParseCodeException
+import unidef.utils.{ParseCodeException, TextTool}
 
 import scala.collection.mutable
 
 class Type(val name: String) {
-  val fields: mutable.ArrayBuffer[TyFieldBuilder] = mutable.ArrayBuffer.empty
+  val fields: mutable.ArrayBuffer[AstValDefBuilder] = mutable.ArrayBuffer.empty
   val equivalent: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
 
   def field(name: String, ty: TyNode, required: Boolean = false): Type = {
-    fields += TyFieldBuilder().name(name).value(ty).defaultNone(!required)
+    val builder = AstValDefBuilder().name(TextTool.toCamelCase(name))
+    if (!required) {
+      builder.ty(TyOptionalImpl(ty))
+    } else {
+      builder.ty(ty)
+    }
+    
+    fields += builder
     this
   }
   def setCommentable(commentable: Boolean): Type = {

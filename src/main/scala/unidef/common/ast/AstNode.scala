@@ -75,10 +75,10 @@ case class AstLambdaDecl(parameters: List[TyField], returnType: TyNode, body: As
 
 case class AstClassIdent(name: String) extends AstNode
 
+def getField(x: AstValDef): TyField =
+  TyFieldBuilder().name(x.name).value(x.ty).defaultNone(x.value.isDefined).build()
 def getFields(self: AstClassDecl): List[TyField] =
-  self.fields
-    .getOrElse(Nil)
-    .map(x => TyFieldBuilder().name(x.name).value(x.ty).defaultNone(x.value.isDefined).build())
+  self.fields.map(getField)
 
 case class AstIdentifier(id: String) extends AstNode
 

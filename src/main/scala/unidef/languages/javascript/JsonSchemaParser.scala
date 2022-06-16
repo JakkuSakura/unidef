@@ -180,26 +180,27 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         } else if (value("anyOf").isDefined) {
           TyUnionImpl(getList(value, "anyOf").toList.map(parse))
         } else if (value("enum").exists(_.isArray)) {
-          TyEnum(
-            getList(value, "enum")
-              .map(_.asString.get)
-              .map(x =>
-                TyVariant(
-                  List(x),
-                  if (options.extendedGrammar && value("number").isDefined)
-                    Some(value("number").get.asNumber.get.toInt.get)
-                  else None
-                )
-              )
-              .toList
-          ).trySetValue(
-            KeyReturn,
-            value("int_enum").map(x =>
-              if (options.extendedGrammar && x.asBoolean.get)
-                TyIntegerImpl(Some(BitSize.B8), Some(true))
-              else TyStringImpl()
-            )
-          )
+          ???
+//          TyEnum(
+//            getList(value, "enum")
+//              .map(_.asString.get)
+//              .map(x =>
+//                TyVariant(
+//                  List(x),
+//                  if (options.extendedGrammar && value("number").isDefined)
+//                    Some(value("number").get.asNumber.get.toInt.get)
+//                  else None
+//                )
+//              )
+//              .toList
+//          ).trySetValue(
+//            KeyReturn,
+//            value("int_enum").map(x =>
+//              if (options.extendedGrammar && x.asBoolean.get)
+//                TyIntegerImpl(Some(BitSize.B8), Some(true))
+//              else TyStringImpl()
+//            )
+//          )
         } else {
           getString(value, "type") match {
             case "object" => parseStruct(value)

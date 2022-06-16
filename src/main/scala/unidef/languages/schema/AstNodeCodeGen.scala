@@ -19,10 +19,10 @@ case class AstNodeCodeGen() {
   val logger: Logger = Logger[this.type]
   val common = JsonSchemaCommon(true)
   val scalaCommon = ScalaCommon()
-  def collectFields(ty: Ast): Set[TyField] = {
+  def collectFields(ty: Ast): Set[AstValDef] = {
     ty.fields.map(_.build()).toSet
   }
-  def collectFields(types: List[Ast]): Set[TyField] = {
+  def collectFields(types: List[Ast]): Set[AstValDef] = {
     types
       .flatMap(collectFields)
       .toSet
@@ -46,7 +46,7 @@ case class AstNodeCodeGen() {
     val traitName = "Has" + TextTool.toPascalCase(field.name.get)
     val scalaCommon = ScalaCommon()
     val valueType =
-      scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
+      scalaCommon.encodeOrThrow(field.value, "Scala")
 
     scalaField(
       traitName,
@@ -64,33 +64,29 @@ case class AstNodeCodeGen() {
         fields
           .map(field =>
             val valueType =
-              scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
+              scalaCommon.encodeOrThrow(field.ty, "Scala")
 
-            AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}", None)
+            AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name)}: ${valueType}", None)
           )
       )
       .derived(
         List(AstClassIdent("AstNode"))
           :::
             fields
-              .map(x => "Has" + TextTool.toPascalCase(x.name.get))
+              .map(x => "Has" + TextTool.toPascalCase(x.name))
               .map(x => AstClassIdent(x))
               .toList
       )
       .classType("trait")
       .build()
   }
-  def tryWrapValue(x: TyField): TyNode = if (x.defaultNone.get) TyOptionalImpl(x.value) else x.value
+
   def generateScalaCaseClass(ty: Ast): AstClassDecl = {
     val fields =
       ty.fields.map(_.build()).toList
     AstClassDeclBuilder()
       .name(toAstClassName(ty.name) + "Impl")
-      .fields(
-        fields.map(x =>
-          AstValDefImpl(TextTool.toCamelCase(x.name.get), tryWrapValue(x), None, None)
-        )
-      )
+      .parameters(fields)
       .derived(
         List(AstClassIdent(toAstClassName(ty.name)))
       )
@@ -101,7 +97,7 @@ case class AstNodeCodeGen() {
     val fields = ty.fields
       .map(x =>
         x.name(TextTool.toCamelCase(x.name.get))
-          .value(tryWrapValue(x.build()))
+          .value(x.value)
           .build()
       )
       .toList
@@ -125,7 +121,7 @@ object AstNodeCodeGen {
       Ast("statement")
         .field("expr", astNode, required = true),
       Ast("if")
-        .field("test", astNode)
+        .field("test", astNode, required = true)
         .field("consequent", astNode)
         .field("alternative", astNode),
       Ast("flow_control")
@@ -187,7 +183,7 @@ object AstNodeCodeGen {
     val fields = parser.collectFields(types)
     println("Parsed fields")
     println(fields.mkString("\n"))
-    val hasTraits = fields.map(parser.generateScalaHasTrait)
+    val hasTraits = fields.map(getField).map(parser.generateScalaHasTrait)
     println("Generated has traits")
     println(hasTraits.mkString("\n"))
     val caseClasses = types.map(parser.generateScalaCaseClass)
@@ -211,6 +207,7 @@ object AstNodeCodeGen {
     writer.println("""
                      |package unidef.common.ast
                      |import unidef.common.ty.*
+                     |import scala.collection.mutable
                      |
                      |""".trim.stripMargin)
     writer.write(scalaCode)

@@ -2,20 +2,31 @@ package unidef.common.ast
 
 import unidef.common.ty.*
 
+import scala.collection.mutable
+
 trait HasSchema() extends AstNode {
   def schema: Option[String]
 }
 trait HasTest() extends AstNode {
-  def test: Option[AstNode]
+  def test: AstNode
 }
 trait HasApplicable() extends AstNode {
   def applicable: AstNode
 }
-trait HasMethods() extends AstNode {
-  def methods: Option[List[AstNode]]
+trait HasFields() extends AstNode {
+  def fields: List[AstValDef]
 }
-trait HasDataframe() extends AstNode {
-  def dataframe: Option[Boolean]
+trait HasClassType() extends AstNode {
+  def classType: Option[String]
+}
+trait HasMethods() extends AstNode {
+  def methods: List[AstNode]
+}
+trait HasDerived() extends AstNode {
+  def derived: List[AstClassIdent]
+}
+trait HasFlow() extends AstNode {
+  def flow: Option[FlowControl]
 }
 trait HasMutability() extends AstNode {
   def mutability: Option[Boolean]
@@ -41,26 +52,20 @@ trait HasLiteralValue() extends AstNode {
 trait HasArguments() extends AstNode {
   def arguments: List[AstNode]
 }
-trait HasClassType() extends AstNode {
-  def classType: Option[String]
+trait HasParameters() extends AstNode {
+  def parameters: List[AstValDef]
 }
-trait HasFields() extends AstNode {
-  def fields: Option[List[AstValDef]]
+trait HasDataframe() extends AstNode {
+  def dataframe: Option[Boolean]
+}
+trait HasNodes() extends AstNode {
+  def nodes: List[AstNode]
 }
 trait HasDecls() extends AstNode {
   def decls: List[AstNode]
 }
-trait HasDerived() extends AstNode {
-  def derived: Option[List[AstClassIdent]]
-}
 trait HasSymbol() extends AstNode {
   def symbol: String
-}
-trait HasParameters() extends AstNode {
-  def parameters: Option[List[AstValDef]]
-}
-trait HasFlow() extends AstNode {
-  def flow: Option[FlowControl]
 }
 trait HasAlternative() extends AstNode {
   def alternative: Option[AstNode]
@@ -77,9 +82,6 @@ trait HasConsequent() extends AstNode {
 trait HasTy() extends AstNode {
   def ty: TyNode
 }
-trait HasNodes() extends AstNode {
-  def nodes: Option[List[AstNode]]
-}
 trait HasExpr() extends AstNode {
   def expr: AstNode
 }
@@ -87,7 +89,7 @@ class AstLiteralNullImpl() extends AstLiteralNull
 class AstAwaitImpl(val expr: AstNode) extends AstAwait
 class AstLiteralNoneImpl() extends AstLiteralNone
 class AstIfImpl(
-    val test: Option[AstNode],
+    val test: AstNode,
     val consequent: Option[AstNode],
     val alternative: Option[AstNode]
 ) extends AstIf
@@ -103,13 +105,13 @@ class AstLiteralStringImpl(val literalString: String) extends AstLiteralString
 class AstLiteralImpl(val literalValue: String, val ty: TyNode) extends AstLiteral
 class AstUnitImpl() extends AstUnit
 class AstUndefinedImpl() extends AstUndefined
-class AstBlockImpl(val nodes: Option[List[AstNode]]) extends AstBlock
+class AstBlockImpl(val nodes: List[AstNode]) extends AstBlock
 class AstClassDeclImpl(
     val name: String,
-    val parameters: Option[List[AstValDef]],
-    val fields: Option[List[AstValDef]],
-    val methods: Option[List[AstNode]],
-    val derived: Option[List[AstClassIdent]],
+    val parameters: List[AstValDef],
+    val fields: List[AstValDef],
+    val methods: List[AstNode],
+    val derived: List[AstClassIdent],
     val schema: Option[String],
     val dataframe: Option[Boolean],
     val classType: Option[String]
@@ -129,7 +131,7 @@ trait AstAwait() extends AstNode with HasExpr {
 }
 trait AstLiteralNone() extends AstNode
 trait AstIf() extends AstNode with HasTest with HasConsequent with HasAlternative {
-  def test: Option[AstNode]
+  def test: AstNode
   def consequent: Option[AstNode]
   def alternative: Option[AstNode]
 }
@@ -163,7 +165,7 @@ trait AstLiteral() extends AstNode with HasLiteralValue with HasTy {
 trait AstUnit() extends AstNode
 trait AstUndefined() extends AstNode
 trait AstBlock() extends AstNode with HasNodes {
-  def nodes: Option[List[AstNode]]
+  def nodes: List[AstNode]
 }
 trait AstClassDecl()
     extends AstNode
@@ -176,10 +178,10 @@ trait AstClassDecl()
     with HasDataframe
     with HasClassType {
   def name: String
-  def parameters: Option[List[AstValDef]]
-  def fields: Option[List[AstValDef]]
-  def methods: Option[List[AstNode]]
-  def derived: Option[List[AstClassIdent]]
+  def parameters: List[AstValDef]
+  def fields: List[AstValDef]
+  def methods: List[AstNode]
+  def derived: List[AstClassIdent]
   def schema: Option[String]
   def dataframe: Option[Boolean]
   def classType: Option[String]
@@ -228,10 +230,6 @@ class AstIfBuilder() {
     this.test = Some(test)
     this
   }
-  def test(test: Option[AstNode]): AstIfBuilder = {
-    this.test = test
-    this
-  }
   def consequent(consequent: AstNode): AstIfBuilder = {
     this.consequent = Some(consequent)
     this
@@ -249,7 +247,7 @@ class AstIfBuilder() {
     this
   }
   def build(): AstIfImpl = {
-    AstIfImpl(test, consequent, alternative)
+    AstIfImpl(test.get, consequent, alternative)
   }
 }
 class AstFlowControlBuilder() {
@@ -312,27 +310,35 @@ class AstSelectBuilder() {
 }
 class AstApplyBuilder() {
   var applicable: Option[AstNode] = None
-  var arguments: Option[List[AstNode]] = None
+  var arguments: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
   def applicable(applicable: AstNode): AstApplyBuilder = {
     this.applicable = Some(applicable)
     this
   }
   def arguments(arguments: List[AstNode]): AstApplyBuilder = {
-    this.arguments = Some(arguments)
+    this.arguments ++= arguments
+    this
+  }
+  def argument(argument: AstNode): AstApplyBuilder = {
+    this.arguments += argument
     this
   }
   def build(): AstApplyImpl = {
-    AstApplyImpl(applicable.get, arguments.get)
+    AstApplyImpl(applicable.get, arguments.toList)
   }
 }
 class AstDeclsBuilder() {
-  var decls: Option[List[AstNode]] = None
+  var decls: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
   def decls(decls: List[AstNode]): AstDeclsBuilder = {
-    this.decls = Some(decls)
+    this.decls ++= decls
+    this
+  }
+  def decl(decl: AstNode): AstDeclsBuilder = {
+    this.decls += decl
     this
   }
   def build(): AstDeclsImpl = {
-    AstDeclsImpl(decls.get)
+    AstDeclsImpl(decls.toList)
   }
 }
 class AstLiteralStringBuilder() {
@@ -371,25 +377,25 @@ class AstUndefinedBuilder() {
   }
 }
 class AstBlockBuilder() {
-  var nodes: Option[List[AstNode]] = None
+  var nodes: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
   def nodes(nodes: List[AstNode]): AstBlockBuilder = {
-    this.nodes = Some(nodes)
+    this.nodes ++= nodes
     this
   }
-  def nodes(nodes: Option[List[AstNode]]): AstBlockBuilder = {
-    this.nodes = nodes
+  def node(node: AstNode): AstBlockBuilder = {
+    this.nodes += node
     this
   }
   def build(): AstBlockImpl = {
-    AstBlockImpl(nodes)
+    AstBlockImpl(nodes.toList)
   }
 }
 class AstClassDeclBuilder() {
   var name: Option[String] = None
-  var parameters: Option[List[AstValDef]] = None
-  var fields: Option[List[AstValDef]] = None
-  var methods: Option[List[AstNode]] = None
-  var derived: Option[List[AstClassIdent]] = None
+  var parameters: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
+  var fields: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
+  var methods: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
+  var derived: mutable.ArrayBuffer[AstClassIdent] = mutable.ArrayBuffer.empty
   var schema: Option[String] = None
   var dataframe: Option[Boolean] = None
   var classType: Option[String] = None
@@ -398,35 +404,35 @@ class AstClassDeclBuilder() {
     this
   }
   def parameters(parameters: List[AstValDef]): AstClassDeclBuilder = {
-    this.parameters = Some(parameters)
+    this.parameters ++= parameters
     this
   }
-  def parameters(parameters: Option[List[AstValDef]]): AstClassDeclBuilder = {
-    this.parameters = parameters
+  def parameter(parameter: AstValDef): AstClassDeclBuilder = {
+    this.parameters += parameter
     this
   }
   def fields(fields: List[AstValDef]): AstClassDeclBuilder = {
-    this.fields = Some(fields)
+    this.fields ++= fields
     this
   }
-  def fields(fields: Option[List[AstValDef]]): AstClassDeclBuilder = {
-    this.fields = fields
+  def field(field: AstValDef): AstClassDeclBuilder = {
+    this.fields += field
     this
   }
   def methods(methods: List[AstNode]): AstClassDeclBuilder = {
-    this.methods = Some(methods)
+    this.methods ++= methods
     this
   }
-  def methods(methods: Option[List[AstNode]]): AstClassDeclBuilder = {
-    this.methods = methods
+  def method(method: AstNode): AstClassDeclBuilder = {
+    this.methods += method
     this
   }
   def derived(derived: List[AstClassIdent]): AstClassDeclBuilder = {
-    this.derived = Some(derived)
+    this.derived ++= derived
     this
   }
-  def derived(derived: Option[List[AstClassIdent]]): AstClassDeclBuilder = {
-    this.derived = derived
+  def derived(derived: AstClassIdent): AstClassDeclBuilder = {
+    this.derived += derived
     this
   }
   def schema(schema: String): AstClassDeclBuilder = {
@@ -454,7 +460,16 @@ class AstClassDeclBuilder() {
     this
   }
   def build(): AstClassDeclImpl = {
-    AstClassDeclImpl(name.get, parameters, fields, methods, derived, schema, dataframe, classType)
+    AstClassDeclImpl(
+      name.get,
+      parameters.toList,
+      fields.toList,
+      methods.toList,
+      derived.toList,
+      schema,
+      dataframe,
+      classType
+    )
   }
 }
 class AstValDefBuilder() {

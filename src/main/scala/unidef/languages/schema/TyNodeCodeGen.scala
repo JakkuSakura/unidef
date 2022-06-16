@@ -5,7 +5,7 @@ import io.circe.yaml.parser
 import io.circe.{Json, JsonNumber, JsonObject}
 import unidef.common.{NoopNamingConvention, ast}
 import unidef.languages.javascript.{JsonSchemaCommon, JsonSchemaParser}
-import unidef.languages.scala.{ScalaCodeGen, ScalaCommon}
+import unidef.languages.scala.*
 import unidef.utils.FileUtils.readFile
 import unidef.utils.{ParseCodeException, TextTool, TypeDecodeException, TypeEncodeException}
 import unidef.common.ty.*
@@ -16,12 +16,11 @@ import scala.collection.mutable
 
 case class TyNodeCodeGen() {
   val logger: Logger = Logger[this.type]
-  val common = JsonSchemaCommon(true)
 
-  def collectFields(ty: Type): Set[TyField] = {
+  def collectFields(ty: Type): Set[AstValDef] = {
     ty.fields.map(_.build()).toSet
   }
-  def collectFields(types: List[Type]): Set[TyField] = {
+  def collectFields(types: List[Type]): Set[AstValDef] = {
     types.flatMap(collectFields).toSet
   }
   def scalaField(
@@ -39,11 +38,9 @@ case class TyNodeCodeGen() {
       .classType(classType)
       .build()
   }
-  def tryWrapValue(x: TyField): TyNode =
-    if (x.defaultNone.get) TyOptionalImpl(x.value) else x.value
-
-  def generateScalaHasTrait(field: TyField): AstClassDecl = {
-    val traitName = "Has" + TextTool.toPascalCase(field.name.get)
+  def tryWrapValue(x: AstValDef): TyNode = x.ty
+  def generateScalaHasTrait(field: AstValDef): AstClassDecl = {
+    val traitName = "Has" + TextTool.toPascalCase(field.name)
     val scalaCommon = ScalaCommon()
     val valueType =
       scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
@@ -51,7 +48,7 @@ case class TyNodeCodeGen() {
     scalaField(
       traitName,
       "TyNode",
-      List(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}"),
+      List(s"def ${TextTool.toCamelCase(field.name)}: ${valueType}"),
       Some("trait")
     )
   }
@@ -66,7 +63,7 @@ case class TyNodeCodeGen() {
           .map(field =>
             val valueType =
               scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
-            AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name.get)}: ${valueType}", None)
+            AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name)}: ${valueType}", None)
           )
           .toList
       )
@@ -82,7 +79,7 @@ case class TyNodeCodeGen() {
               .toList
             :::
             fields
-              .map(x => x.name.get -> x.value)
+              .map(x => x.name -> x.value)
               .map((k, v) => "Has" + TextTool.toPascalCase(k))
               .map(x => AstClassIdent(x))
               .toList
@@ -91,14 +88,8 @@ case class TyNodeCodeGen() {
       .build()
   }
   def generateScalaBuilder(ty: Type): AstClassDecl = {
-    val fields = ty.fields
-      .map(x =>
-        x.name(TextTool.toCamelCase(x.name.get))
-          .value(tryWrapValue(x.build()))
-          .build()
-      )
-      .toList
-    val codegen = ScalaCodeGen(NoopNamingConvention)
+    val fields = ty.fields.map(_.build()).toList
+    val codegen = ScalaCodeGen(ScalaNamingConvention)
     codegen.generateBuilder(
       "Ty" + TextTool.toPascalCase(ty.name) + "Builder",
       "Ty" + TextTool.toPascalCase(ty.name) + "Impl",
@@ -106,15 +97,15 @@ case class TyNodeCodeGen() {
     )
   }
   def generateScalaCaseClass(ty: Type): AstClassDecl = {
-    val fields = ty.fields.map(x => x.name(TextTool.toCamelCase(x.name.get)).build())
+    val fields = ty.fields.map(_.build()).toList
 
     AstClassDeclBuilder()
       .name(
         "Ty" + TextTool.toPascalCase(ty.name) + "Impl"
       )
-      .fields(
+      .parameters(
         fields
-          .map(x => AstValDefImpl(x.name.get, tryWrapValue(x), None, None))
+          .map(x => AstValDefImpl(x.name, tryWrapValue(x), None, None))
           .toList // TODO: overwrite
       )
       .derived(
@@ -197,7 +188,7 @@ object TyNodeCodeGen {
       Type("inet"),
       Type("uuid"),
       Type("union")
-        .field("types", TyListImpl(TyNode), required = true),
+        .field("tys", TyListImpl(TyNode), required = true),
       Type("date_time")
         .field("timezone", TyNamedImpl("java.util.TimeZone")),
       Type("time_stamp")
@@ -249,6 +240,7 @@ object TyNodeCodeGen {
     val writer = new PrintWriter("target/TyNodeGen.scala")
     writer.println("""
                      |package unidef.common.ty
+                     |import scala.collection.mutable
                      |
                      |""".trim.stripMargin)
     writer.write(scalaCode)
