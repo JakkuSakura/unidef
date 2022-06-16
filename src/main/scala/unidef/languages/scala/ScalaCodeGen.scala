@@ -145,14 +145,14 @@ class ScalaCodeGen(naming: NamingConvention) {
       x match {
         case x: TyOptional => x
         case x: TyList =>
-          val content = common.encodeOrThrow(x.content, "scala")
+          val content = common.encodeOrThrow(x.value, "scala")
           TyNamedImpl(s"mutable.ArrayBuffer[${content}]")
         case x => TyOptionalImpl(x)
       }
     }
     def unwrapOptional(x: TyNode): TyNode = {
       x match {
-        case x: TyOptional => x.content
+        case x: TyOptional => x.value
         case x => x
       }
     }
@@ -218,7 +218,7 @@ class ScalaCodeGen(naming: NamingConvention) {
               .returnType(TyNamedImpl(builderName))
               .parameters(
                 List(
-                  AstValDefBuilder().name(fieldNameWithoutS).ty(list.content).build()
+                  AstValDefBuilder().name(fieldNameWithoutS).ty(list.value).build()
                 )
               )
               .body(

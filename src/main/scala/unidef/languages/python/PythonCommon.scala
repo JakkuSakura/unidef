@@ -11,7 +11,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
     node match {
       // handle unknown case
       case x: TyOptional =>
-        convertType(x.content, importManager)
+        convertType(x.value, importManager)
           .map(s =>
             importManager.foreach(_ += AstImport("typing.Optional"))
             s"Optional[$s]"
@@ -43,11 +43,11 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case l: TyList =>
         importManager.foreach(_ += AstImport("typing.Dict"))
         // handle unknown case
-        convertType(l.content, importManager).map(x => s"List[${x}]")
+        convertType(l.value, importManager).map(x => s"List[${x}]")
       case s: TySet =>
         importManager.foreach(_ += AstImport("typing.Set"))
         // handle unknown case
-        convertType(s.content, importManager).map(x => s"Set[${x}]")
+        convertType(s.value, importManager).map(x => s"Set[${x}]")
       case _: TyJsonAny =>
         importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")

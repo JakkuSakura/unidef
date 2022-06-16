@@ -120,7 +120,7 @@ object TyNodeCodeGen {
         .field("value", TyNode, required = true)
         .field("mutability", TyBooleanImpl()),
       Type("list")
-        .field("content", TyNode, required = true),
+        .field("value", TyNode, required = true),
       Type("variant")
         .field("names", TyListImpl(TyStringImpl()), required = true)
         .field("code", TyIntegerBuilder().build()),
@@ -133,7 +133,7 @@ object TyNodeCodeGen {
       Type("tuple")
         .field("values", TyListImpl(TyNode), required = true),
       Type("optional")
-        .field("content", TyNode, required = true),
+        .field("value", TyNode, required = true),
       Type("result")
         .field("ok", TyNode, required = true)
         .field("err", TyNode, required = true),
@@ -166,9 +166,9 @@ object TyNodeCodeGen {
         .field("key", TyNode, required = true)
         .field("value", TyNode, required = true),
       Type("set")
-        .field("content", TyNode, required = true),
+        .field("value", TyNode, required = true),
       Type("set")
-        .field("content", TyNode, required = true)
+        .field("value", TyNode, required = true)
         .is(TyIntegerImpl(Some(BitSize.B8), Some(false))),
       Type("byte_array")
         .is(TyListImpl(TyIntegerImpl(Some(BitSize.B8), Some(false)))),

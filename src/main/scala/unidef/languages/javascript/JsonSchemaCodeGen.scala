@@ -32,7 +32,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
     struct0.fields.get.foreach {
       case f: TyField if f.value.isInstanceOf[TyList] =>
         headers += f.name.get
-        body_row += f.value.asInstanceOf[TyList].content
+        body_row += f.value.asInstanceOf[TyList].value
       case x: TyField =>
         fields += x
     }
@@ -108,7 +108,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         logger.warn("Failed to encode union: " + x.values)
         Some(Json.obj())
       case x: TyList =>
-        Some(jsonObjectOf("array", "items" -> generateType(x.content)))
+        Some(jsonObjectOf("array", "items" -> generateType(x.value)))
 
       case x: TyEnum if x.name.isDefined =>
         Some(
@@ -150,7 +150,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         others += "properties" -> Json.fromFields(
           x.fields.get.map(f =>
             naming(f.name.get) -> generateType(f.value match {
-              case opt: TyOptional => opt.content
+              case opt: TyOptional => opt.value
               case x => x
             })
           )

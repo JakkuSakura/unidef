@@ -40,7 +40,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   }
 
   override def encode(ty: TyNode): Option[String] = ty match {
-    case t: TyOptional => encode(t.content).map(s => s"$s = NULL")
+    case t: TyOptional => encode(t.value).map(s => s"$s = NULL")
     case t: TyReal => Some(convertReal(t))
     case t: TyOid => Some("oid")
     case t: TyInteger => Some(convertInt(t))
@@ -64,7 +64,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     case _: TyInet => Some("inet")
     case _: TyUuid => Some("uuid")
     case _: TyRecord => Some("record")
-    case t: TyList => encode(t.content).map(x => s"${x}[]")
+    case t: TyList => encode(t.value).map(x => s"${x}[]")
     case _ => None
   }
 
@@ -108,7 +108,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
         attributes ++= " NULL" // optional
         SqlField(
           naming.toFieldName(node.name),
-          convertType(x.content),
+          convertType(x.value),
           attributes.toString
         )
       case _ =>
