@@ -33,12 +33,11 @@ class ScalaCodeGen(naming: NamingConvention) {
           .mkString(", ") + ")"
 
     val body = method.body.map(_.asInstanceOf[AstRawCode].code)
-    val override_a = if (true) { // FIXME: method.getValue(KeyOverride).getOrElse(false)) {
+    val override_a = if (method.overwrite.getOrElse(false)) {
       "override "
     } else {
       ""
     }
-
     val ret = common.encode(method.returnType)
     renderMethod(override_a, name, params, ret, body)
   }
@@ -196,7 +195,7 @@ class ScalaCodeGen(naming: NamingConvention) {
               .returnType(TyNamedImpl(builderName))
               .parameters(
                 List(
-                  AstValDefBuilder().name(fieldName).ty(unwrapOptional(o)).build()
+                  AstValDefBuilder().name(fieldName).ty(o).build()
                 )
               )
               .body(

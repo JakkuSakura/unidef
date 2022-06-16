@@ -178,6 +178,7 @@ object AstNodeCodeGen {
         .field("body", astNode)
         .field("schema", TyStringImpl())
         .field("language", TyStringImpl())
+        .field("overwrite", TyBooleanImpl())
     ).map(x => x.name -> x).toMap
   }
 

@@ -36,8 +36,7 @@ class SqlCodeGen(
 
     val params = func.parameters.map(_.name).map(naming.toFunctionParameterName)
     val db_func_name = naming.toFunctionName(func.name)
-//   FIXME: val schema = func.getValue(KeySchema).fold("")(x => s"$x.")
-    val schema = None.fold("")(x => s"$x.")
+    val schema = func.schema.fold("")(x => s"$x.")
     val returnType = func.returnType
     val is_table = returnType match {
       case _: TyRecord | _: TyStruct =>
@@ -101,8 +100,7 @@ class SqlCodeGen(
         .get
 
     val body = node.body.get.asInstanceOf[AstRawCode].code
-//   FIXME: val schema = node.getValue(KeySchema).fold("")(x => s"$x.")
-    val schema = ""
+    val schema = node.schema.fold("")(x => s"$x.")
     var returnTable: List[SqlField] = Nil
     var returnType = ""
     node.returnType match {

@@ -247,8 +247,8 @@ class JSqlParser() {
           TyStructBuilder().fields(Nil).build()
       )
       .body(AstRawCodeImpl(body, Some(language)))
-    // FIXME: .trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
-
+      .schema(Option(schema).filterNot(_.isEmpty))
+    
     //    if (outputOnly.isEmpty)
     //      func.records(true)
     logger.debug(
