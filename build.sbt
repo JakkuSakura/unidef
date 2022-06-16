@@ -8,17 +8,15 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 resolvers += "jitpack" at "https://jitpack.io"
-publishTo := None
 
 releaseProcess := Seq[ReleaseStep](
-  inquireVersions,                        // : ReleaseStep
-  runClean,                               // : ReleaseStep
-  setReleaseVersion,                      // : ReleaseStep
-  commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
-  tagRelease,                             // : ReleaseStep
-  setNextVersion,                         // : ReleaseStep
-  commitNextVersion                       // : ReleaseStep
-
+  inquireVersions,
+  runClean,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  setNextVersion,
+  commitNextVersion
 )
 lazy val root = (project in file("."))
   .enablePlugins(NativeImagePlugin)
