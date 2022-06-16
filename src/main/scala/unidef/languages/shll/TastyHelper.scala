@@ -1,8 +1,7 @@
 package unidef.languages.shll
 
 import com.typesafe.scalalogging.Logger
-import unidef.common.ast.{AstNode, AstProgram}
-
+import unidef.common.ast.*
 
 import scala.collection.mutable
 import scala.quoted.*
@@ -11,7 +10,7 @@ import scala.tasty.inspector.*
 class TastyHelper extends Inspector {
   val stmts = mutable.ArrayBuffer[AstNode]()
   def getAstNode: AstProgram = {
-    val ast = AstProgram(stmts.toList)
+    val ast = AstProgramImpl(stmts.toList)
     stmts.clear()
     ast
   }
@@ -31,7 +30,6 @@ def liftImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): AstNode = {
   val value = lifter.liftTree(tree.asInstanceOf[lifter.quotes.reflect.Tree])
   value
 }
-
 
 def stageImpl[T](x: Expr[T])(using quotes: Quotes, t: quoted.Type[T]): Expr[String] = {
   import quotes.reflect.*

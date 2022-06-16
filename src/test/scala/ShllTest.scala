@@ -24,7 +24,7 @@ private object ScalaiTestHelper {
         |""".stripMargin)
     val extracted = lifted
       .asInstanceOf[AstProgram]
-      .statements
+      .stmts
       .head
       .asInstanceOf[AstClassDecl]
       .fields

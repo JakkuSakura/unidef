@@ -63,13 +63,6 @@ case class AstClassIdent(name: String) extends AstNode
 def getField(x: AstValDef): TyField =
   TyFieldBuilder().name(x.name).value(x.ty).build()
 
-def getFields(self: AstClassDecl): List[TyField] =
-  self.fields.map(getField)
-
-case class AstIdentifier(id: String) extends AstNode
-
-case class AstDirective(directive: String) extends AstNode
-
 sealed trait BinaryOperator
 object BinaryOperator {
   case object Plus extends BinaryOperator
@@ -77,25 +70,3 @@ object BinaryOperator {
   case object Multiply extends BinaryOperator
   case object Divide extends BinaryOperator
 }
-
-case class AstBinaryOperator(left: AstNode, right: AstNode, op: BinaryOperator) extends AstNode {
-  def toFunctionApply: AstFunctionApply =
-    AstFunctionApply(AstFunctionIdent(op.toString), List(left, right), Map())
-
-}
-
-case class AstFunctionIdent(name: String) extends AstNode
-
-case class AstFunctionApply(
-    func: AstFunctionIdent,
-    args: List[AstNode],
-    kwArgs: Map[String, AstNode],
-    applyArgs: List[AstNode] = Nil,
-    applyKwArgs: List[AstNode] = Nil
-) extends AstNode
-
-case class AstAnnotation(value: AstNode) extends AstNode
-
-case class AstComment(comment: String) extends AstNode
-
-case class AstProgram(statements: List[AstNode]) extends AstNode

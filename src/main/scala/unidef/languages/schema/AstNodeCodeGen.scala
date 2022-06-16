@@ -148,9 +148,32 @@ object AstNodeCodeGen {
       Ast("raw_code")
         .field("code", TyStringImpl(), required = true)
         .field("language", TyStringImpl()),
+      Ast("parameter_list")
+        .field(
+          "parameter_list",
+          TyListImpl(TyNamedImpl("AstValDef")),
+          required = true
+        ) // AstParameter later
+      ,
+      Ast("parameter_lists")
+        .field("parameter_lists", TyListImpl(TyNamedImpl("AstParameterList")), required = true),
+      Ast("argument")
+        .field("name", TyStringImpl(), required = true)
+        .field("value", astNode),
+      Ast("argument_list")
+        .field(
+          "argument_list",
+          TyListImpl(TyNamedImpl("AstArgument")),
+          required = true
+        ),
+      Ast("argument_lists")
+        .field("argument_lists", TyListImpl(TyNamedImpl("AstArgumentList")), required = true),
       Ast("apply")
         .field("applicable", astNode, required = true)
         .field("arguments", TyListImpl(astNode), required = true),
+      Ast("apply_lists")
+        .field("applicable", astNode, required = true)
+        .field("arguments_lists", TyNamedImpl("AstArgumentLists"), required = true),
       Ast("val_def")
         .field("name", TyStringImpl(), required = true)
         .field("ty", TyNode, required = true)
@@ -172,7 +195,8 @@ object AstNodeCodeGen {
         .field("derived", TyListImpl(TyNamedImpl("AstClassIdent")), required = true)
         .field("schema", TyStringImpl())
         .field("dataframe", TyBooleanImpl())
-        .field("class_type", TyStringImpl()),
+        .field("class_type", TyStringImpl())
+        .field("access", TyNamedImpl("AccessModifier")),
       Ast("function_decl")
         .field("name", TyStringImpl(), required = true)
         .field("parameters", TyListImpl(TyNamedImpl("AstValDef")), required = true)
@@ -183,7 +207,15 @@ object AstNodeCodeGen {
         .field("body", astNode)
         .field("schema", TyStringImpl())
         .field("language", TyStringImpl())
-        .field("overwrite", TyBooleanImpl())
+        .field("overwrite", TyBooleanImpl()),
+      Ast("program")
+        .field("stmts", TyListImpl(astNode), required = true),
+      Ast("class_identifier")
+        .field("class_id", TyStringImpl(), required = true),
+      Ast("variable_identifier")
+        .field("variable_identifier", TyStringImpl(), required = true),
+      Ast("directive")
+        .field("directive", TyStringImpl(), required = true)
     ).map(x => x.name -> x).toMap
   }
 
