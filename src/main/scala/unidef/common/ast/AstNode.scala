@@ -52,26 +52,12 @@ object AccessModifier extends Keyword {
 def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
   TyStructBuilder()
     .name(func.name)
-    .fields(func.parameters)
+    .fields(func.parameters.map(getField))
     .dataframe(func.dataframe)
     .comment(func.comment)
     .build()
 
 }
-case class AstFunctionDecl(
-    name: String,
-    parameters: List[TyField],
-    returnType: TyNode,
-    dataframe: Option[Boolean] = None,
-    var comment: Option[String] = None
-) extends Extendable
-    with AstNode
-    with HasBody
-    with HasDataframe {}
-
-case class AstLambdaDecl(parameters: List[TyField], returnType: TyNode, body: AstNode)
-    extends Extendable
-    with AstNode
 
 case class AstClassIdent(name: String) extends AstNode
 
@@ -123,14 +109,6 @@ case object AstAnnotations extends AstNode with Keyword {
 case class AstComment(comment: String) extends AstNode
 
 case class AstProgram(statements: List[AstNode]) extends AstNode
-
-trait HasBody extends Extendable {
-  def getBody: Option[AstNode] = getValue(KeyBody)
-}
-
-case object KeyBody extends Keyword {
-  override type V = AstNode
-}
 
 case object KeyLanguage extends KeywordString
 case object KeyParameters extends KeywordOnly

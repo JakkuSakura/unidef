@@ -101,7 +101,7 @@ class DruidSqlParser {
 
   private def parseParam(
       arg: SQLParameter
-  )(implicit resolver: TypeDecoder[String]): (ParameterType, TyField) = {
+  )(implicit resolver: TypeDecoder[String]): (ParameterType, AstValDef) = {
     logger.debug("parseParam: " + arg)
 
     val name = arg.getName.getSimpleName.replaceAll("\"", "")
@@ -110,9 +110,9 @@ class DruidSqlParser {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (arg.getParamType, TyFieldBuilder().name(name).value(TyOptionalImpl(ty)).build())
+      (arg.getParamType, AstValDefBuilder().name(name).ty(TyOptionalImpl(ty)).build())
     else
-      (arg.getParamType, TyFieldBuilder().name(name).value(ty).build())
+      (arg.getParamType, AstValDefBuilder().name(name).ty(ty).build())
   }
 
   def parseCreateFunction(
@@ -140,26 +140,29 @@ class DruidSqlParser {
         )
     }
 
-    val func = AstFunctionDecl(
-      name,
-      inputs,
-      if (outputs.nonEmpty)
-        TyStructBuilder()
-          .fields(outputs.map(x => TyFieldBuilder().name(x.name).value(x.ty).build()).toList)
-          .build()
-      else if (outputOnly.isDefined)
-        outputOnly.get
-      else
-        TyStructBuilder().fields(Nil).build()
-    ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
-    func.setValue(KeyBody, AstRawCodeImpl(body.toString, Some(language)))
-    if (outputOnly.isEmpty)
-      func.setValue(KeyRecords, true)
+    val func = AstFunctionDeclBuilder()
+      .name(name)
+      .parameters(inputs)
+      .returnType(
+        if (outputs.nonEmpty)
+          TyStructBuilder()
+            .fields(outputs.map(x => TyFieldBuilder().name(x.name).value(x.ty).build()).toList)
+            .build()
+        else if (outputOnly.isDefined)
+          outputOnly.get
+        else
+          TyStructBuilder().fields(Nil).build()
+      )
+      .body(AstRawCodeImpl(body.toString, Some(language)))
+    // FIXME: .trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
+
+//    if (outputOnly.isEmpty)
+//      func.records(true)
     logger.debug(
       s"Parsed function: ${func.name}(${func.parameters})->${func.returnType}"
     )
 
-    func
+    func.build()
   }
   def parseCreateTable(
       tbl: SQLCreateTableStatement

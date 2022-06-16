@@ -68,13 +68,13 @@ class LifterImpl(using val quotes: Quotes) {
         AstRawCodeImpl(x.show, None)
     }
   }
-  def liftParameter(tree: ValDef): TyField = {
+  def liftParameter(tree: ValDef): AstValDef = {
     logger.debug(tree.toString)
 
     tree match {
       case ValDef(name, tpt, rhs) =>
         // TODO: process tpt and rhs
-        TyFieldBuilder().name(name).value(TyNamedImpl(tpt.toString)).build()
+        AstValDefBuilder().name(name).ty(TyNamedImpl(tpt.toString)).build()
     }
   }
   // TODO support currying
@@ -103,8 +103,12 @@ class LifterImpl(using val quotes: Quotes) {
     // TODO
     val retType = liftType(ty)
     val body = term.map(liftStmt)
-    AstFunctionDecl(name, paramss.map(liftParameter), retType)
-      .trySetValue(KeyBody, body)
+    AstFunctionDeclBuilder()
+      .name(name)
+      .parameters(paramss.map(liftParameter))
+      .returnType(retType)
+      .body(body)
+      .build()
   }
   def liftDecl(tree: Statement): Option[AstNode] = {
     logger.debug(tree.show(using Printer.TreeStructure))
@@ -112,7 +116,7 @@ class LifterImpl(using val quotes: Quotes) {
       case DefDef(name, param, ty, term) =>
         Some(liftMethodDef(name, param, ty, term))
       case ValDef(name, ty, value) =>
-        Some(AstValDefImpl(name, liftType(ty), value.map(liftTerm), None))
+        Some(AstValDefBuilder().name(name).ty(liftType(ty)).value(value.map(liftTerm)).build())
       case t @ TypeDef(name, ty) =>
         None
     }

@@ -123,7 +123,7 @@ class JSqlParser() {
 
   private def parseParam(
       args: Seq[String]
-  )(implicit resolver: TypeDecoder[String]): (Boolean, TyField) = {
+  )(implicit resolver: TypeDecoder[String]): (Boolean, AstValDef) = {
     logger.info("parseParam: " + args.mkString(", "))
     var nameCursor = 0
     var typeCursor = 1
@@ -152,9 +152,9 @@ class JSqlParser() {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (input, TyFieldBuilder().name(name).value(TyOptionalImpl(ty)).build())
+      (input, AstValDefBuilder().name(name).ty(TyOptionalImpl(ty)).build())
     else
-      (input, TyFieldBuilder().name(name).value(ty).build())
+      (input, AstValDefBuilder().name(name).ty(ty).build())
 
   }
 
@@ -179,8 +179,8 @@ class JSqlParser() {
     val params = parts.slice(first_left_paren + 1, first_right_paren)
 
     var cursor = 0
-    val inputs = ArrayBuffer[TyField]()
-    val outputs = ArrayBuffer[TyField]()
+    val inputs = ArrayBuffer[AstValDef]()
+    val outputs = ArrayBuffer[AstValDef]()
     var outputOnly: Option[TyNode] = None
     for (i <- 0 to params.length) {
       if (i == params.length || params(i) == ",") {
@@ -233,23 +233,29 @@ class JSqlParser() {
 
     }
 
-    val func = AstFunctionDecl(
-      name,
-      inputs.toList,
-      if (outputs.nonEmpty)
-        TyStructBuilder().fields(outputs.toList).build()
-      else if (outputOnly.isDefined)
-        outputOnly.get
-      else
-        TyStructBuilder().fields(Nil).build()
-    ).trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
-    func.setValue(KeyBody, AstRawCodeImpl(body, Some(language)))
-    if (outputOnly.isEmpty)
-      func.setValue(KeyRecords, true)
+    val func = AstFunctionDeclBuilder()
+      .name(name)
+      .parameters(inputs.toList)
+      .returnType(
+        if (outputs.nonEmpty)
+          TyStructBuilder()
+            .fields(outputs.map(x => TyFieldBuilder().name(x.name).value(x.ty).build()).toList)
+            .build()
+        else if (outputOnly.isDefined)
+          outputOnly.get
+        else
+          TyStructBuilder().fields(Nil).build()
+      )
+      .body(AstRawCodeImpl(body, Some(language)))
+    // FIXME: .trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
+
+    //    if (outputOnly.isEmpty)
+    //      func.records(true)
     logger.debug(
       s"Parsed function: ${func.name}(${func.parameters})->${func.returnType}"
     )
-    Some((func, end))
+
+    Some((func.build(), end))
   }
   def parseCreateTable(
       tbl: CreateTable

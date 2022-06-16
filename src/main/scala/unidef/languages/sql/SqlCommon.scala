@@ -1,10 +1,12 @@
 package unidef.languages.sql
 
 import com.typesafe.scalalogging.Logger
+import unidef.common.ast.AstValDef
 import unidef.common.{KeywordBoolean, KeywordString, NamingConvention}
 import unidef.common.ty.*
 import unidef.languages.sql.{KeyNullable, KeyPrimary}
 import unidef.utils.TypeEncodeException
+
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 object SqlCommon {
@@ -101,6 +103,19 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       case "record" => Some(TyRecordImpl())
       case _ => None
     }
+  }
+  def convertToSqlField(node: AstValDef): SqlField = {
+    val attributes = new mutable.StringBuilder()
+    //    if (node.getValue(KeyPrimary).contains(true))
+    //      attributes ++= " PRIMARY KEY"
+    //    if (!node.getValue(KeyNullable).contains(true))
+    //      attributes ++= " NOT NULL"
+    // TODO auto incr
+    SqlField(
+      naming.toFieldName(node.name),
+      convertType(node.ty),
+      attributes.toString
+    )
   }
 
   def convertToSqlField(node: TyField): SqlField = {

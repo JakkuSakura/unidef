@@ -7,7 +7,6 @@ import unidef.common.ast.{
   AstFunctionDecl,
   AstLiteralString,
   AstRawCode,
-  KeyBody,
   KeyLanguage,
   KeyParameters,
   KeyReturn
@@ -25,7 +24,7 @@ class JsonSchemaParserOption(
 class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption()) {
   val jsonSchemaCommon: JsonSchemaCommon = JsonSchemaCommon(options.extendedGrammar)
 
-  def parseFunction(content: JsonObject): TyNode = {
+  def parseFunction(content: JsonObject): AstFunctionDecl = {
     val name = getString(content, "name")
     val parameters = content("parameters")
       .map(_ => getList(content, "parameters"))
@@ -46,19 +45,23 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
       )
       .getOrElse(TyUnitImpl())
 
-    val node =
-      AstFunctionDecl(name, parameters.toList, ret)
+    val builder =
+      AstFunctionDeclBuilder()
+        .name(name)
+        .parameters(
+          parameters
+            .map(x => AstValDefBuilder().name(x.name.get).ty(x.value).build())
+            .toList
+        )
+        .returnType(ret)
 
     if (content("language").isDefined && content("language").isDefined) {
       val language = getString(content, "language")
       val body = getString(content, "body")
-      node.setValue(KeyBody, AstRawCodeImpl(body, Some(language)))
+      builder.body(AstRawCodeImpl(body, Some(language)))
     }
 
-    collectExtKeys(content, extKeysForFuncDecl.toList)
-      .foreach(node.setValue)
-
-    node
+    builder.build()
   }
 
   def parseStruct(value: JsonObject): TyStruct = {
@@ -90,7 +93,6 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
     mutable
       .HashSet[Keyword](
         KeyType,
-        KeyBody,
         KeyLanguage,
         KeyParameters,
         KeyReturn
@@ -209,7 +211,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
             case "array" =>
               val items = getObject(value, "items")
               TyListImpl(parse(Json.fromJsonObject(items)))
-            case "function" if options.extendedGrammar => parseFunction(value)
+//            case "function" if options.extendedGrammar => parseFunction(value)
             case ty => jsonSchemaCommon.decodeOrThrow(ty)
           }
 

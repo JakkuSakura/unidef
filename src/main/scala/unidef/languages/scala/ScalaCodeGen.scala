@@ -29,11 +29,11 @@ class ScalaCodeGen(naming: NamingConvention) {
         ""
       else
         "(" + method.parameters
-          .map(x => x.name.get + ": " + common.encodeOrThrow(x.value, "param"))
+          .map(x => x.name + ": " + common.encodeOrThrow(x.ty, "param"))
           .mkString(", ") + ")"
 
-    val body = method.getBody.map(_.asInstanceOf[AstRawCode].code)
-    val override_a = if (method.getValue(KeyOverride).getOrElse(false)) {
+    val body = method.body.map(_.asInstanceOf[AstRawCode].code)
+    val override_a = if (true) { // FIXME: method.getValue(KeyOverride).getOrElse(false)) {
       "override "
     } else {
       ""
@@ -129,14 +129,13 @@ class ScalaCodeGen(naming: NamingConvention) {
         case _ => ".get"
       })
     }
-    val buildMethod = AstFunctionDecl(
-      name = "build",
-      returnType = TyNamedImpl(target),
-      parameters = Nil
-    ).setValue(
-      KeyBody,
-      AstRawCodeImpl(s"$target(${fields.map(expandField).mkString(", ")})", None)
-    )
+    val buildMethod = AstFunctionDeclBuilder()
+      .name("build")
+      .returnType(TyNamedImpl(target))
+      .body(
+        AstRawCodeImpl(s"$target(${fields.map(expandField).mkString(", ")})", None)
+      )
+      .build()
     def getDefaultValue(x: TyNode): String = {
       x match {
         case _: TyList => "mutable.ArrayBuffer.empty"
@@ -160,32 +159,29 @@ class ScalaCodeGen(naming: NamingConvention) {
     }
     def setFieldUnwrapped(x: AstValDef): List[AstFunctionDecl] = {
       val fieldName = naming.toFieldName(x.name)
+      val builder = AstFunctionDeclBuilder()
+        .name(fieldName)
+        .returnType(TyNamedImpl(builderName))
+        .parameters(
+          List(
+            AstValDefBuilder().name(fieldName).ty(unwrapOptional(x.ty)).build()
+          )
+        )
+
       (x.ty match {
         case list: TyList =>
           List(
-            AstFunctionDecl(
-              name = fieldName,
-              returnType = TyNamedImpl(builderName),
-              parameters = List(
-                TyFieldBuilder().name(fieldName).value(unwrapOptional(x.ty)).build()
-              )
-            ).setValue(
-              KeyBody,
-              AstRawCodeImpl(s"this.${fieldName} ++= ${fieldName}\nthis", None)
-            )
+            builder
+              .body(AstRawCodeImpl(s"this.${fieldName} ++= ${fieldName}\nthis", None))
+              .build()
           )
         case _ =>
           List(
-            AstFunctionDecl(
-              name = fieldName,
-              returnType = TyNamedImpl(builderName),
-              parameters = List(
-                TyFieldBuilder().name(fieldName).value(unwrapOptional(x.ty)).build()
+            builder
+              .body(
+                AstRawCodeImpl(s"this.${fieldName} = Some(${fieldName})\nthis", None)
               )
-            ).setValue(
-              KeyBody,
-              AstRawCodeImpl(s"this.${fieldName} = Some(${fieldName})\nthis", None)
-            )
+              .build()
           )
       })
     }
@@ -195,16 +191,18 @@ class ScalaCodeGen(naming: NamingConvention) {
       (x.ty match {
         case o: TyOptional =>
           Some(
-            AstFunctionDecl(
-              name = fieldName,
-              returnType = TyNamedImpl(builderName),
-              parameters = List(
-                TyFieldBuilder().name(fieldName).value(o).build()
+            AstFunctionDeclBuilder()
+              .name(fieldName)
+              .returnType(TyNamedImpl(builderName))
+              .parameters(
+                List(
+                  AstValDefBuilder().name(fieldName).ty(unwrapOptional(o)).build()
+                )
               )
-            ).setValue(
-              KeyBody,
-              AstRawCodeImpl(s"this.${fieldName} = ${fieldName}\nthis", None)
-            )
+              .body(
+                AstRawCodeImpl(s"this.${fieldName} = ${fieldName}\nthis", None)
+              )
+              .build()
           )
         case _ => None
       })
@@ -216,30 +214,34 @@ class ScalaCodeGen(naming: NamingConvention) {
         case list: TyList =>
           val fieldNameWithoutS = fieldName.stripSuffix("s")
           List(
-            AstFunctionDecl(
-              name = fieldNameWithoutS,
-              returnType = TyNamedImpl(builderName),
-              parameters = List(
-                TyFieldBuilder().name(fieldNameWithoutS).value(list.content).build()
+            AstFunctionDeclBuilder()
+              .name(fieldNameWithoutS)
+              .returnType(TyNamedImpl(builderName))
+              .parameters(
+                List(
+                  AstValDefBuilder().name(fieldNameWithoutS).ty(list.content).build()
+                )
               )
-            ).setValue(
-              KeyBody,
-              AstRawCodeImpl(s"this.${fieldName} += ${fieldNameWithoutS}\nthis", None)
-            )
+              .body(
+                AstRawCodeImpl(s"this.${fieldName} += ${fieldNameWithoutS}\nthis", None)
+              )
+              .build()
           )
+
         case _ => Nil
+
       })
     }
     AstClassDeclBuilder()
       .name(builderName)
       .fields(fields.map(x =>
         val fieldName = naming.toFieldName(x.name)
-        AstValDefImpl(
-          fieldName,
-          ensureOptional(x.ty),
-          mutability = Some(true),
-          value = Some(AstRawCodeImpl(getDefaultValue(x.ty), None))
-        )
+        AstValDefBuilder()
+          .name(fieldName)
+          .ty(ensureOptional(x.ty))
+          .mutability(true)
+          .value(Some(AstRawCodeImpl(getDefaultValue(x.ty), None)))
+          .build()
       ))
       .classType("class")
       .methods(fields.flatMap(setFieldUnwrapped))

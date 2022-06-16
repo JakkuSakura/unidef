@@ -12,7 +12,7 @@ class SqlCodeGen(
     sqlCommon: SqlCommon = SqlCommon()
 ) extends KeywordProvider {
   override def keysOnFuncDecl: Seq[Keyword] =
-    Seq(KeyRecords, KeySchema, KeyBody)
+    Seq(KeyRecords, KeySchema)
 
   override def keysOnField: Seq[Keyword] = Seq(KeyPrimary, KeyAutoIncr, KeyNullable)
   def renderFunctionCall(
@@ -34,9 +34,10 @@ class SqlCodeGen(
   }
   def generateCallFunc(func: AstFunctionDecl, percentage: Boolean = false): String = {
 
-    val params = func.parameters.map(_.name.get).map(naming.toFunctionParameterName)
+    val params = func.parameters.map(_.name).map(naming.toFunctionParameterName)
     val db_func_name = naming.toFunctionName(func.name)
-    val schema = func.getValue(KeySchema).fold("")(x => s"$x.")
+//   FIXME: val schema = func.getValue(KeySchema).fold("")(x => s"$x.")
+    val schema = None.fold("")(x => s"$x.")
     val returnType = func.returnType
     val is_table = returnType match {
       case _: TyRecord | _: TyStruct =>
@@ -94,15 +95,14 @@ class SqlCodeGen(
       .map(sqlCommon.convertToSqlField)
 
     val language =
-      node
-        .getValue(KeyBody)
-        .get
+      node.body.get
         .asInstanceOf[AstRawCode]
         .language
         .get
 
-    val body = node.getValue(KeyBody).get.asInstanceOf[AstRawCode].code
-    val schema = node.getValue(KeySchema).fold("")(x => s"$x.")
+    val body = node.body.get.asInstanceOf[AstRawCode].code
+//   FIXME: val schema = node.getValue(KeySchema).fold("")(x => s"$x.")
+    val schema = ""
     var returnTable: List[SqlField] = Nil
     var returnType = ""
     node.returnType match {

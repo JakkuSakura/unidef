@@ -168,7 +168,14 @@ object AstNodeCodeGen {
         .field("derived", TyListImpl(TyNamedImpl("AstClassIdent")), required = true)
         .field("schema", TyStringImpl())
         .field("dataframe", TyBooleanImpl())
-        .field("class_type", TyStringImpl())
+        .field("class_type", TyStringImpl()),
+      Ast("function_decl")
+        .field("name", TyStringImpl(), required = true)
+        .field("parameters", TyListImpl(TyNamedImpl("AstValDef")), required = true)
+        .field("return_type", TyNode, required = true)
+        .field("dataframe", TyBooleanImpl())
+        .field("comment", TyStringImpl())
+        .field("body", astNode)
     ).map(x => x.name -> x).toMap
   }
 
