@@ -158,8 +158,7 @@ class ScalaCodeGen(naming: NamingConvention) {
         case x => x
       }
     }
-
-    def setFieldMethod(x: AstValDef): List[AstFunctionDecl] = {
+    def setFieldUnwrapped(x: AstValDef): List[AstFunctionDecl] = {
       val fieldName = naming.toFieldName(x.name)
       (x.ty match {
         case list: TyList =>
@@ -188,44 +187,51 @@ class ScalaCodeGen(naming: NamingConvention) {
               AstRawCodeImpl(s"this.${fieldName} = Some(${fieldName})\nthis", None)
             )
           )
-      }) :::
-        (x.ty match {
-          case o: TyOptional =>
-            List(
-              AstFunctionDecl(
-                name = fieldName,
-                returnType = TyNamedImpl(builderName),
-                parameters = List(
-                  TyFieldBuilder().name(fieldName).value(o).build()
-                )
-              ).setValue(
-                KeyBody,
-                AstRawCodeImpl(s"this.${fieldName} = ${fieldName}\nthis", None)
+      })
+    }
+    def setFieldWholeReplace(x: AstValDef): Option[AstFunctionDecl] = {
+      val fieldName = naming.toFieldName(x.name)
+
+      (x.ty match {
+        case o: TyOptional =>
+          Some(
+            AstFunctionDecl(
+              name = fieldName,
+              returnType = TyNamedImpl(builderName),
+              parameters = List(
+                TyFieldBuilder().name(fieldName).value(o).build()
               )
+            ).setValue(
+              KeyBody,
+              AstRawCodeImpl(s"this.${fieldName} = ${fieldName}\nthis", None)
             )
-          case _ => Nil
-        })
-        ::: (x.ty match {
-          case list: TyList =>
-            val fieldNameWithoutS = fieldName.stripSuffix("s")
-            List(
-              AstFunctionDecl(
-                name = fieldNameWithoutS,
-                returnType = TyNamedImpl(builderName),
-                parameters = List(
-                  TyFieldBuilder().name(fieldNameWithoutS).value(list.content).build()
-                )
-              ).setValue(
-                KeyBody,
-                AstRawCodeImpl(s"this.${fieldName} += ${fieldNameWithoutS}\nthis", None)
+          )
+        case _ => None
+      })
+    }
+    def setFieldAppend(x: AstValDef): List[AstFunctionDecl] = {
+      val fieldName = naming.toFieldName(x.name)
+
+      (x.ty match {
+        case list: TyList =>
+          val fieldNameWithoutS = fieldName.stripSuffix("s")
+          List(
+            AstFunctionDecl(
+              name = fieldNameWithoutS,
+              returnType = TyNamedImpl(builderName),
+              parameters = List(
+                TyFieldBuilder().name(fieldNameWithoutS).value(list.content).build()
               )
+            ).setValue(
+              KeyBody,
+              AstRawCodeImpl(s"this.${fieldName} += ${fieldNameWithoutS}\nthis", None)
             )
-          case _ => Nil
-        })
+          )
+        case _ => Nil
+      })
     }
     AstClassDeclBuilder()
       .name(builderName)
-      .parameters(Nil)
       .fields(fields.map(x =>
         val fieldName = naming.toFieldName(x.name)
         AstValDefImpl(
@@ -235,8 +241,11 @@ class ScalaCodeGen(naming: NamingConvention) {
           value = Some(AstRawCodeImpl(getDefaultValue(x.ty), None))
         )
       ))
-      .methods(fields.flatMap(setFieldMethod) :+ buildMethod)
       .classType("class")
+      .methods(fields.flatMap(setFieldUnwrapped))
+      .methods(fields.flatMap(setFieldWholeReplace))
+      .methods(fields.flatMap(setFieldAppend))
+      .method(buildMethod)
       .build()
   }
 
