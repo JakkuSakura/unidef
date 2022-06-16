@@ -83,7 +83,7 @@ case class TyNodeCodeGen() {
         :::
           ty.equivalent
             .flatMap {
-              case TyNamed(x) => Some("Ty" + TextTool.toPascalCase(x))
+              case x: TyNamed => Some("Ty" + TextTool.toPascalCase(x.ref))
               case _ => None // TODO: support other IS
             }
             .map(x => AstClassIdent(x))
@@ -147,27 +147,27 @@ object TyNodeCodeGen {
         .field("err", TyNode, required = true),
       Type("numeric"),
       Type("integer")
-        .field("bit_size", TyNamed("bit_size"))
+        .field("bit_size", TyNamedImpl("BitSize"))
         .field("sized", TyBooleanImpl())
-        .is(TyNamed("numeric")),
+        .is(TyNamedImpl("numeric")),
       Type("real")
-        .is(TyNamed("numeric")),
+        .is(TyNamedImpl("numeric")),
       Type("decimal")
         .field("precision", TyIntegerImpl(None, None))
         .field("scale", TyIntegerImpl(None, None))
-        .is(TyNamed("real")),
+        .is(TyNamedImpl("real")),
       Type("float")
-        .field("bit_size", TyNamed("bit_size"))
-        .is(TyNamed("real")),
+        .field("bit_size", TyNamedImpl("BitSize"))
+        .is(TyNamedImpl("real")),
       Type("class"),
       Type("struct")
         .field("name", TyStringImpl())
-        .field("fields", TyListImpl(TyNamed("TyField")))
+        .field("fields", TyListImpl(TyNamedImpl("TyField")))
         .field("derives", TyListImpl(TyStringImpl()))
         .field("attributes", TyListImpl(TyStringImpl()))
         .field("dataframe", TyBooleanImpl())
         .field("schema", TyStringImpl())
-        .is(TyNamed("class"))
+        .is(TyNamedImpl("class"))
         .setCommentable(true),
       Type("object"),
       Type("map")
@@ -189,7 +189,21 @@ object TyNodeCodeGen {
       Type("nothing"),
       Type("undefined"),
       Type("inet"),
-      Type("uuid")
+      Type("uuid"),
+      Type("union")
+        .field("types", TyListImpl(TyNode), required = true),
+      Type("date_time")
+        .field("timezone", TyNamedImpl("java.util.TimeZone")),
+      Type("time_stamp")
+        .field("has_time_zone", TyBooleanImpl())
+        .field("time_unit", TyNamedImpl("java.util.concurrent.TimeUnit")),
+      Type("named")
+        .field("ref", TyStringImpl(), required = true),
+      Type("type_var")
+        .field("name", TyStringImpl()),
+      Type("key_value")
+        .field("key", TyNode, required = true)
+        .field("value", TyNode, required = true)
     )
       .map(x => x.name -> x)
       .toMap

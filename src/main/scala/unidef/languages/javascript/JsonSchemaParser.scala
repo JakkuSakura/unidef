@@ -176,9 +176,9 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
       override def onObject(value: JsonObject): TyNode = {
         if (value("type").exists(_.isArray)) {
           // probably map(parseType) is enough
-          TyUnion(getList(value, "type").toList.map(parse))
+          TyUnionImpl(getList(value, "type").toList.map(parse))
         } else if (value("anyOf").isDefined) {
-          TyUnion(getList(value, "anyOf").toList.map(parse))
+          TyUnionImpl(getList(value, "anyOf").toList.map(parse))
         } else if (value("enum").exists(_.isArray)) {
           TyEnum(
             getList(value, "enum")

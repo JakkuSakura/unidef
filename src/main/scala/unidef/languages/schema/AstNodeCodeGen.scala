@@ -102,7 +102,7 @@ case class AstNodeCodeGen() {
 }
 object AstNodeCodeGen {
   def getAsts: Map[String, Ast] = {
-    val astNode = TyNamed("AstNode")
+    val astNode = TyNamedImpl("AstNode")
     Seq(
       Ast("unit"),
       Ast("null"),
@@ -116,7 +116,7 @@ object AstNodeCodeGen {
         .field("consequent", astNode)
         .field("alternative", astNode),
       Ast("flow_control")
-        .field("flow", TyNamed("FlowControl"))
+        .field("flow", TyNamedImpl("FlowControl"))
         .field("value", astNode),
       Ast("literal")
         .field(
@@ -124,7 +124,7 @@ object AstNodeCodeGen {
           TyStringImpl(),
           required = true
         ) // TODO: make subtypes of literal values?
-        .field("ty", TyNamed("TyNode"), required = true),
+        .field("ty", TyNode, required = true),
       Ast("select")
         .field("qualifier", astNode, required = true)
         .field("symbol", TyStringImpl(), required = true),
@@ -137,7 +137,7 @@ object AstNodeCodeGen {
         .field("arguments", TyListImpl(astNode), required = true),
       Ast("val_def")
         .field("name", TyStringImpl(), required = true)
-        .field("ty", TyNamed("TyNode"), required = true)
+        .field("ty", TyNode, required = true)
         .field("value", astNode)
         .field("mutability", TyBooleanImpl()),
       Ast("decls")
@@ -172,7 +172,7 @@ object AstNodeCodeGen {
         hasTraits.map(scalaCodegen.generateClass).toList
           ::: caseClasses.map(scalaCodegen.generateClass)
           ::: compoundTraits.map(scalaCodegen.generateClass)
-            ::: builders.map(scalaCodegen.generateClass)
+          ::: builders.map(scalaCodegen.generateClass)
       ).mkString("\n")
 
     println(scalaCode)

@@ -69,8 +69,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
           jsonObjectOf(
             "string",
             "format" -> Json.fromString("timestamp"),
-            "unit" -> t
-              .timeUnit
+            "unit" -> t.timeUnit
               .map(_.toString)
               .map(Json.fromString)
               .getOrElse(Json.Null)
@@ -185,8 +184,8 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         )
       case _: TyAny | TyJsonAny() if !options.useListForJsonAny =>
         Some(Json.fromJsonObject(JsonObject.empty))
-      case TyNamed(name) =>
-        Some(jsonObjectOf("string", "name" -> Json.fromString(name)))
+      case x: TyNamed =>
+        Some(jsonObjectOf("string", "name" -> Json.fromString(x.ref)))
       case _: TyByteArray =>
         Some(
           jsonObjectOf(
@@ -200,15 +199,15 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
       case _ => None
     }
     ty match {
-      case ty: TyCommentable if ty.getComment != "" =>
-        coded
-          .flatMap(x => x.asObject)
-          .map(x => x.add("$comment", Json.fromString(ty.getComment)))
-          .map(Json.fromJsonObject)
+//      case ty: TyCommentable if ty.getComment != "" =>
+//        coded
+//          .flatMap(x => x.asObject)
+//          .map(x => x.add("$comment", Json.fromString(ty.getComment)))
+//          .map(Json.fromJsonObject)
       case _ => coded
     }
   }
-  def generateType(ty: TyNode, isMethodParameters: Boolean=false): Json = {
+  def generateType(ty: TyNode, isMethodParameters: Boolean = false): Json = {
     val new_ty = ty match {
       case x: TyStruct if x.dataframe.contains(true) =>
         convertToMatrix(x)

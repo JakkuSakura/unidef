@@ -30,7 +30,6 @@ class LifterImpl(using val quotes: Quotes) {
     }
   }
 
-
   def liftPackageClause(tree: PackageClause): List[AstNode] = {
     val stmts = mutable.ArrayBuffer[AstNode]()
 
@@ -75,7 +74,7 @@ class LifterImpl(using val quotes: Quotes) {
     tree match {
       case ValDef(name, tpt, rhs) =>
         // TODO: process tpt and rhs
-        TyFieldBuilder().name(name).value(TyNamed(tpt.toString)).build()
+        TyFieldBuilder().name(name).value(TyNamedImpl(tpt.toString)).build()
     }
   }
   // TODO support currying
@@ -147,8 +146,8 @@ class LifterImpl(using val quotes: Quotes) {
       case x: AstValDef => valDefs += x
     }
 
-    liftClassDefHeadFields(head).foreach{
-      case x: TyField => valDefs += x
+    liftClassDefHeadFields(head).foreach { case x: TyField =>
+      valDefs += x
     }
 
     val derived = liftClassDefParents(parents)

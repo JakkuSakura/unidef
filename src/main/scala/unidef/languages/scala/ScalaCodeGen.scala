@@ -126,7 +126,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     }
     val buildMethod = AstFunctionDecl(
       name = "build",
-      returnType = TyNamed(target),
+      returnType = TyNamedImpl(target),
       parameters = Nil
     ).setValue(
       KeyBody,
@@ -150,7 +150,7 @@ class ScalaCodeGen(naming: NamingConvention) {
       List(
         AstFunctionDecl(
           name = fieldName,
-          returnType = TyNamed(builderName),
+          returnType = TyNamedImpl(builderName),
           parameters = List(
             TyFieldBuilder().name(fieldName).value(unwrapOptional(x.value)).build()
           )
@@ -163,7 +163,7 @@ class ScalaCodeGen(naming: NamingConvention) {
            List(
              AstFunctionDecl(
                name = fieldName,
-               returnType = TyNamed(builderName),
+               returnType = TyNamedImpl(builderName),
                parameters = List(
                  TyFieldBuilder().name(fieldName).value(x.value).build()
                )

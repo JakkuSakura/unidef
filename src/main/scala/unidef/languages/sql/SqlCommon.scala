@@ -40,7 +40,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   }
 
   def convertType(ty: TyNode): String = ty match {
-    case t: TyNamed => t.name
+    case t: TyNamed => t.ref
     case t => encode(t).getOrElse(throw TypeEncodeException("SQL", t))
   }
 
