@@ -102,7 +102,9 @@ case class AstFunctionDeclImpl(
     returnType: TyNode,
     dataframe: Option[Boolean],
     comment: Option[String],
-    body: Option[AstNode]
+    body: Option[AstNode],
+    schema: Option[String],
+    language: Option[String]
 ) extends AstFunctionDecl
 case class AstIfImpl(test: AstNode, consequent: Option[AstNode], alternative: Option[AstNode])
     extends AstIf
@@ -150,13 +152,17 @@ trait AstFunctionDecl()
     with HasReturnType
     with HasDataframe
     with HasComment
-    with HasBody {
+    with HasBody
+    with HasSchema
+    with HasLanguage {
   def name: String
   def parameters: List[AstValDef]
   def returnType: TyNode
   def dataframe: Option[Boolean]
   def comment: Option[String]
   def body: Option[AstNode]
+  def schema: Option[String]
+  def language: Option[String]
 }
 trait AstIf() extends AstNode with HasTest with HasConsequent with HasAlternative {
   def test: AstNode
@@ -257,6 +263,8 @@ class AstFunctionDeclBuilder() {
   var dataframe: Option[Boolean] = None
   var comment: Option[String] = None
   var body: Option[AstNode] = None
+  var schema: Option[String] = None
+  var language: Option[String] = None
   def name(name: String): AstFunctionDeclBuilder = {
     this.name = Some(name)
     this
@@ -281,24 +289,39 @@ class AstFunctionDeclBuilder() {
     this.body = Some(body)
     this
   }
-  def dataframe(dataframe: Option[Boolean]): AstFunctionDeclBuilder = {
-    this.dataframe = dataframe
-    this
-  }
-  def comment(comment: Option[String]): AstFunctionDeclBuilder = {
-    this.comment = comment
-    this
-  }
   def body(body: Option[AstNode]): AstFunctionDeclBuilder = {
     this.body = body
     this
   }
+  def schema(schema: String): AstFunctionDeclBuilder = {
+    this.schema = Some(schema)
+    this
+  }
+
+  def schema(schema: Option[String]): AstFunctionDeclBuilder = {
+    this.schema = schema
+    this
+  }
+  def language(language: String): AstFunctionDeclBuilder = {
+    this.language = Some(language)
+    this
+  }
+
   def parameter(parameter: AstValDef): AstFunctionDeclBuilder = {
     this.parameters += parameter
     this
   }
   def build(): AstFunctionDeclImpl = {
-    AstFunctionDeclImpl(name.get, parameters.toList, returnType.get, dataframe, comment, body)
+    AstFunctionDeclImpl(
+      name.get,
+      parameters.toList,
+      returnType.get,
+      dataframe,
+      comment,
+      body,
+      schema,
+      language
+    )
   }
 }
 class AstIfBuilder() {
@@ -317,14 +340,7 @@ class AstIfBuilder() {
     this.alternative = Some(alternative)
     this
   }
-  def consequent(consequent: Option[AstNode]): AstIfBuilder = {
-    this.consequent = consequent
-    this
-  }
-  def alternative(alternative: Option[AstNode]): AstIfBuilder = {
-    this.alternative = alternative
-    this
-  }
+
   def build(): AstIfImpl = {
     AstIfImpl(test.get, consequent, alternative)
   }
@@ -340,14 +356,7 @@ class AstFlowControlBuilder() {
     this.value = Some(value)
     this
   }
-  def flow(flow: Option[FlowControl]): AstFlowControlBuilder = {
-    this.flow = flow
-    this
-  }
-  def value(value: Option[AstNode]): AstFlowControlBuilder = {
-    this.value = value
-    this
-  }
+
   def build(): AstFlowControlImpl = {
     AstFlowControlImpl(flow, value)
   }
@@ -461,10 +470,6 @@ class AstBlockBuilder() {
     this.nodes = Some(nodes)
     this
   }
-  def nodes(nodes: Option[List[AstNode]]): AstBlockBuilder = {
-    this.nodes = nodes
-    this
-  }
   def build(): AstBlockImpl = {
     AstBlockImpl(nodes)
   }
@@ -502,20 +507,17 @@ class AstClassDeclBuilder() {
     this.schema = Some(schema)
     this
   }
+
+  def schema(schema: Option[String]): AstClassDeclBuilder = {
+    this.schema = schema
+    this
+  }
   def dataframe(dataframe: Boolean): AstClassDeclBuilder = {
     this.dataframe = Some(dataframe)
     this
   }
   def classType(classType: String): AstClassDeclBuilder = {
     this.classType = Some(classType)
-    this
-  }
-  def schema(schema: Option[String]): AstClassDeclBuilder = {
-    this.schema = schema
-    this
-  }
-  def dataframe(dataframe: Option[Boolean]): AstClassDeclBuilder = {
-    this.dataframe = dataframe
     this
   }
   def classType(classType: Option[String]): AstClassDeclBuilder = {
@@ -568,18 +570,15 @@ class AstValDefBuilder() {
     this.value = Some(value)
     this
   }
-  def mutability(mutability: Boolean): AstValDefBuilder = {
-    this.mutability = Some(mutability)
-    this
-  }
   def value(value: Option[AstNode]): AstValDefBuilder = {
     this.value = value
     this
   }
-  def mutability(mutability: Option[Boolean]): AstValDefBuilder = {
-    this.mutability = mutability
+  def mutability(mutability: Boolean): AstValDefBuilder = {
+    this.mutability = Some(mutability)
     this
   }
+
   def build(): AstValDefImpl = {
     AstValDefImpl(name.get, ty.get, value, mutability)
   }
@@ -615,10 +614,7 @@ class AstRawCodeBuilder() {
     this.language = Some(language)
     this
   }
-  def language(language: Option[String]): AstRawCodeBuilder = {
-    this.language = language
-    this
-  }
+
   def build(): AstRawCodeImpl = {
     AstRawCodeImpl(code.get, language)
   }

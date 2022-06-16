@@ -176,6 +176,8 @@ object AstNodeCodeGen {
         .field("dataframe", TyBooleanImpl())
         .field("comment", TyStringImpl())
         .field("body", astNode)
+        .field("schema", TyStringImpl())
+        .field("language", TyStringImpl())
     ).map(x => x.name -> x).toMap
   }
 

@@ -240,7 +240,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           .name(fieldName)
           .ty(ensureOptional(x.ty))
           .mutability(true)
-          .value(Some(AstRawCodeImpl(getDefaultValue(x.ty), None)))
+          .value(AstRawCodeImpl(getDefaultValue(x.ty), None))
           .build()
       ))
       .classType("class")

@@ -154,8 +154,7 @@ class DruidSqlParser {
           TyStructBuilder().fields(Nil).build()
       )
       .body(AstRawCodeImpl(body.toString, Some(language)))
-    // FIXME: .trySetValue(KeySchema, if (schema.isEmpty) None else Some(schema))
-
+      .schema(Option(schema).filter(_.nonEmpty))
 //    if (outputOnly.isEmpty)
 //      func.records(true)
     logger.debug(

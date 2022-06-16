@@ -16,7 +16,7 @@ import java.io.PrintWriter
   val pyCodeGen = PythonCodeGen()
   val json_schema = JsonSchemaCodeGen()
   val parser: JsonSchemaParser = JsonSchemaParser()
-  parser.prepareForExtKeys(sqlCodegen)
+
   val yamlParser: YamlParser = YamlParser(parser)
   implicit val sqlResolver: TypeRegistry = TypeRegistry()
   val fs = new VirtualFileSystem()
@@ -26,7 +26,7 @@ import java.io.PrintWriter
   } else if (filename.endsWith(".sql")) {
     JSqlParser().parse(fileContents)(sqlResolver)
   } else if (filename.endsWith(".json")) {
-    val parsed = JsonSchemaParser().parse(io.circe.parser.parse(fileContents).toTry.get)
+    val parsed = parser.parse(io.circe.parser.parse(fileContents).toTry.get)
     Seq(AstTypeImpl(parsed))
   } else {
     throw new RuntimeException("Unsupported file type " + filename)

@@ -87,24 +87,6 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
 
     node.build()
   }
-  private val extKeysForField =
-    mutable.HashSet[Keyword](KeyType)
-  private val extKeysForFuncDecl =
-    mutable
-      .HashSet[Keyword](
-        KeyType,
-        KeyLanguage,
-        KeyParameters,
-        KeyReturn
-      )
-  private val extKeysForClassDecl =
-    mutable.HashSet[Keyword](KeyType, KeyProperties)
-
-  def prepareForExtKeys(obj: KeywordProvider): Unit = {
-    extKeysForField ++= obj.keysOnField
-    extKeysForFuncDecl ++= obj.keysOnFuncDecl
-    extKeysForClassDecl ++= obj.keysOnClassDecl
-  }
 
   def parseFieldType(js: Json): TyField = {
     js.foldWith(new Json.Folder[TyField] {
