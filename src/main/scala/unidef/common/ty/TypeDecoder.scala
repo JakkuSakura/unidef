@@ -1,8 +1,6 @@
 package unidef.common.ty
 
 import com.typesafe.scalalogging.Logger
-import unidef.common.Extendable
-import unidef.common.ast.KeyLanguage
 import unidef.utils.{TextTool, TypeDecodeException, TypeEncodeException}
 
 import scala.collection.mutable
