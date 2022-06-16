@@ -103,15 +103,11 @@ case class TyNodeCodeGen() {
       .name(
         "Ty" + TextTool.toPascalCase(ty.name) + "Impl"
       )
-      .parameters(
-        fields
-          .map(x => AstValDefImpl(x.name, tryWrapValue(x), None, None))
-          .toList // TODO: overwrite
-      )
+      .parameters(fields)
       .derived(
         List(AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
       )
-      .classType("class")
+      .classType("case class")
       .build()
   }
 }
@@ -188,7 +184,7 @@ object TyNodeCodeGen {
       Type("inet"),
       Type("uuid"),
       Type("union")
-        .field("tys", TyListImpl(TyNode), required = true),
+        .field("values", TyListImpl(TyNode), required = true),
       Type("date_time")
         .field("timezone", TyNamedImpl("java.util.TimeZone")),
       Type("time_stamp")

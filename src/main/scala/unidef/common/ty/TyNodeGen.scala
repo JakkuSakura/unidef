@@ -1,10 +1,9 @@
 package unidef.common.ty
 
+import scala.collection.mutable
+
 trait HasValues() extends TyNode {
   def values: List[TyNode]
-}
-trait HasDerives() extends TyNode {
-  def derives: Option[List[String]]
 }
 trait HasOk() extends TyNode {
   def ok: TyNode
@@ -24,11 +23,17 @@ trait HasContent() extends TyNode {
 trait HasAttributes() extends TyNode {
   def attributes: Option[List[String]]
 }
+trait HasDefaultNone() extends TyNode {
+  def defaultNone: Option[Boolean]
+}
 trait HasTimezone() extends TyNode {
   def timezone: Option[java.util.TimeZone]
 }
-trait HasTypes() extends TyNode {
-  def types: List[TyNode]
+trait HasTys() extends TyNode {
+  def values: List[TyNode]
+}
+trait HasDerives() extends TyNode {
+  def derives: Option[List[String]]
 }
 trait HasScale() extends TyNode {
   def scale: Option[Int]
@@ -81,67 +86,63 @@ trait HasSized() extends TyNode {
 trait HasTimeUnit() extends TyNode {
   def timeUnit: Option[java.util.concurrent.TimeUnit]
 }
-trait HasDefaultNone() extends TyNode {
-  def defaultNone: Option[Boolean]
-}
-
-class TyAnyImpl() extends TyAny
-class TyTimeStampImpl(
-    val hasTimeZone: Option[Boolean],
-    val timeUnit: Option[java.util.concurrent.TimeUnit]
+case class TyAnyImpl() extends TyAny
+case class TyTimeStampImpl(
+    hasTimeZone: Option[Boolean],
+    timeUnit: Option[java.util.concurrent.TimeUnit]
 ) extends TyTimeStamp
-class TyFloatImpl(val bitSize: Option[BitSize]) extends TyFloat
-class TySetImpl(val content: TyNode) extends TySet
-class TyDecimalImpl(val precision: Option[Int], val scale: Option[Int]) extends TyDecimal
-class TyByteArrayImpl() extends TyByteArray
-class TyTupleImpl(val values: List[TyNode]) extends TyTuple
-class TyStructImpl(
-    val name: Option[String],
-    val fields: Option[List[TyField]],
-    val derives: Option[List[String]],
-    val attributes: Option[List[String]],
-    val dataframe: Option[Boolean],
-    val schema: Option[String],
-    val comment: Option[String]
+case class TyFloatImpl(bitSize: Option[BitSize]) extends TyFloat
+case class TySetImpl(content: TyNode) extends TySet
+case class TyDecimalImpl(precision: Option[Int], scale: Option[Int]) extends TyDecimal
+case class TyByteArrayImpl() extends TyByteArray
+case class TyTupleImpl(values: List[TyNode]) extends TyTuple
+case class TyStructImpl(
+    name: Option[String],
+    fields: Option[List[TyField]],
+    derives: Option[List[String]],
+    attributes: Option[List[String]],
+    dataframe: Option[Boolean],
+    schema: Option[String],
+    comment: Option[String]
 ) extends TyStruct
-class TyClassImpl() extends TyClass
-class TyRecordImpl() extends TyRecord
-class TyRealImpl() extends TyReal
-class TyUnionImpl(val types: List[TyNode]) extends TyUnion
-class TyFieldImpl(
-    val name: Option[String],
-    val value: TyNode,
-    val mutability: Option[Boolean],
-    val defaultNone: Option[Boolean]
+case class TyClassImpl() extends TyClass
+case class TyRecordImpl() extends TyRecord
+case class TyRealImpl() extends TyReal
+case class TyUnionImpl(values: List[TyNode]) extends TyUnion
+case class TyFieldImpl(
+    name: Option[String],
+    value: TyNode,
+    mutability: Option[Boolean],
+    defaultNone: Option[Boolean]
 ) extends TyField
-class TyMapImpl(val key: TyNode, val value: TyNode) extends TyMap
-class TyUuidImpl() extends TyUuid
-class TyResultImpl(val ok: TyNode, val err: TyNode) extends TyResult
-class TyTypeVarImpl(val name: Option[String]) extends TyTypeVar
-class TyOptionalImpl(val content: TyNode) extends TyOptional
-class TyVariantImpl(val names: List[String], val code: Option[Int]) extends TyVariant
-class TyStringImpl() extends TyString
-class TyCharImpl() extends TyChar
-class TyNullImpl() extends TyNull
-class TyNamedImpl(val ref: String) extends TyNamed
-class TyObjectImpl() extends TyObject
-class TyNothingImpl() extends TyNothing
-class TyBooleanImpl() extends TyBoolean
-class TyEnumImpl(
-    val variants: List[TyVariant],
-    val simpleEnum: Option[Boolean],
-    val name: Option[String],
-    val value: TyNode,
-    val schema: Option[String]
+case class TyMapImpl(key: TyNode, value: TyNode) extends TyMap
+case class TyUuidImpl() extends TyUuid
+case class TyResultImpl(ok: TyNode, err: TyNode) extends TyResult
+case class TyTypeVarImpl(name: Option[String]) extends TyTypeVar
+case class TyOptionalImpl(content: TyNode) extends TyOptional
+case class TyVariantImpl(names: List[String], code: Option[Int]) extends TyVariant
+case class TyStringImpl() extends TyString
+case class TyCharImpl() extends TyChar
+case class TyNullImpl() extends TyNull
+case class TyNamedImpl(ref: String) extends TyNamed
+case class TyObjectImpl() extends TyObject
+case class TyNothingImpl() extends TyNothing
+case class TyBooleanImpl() extends TyBoolean
+case class TyEnumImpl(
+    variants: List[TyVariant],
+    simpleEnum: Option[Boolean],
+    name: Option[String],
+    value: TyNode,
+    schema: Option[String]
 ) extends TyEnum
-class TyInetImpl() extends TyInet
-class TyDateTimeImpl(val timezone: Option[java.util.TimeZone]) extends TyDateTime
-class TyKeyValueImpl(val key: TyNode, val value: TyNode) extends TyKeyValue
-class TyNumericImpl() extends TyNumeric
-class TyIntegerImpl(val bitSize: Option[BitSize], val sized: Option[Boolean]) extends TyInteger
-class TyUnitImpl() extends TyUnit
-class TyListImpl(val content: TyNode) extends TyList
-class TyUndefinedImpl() extends TyUndefined
+case class TyInetImpl() extends TyInet
+case class TyDateTimeImpl(timezone: Option[java.util.TimeZone]) extends TyDateTime
+case class TyKeyValueImpl(key: TyNode, value: TyNode) extends TyKeyValue
+case class TyNumericImpl() extends TyNumeric
+case class TyIntegerImpl(bitSize: Option[BitSize], sized: Option[Boolean]) extends TyInteger
+case class TyUnitImpl() extends TyUnit
+case class TyListImpl(content: TyNode) extends TyList
+case class TyUndefinedImpl() extends TyUndefined
 trait TyAny() extends TyNode
 trait TyTimeStamp() extends TyNode with HasHasTimeZone with HasTimeUnit {
   def hasTimeZone: Option[Boolean]
@@ -182,8 +183,8 @@ trait TyStruct()
 trait TyClass() extends TyNode
 trait TyRecord() extends TyNode
 trait TyReal() extends TyNode with TyNumeric
-trait TyUnion() extends TyNode with HasTypes {
-  def types: List[TyNode]
+trait TyUnion() extends TyNode with HasTys {
+  def values: List[TyNode]
 }
 trait TyField() extends TyNode with HasName with HasValue with HasMutability with HasDefaultNone {
   def name: Option[String]
@@ -331,13 +332,17 @@ class TyByteArrayBuilder() {
   }
 }
 class TyTupleBuilder() {
-  var values: Option[List[TyNode]] = None
+  var values: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
   def values(values: List[TyNode]): TyTupleBuilder = {
-    this.values = Some(values)
+    this.values ++= values
+    this
+  }
+  def value(value: TyNode): TyTupleBuilder = {
+    this.values += value
     this
   }
   def build(): TyTupleImpl = {
-    TyTupleImpl(values.get)
+    TyTupleImpl(values.toList)
   }
 }
 class TyStructBuilder() {
@@ -424,13 +429,17 @@ class TyRealBuilder() {
   }
 }
 class TyUnionBuilder() {
-  var types: Option[List[TyNode]] = None
-  def types(types: List[TyNode]): TyUnionBuilder = {
-    this.types = Some(types)
+  var tys: mutable.ArrayBuffer[TyNode] = mutable.ArrayBuffer.empty
+  def tys(tys: List[TyNode]): TyUnionBuilder = {
+    this.tys ++= tys
+    this
+  }
+  def ty(ty: TyNode): TyUnionBuilder = {
+    this.tys += ty
     this
   }
   def build(): TyUnionImpl = {
-    TyUnionImpl(types.get)
+    TyUnionImpl(tys.toList)
   }
 }
 class TyFieldBuilder() {
@@ -530,10 +539,14 @@ class TyOptionalBuilder() {
   }
 }
 class TyVariantBuilder() {
-  var names: Option[List[String]] = None
+  var names: mutable.ArrayBuffer[String] = mutable.ArrayBuffer.empty
   var code: Option[Int] = None
   def names(names: List[String]): TyVariantBuilder = {
-    this.names = Some(names)
+    this.names ++= names
+    this
+  }
+  def name(name: String): TyVariantBuilder = {
+    this.names += name
     this
   }
   def code(code: Int): TyVariantBuilder = {
@@ -545,7 +558,7 @@ class TyVariantBuilder() {
     this
   }
   def build(): TyVariantImpl = {
-    TyVariantImpl(names.get, code)
+    TyVariantImpl(names.toList, code)
   }
 }
 class TyStringBuilder() {
@@ -589,13 +602,17 @@ class TyBooleanBuilder() {
   }
 }
 class TyEnumBuilder() {
-  var variants: Option[List[TyVariant]] = None
+  var variants: mutable.ArrayBuffer[TyVariant] = mutable.ArrayBuffer.empty
   var simpleEnum: Option[Boolean] = None
   var name: Option[String] = None
   var value: Option[TyNode] = None
   var schema: Option[String] = None
   def variants(variants: List[TyVariant]): TyEnumBuilder = {
-    this.variants = Some(variants)
+    this.variants ++= variants
+    this
+  }
+  def variant(variant: TyVariant): TyEnumBuilder = {
+    this.variants += variant
     this
   }
   def simpleEnum(simpleEnum: Boolean): TyEnumBuilder = {
@@ -618,10 +635,6 @@ class TyEnumBuilder() {
     this.value = Some(value)
     this
   }
-  def value(value: Option[TyNode]): TyEnumBuilder = {
-    this.value = value
-    this
-  }
   def schema(schema: String): TyEnumBuilder = {
     this.schema = Some(schema)
     this
@@ -631,7 +644,7 @@ class TyEnumBuilder() {
     this
   }
   def build(): TyEnumImpl = {
-    TyEnumImpl(variants.get, simpleEnum, name, value.get, schema)
+    TyEnumImpl(variants.toList, simpleEnum, name, value.get, schema)
   }
 }
 class TyInetBuilder() {

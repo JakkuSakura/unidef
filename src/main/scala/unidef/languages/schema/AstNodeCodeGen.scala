@@ -90,7 +90,7 @@ case class AstNodeCodeGen() {
       .derived(
         List(AstClassIdent(toAstClassName(ty.name)))
       )
-      .classType("class")
+      .classType("case class")
       .build()
   }
   def generateScalaBuilder(ty: Ast): AstClassDecl = {
@@ -162,10 +162,10 @@ object AstNodeCodeGen {
         .field("ty", TyNode, required = true),
       Ast("class_decl")
         .field("name", TyStringImpl(), required = true)
-        .field("parameters", TyListImpl(TyNamedImpl("AstValDef")))
-        .field("fields", TyListImpl(TyNamedImpl("AstValDef")))
-        .field("methods", TyListImpl(TyNamedImpl("AstNode")))
-        .field("derived", TyListImpl(TyNamedImpl("AstClassIdent")))
+        .field("parameters", TyListImpl(TyNamedImpl("AstValDef")), required = true)
+        .field("fields", TyListImpl(TyNamedImpl("AstValDef")), required = true)
+        .field("methods", TyListImpl(TyNamedImpl("AstNode")), required = true)
+        .field("derived", TyListImpl(TyNamedImpl("AstClassIdent")), required = true)
         .field("schema", TyStringImpl())
         .field("dataframe", TyBooleanImpl())
         .field("class_type", TyStringImpl())
