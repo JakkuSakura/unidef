@@ -30,7 +30,7 @@ trait HasTimezone() extends TyNode {
   def timezone: Option[java.util.TimeZone]
 }
 trait HasTys() extends TyNode {
-  def values: List[TyNode]
+  def tys: List[TyNode]
 }
 trait HasDerives() extends TyNode {
   def derives: Option[List[String]]
@@ -108,7 +108,7 @@ case class TyStructImpl(
 case class TyClassImpl() extends TyClass
 case class TyRecordImpl() extends TyRecord
 case class TyRealImpl() extends TyReal
-case class TyUnionImpl(values: List[TyNode]) extends TyUnion
+case class TyUnionImpl(tys: List[TyNode]) extends TyUnion
 case class TyFieldImpl(
     name: Option[String],
     value: TyNode,
@@ -184,7 +184,7 @@ trait TyClass() extends TyNode
 trait TyRecord() extends TyNode
 trait TyReal() extends TyNode with TyNumeric
 trait TyUnion() extends TyNode with HasTys {
-  def values: List[TyNode]
+  def tys: List[TyNode]
 }
 trait TyField() extends TyNode with HasName with HasValue with HasMutability with HasDefaultNone {
   def name: Option[String]
