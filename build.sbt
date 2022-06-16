@@ -1,11 +1,25 @@
+import ReleaseTransformations._
+
 ThisBuild / scalaVersion := "3.1.2"
 ThisBuild / organization := "com.jeekrs"
-ThisBuild / version := "0.5.0"
+
+releaseUseGlobalVersion := false
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 resolvers += "jitpack" at "https://jitpack.io"
+publishTo := None
 
+releaseProcess := Seq[ReleaseStep](
+  inquireVersions,                        // : ReleaseStep
+  runClean,                               // : ReleaseStep
+  setReleaseVersion,                      // : ReleaseStep
+  commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
+  tagRelease,                             // : ReleaseStep
+  setNextVersion,                         // : ReleaseStep
+  commitNextVersion                       // : ReleaseStep
+
+)
 lazy val root = (project in file("."))
   .enablePlugins(NativeImagePlugin)
   .settings(name := "unidef")
