@@ -2,7 +2,7 @@ package unidef.common.ast
 
 import io.circe.Decoder
 import io.circe.generic.semiauto.*
-import unidef.common.{BaseNode, Extendable, Keyword, KeywordBoolean, KeywordOnly, KeywordString}
+import unidef.common.BaseNode
 import unidef.common.ty.*
 
 /** The following AST nodes describes a general language that tries to be compatible with other
@@ -41,8 +41,7 @@ object FlowControl {
 
 sealed trait AccessModifier
 
-object AccessModifier extends Keyword {
-  override type V = AccessModifier
+object AccessModifier {
   case object Public extends AccessModifier
   case object Private extends AccessModifier
   case object Protected extends AccessModifier
@@ -96,24 +95,6 @@ case class AstFunctionApply(
 
 case class AstAnnotation(value: AstNode) extends AstNode
 
-case object AstAnnotations extends AstNode with Keyword {
-  override type V = List[AstAnnotation]
-
-  override def name: String = "annotations"
-  private val lsDecoder =
-    deriveDecoder[List[String]]
-      .map(x => x.map(y => AstAnnotation(AstRawCodeImpl(y, None))))
-  override def decoder: Option[Decoder[List[AstAnnotation]]] =
-    Some(lsDecoder.map(_.toSeq))
-}
 case class AstComment(comment: String) extends AstNode
 
 case class AstProgram(statements: List[AstNode]) extends AstNode
-
-case object KeyLanguage extends KeywordString
-case object KeyParameters extends KeywordOnly
-case object KeyReturn extends Keyword {
-  override type V = TyNode
-}
-case object KeyOverride extends KeywordBoolean
-case object KeyClassType extends KeywordString

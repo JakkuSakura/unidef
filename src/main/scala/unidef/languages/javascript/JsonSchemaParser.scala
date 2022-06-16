@@ -2,15 +2,7 @@ package unidef.languages.javascript
 
 import io.circe.Json.Folder
 import io.circe.*
-import unidef.common.{Keyword, KeywordProvider}
-import unidef.common.ast.{
-  AstFunctionDecl,
-  AstLiteralString,
-  AstRawCode,
-  KeyLanguage,
-  KeyParameters,
-  KeyReturn
-}
+import unidef.common.ast.{AstFunctionDecl, AstLiteralString, AstRawCode}
 import unidef.common.ty.*
 import unidef.common.ast.*
 import unidef.utils.FileUtils.readFile
@@ -55,7 +47,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         )
         .returnType(ret)
 
-    if (content("language").isDefined && content("language").isDefined) {
+    if (content("language").isDefined && content("body").isDefined) {
       val language = getString(content, "language")
       val body = getString(content, "body")
       builder.body(AstRawCodeImpl(body, Some(language)))
@@ -112,8 +104,6 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           )
         }
         // TODO: handle list and object recursively
-//        if (value("name").isDefined)
-//          collectExtKeys(value, extKeysForField.toList).foreach(field.setValue)
 
         field
       }
@@ -127,20 +117,6 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
       override def onNumber(value: JsonNumber): TyField =
         throw ParseCodeException("Field should not be number")
     })
-  }
-  def collectExtKeys(content: JsonObject, keywords: Seq[Keyword]): Seq[(Keyword, Any)] = {
-    content.keys.iterator.flatMap { key =>
-      keywords
-        .find(kw => kw.name == key)
-        .fold {
-          // throw UnidefParseException(s"${key} is not needed in " + content, null)
-          None.asInstanceOf[Option[(Keyword, Any)]]
-        } {
-          case kw if kw.decoder.isDefined =>
-            Some(kw -> content(key).get.as[kw.V](kw.decoder.get).toTry.get)
-          case _ => None
-        }
-    }.toSeq
   }
 
   def parse(json: Json): TyNode = {
@@ -164,27 +140,33 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
         } else if (value("anyOf").isDefined) {
           TyUnionImpl(getList(value, "anyOf").toList.map(parse))
         } else if (value("enum").exists(_.isArray)) {
-          ???
-//          TyEnum(
-//            getList(value, "enum")
-//              .map(_.asString.get)
-//              .map(x =>
-//                TyVariant(
-//                  List(x),
-//                  if (options.extendedGrammar && value("number").isDefined)
-//                    Some(value("number").get.asNumber.get.toInt.get)
-//                  else None
-//                )
-//              )
-//              .toList
-//          ).trySetValue(
-//            KeyReturn,
-//            value("int_enum").map(x =>
-//              if (options.extendedGrammar && x.asBoolean.get)
-//                TyIntegerImpl(Some(BitSize.B8), Some(true))
-//              else TyStringImpl()
-//            )
-//          )
+
+          TyEnumBuilder()
+            .variants(
+              getList(value, "enum")
+                .map(_.asString.get)
+                .map(x =>
+                  TyVariantBuilder()
+                    .name(x)
+                    .code(
+                      if (options.extendedGrammar && value("number").isDefined)
+                        Some(value("number").get.asNumber.get.toInt.get)
+                      else None
+                    )
+                    .build()
+                )
+                .toList
+            )
+            .value(
+              value("int_enum")
+                .map(x =>
+                  if (options.extendedGrammar && x.asBoolean.get)
+                    TyIntegerImpl(Some(BitSize.B8), Some(true))
+                  else TyStringImpl()
+                )
+                .getOrElse(TyStringImpl())
+            )
+            .build()
         } else {
           getString(value, "type") match {
             case "object" => parseStruct(value)

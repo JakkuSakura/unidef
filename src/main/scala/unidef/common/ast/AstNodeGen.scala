@@ -3,7 +3,6 @@ package unidef.common.ast
 import unidef.common.ty.*
 import scala.collection.mutable
 
-
 trait HasSchema() extends AstNode {
   def schema: Option[String]
 }
@@ -37,6 +36,9 @@ trait HasDerived() extends AstNode {
 trait HasFlow() extends AstNode {
   def flow: Option[FlowControl]
 }
+trait HasAutoIncr() extends AstNode {
+  def autoIncr: Option[Boolean]
+}
 trait HasMutability() extends AstNode {
   def mutability: Option[Boolean]
 }
@@ -60,6 +62,9 @@ trait HasArguments() extends AstNode {
 }
 trait HasParameters() extends AstNode {
   def parameters: List[AstValDef]
+}
+trait HasPrimaryKey() extends AstNode {
+  def primaryKey: Option[Boolean]
 }
 trait HasDecls() extends AstNode {
   def decls: List[AstNode]
@@ -97,34 +102,72 @@ trait HasNodes() extends AstNode {
 trait HasExpr() extends AstNode {
   def expr: AstNode
 }
-case class AstLiteralNullImpl() extends AstLiteralNull 
-case class AstAwaitImpl(expr: AstNode) extends AstAwait 
-case class AstLiteralNoneImpl() extends AstLiteralNone 
-case class AstFunctionDeclImpl(name: String, parameters: List[AstValDef], returnType: TyNode, dataframe: Option[Boolean], comment: Option[String], body: Option[AstNode], schema: Option[String], language: Option[String], overwrite: Option[Boolean]) extends AstFunctionDecl 
-case class AstIfImpl(test: AstNode, consequent: Option[AstNode], alternative: Option[AstNode]) extends AstIf 
-case class AstFlowControlImpl(flow: Option[FlowControl], value: Option[AstNode]) extends AstFlowControl 
-case class AstLiteralUnitImpl() extends AstLiteralUnit 
-case class AstStatementImpl(expr: AstNode) extends AstStatement 
-case class AstNullImpl() extends AstNull 
-case class AstSelectImpl(qualifier: AstNode, symbol: String) extends AstSelect 
-case class AstApplyImpl(applicable: AstNode, arguments: List[AstNode]) extends AstApply 
-case class AstDeclsImpl(decls: List[AstNode]) extends AstDecls 
-case class AstLiteralStringImpl(literalString: String) extends AstLiteralString 
-case class AstLiteralImpl(literalValue: String, ty: TyNode) extends AstLiteral 
-case class AstUnitImpl() extends AstUnit 
-case class AstUndefinedImpl() extends AstUndefined 
-case class AstBlockImpl(nodes: Option[List[AstNode]]) extends AstBlock 
-case class AstClassDeclImpl(name: String, parameters: List[AstValDef], fields: List[AstValDef], methods: List[AstNode], derived: List[AstClassIdent], schema: Option[String], dataframe: Option[Boolean], classType: Option[String]) extends AstClassDecl 
-case class AstValDefImpl(name: String, ty: TyNode, value: Option[AstNode], mutability: Option[Boolean]) extends AstValDef 
-case class AstTypeImpl(ty: TyNode) extends AstType 
-case class AstLiteralIntImpl(literalInt: Int) extends AstLiteralInt 
-case class AstRawCodeImpl(code: String, language: Option[String]) extends AstRawCode 
-trait AstLiteralNull() extends AstNode 
+case class AstLiteralNullImpl() extends AstLiteralNull
+case class AstAwaitImpl(expr: AstNode) extends AstAwait
+case class AstLiteralNoneImpl() extends AstLiteralNone
+case class AstFunctionDeclImpl(
+    name: String,
+    parameters: List[AstValDef],
+    returnType: TyNode,
+    dataframe: Option[Boolean],
+    comment: Option[String],
+    body: Option[AstNode],
+    schema: Option[String],
+    language: Option[String],
+    overwrite: Option[Boolean]
+) extends AstFunctionDecl
+case class AstIfImpl(test: AstNode, consequent: Option[AstNode], alternative: Option[AstNode])
+    extends AstIf
+case class AstFlowControlImpl(flow: Option[FlowControl], value: Option[AstNode])
+    extends AstFlowControl
+case class AstLiteralUnitImpl() extends AstLiteralUnit
+case class AstStatementImpl(expr: AstNode) extends AstStatement
+case class AstNullImpl() extends AstNull
+case class AstSelectImpl(qualifier: AstNode, symbol: String) extends AstSelect
+case class AstApplyImpl(applicable: AstNode, arguments: List[AstNode]) extends AstApply
+case class AstDeclsImpl(decls: List[AstNode]) extends AstDecls
+case class AstLiteralStringImpl(literalString: String) extends AstLiteralString
+case class AstLiteralImpl(literalValue: String, ty: TyNode) extends AstLiteral
+case class AstUnitImpl() extends AstUnit
+case class AstUndefinedImpl() extends AstUndefined
+case class AstBlockImpl(nodes: Option[List[AstNode]]) extends AstBlock
+case class AstClassDeclImpl(
+    name: String,
+    parameters: List[AstValDef],
+    fields: List[AstValDef],
+    methods: List[AstNode],
+    derived: List[AstClassIdent],
+    schema: Option[String],
+    dataframe: Option[Boolean],
+    classType: Option[String]
+) extends AstClassDecl
+case class AstValDefImpl(
+    name: String,
+    ty: TyNode,
+    value: Option[AstNode],
+    mutability: Option[Boolean],
+    autoIncr: Option[Boolean],
+    primaryKey: Option[Boolean]
+) extends AstValDef
+case class AstTypeImpl(ty: TyNode) extends AstType
+case class AstLiteralIntImpl(literalInt: Int) extends AstLiteralInt
+case class AstRawCodeImpl(code: String, language: Option[String]) extends AstRawCode
+trait AstLiteralNull() extends AstNode
 trait AstAwait() extends AstNode with HasExpr {
   def expr: AstNode
 }
-trait AstLiteralNone() extends AstNode 
-trait AstFunctionDecl() extends AstNode with HasName with HasParameters with HasReturnType with HasDataframe with HasComment with HasBody with HasSchema with HasLanguage with HasOverwrite {
+trait AstLiteralNone() extends AstNode
+trait AstFunctionDecl()
+    extends AstNode
+    with HasName
+    with HasParameters
+    with HasReturnType
+    with HasDataframe
+    with HasComment
+    with HasBody
+    with HasSchema
+    with HasLanguage
+    with HasOverwrite {
   def name: String
   def parameters: List[AstValDef]
   def returnType: TyNode
@@ -144,11 +187,11 @@ trait AstFlowControl() extends AstNode with HasFlow with HasValue {
   def flow: Option[FlowControl]
   def value: Option[AstNode]
 }
-trait AstLiteralUnit() extends AstNode 
+trait AstLiteralUnit() extends AstNode
 trait AstStatement() extends AstNode with HasExpr {
   def expr: AstNode
 }
-trait AstNull() extends AstNode 
+trait AstNull() extends AstNode
 trait AstSelect() extends AstNode with HasQualifier with HasSymbol {
   def qualifier: AstNode
   def symbol: String
@@ -167,12 +210,21 @@ trait AstLiteral() extends AstNode with HasLiteralValue with HasTy {
   def literalValue: String
   def ty: TyNode
 }
-trait AstUnit() extends AstNode 
-trait AstUndefined() extends AstNode 
+trait AstUnit() extends AstNode
+trait AstUndefined() extends AstNode
 trait AstBlock() extends AstNode with HasNodes {
   def nodes: Option[List[AstNode]]
 }
-trait AstClassDecl() extends AstNode with HasName with HasParameters with HasFields with HasMethods with HasDerived with HasSchema with HasDataframe with HasClassType {
+trait AstClassDecl()
+    extends AstNode
+    with HasName
+    with HasParameters
+    with HasFields
+    with HasMethods
+    with HasDerived
+    with HasSchema
+    with HasDataframe
+    with HasClassType {
   def name: String
   def parameters: List[AstValDef]
   def fields: List[AstValDef]
@@ -182,11 +234,20 @@ trait AstClassDecl() extends AstNode with HasName with HasParameters with HasFie
   def dataframe: Option[Boolean]
   def classType: Option[String]
 }
-trait AstValDef() extends AstNode with HasName with HasTy with HasValue with HasMutability {
+trait AstValDef()
+    extends AstNode
+    with HasName
+    with HasTy
+    with HasValue
+    with HasMutability
+    with HasAutoIncr
+    with HasPrimaryKey {
   def name: String
   def ty: TyNode
   def value: Option[AstNode]
   def mutability: Option[Boolean]
+  def autoIncr: Option[Boolean]
+  def primaryKey: Option[Boolean]
 }
 trait AstType() extends AstNode with HasTy {
   def ty: TyNode
@@ -293,7 +354,17 @@ class AstFunctionDeclBuilder() {
     this
   }
   def build(): AstFunctionDeclImpl = {
-    AstFunctionDeclImpl(name.get, parameters.toList, returnType.get, dataframe, comment, body, schema, language, overwrite)
+    AstFunctionDeclImpl(
+      name.get,
+      parameters.toList,
+      returnType.get,
+      dataframe,
+      comment,
+      body,
+      schema,
+      language,
+      overwrite
+    )
   }
 }
 class AstIfBuilder() {
@@ -534,7 +605,16 @@ class AstClassDeclBuilder() {
     this
   }
   def build(): AstClassDeclImpl = {
-    AstClassDeclImpl(name.get, parameters.toList, fields.toList, methods.toList, derived.toList, schema, dataframe, classType)
+    AstClassDeclImpl(
+      name.get,
+      parameters.toList,
+      fields.toList,
+      methods.toList,
+      derived.toList,
+      schema,
+      dataframe,
+      classType
+    )
   }
 }
 class AstValDefBuilder() {
@@ -542,6 +622,8 @@ class AstValDefBuilder() {
   var ty: Option[TyNode] = None
   var value: Option[AstNode] = None
   var mutability: Option[Boolean] = None
+  var autoIncr: Option[Boolean] = None
+  var primaryKey: Option[Boolean] = None
   def name(name: String): AstValDefBuilder = {
     this.name = Some(name)
     this
@@ -558,6 +640,14 @@ class AstValDefBuilder() {
     this.mutability = Some(mutability)
     this
   }
+  def autoIncr(autoIncr: Boolean): AstValDefBuilder = {
+    this.autoIncr = Some(autoIncr)
+    this
+  }
+  def primaryKey(primaryKey: Boolean): AstValDefBuilder = {
+    this.primaryKey = Some(primaryKey)
+    this
+  }
   def value(value: Option[AstNode]): AstValDefBuilder = {
     this.value = value
     this
@@ -566,8 +656,16 @@ class AstValDefBuilder() {
     this.mutability = mutability
     this
   }
+  def autoIncr(autoIncr: Option[Boolean]): AstValDefBuilder = {
+    this.autoIncr = autoIncr
+    this
+  }
+  def primaryKey(primaryKey: Option[Boolean]): AstValDefBuilder = {
+    this.primaryKey = primaryKey
+    this
+  }
   def build(): AstValDefImpl = {
-    AstValDefImpl(name.get, ty.get, value, mutability)
+    AstValDefImpl(name.get, ty.get, value, mutability, autoIncr, primaryKey)
   }
 }
 class AstTypeBuilder() {

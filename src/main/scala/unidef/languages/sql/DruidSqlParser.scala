@@ -16,7 +16,6 @@ import unidef.common.ty.*
 import org.apache.commons.lang3.StringUtils
 import unidef.utils.TextTool.{finds, findss}
 import unidef.common.*
-import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
 import unidef.utils.TypeDecodeException
 
 import scala.jdk.CollectionConverters.*
@@ -96,7 +95,7 @@ class DruidSqlParser {
     val tyName = arg.getDataType.getName
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
-    AstValDefImpl(name, ty, None, None)
+    AstValDefBuilder().name(name).ty(ty).build()
   }
 
   private def parseParam(

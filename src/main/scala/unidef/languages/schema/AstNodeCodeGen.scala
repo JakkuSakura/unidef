@@ -155,7 +155,11 @@ object AstNodeCodeGen {
         .field("name", TyStringImpl(), required = true)
         .field("ty", TyNode, required = true)
         .field("value", astNode)
-        .field("mutability", TyBooleanImpl()),
+        .field("mutability", TyBooleanImpl())
+        .field("auto_incr", TyBooleanImpl())
+//        .field("nullable", TyBooleanImpl())
+// use Option instead
+        .field("primary_key", TyBooleanImpl()),
       Ast("decls")
         .field("decls", TyListImpl(astNode), required = true),
       Ast("type")
@@ -174,6 +178,7 @@ object AstNodeCodeGen {
         .field("parameters", TyListImpl(TyNamedImpl("AstValDef")), required = true)
         .field("return_type", TyNode, required = true)
         .field("dataframe", TyBooleanImpl())
+        .field("records", TyBooleanImpl())
         .field("comment", TyStringImpl())
         .field("body", astNode)
         .field("schema", TyStringImpl())

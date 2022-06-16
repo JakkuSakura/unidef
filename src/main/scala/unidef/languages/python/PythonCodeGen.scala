@@ -1,6 +1,6 @@
 package unidef.languages.python
 
-import unidef.common.{KeywordProvider, NamingConvention}
+import unidef.common.NamingConvention
 import unidef.common.ty.*
 import unidef.common.ast.{
   AstImport,
@@ -21,7 +21,7 @@ private case class PythonCodeGenField(
     orig_name: String,
     ty: String
 )
-class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) extends KeywordProvider {
+class PythonCodeGen(naming: NamingConvention = PythonNamingConvention) {
   def renderEnum(
       name: String,
       enum_type: Option[String],

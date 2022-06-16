@@ -1,20 +1,15 @@
 package unidef.languages.sql
 
-import unidef.common.{Keyword, KeywordProvider, NamingConvention}
+import unidef.common.NamingConvention
 import unidef.common.ty.*
 import unidef.common.ast.*
 import unidef.languages.sql.SqlCommon.*
-import unidef.languages.sql.{KeyAutoIncr, KeyNullable, KeyPrimary}
 import unidef.utils.TextTool
 
 class SqlCodeGen(
     naming: NamingConvention = SqlNamingConvention,
     sqlCommon: SqlCommon = SqlCommon()
-) extends KeywordProvider {
-  override def keysOnFuncDecl: Seq[Keyword] =
-    Seq(KeyRecords, KeySchema)
-
-  override def keysOnField: Seq[Keyword] = Seq(KeyPrimary, KeyAutoIncr, KeyNullable)
+) {
   def renderFunctionCall(
       schema: String,
       db_func_name: String,
@@ -56,13 +51,15 @@ class SqlCodeGen(
 
   def generateTableDdl(node: AstClassDecl): String = {
     val name = naming.toFunctionName(node.name)
-    val fields = getFields(node).map(sqlCommon.convertToSqlField)
+    val fields = node.fields.map(sqlCommon.convertToSqlField)
     val schema = node.schema.fold("")(x => s"$x.")
     renderTableDdl(schema, name, fields)
   }
   def generateTableDdl(node: TyStruct): String = {
     val name = naming.toFunctionName(node.name.get)
-    val fields = node.fields.get.map(sqlCommon.convertToSqlField)
+    val fields = node.fields.get
+      .map(x => AstValDefBuilder().name(x.name.get).ty(x.value).build())
+      .map(sqlCommon.convertToSqlField)
     val schema = node.schema.fold("")(x => s"$x.")
     renderTableDdl(schema, name, fields)
   }
@@ -105,7 +102,9 @@ class SqlCodeGen(
     var returnType = ""
     node.returnType match {
       case x: TyStruct if x.fields.isDefined =>
-        returnTable = x.fields.get.map(sqlCommon.convertToSqlField)
+        returnTable = x.fields.get
+          .map(x => AstValDefBuilder().name(x.name.get).ty(x.value).build())
+          .map(sqlCommon.convertToSqlField)
       case _: TyStruct =>
         returnType = "record"
       case a => returnType = sqlCommon.convertType(a)

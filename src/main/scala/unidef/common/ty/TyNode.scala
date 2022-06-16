@@ -1,7 +1,7 @@
 package unidef.common.ty
 
 import io.circe.{Encoder, Json}
-import unidef.common.{BaseNode, Extendable, Keyword, KeywordBoolean, KeywordOnly}
+import unidef.common.{BaseNode}
 
 import java.util.TimeZone
 import scala.quoted.{Expr, Quotes}
@@ -27,11 +27,7 @@ object BitSize {
 }
 
 trait TyJson extends TyNode
-case class TyJsonAny() extends Extendable with TyJson
-case object KeyIsBinary extends KeywordBoolean
-case object TyJsonObject extends TyJson // TyStruct(None)
+case class TyJsonAny() extends TyJson
+case object TyJsonObject extends TyJson
 
 case class TyConstTupleString(values: List[String]) extends TyNode
-
-case object KeyProperties extends KeywordOnly
-case object KeyType extends KeywordOnly

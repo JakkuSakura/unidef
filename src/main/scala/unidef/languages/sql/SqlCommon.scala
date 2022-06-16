@@ -2,19 +2,12 @@ package unidef.languages.sql
 
 import com.typesafe.scalalogging.Logger
 import unidef.common.ast.AstValDef
-import unidef.common.{KeywordBoolean, KeywordString, NamingConvention}
+import unidef.common.NamingConvention
 import unidef.common.ty.*
-import unidef.languages.sql.{KeyNullable, KeyPrimary}
 import unidef.utils.TypeEncodeException
 
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
-object SqlCommon {
-  // multiple rows
-  case object KeyRecords extends KeywordBoolean
-
-  case object KeySchema extends KeywordString
-}
 
 class TyOid extends TyInteger {
   def bitSize: Option[BitSize] = Some(BitSize.B32)
@@ -62,7 +55,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       x.name
     case _: TyEnum => Some("text")
     case TyJsonObject => Some("jsonb")
-    case t: TyJsonAny if !t.getValue(KeyIsBinary).contains(false) => Some("jsonb")
+//    case t: TyJsonAny if !t.isBinary.contains(false) => Some("jsonb")
     case t: TyJsonAny => Some("json")
     case _: TyUnit => Some("void")
     case _: TyBoolean => Some("boolean")
@@ -92,8 +85,8 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
           TyTimeStampBuilder().timeUnit(TimeUnit.MILLISECONDS).hasTimeZone(true).build()
         )
       case "text" | "varchar" => Some(TyStringImpl())
-      case "jsonb" => Some(TyJsonAny().setValue(KeyIsBinary, true))
-      case "json" => Some(TyJsonAny().setValue(KeyIsBinary, false))
+//      case "jsonb" => Some(TyJsonAny().setValue(KeyIsBinary, true))
+//      case "json" => Some(TyJsonAny().setValue(KeyIsBinary, false))
       case "void" => Some(TyUnitImpl())
       case "oid" => Some(TyOid())
       case "bool" | "boolean" => Some(TyBooleanImpl())
@@ -106,30 +99,25 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   }
   def convertToSqlField(node: AstValDef): SqlField = {
     val attributes = new mutable.StringBuilder()
-    //    if (node.getValue(KeyPrimary).contains(true))
-    //      attributes ++= " PRIMARY KEY"
-    //    if (!node.getValue(KeyNullable).contains(true))
-    //      attributes ++= " NOT NULL"
-    // TODO auto incr
-    SqlField(
-      naming.toFieldName(node.name),
-      convertType(node.ty),
-      attributes.toString
-    )
-  }
-
-  def convertToSqlField(node: TyField): SqlField = {
-    val attributes = new mutable.StringBuilder()
-//    if (node.getValue(KeyPrimary).contains(true))
-//      attributes ++= " PRIMARY KEY"
-//    if (!node.getValue(KeyNullable).contains(true))
-//      attributes ++= " NOT NULL"
-    // TODO auto incr
-    SqlField(
-      naming.toFieldName(node.name.get),
-      convertType(node.value),
-      attributes.toString
-    )
+    if (node.primaryKey.contains(true))
+      attributes ++= " PRIMARY KEY"
+    // TODO: auto incr
+    node.ty match {
+      case x: TyOptional =>
+        attributes ++= " NULL" // optional
+        SqlField(
+          naming.toFieldName(node.name),
+          convertType(x.content),
+          attributes.toString
+        )
+      case _ =>
+        attributes ++= " NOT NULL"
+        SqlField(
+          naming.toFieldName(node.name),
+          convertType(node.ty),
+          attributes.toString
+        )
+    }
   }
 
 }

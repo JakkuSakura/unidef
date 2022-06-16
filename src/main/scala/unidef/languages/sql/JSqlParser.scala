@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils
 import unidef.common
 import unidef.common.ty.*
 import unidef.common.ast.*
-import unidef.languages.sql.SqlCommon.{KeyRecords, KeySchema}
 import unidef.utils.TextTool.{finds, findss}
 import unidef.utils.{ParseCodeException, TypeDecodeException}
 
@@ -248,7 +247,7 @@ class JSqlParser() {
       )
       .body(AstRawCodeImpl(body, Some(language)))
       .schema(Option(schema).filterNot(_.isEmpty))
-    
+
     //    if (outputOnly.isEmpty)
     //      func.records(true)
     logger.debug(
@@ -271,14 +270,15 @@ class JSqlParser() {
   )(implicit resolver: TypeDecoder[String]): AstValDef = {
     val ty = column.getColDataType
     val name = column.getColumnName
-    AstValDefImpl(
-      name,
-      lookUpOrParseType(ty.getDataType).getOrElse(
-        throw TypeDecodeException("Failed to parse type", ty.getDataType)
-      ),
-      None,
-      None
-    )
+    AstValDefBuilder()
+      .name(name)
+      .ty(
+        lookUpOrParseType(ty.getDataType).getOrElse(
+          throw TypeDecodeException("Failed to parse type", ty.getDataType)
+        )
+      )
+      .build()
+
   }
   def lookUpOrParseType(ty: String)(implicit resolver: TypeDecoder[String]): Option[TyNode] = {
     val x = ty.replaceAll("\\w+?\\.", "").trim

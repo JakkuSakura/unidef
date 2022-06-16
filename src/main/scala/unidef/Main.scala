@@ -1,6 +1,5 @@
 package unidef
 
-import unidef.common.Extendable
 import unidef.common.ty.*
 import unidef.common.ast.*
 import unidef.languages.javascript.{JsonSchemaCodeGen, JsonSchemaParser}
