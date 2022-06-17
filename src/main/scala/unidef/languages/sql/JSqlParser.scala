@@ -43,7 +43,7 @@ class JSqlParser() {
         CCJSqlParserUtil.parseStatements(cleaned)
       } catch {
         case t: JSQLParserException =>
-          logger.info("Errr while parsing sql: " + cleaned)
+          logger.warn("Err while parsing sql: " + cleaned)
           throw t
         case t =>
           throw t
@@ -123,7 +123,6 @@ class JSqlParser() {
   private def parseParam(
       args: Seq[String]
   )(implicit resolver: TypeDecoder[String]): (Boolean, AstValDef) = {
-    logger.info("parseParam: " + args.mkString(", "))
     var nameCursor = 0
     var typeCursor = 1
     val input = args.slice(0, 2).map(_.toUpperCase) match {
