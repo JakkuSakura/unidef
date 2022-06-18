@@ -7,6 +7,8 @@ import unidef.common.ast.*
 import scala.collection.mutable
 import scala.quoted.Quotes
 
+case class LiftException(msg: String) extends Exception(msg)
+
 class LifterImpl(using val quotes: Quotes) {
   import quotes.reflect.*
 
@@ -14,8 +16,12 @@ class LifterImpl(using val quotes: Quotes) {
   def liftTree(tree: Tree): AstNode = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
-      case Inlined(_, _, Literal(IntConstant(v))) =>
-        AstLiteralIntImpl(v)
+      case Ident(name) =>
+        AstIdentImpl(name)
+      case Literal(IntConstant(value)) =>
+        AstLiteralIntImpl(value)
+      case Inlined(_, _, x) =>
+        liftTree(x)
 
     }
   }
@@ -26,6 +32,8 @@ class LifterImpl(using val quotes: Quotes) {
         AstLiteralIntImpl(v)
       case Literal(StringConstant(v)) => AstLiteralStringImpl(v)
       case Block(decls, Literal(UnitConstant())) => AstDeclsImpl(decls.flatMap(liftDecl))
+      case Block(decls, x) => throw LiftException(s"Unsupported term: ${x.show}")
+      case x => throw LiftException(s"Unsupported term: ${x.show}")
     }
   }
 
@@ -62,8 +70,9 @@ class LifterImpl(using val quotes: Quotes) {
         liftClassDef(name, defDef, parents, sefl, body)
       case Apply(fun, args) => AstApplyImpl(liftTree(fun), args.map(liftTree))
       case Literal(UnitConstant()) => AstLiteralUnitImpl()
+      case Block(stmts, expr) => AstBlockImpl(stmts.map(liftStmt) :+  liftStmt(expr))
       case x =>
-        logger.error(s"Unsupported statement: ${x.show}")
+        logger.error(s"unsupported statement: ${x.show} \n${x}")
         AstRawCodeImpl(x.show, None)
     }
   }

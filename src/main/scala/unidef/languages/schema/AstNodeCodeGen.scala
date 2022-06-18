@@ -114,7 +114,7 @@ object AstNodeCodeGen {
     val astNode = Types.named("AstNode")
     Seq(
       Ast("block")
-        .field("nodes", Types.list(astNode)),
+        .field("nodes", Types.list(astNode), required = true),
       Ast("statement")
         .field("expr", astNode, required = true),
       Ast("if")
@@ -184,7 +184,7 @@ object AstNodeCodeGen {
         .field("parameters", Types.list(Types.named("AstValDef")), required = true)
         .field("fields", Types.list(Types.named("AstValDef")), required = true)
         .field("methods", Types.list(Types.named("AstNode")), required = true)
-        .field("derived", Types.list(Types.named("AstClassIdent")), required = true)
+        .field("derived", Types.list(Types.named("AstIdent")), required = true)
         .field("schema", Types.string())
         .field("dataframe", Types.bool())
         .field("class_type", Types.string())

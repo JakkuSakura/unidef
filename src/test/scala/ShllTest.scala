@@ -3,7 +3,7 @@ import org.junit.jupiter.api.Test
 import unidef.common.ast.*
 import unidef.common.ty.*
 import unidef.languages.python.PythonCommon
-import unidef.languages.shll.{Compiler, PrettyPrinter}
+import unidef.languages.shll.{Compiler, PrettyPrinter, Specializer}
 
 private object ScalaiTestHelper {
   def compileAndLift(code: String): AstNode = {
@@ -58,6 +58,27 @@ class ScalaiTest {
     }
     println(y)
     assertEquals(y.asInstanceOf[AstDecls].decls.length, 2)
+  }
+  @Test def test_simple_specialize(): Unit = {
+    val code = ScalaiTestHelper.lift {
+      def foo(a: Int): Unit = {}
+      def bar(): Unit = {
+        foo(1)
+        foo(2)
+      }
+    }
+    val specialized = Specializer().specialize(code)
+
+    val expected = ScalaiTestHelper.lift {
+      def foo(): Unit = {}
+      def foo_1(): Unit = {}
+      def foo_2(): Unit = {}
+      def bar(): Unit = {
+        foo_1()
+        foo_2()
+      }
+    }
+    assertEquals(expected, specialized)
   }
 
   @Test def test_active_inlining(): Unit = {
