@@ -37,7 +37,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         fields += x
     }
     fields += TyFieldBuilder().name("headers").value(TyConstTupleString(headers.toList)).build()
-    fields += TyFieldBuilder().name("body").value(TyListImpl(TyTupleImpl(body_row.toList))).build()
+    fields += TyFieldBuilder().name("body").value(Types.list(TyTupleImpl(body_row.toList))).build()
     // TODO: add header names and types
     TyStructBuilder().fields(fields.toList).build()
   }

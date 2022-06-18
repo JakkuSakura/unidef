@@ -64,9 +64,9 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
 
   override def decode(ty: String): Option[TyNode] = {
     ty match {
-      case s"$ty[]" => decode(ty).map(x => TyListImpl(x))
+      case s"$ty[]" => decode(ty).map(x => Types.list(x))
       case "bigint" | "bigserial" => Some(TyIntegerImpl(Some(BitSize.B64), Some(true)))
-      case "integer" | "int" | "serial" => Some(TyIntegerImpl(Some(BitSize.B32), Some(true)))
+      case "integer" | "int" | "serial" => Some(Types.i32())
       case "smallint" => Some(TyIntegerImpl(Some(BitSize.B16), Some(true)))
       case "double precision" | "float" => Some(TyFloatImpl(Some(BitSize.B64)))
       case "real" => Some(TyFloatImpl(Some(BitSize.B32)))

@@ -11,12 +11,11 @@ class LifterImpl(using val quotes: Quotes) {
   import quotes.reflect.*
 
   val logger = Logger[this.type]
-  val tyInt = TyIntegerImpl(Some(BitSize.B32), Some(true))
   def liftTree(tree: Tree): AstNode = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
       case Inlined(_, _, Literal(IntConstant(v))) =>
-        AstLiteralImpl(v.toString, tyInt)
+        AstLiteralImpl(v.toString, Types.i32())
 
     }
   }
@@ -24,7 +23,7 @@ class LifterImpl(using val quotes: Quotes) {
     tree match {
       case Block(Nil, x) => liftTerm(x)
       case Literal(IntConstant(v)) =>
-        AstLiteralImpl(v.toString, tyInt)
+        AstLiteralImpl(v.toString, Types.i32())
       case Literal(StringConstant(v)) => AstLiteralImpl(v, Types.string())
       case Block(decls, Literal(UnitConstant())) => AstDeclsImpl(decls.flatMap(liftDecl))
     }

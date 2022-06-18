@@ -37,9 +37,11 @@ case object LifeTime {
 object Types {
   def named(name: String): TyNamed = TyNamedBuilder().ref(name).build()
   def i32(): TyInteger = TyIntegerBuilder().bitSize(BitSize.B32).signed(true).build()
+  def u32(): TyInteger = TyIntegerBuilder().bitSize(BitSize.B32).signed(false).build()
 
   def string(): TyString = TyStringBuilder().build()
   def unit(): TyUnit = TyUnitBuilder().build()
+  def any(): TyUnit = TyAnyBuilder().build()
   def bool(): TyBoolean = TyBooleanBuilder().build()
 
   def list(ty: TyNode): TyList = TyListBuilder().value(ty).build()

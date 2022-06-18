@@ -171,10 +171,10 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
           getString(value, "type") match {
             case "object" => parseStruct(value)
             case "array" if options.extendedGrammar =>
-              TyListImpl(value("items").map(parse).getOrElse(TyAnyImpl()))
+              Types.list(value("items").map(parse).getOrElse(TyAnyImpl()))
             case "array" =>
               val items = getObject(value, "items")
-              TyListImpl(parse(Json.fromJsonObject(items)))
+              Types.list(parse(Json.fromJsonObject(items)))
 //            case "function" if options.extendedGrammar => parseFunction(value)
             case ty => jsonSchemaCommon.decodeOrThrow(ty)
           }

@@ -5,7 +5,7 @@ import unidef.common.ty.*
 class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
   override def decode(name: String): Option[TyNode] = name.toLowerCase match {
     case s"$x?" if extended => decode(x).map(x => TyOptionalImpl(x))
-    case s"$x[]" if extended => decode(x).map(x => TyListImpl(x))
+    case s"$x[]" if extended => decode(x).map(x => Types.list(x))
     case "integer" if !extended =>
       Some(TyIntegerImpl(None, Some(true)))
     case "string" => Some(Types.string())
@@ -13,9 +13,9 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "number" => Some(TyNumericImpl())
     case "object" => Some(TyStructBuilder().build())
     case "null" => Some(TyNullImpl())
-    case "int" | "i32" | "integer" if extended => Some(TyIntegerImpl(Some(BitSize.B32), Some(true)))
+    case "int" | "i32" | "integer" if extended => Some(Types.i32())
     case "uint" | "u32" if extended =>
-      Some(TyIntegerImpl(Some(BitSize.B32), Some(false)))
+      Some(Types.u32())
     case "long" | "i64" if extended => Some(TyIntegerImpl(Some(BitSize.B64), Some(true)))
     case "ulong" | "u64" if extended =>
       Some(TyIntegerImpl(Some(BitSize.B64), Some(false)))
@@ -31,7 +31,7 @@ class JsonSchemaCommon(extended: Boolean) extends TypeDecoder[String] {
     case "timestamptz" if extended =>
       Some(TyTimeStampBuilder().hasTimeZone(true).build())
     // TODO really extended only?
-    case "array" | "list" if extended => Some(TyListImpl(TyAnyImpl()))
+    case "array" | "list" if extended => Some(Types.list(TyAnyImpl()))
     case "option" | "optional" if extended => Some(TyOptionalImpl(TyAnyImpl()))
     case "bytea" | "[u8]" if extended => Some(TyByteArrayImpl())
     case "bool" if extended => Some(TyBooleanImpl())
