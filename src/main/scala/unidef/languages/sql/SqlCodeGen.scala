@@ -29,7 +29,7 @@ class SqlCodeGen(
   }
   def generateCallFunc(func: AstFunctionDecl, percentage: Boolean = false): String = {
 
-    val params = func.parameters.map(_.name).map(naming.toFunctionParameterName)
+    val params = Asts.flattenParameters(func.parameters).map(_.name).map(naming.toFunctionParameterName)
     val db_func_name = naming.toFunctionName(func.name)
     val schema = func.schema.fold("")(x => s"$x.")
     val returnType = func.returnType
@@ -85,22 +85,22 @@ class SqlCodeGen(
       + TextTool.indent_hard(body, 2)
       + "\n$$;"
 
-  def generateFunctionDdl(node: AstFunctionDecl): String = {
-    val name = naming.toFunctionName(node.name)
-    val args = node.parameters
+  def generateFunctionDdl(func: AstFunctionDecl): String = {
+    val name = naming.toFunctionName(func.name)
+    val args = Asts.flattenParameters(func.parameters)
       .map(sqlCommon.convertToSqlField)
 
     val language =
-      node.body.get
+      func.body.get
         .asInstanceOf[AstRawCode]
         .language
         .get
 
-    val body = node.body.get.asInstanceOf[AstRawCode].code
-    val schema = node.schema.fold("")(x => s"$x.")
+    val body = func.body.get.asInstanceOf[AstRawCode].code
+    val schema = func.schema.fold("")(x => s"$x.")
     var returnTable: List[SqlField] = Nil
     var returnType = ""
-    node.returnType match {
+    func.returnType match {
       case x: TyStruct if x.fields.isDefined =>
         returnTable = x.fields.get
           .map(x => AstValDefBuilder().name(x.name.get).ty(x.value).build())

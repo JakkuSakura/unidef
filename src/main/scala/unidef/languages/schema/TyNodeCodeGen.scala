@@ -103,7 +103,7 @@ case class TyNodeCodeGen() {
       .name(
         "Ty" + TextTool.toPascalCase(ty.name) + "Impl"
       )
-      .parameters(fields)
+      .parameters(Asts.parameters(fields))
       .derived(
         List(AstIdentImpl("Ty" + TextTool.toPascalCase(ty.name)))
       )

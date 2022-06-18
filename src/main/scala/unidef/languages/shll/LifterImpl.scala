@@ -113,7 +113,7 @@ class LifterImpl(using val quotes: Quotes) {
     val body = term.map(liftStmt)
     AstFunctionDeclBuilder()
       .name(name)
-      .parameters(paramss.map(liftParameter))
+      .parameters(Asts.parameters(paramss.map(liftParameter)))
       .returnType(retType)
       .body(body)
       .build()

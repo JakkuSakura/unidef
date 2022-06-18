@@ -117,8 +117,6 @@ case class RustCommon() extends TypeEncoder[String] with TypeDecoder[String] {
         encode(x.key).flatMap(k => encode(x.value).map(v => s"HashMap<${k}, ${v}>"))
 //      case x: TyReference =>
 //        Some("String")
-      case x: TyString =>
-        Some("String")
     }
   }
 

@@ -4,9 +4,6 @@ import unidef.common.ty.*
 import scala.collection.mutable
 
 
-trait HasSchema() extends AstNode {
-  def schema: Option[String]
-}
 trait HasTest() extends AstNode {
   def test: AstNode
 }
@@ -16,23 +13,14 @@ trait HasApplicable() extends AstNode {
 trait HasRecords() extends AstNode {
   def records: Option[Boolean]
 }
-trait HasParameterLists() extends AstNode {
-  def parameterLists: List[AstParameterList]
+trait HasArgumentLists() extends AstNode {
+  def argumentLists: AstArgumentLists
 }
 trait HasFields() extends AstNode {
   def fields: List[AstValDef]
 }
-trait HasReturnType() extends AstNode {
-  def returnType: TyNode
-}
 trait HasClassType() extends AstNode {
   def classType: Option[String]
-}
-trait HasMethods() extends AstNode {
-  def methods: List[AstNode]
-}
-trait HasDerived() extends AstNode {
-  def derived: List[AstIdent]
 }
 trait HasStmts() extends AstNode {
   def stmts: List[AstNode]
@@ -40,8 +28,20 @@ trait HasStmts() extends AstNode {
 trait HasAutoIncr() extends AstNode {
   def autoIncr: Option[Boolean]
 }
+trait HasMutability() extends AstNode {
+  def mutability: Option[Boolean]
+}
+trait HasArgumentListsContent() extends AstNode {
+  def argumentListsContent: List[AstArgumentList]
+}
 trait HasCode() extends AstNode {
   def code: String
+}
+trait HasParameters() extends AstNode {
+  def parameters: AstParameterLists
+}
+trait HasSchema() extends AstNode {
+  def schema: Option[String]
 }
 trait HasValue() extends AstNode {
   def value: Option[AstNode]
@@ -52,14 +52,8 @@ trait HasQualifier() extends AstNode {
 trait HasLanguage() extends AstNode {
   def language: Option[String]
 }
-trait HasParameterList() extends AstNode {
-  def parameterList: List[AstValDef]
-}
 trait HasArguments() extends AstNode {
   def arguments: List[AstNode]
-}
-trait HasParameters() extends AstNode {
-  def parameters: List[AstValDef]
 }
 trait HasPrimaryKey() extends AstNode {
   def primaryKey: Option[Boolean]
@@ -70,14 +64,20 @@ trait HasOverwrite() extends AstNode {
 trait HasDirective() extends AstNode {
   def directive: String
 }
+trait HasParameterListsContent() extends AstNode {
+  def parameterListsContent: List[AstParameterList]
+}
+trait HasArgumentListContent() extends AstNode {
+  def argumentListContent: List[AstArgument]
+}
+trait HasReturnType() extends AstNode {
+  def returnType: TyNode
+}
 trait HasDataframe() extends AstNode {
   def dataframe: Option[Boolean]
 }
 trait HasNodes() extends AstNode {
   def nodes: List[AstNode]
-}
-trait HasArgumentList() extends AstNode {
-  def argumentList: List[AstArgument]
 }
 trait HasClassId() extends AstNode {
   def classId: String
@@ -91,17 +91,17 @@ trait HasDecls() extends AstNode {
 trait HasSymbol() extends AstNode {
   def symbol: String
 }
-trait HasArgumentLists() extends AstNode {
-  def argumentLists: List[AstArgumentList]
+trait HasMethods() extends AstNode {
+  def methods: List[AstNode]
+}
+trait HasParameterListContent() extends AstNode {
+  def parameterListContent: List[AstValDef]
+}
+trait HasDerived() extends AstNode {
+  def derived: List[AstIdent]
 }
 trait HasFlow() extends AstNode {
   def flow: Option[FlowControl]
-}
-trait HasMutability() extends AstNode {
-  def mutability: Option[Boolean]
-}
-trait HasArgumentsLists() extends AstNode {
-  def argumentsLists: AstArgumentLists
 }
 trait HasBody() extends AstNode {
   def body: Option[AstNode]
@@ -140,27 +140,27 @@ case class AstLiteralNoneImpl() extends AstLiteralNone
 case class AstIfImpl(test: AstNode, consequent: Option[AstNode], alternative: Option[AstNode]) extends AstIf 
 case class AstFlowControlImpl(flow: Option[FlowControl], value: Option[AstNode]) extends AstFlowControl 
 case class AstLiteralUnitImpl() extends AstLiteralUnit 
-case class AstIdentifierImpl(classId: String) extends AstIdentifier
+case class AstClassIdentifierImpl(classId: String) extends AstClassIdentifier 
 case class AstStatementImpl(expr: AstNode) extends AstStatement 
-case class AstArgumentListsImpl(argumentLists: List[AstArgumentList]) extends AstArgumentLists 
-case class AstArgumentListImpl(argumentList: List[AstArgument]) extends AstArgumentList 
+case class AstArgumentListsImpl(argumentListsContent: List[AstArgumentList]) extends AstArgumentLists 
+case class AstArgumentListImpl(argumentListContent: List[AstArgument]) extends AstArgumentList 
 case class AstApplyImpl(applicable: AstNode, arguments: List[AstNode]) extends AstApply 
 case class AstDeclsImpl(decls: List[AstNode]) extends AstDecls 
 case class AstLiteralStringImpl(literalString: String) extends AstLiteralString 
 case class AstArgumentImpl(name: String, value: Option[AstNode]) extends AstArgument 
 case class AstDirectiveImpl(directive: String) extends AstDirective 
-case class AstFunctionDeclImpl(name: String, parameters: List[AstValDef], returnType: TyNode, dataframe: Option[Boolean], records: Option[Boolean], comment: Option[String], body: Option[AstNode], schema: Option[String], language: Option[String], overwrite: Option[Boolean]) extends AstFunctionDecl 
+case class AstFunctionDeclImpl(name: String, parameters: AstParameterLists, returnType: TyNode, dataframe: Option[Boolean], records: Option[Boolean], comment: Option[String], body: Option[AstNode], schema: Option[String], language: Option[String], overwrite: Option[Boolean]) extends AstFunctionDecl 
 case class AstLiteralUndefinedImpl() extends AstLiteralUndefined 
 case class AstSelectImpl(qualifier: AstNode, symbol: String) extends AstSelect 
-case class AstParameterListsImpl(parameterLists: List[AstParameterList]) extends AstParameterLists 
+case class AstParameterListsImpl(parameterListsContent: List[AstParameterList]) extends AstParameterLists 
 case class AstBlockImpl(nodes: List[AstNode]) extends AstBlock 
-case class AstClassDeclImpl(name: String, parameters: List[AstValDef], fields: List[AstValDef], methods: List[AstNode], derived: List[AstIdent], schema: Option[String], dataframe: Option[Boolean], classType: Option[String], access: Option[AccessModifier]) extends AstClassDecl
+case class AstClassDeclImpl(name: String, parameters: AstParameterLists, fields: List[AstValDef], methods: List[AstNode], derived: List[AstIdent], schema: Option[String], dataframe: Option[Boolean], classType: Option[String], access: Option[AccessModifier]) extends AstClassDecl 
 case class AstIdentImpl(name: String) extends AstIdent 
 case class AstVariableIdentifierImpl(variableIdentifier: String) extends AstVariableIdentifier 
-case class AstApplyListsImpl(applicable: AstNode, argumentsLists: AstArgumentLists) extends AstApplyLists 
+case class AstApplyListsImpl(applicable: AstNode, argumentLists: AstArgumentLists) extends AstApplyLists 
 case class AstValDefImpl(name: String, ty: TyNode, value: Option[AstNode], mutability: Option[Boolean], autoIncr: Option[Boolean], primaryKey: Option[Boolean]) extends AstValDef 
 case class AstTypeImpl(ty: TyNode) extends AstType 
-case class AstParameterListImpl(parameterList: List[AstValDef]) extends AstParameterList 
+case class AstParameterListImpl(parameterListContent: List[AstValDef]) extends AstParameterList 
 case class AstLiteralIntImpl(literalInt: Int) extends AstLiteralInt 
 case class AstRawCodeImpl(code: String, language: Option[String]) extends AstRawCode 
 trait AstLiteralNull() extends AstNode 
@@ -181,17 +181,17 @@ trait AstFlowControl() extends AstNode with HasFlow with HasValue {
   def value: Option[AstNode]
 }
 trait AstLiteralUnit() extends AstNode 
-trait AstIdentifier() extends AstNode with HasClassId {
+trait AstClassIdentifier() extends AstNode with HasClassId {
   def classId: String
 }
 trait AstStatement() extends AstNode with HasExpr {
   def expr: AstNode
 }
-trait AstArgumentLists() extends AstNode with HasArgumentLists {
-  def argumentLists: List[AstArgumentList]
+trait AstArgumentLists() extends AstNode with HasArgumentListsContent {
+  def argumentListsContent: List[AstArgumentList]
 }
-trait AstArgumentList() extends AstNode with HasArgumentList {
-  def argumentList: List[AstArgument]
+trait AstArgumentList() extends AstNode with HasArgumentListContent {
+  def argumentListContent: List[AstArgument]
 }
 trait AstApply() extends AstNode with HasApplicable with HasArguments {
   def applicable: AstNode
@@ -212,7 +212,7 @@ trait AstDirective() extends AstNode with HasDirective {
 }
 trait AstFunctionDecl() extends AstNode with HasName with HasParameters with HasReturnType with HasDataframe with HasRecords with HasComment with HasBody with HasSchema with HasLanguage with HasOverwrite {
   def name: String
-  def parameters: List[AstValDef]
+  def parameters: AstParameterLists
   def returnType: TyNode
   def dataframe: Option[Boolean]
   def records: Option[Boolean]
@@ -227,15 +227,15 @@ trait AstSelect() extends AstNode with HasQualifier with HasSymbol {
   def qualifier: AstNode
   def symbol: String
 }
-trait AstParameterLists() extends AstNode with HasParameterLists {
-  def parameterLists: List[AstParameterList]
+trait AstParameterLists() extends AstNode with HasParameterListsContent {
+  def parameterListsContent: List[AstParameterList]
 }
 trait AstBlock() extends AstNode with HasNodes {
   def nodes: List[AstNode]
 }
 trait AstClassDecl() extends AstNode with HasName with HasParameters with HasFields with HasMethods with HasDerived with HasSchema with HasDataframe with HasClassType with HasAccess {
   def name: String
-  def parameters: List[AstValDef]
+  def parameters: AstParameterLists
   def fields: List[AstValDef]
   def methods: List[AstNode]
   def derived: List[AstIdent]
@@ -250,9 +250,9 @@ trait AstIdent() extends AstNode with HasName {
 trait AstVariableIdentifier() extends AstNode with HasVariableIdentifier {
   def variableIdentifier: String
 }
-trait AstApplyLists() extends AstNode with HasApplicable with HasArgumentsLists {
+trait AstApplyLists() extends AstNode with HasApplicable with HasArgumentLists {
   def applicable: AstNode
-  def argumentsLists: AstArgumentLists
+  def argumentLists: AstArgumentLists
 }
 trait AstValDef() extends AstNode with HasName with HasTy with HasValue with HasMutability with HasAutoIncr with HasPrimaryKey {
   def name: String
@@ -265,8 +265,8 @@ trait AstValDef() extends AstNode with HasName with HasTy with HasValue with Has
 trait AstType() extends AstNode with HasTy {
   def ty: TyNode
 }
-trait AstParameterList() extends AstNode with HasParameterList {
-  def parameterList: List[AstValDef]
+trait AstParameterList() extends AstNode with HasParameterListContent {
+  def parameterListContent: List[AstValDef]
 }
 trait AstLiteralInt() extends AstNode with HasLiteralInt {
   def literalInt: Int
@@ -365,14 +365,14 @@ class AstLiteralUnitBuilder() {
     AstLiteralUnitImpl()
   }
 }
-class AstIdentifierBuilder() {
+class AstClassIdentifierBuilder() {
   var classId: Option[String] = None
-  def classId(classId: String): AstIdentifierBuilder = {
+  def classId(classId: String): AstClassIdentifierBuilder = {
     this.classId = Some(classId)
     this
   }
-  def build(): AstIdentifierImpl = {
-    AstIdentifierImpl(classId.get)
+  def build(): AstClassIdentifierImpl = {
+    AstClassIdentifierImpl(classId.get)
   }
 }
 class AstStatementBuilder() {
@@ -386,31 +386,31 @@ class AstStatementBuilder() {
   }
 }
 class AstArgumentListsBuilder() {
-  var argumentLists: mutable.ArrayBuffer[AstArgumentList] = mutable.ArrayBuffer.empty
-  def argumentLists(argumentLists: List[AstArgumentList]): AstArgumentListsBuilder = {
-    this.argumentLists ++= argumentLists
+  var argumentListsContent: mutable.ArrayBuffer[AstArgumentList] = mutable.ArrayBuffer.empty
+  def argumentListsContent(argumentListsContent: List[AstArgumentList]): AstArgumentListsBuilder = {
+    this.argumentListsContent ++= argumentListsContent
     this
   }
-  def argumentList(argumentList: AstArgumentList): AstArgumentListsBuilder = {
-    this.argumentLists += argumentList
+  def argumentListsContent(argumentListsContent: AstArgumentList): AstArgumentListsBuilder = {
+    this.argumentListsContent += argumentListsContent
     this
   }
   def build(): AstArgumentListsImpl = {
-    AstArgumentListsImpl(argumentLists.toList)
+    AstArgumentListsImpl(argumentListsContent.toList)
   }
 }
 class AstArgumentListBuilder() {
-  var argumentList: mutable.ArrayBuffer[AstArgument] = mutable.ArrayBuffer.empty
-  def argumentList(argumentList: List[AstArgument]): AstArgumentListBuilder = {
-    this.argumentList ++= argumentList
+  var argumentListContent: mutable.ArrayBuffer[AstArgument] = mutable.ArrayBuffer.empty
+  def argumentListContent(argumentListContent: List[AstArgument]): AstArgumentListBuilder = {
+    this.argumentListContent ++= argumentListContent
     this
   }
-  def argumentList(argumentList: AstArgument): AstArgumentListBuilder = {
-    this.argumentList += argumentList
+  def argumentListContent(argumentListContent: AstArgument): AstArgumentListBuilder = {
+    this.argumentListContent += argumentListContent
     this
   }
   def build(): AstArgumentListImpl = {
-    AstArgumentListImpl(argumentList.toList)
+    AstArgumentListImpl(argumentListContent.toList)
   }
 }
 class AstApplyBuilder() {
@@ -487,7 +487,7 @@ class AstDirectiveBuilder() {
 }
 class AstFunctionDeclBuilder() {
   var name: Option[String] = None
-  var parameters: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
+  var parameters: Option[AstParameterLists] = None
   var returnType: Option[TyNode] = None
   var dataframe: Option[Boolean] = None
   var records: Option[Boolean] = None
@@ -500,8 +500,8 @@ class AstFunctionDeclBuilder() {
     this.name = Some(name)
     this
   }
-  def parameters(parameters: List[AstValDef]): AstFunctionDeclBuilder = {
-    this.parameters ++= parameters
+  def parameters(parameters: AstParameterLists): AstFunctionDeclBuilder = {
+    this.parameters = Some(parameters)
     this
   }
   def returnType(returnType: TyNode): AstFunctionDeclBuilder = {
@@ -564,12 +564,8 @@ class AstFunctionDeclBuilder() {
     this.overwrite = overwrite
     this
   }
-  def parameter(parameter: AstValDef): AstFunctionDeclBuilder = {
-    this.parameters += parameter
-    this
-  }
   def build(): AstFunctionDeclImpl = {
-    AstFunctionDeclImpl(name.get, parameters.toList, returnType.get, dataframe, records, comment, body, schema, language, overwrite)
+    AstFunctionDeclImpl(name.get, parameters.get, returnType.get, dataframe, records, comment, body, schema, language, overwrite)
   }
 }
 class AstLiteralUndefinedBuilder() {
@@ -593,17 +589,17 @@ class AstSelectBuilder() {
   }
 }
 class AstParameterListsBuilder() {
-  var parameterLists: mutable.ArrayBuffer[AstParameterList] = mutable.ArrayBuffer.empty
-  def parameterLists(parameterLists: List[AstParameterList]): AstParameterListsBuilder = {
-    this.parameterLists ++= parameterLists
+  var parameterListsContent: mutable.ArrayBuffer[AstParameterList] = mutable.ArrayBuffer.empty
+  def parameterListsContent(parameterListsContent: List[AstParameterList]): AstParameterListsBuilder = {
+    this.parameterListsContent ++= parameterListsContent
     this
   }
-  def parameterList(parameterList: AstParameterList): AstParameterListsBuilder = {
-    this.parameterLists += parameterList
+  def parameterListsContent(parameterListsContent: AstParameterList): AstParameterListsBuilder = {
+    this.parameterListsContent += parameterListsContent
     this
   }
   def build(): AstParameterListsImpl = {
-    AstParameterListsImpl(parameterLists.toList)
+    AstParameterListsImpl(parameterListsContent.toList)
   }
 }
 class AstBlockBuilder() {
@@ -622,7 +618,7 @@ class AstBlockBuilder() {
 }
 class AstClassDeclBuilder() {
   var name: Option[String] = None
-  var parameters: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
+  var parameters: Option[AstParameterLists] = None
   var fields: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
   var methods: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
   var derived: mutable.ArrayBuffer[AstIdent] = mutable.ArrayBuffer.empty
@@ -634,8 +630,8 @@ class AstClassDeclBuilder() {
     this.name = Some(name)
     this
   }
-  def parameters(parameters: List[AstValDef]): AstClassDeclBuilder = {
-    this.parameters ++= parameters
+  def parameters(parameters: AstParameterLists): AstClassDeclBuilder = {
+    this.parameters = Some(parameters)
     this
   }
   def fields(fields: List[AstValDef]): AstClassDeclBuilder = {
@@ -682,10 +678,6 @@ class AstClassDeclBuilder() {
     this.access = access
     this
   }
-  def parameter(parameter: AstValDef): AstClassDeclBuilder = {
-    this.parameters += parameter
-    this
-  }
   def field(field: AstValDef): AstClassDeclBuilder = {
     this.fields += field
     this
@@ -699,7 +691,7 @@ class AstClassDeclBuilder() {
     this
   }
   def build(): AstClassDeclImpl = {
-    AstClassDeclImpl(name.get, parameters.toList, fields.toList, methods.toList, derived.toList, schema, dataframe, classType, access)
+    AstClassDeclImpl(name.get, parameters.get, fields.toList, methods.toList, derived.toList, schema, dataframe, classType, access)
   }
 }
 class AstIdentBuilder() {
@@ -724,17 +716,17 @@ class AstVariableIdentifierBuilder() {
 }
 class AstApplyListsBuilder() {
   var applicable: Option[AstNode] = None
-  var argumentsLists: Option[AstArgumentLists] = None
+  var argumentLists: Option[AstArgumentLists] = None
   def applicable(applicable: AstNode): AstApplyListsBuilder = {
     this.applicable = Some(applicable)
     this
   }
-  def argumentsLists(argumentsLists: AstArgumentLists): AstApplyListsBuilder = {
-    this.argumentsLists = Some(argumentsLists)
+  def argumentLists(argumentLists: AstArgumentLists): AstApplyListsBuilder = {
+    this.argumentLists = Some(argumentLists)
     this
   }
   def build(): AstApplyListsImpl = {
-    AstApplyListsImpl(applicable.get, argumentsLists.get)
+    AstApplyListsImpl(applicable.get, argumentLists.get)
   }
 }
 class AstValDefBuilder() {
@@ -799,17 +791,17 @@ class AstTypeBuilder() {
   }
 }
 class AstParameterListBuilder() {
-  var parameterList: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
-  def parameterList(parameterList: List[AstValDef]): AstParameterListBuilder = {
-    this.parameterList ++= parameterList
+  var parameterListContent: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
+  def parameterListContent(parameterListContent: List[AstValDef]): AstParameterListBuilder = {
+    this.parameterListContent ++= parameterListContent
     this
   }
-  def parameterList(parameterList: AstValDef): AstParameterListBuilder = {
-    this.parameterList += parameterList
+  def parameterListContent(parameterListContent: AstValDef): AstParameterListBuilder = {
+    this.parameterListContent += parameterListContent
     this
   }
   def build(): AstParameterListImpl = {
-    AstParameterListImpl(parameterList.toList)
+    AstParameterListImpl(parameterListContent.toList)
   }
 }
 class AstLiteralIntBuilder() {

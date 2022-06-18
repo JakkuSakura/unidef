@@ -233,7 +233,7 @@ class JSqlParser() {
 
     val func = AstFunctionDeclBuilder()
       .name(name)
-      .parameters(inputs.toList)
+      .parameters(Asts.parameters(inputs.toList))
       .returnType(
         if (outputs.nonEmpty)
           TyStructBuilder()
@@ -260,7 +260,7 @@ class JSqlParser() {
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
     AstClassDeclBuilder()
       .name(tbl.getTable.getName)
-      .parameters(tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList)
+      .parameters(Asts.parameters(tbl.getColumnDefinitions.asScala.map(parseParseColumn).toList))
       .schema(Option(tbl.getTable.getSchemaName))
       .build()
   }

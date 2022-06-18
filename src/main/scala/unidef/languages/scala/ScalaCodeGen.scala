@@ -24,11 +24,13 @@ class ScalaCodeGen(naming: NamingConvention) {
 
   def generateMethod(method: AstFunctionDecl): String = {
     val name = naming.toMethodName(method.name)
+    // TODO: support multiple param lists
+    val parameters = Asts.flattenParameters(method.parameters)
     val params =
-      if (method.parameters.isEmpty && method.name.startsWith("get"))
+      if (parameters.isEmpty && method.name.startsWith("get"))
         ""
       else
-        "(" + method.parameters
+        "(" + parameters
           .map(x => x.name + ": " + common.encodeOrThrow(x.ty, "param"))
           .mkString(", ") + ")"
 
@@ -89,7 +91,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     }
 
     val name = naming.toClassName(c.name)
-    val params = c.parameters.map(mapParam)
+    val params = Asts.flattenParameters(c.parameters).map(mapParam)
     val fields = c.fields.map(mapParam)
     val derive = c.derived.map(_.name).map(naming.toClassName)
     val methods = c.methods.map {
@@ -162,8 +164,10 @@ class ScalaCodeGen(naming: NamingConvention) {
         .name(fieldName)
         .returnType(Types.named(builderName))
         .parameters(
-          List(
-            AstValDefBuilder().name(fieldName).ty(unwrapOptional(x.ty)).build()
+          Asts.parameters(
+            List(
+              AstValDefBuilder().name(fieldName).ty(unwrapOptional(x.ty)).build()
+            )
           )
         )
 
@@ -194,8 +198,10 @@ class ScalaCodeGen(naming: NamingConvention) {
               .name(fieldName)
               .returnType(Types.named(builderName))
               .parameters(
+                Asts.parameters(
                 List(
                   AstValDefBuilder().name(fieldName).ty(o).build()
+                )
                 )
               )
               .body(
@@ -217,8 +223,10 @@ class ScalaCodeGen(naming: NamingConvention) {
               .name(fieldNameWithoutS)
               .returnType(Types.named(builderName))
               .parameters(
-                List(
-                  AstValDefBuilder().name(fieldNameWithoutS).ty(list.value).build()
+                Asts.parameters(
+                  List(
+                    AstValDefBuilder().name(fieldNameWithoutS).ty(list.value).build()
+                  )
                 )
               )
               .body(

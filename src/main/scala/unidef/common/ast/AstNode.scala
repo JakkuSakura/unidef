@@ -31,7 +31,7 @@ object AccessModifier {
 def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
   TyStructBuilder()
     .name(func.name)
-    .fields(func.parameters.map(getField))
+    .fields(Asts.flattenParameters(func.parameters).map(getField))
     .dataframe(func.dataframe)
     .comment(func.comment)
     .build()
@@ -50,5 +50,8 @@ object BinaryOperator {
 }
 
 case object Asts {
-  
+  def flattenParameters(parameters: AstParameterLists): List[AstValDef] =
+    parameters.parameterListsContent.flatMap(_.parameterListContent)
+  def parameters(parameters: Seq[AstValDef]): AstParameterLists =
+    AstParameterListsImpl(List(AstParameterListImpl(parameters.toList)))
 }

@@ -141,7 +141,7 @@ class DruidSqlParser {
 
     val func = AstFunctionDeclBuilder()
       .name(name)
-      .parameters(inputs)
+      .parameters(Asts.parameters(inputs))
       .returnType(
         if (outputs.nonEmpty)
           TyStructBuilder()
@@ -167,7 +167,7 @@ class DruidSqlParser {
   )(implicit resolver: TypeDecoder[String]): AstClassDecl = {
     AstClassDeclBuilder()
       .name(tbl.getTableName)
-      .parameters(tbl.getColumnDefinitions.asScala.map(parseColumn).toList)
+      .parameters(Asts.parameters(tbl.getColumnDefinitions.asScala.map(parseColumn).toList))
       .schema(Option(tbl.getSchema))
       .build()
   }

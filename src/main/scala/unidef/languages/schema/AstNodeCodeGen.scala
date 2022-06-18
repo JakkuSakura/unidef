@@ -86,7 +86,7 @@ case class AstNodeCodeGen() {
       ty.fields.map(_.build()).toList
     AstClassDeclBuilder()
       .name(toAstClassName(ty.name) + "Impl")
-      .parameters(fields)
+      .parameters(Asts.parameters(fields))
       .derived(
         List(AstIdentImpl(toAstClassName(ty.name)))
       )
@@ -144,30 +144,30 @@ object AstNodeCodeGen {
         .field("language", Types.string()),
       Ast("parameter_list")
         .field(
-          "parameter_list",
+          "parameter_list_content",
           Types.list(Types.named("AstValDef")),
           required = true
         ) // AstParameter later
       ,
       Ast("parameter_lists")
-        .field("parameter_lists", Types.list(Types.named("AstParameterList")), required = true),
+        .field("parameter_lists_content", Types.list(Types.named("AstParameterList")), required = true),
       Ast("argument")
         .field("name", Types.string(), required = true)
         .field("value", astNode),
       Ast("argument_list")
         .field(
-          "argument_list",
+          "argument_list_content",
           Types.list(Types.named("AstArgument")),
           required = true
         ),
       Ast("argument_lists")
-        .field("argument_lists", Types.list(Types.named("AstArgumentList")), required = true),
+        .field("argument_lists_content", Types.list(Types.named("AstArgumentList")), required = true),
       Ast("apply")
         .field("applicable", astNode, required = true)
         .field("arguments", Types.list(astNode), required = true),
       Ast("apply_lists")
         .field("applicable", astNode, required = true)
-        .field("arguments_lists", Types.named("AstArgumentLists"), required = true),
+        .field("argument_lists", Types.named("AstArgumentLists"), required = true),
       Ast("val_def")
         .field("name", Types.string(), required = true)
         .field("ty", TyNode, required = true)
@@ -181,7 +181,7 @@ object AstNodeCodeGen {
         .field("ty", TyNode, required = true),
       Ast("class_decl")
         .field("name", Types.string(), required = true)
-        .field("parameters", Types.list(Types.named("AstValDef")), required = true)
+        .field("parameters", Types.named("AstParameterLists"), required = true)
         .field("fields", Types.list(Types.named("AstValDef")), required = true)
         .field("methods", Types.list(Types.named("AstNode")), required = true)
         .field("derived", Types.list(Types.named("AstIdent")), required = true)
@@ -191,7 +191,7 @@ object AstNodeCodeGen {
         .field("access", Types.named("AccessModifier")),
       Ast("function_decl")
         .field("name", Types.string(), required = true)
-        .field("parameters", Types.list(Types.named("AstValDef")), required = true)
+        .field("parameters", Types.named("AstParameterLists"), required = true)
         .field("return_type", TyNode, required = true)
         .field("dataframe", Types.bool())
         .field("records", Types.bool())

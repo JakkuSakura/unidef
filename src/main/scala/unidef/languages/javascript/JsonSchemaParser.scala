@@ -41,9 +41,11 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
       AstFunctionDeclBuilder()
         .name(name)
         .parameters(
-          parameters
-            .map(x => AstValDefBuilder().name(x.name.get).ty(x.value).build())
-            .toList
+          Asts.parameters(
+            parameters
+              .map(x => AstValDefBuilder().name(x.name.get).ty(x.value).build())
+              .toList
+          )
         )
         .returnType(ret)
 

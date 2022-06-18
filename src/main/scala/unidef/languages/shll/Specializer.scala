@@ -38,8 +38,10 @@ case class Specializer () {
     ctx.clsDeclMap(c.name) = c
     c
   }
+//  def isSpecializedFunctionDecl(d: AstFunctionDecl): Boolean = {
+//  
+//  }
   def specializeFunctionDecl(d: AstFunctionDecl): AstFunctionDecl = {
-
     ctx.funcDeclMap(d.name) = d
     d
   }
