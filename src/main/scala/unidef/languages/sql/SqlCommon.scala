@@ -34,7 +34,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   }
 
   override def encode(ty: TyNode): Option[String] = ty match {
-    case t: TyOptional => encode(t.value).map(s => s"$s = NULL")
+    case t: TyOption => encode(t.value).map(s => s"$s = NULL")
     case t: TyReal => Some(convertReal(t))
     case t: TyOid => Some("oid")
     case t: TyInteger => Some(convertInt(t))
@@ -65,11 +65,11 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
   override def decode(ty: String): Option[TyNode] = {
     ty match {
       case s"$ty[]" => decode(ty).map(x => Types.list(x))
-      case "bigint" | "bigserial" => Some(TyIntegerImpl(Some(BitSize.B64), Some(true)))
+      case "bigint" | "bigserial" => Some(Types.i64())
       case "integer" | "int" | "serial" => Some(Types.i32())
-      case "smallint" => Some(TyIntegerImpl(Some(BitSize.B16), Some(true)))
-      case "double precision" | "float" => Some(TyFloatImpl(Some(BitSize.B64)))
-      case "real" => Some(TyFloatImpl(Some(BitSize.B32)))
+      case "smallint" => Some(Types.i16())
+      case "double precision" | "float" => Some(Types.f64())
+      case "real" => Some(Types.f32())
       case "decimal" | "numeric" => Some(TyDecimalImpl(None, None))
       case "timestamp" | "timestamp without time zone" =>
         Some(
@@ -82,9 +82,9 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       case "text" | "varchar" => Some(Types.string())
       case "jsonb" => Some(TyJsonAnyBuilder().isBinary(true).build())
       case "json" => Some(TyJsonAnyBuilder().isBinary(false).build())
-      case "void" => Some(TyUnitImpl())
+      case "void" => Some(Types.unit())
       case "oid" => Some(TyOidImpl())
-      case "bool" | "boolean" => Some(TyBooleanImpl())
+      case "bool" | "boolean" => Some(Types.bool())
       case "bytea" => Some(TyByteArrayImpl())
       case "inet" => Some(TyInetImpl())
       case "uuid" => Some(TyUuidImpl())
@@ -98,7 +98,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       attributes ++= " PRIMARY KEY"
     // TODO: auto incr
     node.ty match {
-      case x: TyOptional =>
+      case x: TyOption =>
         attributes ++= " NULL" // optional
         SqlField(
           naming.toFieldName(node.name),

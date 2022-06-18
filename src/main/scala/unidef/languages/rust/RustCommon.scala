@@ -10,7 +10,7 @@ import unidef.common.ty.{
   TyMap,
   TyNamed,
   TyNode,
-  TyOptional,
+  TyOption,
   TyString,
   TyTuple,
   TyUnit,
@@ -75,7 +75,7 @@ case class RustCommon() extends TypeEncoder[String] with TypeDecoder[String] {
 
   override def encode(ty: TyNode): Option[String] = {
     ty match {
-      case x: TyOptional =>
+      case x: TyOption =>
         encode(x.value).map(x => s"Option<${x}>")
       case x: TyString =>
         Some(s"String")

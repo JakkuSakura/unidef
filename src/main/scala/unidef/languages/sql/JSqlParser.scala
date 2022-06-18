@@ -150,7 +150,7 @@ class JSqlParser() {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (input, AstValDefBuilder().name(name).ty(TyOptionalImpl(ty)).build())
+      (input, AstValDefBuilder().name(name).ty(Types.option(ty)).build())
     else
       (input, AstValDefBuilder().name(name).ty(ty).build())
 

@@ -150,7 +150,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         others += "properties" -> Json.fromFields(
           x.fields.get.map(f =>
             naming(f.name.get) -> generateType(f.value match {
-              case opt: TyOptional => opt.value
+              case opt: TyOption => opt.value
               case x => x
             })
           )
@@ -162,7 +162,7 @@ class JsonSchemaCodeGen(options: JsonSchemaCodeGenOption = JsonSchemaCodeGenOpti
         if (keyRequired) {
           others += "required" -> Json.fromValues(
             x.fields.get
-              .filterNot(f => f.value.isInstanceOf[TyOptional])
+              .filterNot(f => f.value.isInstanceOf[TyOption])
               .map(f => naming(f.name.get))
               .map(Json.fromString)
           )

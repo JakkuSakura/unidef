@@ -10,7 +10,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =
     node match {
       // handle unknown case
-      case x: TyOptional =>
+      case x: TyOption =>
         convertType(x.value, importManager)
           .map(s =>
             importManager.foreach(_ += AstImport("typing.Optional"))

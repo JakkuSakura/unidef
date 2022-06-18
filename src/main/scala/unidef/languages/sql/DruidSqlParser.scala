@@ -109,7 +109,7 @@ class DruidSqlParser {
     val ty = lookUpOrParseType(tyName)
       .getOrElse(throw TypeDecodeException(s"Failed to parse type", tyName))
     if (default == "NULL")
-      (arg.getParamType, AstValDefBuilder().name(name).ty(TyOptionalImpl(ty)).build())
+      (arg.getParamType, AstValDefBuilder().name(name).ty(Types.option(ty)).build())
     else
       (arg.getParamType, AstValDefBuilder().name(name).ty(ty).build())
   }

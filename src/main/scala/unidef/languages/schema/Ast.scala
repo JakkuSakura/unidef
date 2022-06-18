@@ -11,7 +11,7 @@ class Ast(val name: String) {
   def field(name: String, ty: TyNode, required: Boolean = false): Ast = {
     val builder = AstValDefBuilder().name(TextTool.toCamelCase(name))
     if (!required) {
-      builder.ty(TyOptionalImpl(ty))
+      builder.ty(Types.option(ty))
     } else {
       builder.ty(ty)
     }

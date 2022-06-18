@@ -90,7 +90,7 @@ class LifterImpl(using val quotes: Quotes) {
 
   def liftType(tree: TypeTree): TyNode = {
     // TODO
-    TyAnyImpl()
+    Types.any()
   }
   def liftMethodDef(
       name: String,

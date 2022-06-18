@@ -132,7 +132,7 @@ object TyNodeCodeGen {
         .field("schema", Types.string()),
       Type("tuple")
         .field("values", Types.list(TyNode), required = true),
-      Type("optional")
+      Type("option")
         .field("value", TyNode, required = true),
       Type("result")
         .field("ok", TyNode, required = true)

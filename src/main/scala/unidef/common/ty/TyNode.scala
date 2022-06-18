@@ -36,14 +36,29 @@ case object LifeTime {
 
 object Types {
   def named(name: String): TyNamed = TyNamedBuilder().ref(name).build()
-  def i32(): TyInteger = TyIntegerBuilder().bitSize(BitSize.B32).signed(true).build()
-  def u32(): TyInteger = TyIntegerBuilder().bitSize(BitSize.B32).signed(false).build()
+  private def integer(bitSize: BitSize, signed: Boolean) =
+    TyIntegerBuilder().bitSize(bitSize).signed(signed).build()
+
+  def i16(): TyInteger = integer(BitSize.B16, true)
+  def i32(): TyInteger = integer(BitSize.B32, true)
+  def i64(): TyInteger = integer(BitSize.B64, true)
+  def i128(): TyInteger = integer(BitSize.B128, true)
+  def u32(): TyInteger = integer(BitSize.B32, false)
+  def u64(): TyInteger = integer(BitSize.B64, false)
+  def u128(): TyInteger = integer(BitSize.B128, false)
+  def isize(): TyInteger = integer(BitSize.Native, true)
+  def usize(): TyInteger = integer(BitSize.Native, false)
+  def f32(): TyFloat = TyFloatBuilder().bitSize(BitSize.B32).build()
+  def f64(): TyFloat = TyFloatBuilder().bitSize(BitSize.B64).build()
 
   def string(): TyString = TyStringBuilder().build()
   def unit(): TyUnit = TyUnitBuilder().build()
-  def any(): TyUnit = TyAnyBuilder().build()
+
+  def any(): TyAny = TyAnyBuilder().build()
   def bool(): TyBoolean = TyBooleanBuilder().build()
 
   def list(ty: TyNode): TyList = TyListBuilder().value(ty).build()
+
+  def option(ty: TyNode): TyOption = TyOptionBuilder().value(ty).build()
 
 }

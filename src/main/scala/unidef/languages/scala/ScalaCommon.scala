@@ -7,7 +7,7 @@ import unidef.common.ty.{
   TyList,
   TyNamed,
   TyNode,
-  TyOptional,
+  TyOption,
   TyString,
   TyUnit,
   TypeEncoder
@@ -21,7 +21,7 @@ class ScalaCommon() extends TypeEncoder[String] {
       case _: TyString => Some("String")
       case _: TyUnit => Some("Unit")
       case _: TyBoolean => Some("Boolean")
-      case t: TyOptional => encode(t.value).map(x => s"Option[${x}]")
+      case t: TyOption => encode(t.value).map(x => s"Option[${x}]")
       case _: TyAny => Some("Any")
       case t: TyList => encode(t.value).map(x => s"List[${x}]")
       case x: TyNamed => Some(x.ref)

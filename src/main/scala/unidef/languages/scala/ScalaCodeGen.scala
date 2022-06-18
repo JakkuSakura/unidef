@@ -123,7 +123,7 @@ class ScalaCodeGen(naming: NamingConvention) {
       val fieldName = naming.toFieldName(field.name)
       println("expandField " + fieldName + " " + field.ty)
       fieldName + (field.ty match {
-        case _: TyOptional => ""
+        case _: TyOption => ""
         case _: TyList => ".toList"
         case _ => ".get"
       })
@@ -143,16 +143,16 @@ class ScalaCodeGen(naming: NamingConvention) {
     }
     def ensureOptional(x: TyNode): TyNode = {
       x match {
-        case x: TyOptional => x
+        case x: TyOption => x
         case x: TyList =>
           val content = common.encodeOrThrow(x.value, "scala")
           Types.named(s"mutable.ArrayBuffer[${content}]")
-        case x => TyOptionalImpl(x)
+        case x => TyOptionImpl(x)
       }
     }
     def unwrapOptional(x: TyNode): TyNode = {
       x match {
-        case x: TyOptional => x.value
+        case x: TyOption => x.value
         case x => x
       }
     }
@@ -188,7 +188,7 @@ class ScalaCodeGen(naming: NamingConvention) {
       val fieldName = naming.toFieldName(x.name)
 
       (x.ty match {
-        case o: TyOptional =>
+        case o: TyOption =>
           Some(
             AstFunctionDeclBuilder()
               .name(fieldName)
