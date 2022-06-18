@@ -36,7 +36,7 @@ case class AstNodeCodeGen() {
     AstClassDeclBuilder()
       .name(name)
       .methods(methods.map(x => AstRawCodeImpl(x, None)))
-      .derived(List(AstClassIdent(derive)))
+      .derived(List(AstIdentImpl(derive)))
       .classType(classType)
       .build()
 
@@ -70,11 +70,11 @@ case class AstNodeCodeGen() {
           )
       )
       .derived(
-        List(AstClassIdent("AstNode"))
+        List(AstIdentImpl("AstNode"))
           :::
             fields
               .map(x => "Has" + TextTool.toPascalCase(x.name))
-              .map(x => AstClassIdent(x))
+              .map(x => AstIdentImpl(x))
               .toList
       )
       .classType("trait")
@@ -88,7 +88,7 @@ case class AstNodeCodeGen() {
       .name(toAstClassName(ty.name) + "Impl")
       .parameters(fields)
       .derived(
-        List(AstClassIdent(toAstClassName(ty.name)))
+        List(AstIdentImpl(toAstClassName(ty.name)))
       )
       .classType("case class")
       .build()
@@ -113,9 +113,6 @@ object AstNodeCodeGen {
   def getAsts: Map[String, Ast] = {
     val astNode = Types.named("AstNode")
     Seq(
-      Ast("unit"),
-      Ast("null"),
-      Ast("undefined"),
       Ast("block")
         .field("nodes", Types.list(astNode)),
       Ast("statement")
@@ -127,20 +124,17 @@ object AstNodeCodeGen {
       Ast("flow_control")
         .field("flow", Types.named("FlowControl"))
         .field("value", astNode),
-      Ast("literal")
-        .field(
-          "literal_value",
-          Types.string(),
-          required = true
-        ) // TODO: make subtypes of literal values?
-        .field("ty", TyNode, required = true),
+      Ast("ident")
+      .field("name", Types.string(), required = true),
       Ast("literal_string")
         .field("literal_string", Types.string(), required = true),
       Ast("literal_int")
-        .field("literal_int", TyIntegerBuilder().build(), required = true),
+        .field("literal_int", Types.i32(), required = true),
       Ast("literal_unit"),
       Ast("literal_none"),
       Ast("literal_null"),
+      Ast("literal_undefined"),
+
       Ast("select")
         .field("qualifier", astNode, required = true)
         .field("symbol", Types.string(), required = true),

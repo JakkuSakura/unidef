@@ -1,12 +1,20 @@
 package unidef.languages.shll
 
-import unidef.common.ast.{AstLiteral, AstNode}
+import unidef.common.ast.*
 
 class PrettyPrinter {
   def print(n: AstNode): String = {
     n match {
-      case n: AstLiteral =>
-        n.literalValue
+      case n: AstLiteralString =>
+        n.literalString
+      case n: AstLiteralInt =>
+        n.literalInt.toString
+      case n: AstLiteralUnit =>
+        "()"
+      case n: AstLiteralNone =>
+        "None"
+      case n: AstLiteralNull =>
+        "null"
     }
   }
 }

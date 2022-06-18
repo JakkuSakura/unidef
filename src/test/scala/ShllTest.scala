@@ -1,6 +1,7 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import unidef.common.ast.{AstClassDecl, AstNode, AstProgram}
+import unidef.common.ast.{AstClassDecl, AstLiteralImpl, AstNode, AstProgram}
+import unidef.common.ty.*
 import unidef.languages.python.PythonCommon
 import unidef.languages.shll.{Compiler, PrettyPrinter}
 
@@ -31,6 +32,7 @@ private object ScalaiTestHelper {
       .head
       .value
       .get
+
     extracted
   }
 
@@ -38,16 +40,20 @@ private object ScalaiTestHelper {
 class ScalaiTest {
   @Test def test_math(): Unit = {
     val x = ScalaiTestHelper.lift {
-      1
+      2
     }
-    ScalaiTestHelper.lift {
+    val y = ScalaiTestHelper.lift {
       1 + 1
     }
+    assertEquals(x, y)
+
   }
   @Test def test_hello_world(): Unit = {
-    ScalaiTestHelper.lift {
+    val x = ScalaiTestHelper.lift {
       def main(): Unit = {}
     }
+    println(x)
+    assertEquals(x, ???)
   }
 
   @Test def test_active_inlining(): Unit = {

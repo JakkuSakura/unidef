@@ -34,7 +34,7 @@ trait HasMethods() extends AstNode {
   def methods: List[AstNode]
 }
 trait HasDerived() extends AstNode {
-  def derived: List[AstClassIdent]
+  def derived: List[AstIdent]
 }
 trait HasStmts() extends AstNode {
   def stmts: List[AstNode]
@@ -53,9 +53,6 @@ trait HasQualifier() extends AstNode {
 }
 trait HasLanguage() extends AstNode {
   def language: Option[String]
-}
-trait HasLiteralValue() extends AstNode {
-  def literalValue: String
 }
 trait HasParameterList() extends AstNode {
   def parameterList: List[AstValDef]
@@ -139,6 +136,20 @@ case class AstLiteralNullImpl() extends AstLiteralNull
 case class AstProgramImpl(stmts: List[AstNode]) extends AstProgram
 case class AstAwaitImpl(expr: AstNode) extends AstAwait
 case class AstLiteralNoneImpl() extends AstLiteralNone
+case class AstIfImpl(test: AstNode, consequent: Option[AstNode], alternative: Option[AstNode])
+    extends AstIf
+case class AstFlowControlImpl(flow: Option[FlowControl], value: Option[AstNode])
+    extends AstFlowControl
+case class AstLiteralUnitImpl() extends AstLiteralUnit
+case class AstClassIdentifierImpl(classId: String) extends AstClassIdentifier
+case class AstStatementImpl(expr: AstNode) extends AstStatement
+case class AstArgumentListsImpl(argumentLists: List[AstArgumentList]) extends AstArgumentLists
+case class AstArgumentListImpl(argumentList: List[AstArgument]) extends AstArgumentList
+case class AstApplyImpl(applicable: AstNode, arguments: List[AstNode]) extends AstApply
+case class AstDeclsImpl(decls: List[AstNode]) extends AstDecls
+case class AstLiteralStringImpl(literalString: String) extends AstLiteralString
+case class AstArgumentImpl(name: String, value: Option[AstNode]) extends AstArgument
+case class AstDirectiveImpl(directive: String) extends AstDirective
 case class AstFunctionDeclImpl(
     name: String,
     parameters: List[AstValDef],
@@ -151,24 +162,7 @@ case class AstFunctionDeclImpl(
     language: Option[String],
     overwrite: Option[Boolean]
 ) extends AstFunctionDecl
-case class AstIfImpl(test: AstNode, consequent: Option[AstNode], alternative: Option[AstNode])
-    extends AstIf
-case class AstFlowControlImpl(flow: Option[FlowControl], value: Option[AstNode])
-    extends AstFlowControl
-case class AstLiteralUnitImpl() extends AstLiteralUnit
-case class AstClassIdentifierImpl(classId: String) extends AstClassIdentifier
-case class AstStatementImpl(expr: AstNode) extends AstStatement
-case class AstArgumentListImpl(argumentList: List[AstArgument]) extends AstArgumentList
-case class AstApplyImpl(applicable: AstNode, arguments: List[AstNode]) extends AstApply
-case class AstDeclsImpl(decls: List[AstNode]) extends AstDecls
-case class AstLiteralStringImpl(literalString: String) extends AstLiteralString
-case class AstLiteralImpl(literalValue: String, ty: TyNode) extends AstLiteral
-case class AstUnitImpl() extends AstUnit
-case class AstArgumentImpl(name: String, value: Option[AstNode]) extends AstArgument
-case class AstDirectiveImpl(directive: String) extends AstDirective
-case class AstUndefinedImpl() extends AstUndefined
-case class AstNullImpl() extends AstNull
-case class AstArgumentListsImpl(argumentLists: List[AstArgumentList]) extends AstArgumentLists
+case class AstLiteralUndefinedImpl() extends AstLiteralUndefined
 case class AstSelectImpl(qualifier: AstNode, symbol: String) extends AstSelect
 case class AstParameterListsImpl(parameterLists: List[AstParameterList]) extends AstParameterLists
 case class AstBlockImpl(nodes: Option[List[AstNode]]) extends AstBlock
@@ -177,12 +171,13 @@ case class AstClassDeclImpl(
     parameters: List[AstValDef],
     fields: List[AstValDef],
     methods: List[AstNode],
-    derived: List[AstClassIdent],
+    derived: List[AstIdent],
     schema: Option[String],
     dataframe: Option[Boolean],
     classType: Option[String],
     access: Option[AccessModifier]
 ) extends AstClassDecl
+case class AstIdentImpl(name: String) extends AstIdent
 case class AstVariableIdentifierImpl(variableIdentifier: String) extends AstVariableIdentifier
 case class AstApplyListsImpl(applicable: AstNode, argumentsLists: AstArgumentLists)
     extends AstApplyLists
@@ -206,6 +201,45 @@ trait AstAwait() extends AstNode with HasExpr {
   def expr: AstNode
 }
 trait AstLiteralNone() extends AstNode
+trait AstIf() extends AstNode with HasTest with HasConsequent with HasAlternative {
+  def test: AstNode
+  def consequent: Option[AstNode]
+  def alternative: Option[AstNode]
+}
+trait AstFlowControl() extends AstNode with HasFlow with HasValue {
+  def flow: Option[FlowControl]
+  def value: Option[AstNode]
+}
+trait AstLiteralUnit() extends AstNode
+trait AstClassIdentifier() extends AstNode with HasClassId {
+  def classId: String
+}
+trait AstStatement() extends AstNode with HasExpr {
+  def expr: AstNode
+}
+trait AstArgumentLists() extends AstNode with HasArgumentLists {
+  def argumentLists: List[AstArgumentList]
+}
+trait AstArgumentList() extends AstNode with HasArgumentList {
+  def argumentList: List[AstArgument]
+}
+trait AstApply() extends AstNode with HasApplicable with HasArguments {
+  def applicable: AstNode
+  def arguments: List[AstNode]
+}
+trait AstDecls() extends AstNode with HasDecls {
+  def decls: List[AstNode]
+}
+trait AstLiteralString() extends AstNode with HasLiteralString {
+  def literalString: String
+}
+trait AstArgument() extends AstNode with HasName with HasValue {
+  def name: String
+  def value: Option[AstNode]
+}
+trait AstDirective() extends AstNode with HasDirective {
+  def directive: String
+}
 trait AstFunctionDecl()
     extends AstNode
     with HasName
@@ -229,52 +263,7 @@ trait AstFunctionDecl()
   def language: Option[String]
   def overwrite: Option[Boolean]
 }
-trait AstIf() extends AstNode with HasTest with HasConsequent with HasAlternative {
-  def test: AstNode
-  def consequent: Option[AstNode]
-  def alternative: Option[AstNode]
-}
-trait AstFlowControl() extends AstNode with HasFlow with HasValue {
-  def flow: Option[FlowControl]
-  def value: Option[AstNode]
-}
-trait AstLiteralUnit() extends AstNode
-trait AstClassIdentifier() extends AstNode with HasClassId {
-  def classId: String
-}
-trait AstStatement() extends AstNode with HasExpr {
-  def expr: AstNode
-}
-trait AstArgumentList() extends AstNode with HasArgumentList {
-  def argumentList: List[AstArgument]
-}
-trait AstApply() extends AstNode with HasApplicable with HasArguments {
-  def applicable: AstNode
-  def arguments: List[AstNode]
-}
-trait AstDecls() extends AstNode with HasDecls {
-  def decls: List[AstNode]
-}
-trait AstLiteralString() extends AstNode with HasLiteralString {
-  def literalString: String
-}
-trait AstLiteral() extends AstNode with HasLiteralValue with HasTy {
-  def literalValue: String
-  def ty: TyNode
-}
-trait AstUnit() extends AstNode
-trait AstArgument() extends AstNode with HasName with HasValue {
-  def name: String
-  def value: Option[AstNode]
-}
-trait AstDirective() extends AstNode with HasDirective {
-  def directive: String
-}
-trait AstUndefined() extends AstNode
-trait AstNull() extends AstNode
-trait AstArgumentLists() extends AstNode with HasArgumentLists {
-  def argumentLists: List[AstArgumentList]
-}
+trait AstLiteralUndefined() extends AstNode
 trait AstSelect() extends AstNode with HasQualifier with HasSymbol {
   def qualifier: AstNode
   def symbol: String
@@ -300,11 +289,14 @@ trait AstClassDecl()
   def parameters: List[AstValDef]
   def fields: List[AstValDef]
   def methods: List[AstNode]
-  def derived: List[AstClassIdent]
+  def derived: List[AstIdent]
   def schema: Option[String]
   def dataframe: Option[Boolean]
   def classType: Option[String]
   def access: Option[AccessModifier]
+}
+trait AstIdent() extends AstNode with HasName {
+  def name: String
 }
 trait AstVariableIdentifier() extends AstNode with HasVariableIdentifier {
   def variableIdentifier: String
@@ -373,6 +365,182 @@ class AstAwaitBuilder() {
 class AstLiteralNoneBuilder() {
   def build(): AstLiteralNoneImpl = {
     AstLiteralNoneImpl()
+  }
+}
+class AstIfBuilder() {
+  var test: Option[AstNode] = None
+  var consequent: Option[AstNode] = None
+  var alternative: Option[AstNode] = None
+  def test(test: AstNode): AstIfBuilder = {
+    this.test = Some(test)
+    this
+  }
+  def consequent(consequent: AstNode): AstIfBuilder = {
+    this.consequent = Some(consequent)
+    this
+  }
+  def alternative(alternative: AstNode): AstIfBuilder = {
+    this.alternative = Some(alternative)
+    this
+  }
+  def consequent(consequent: Option[AstNode]): AstIfBuilder = {
+    this.consequent = consequent
+    this
+  }
+  def alternative(alternative: Option[AstNode]): AstIfBuilder = {
+    this.alternative = alternative
+    this
+  }
+  def build(): AstIfImpl = {
+    AstIfImpl(test.get, consequent, alternative)
+  }
+}
+class AstFlowControlBuilder() {
+  var flow: Option[FlowControl] = None
+  var value: Option[AstNode] = None
+  def flow(flow: FlowControl): AstFlowControlBuilder = {
+    this.flow = Some(flow)
+    this
+  }
+  def value(value: AstNode): AstFlowControlBuilder = {
+    this.value = Some(value)
+    this
+  }
+  def flow(flow: Option[FlowControl]): AstFlowControlBuilder = {
+    this.flow = flow
+    this
+  }
+  def value(value: Option[AstNode]): AstFlowControlBuilder = {
+    this.value = value
+    this
+  }
+  def build(): AstFlowControlImpl = {
+    AstFlowControlImpl(flow, value)
+  }
+}
+class AstLiteralUnitBuilder() {
+  def build(): AstLiteralUnitImpl = {
+    AstLiteralUnitImpl()
+  }
+}
+class AstClassIdentifierBuilder() {
+  var classId: Option[String] = None
+  def classId(classId: String): AstClassIdentifierBuilder = {
+    this.classId = Some(classId)
+    this
+  }
+  def build(): AstClassIdentifierImpl = {
+    AstClassIdentifierImpl(classId.get)
+  }
+}
+class AstStatementBuilder() {
+  var expr: Option[AstNode] = None
+  def expr(expr: AstNode): AstStatementBuilder = {
+    this.expr = Some(expr)
+    this
+  }
+  def build(): AstStatementImpl = {
+    AstStatementImpl(expr.get)
+  }
+}
+class AstArgumentListsBuilder() {
+  var argumentLists: mutable.ArrayBuffer[AstArgumentList] = mutable.ArrayBuffer.empty
+  def argumentLists(argumentLists: List[AstArgumentList]): AstArgumentListsBuilder = {
+    this.argumentLists ++= argumentLists
+    this
+  }
+  def argumentList(argumentList: AstArgumentList): AstArgumentListsBuilder = {
+    this.argumentLists += argumentList
+    this
+  }
+  def build(): AstArgumentListsImpl = {
+    AstArgumentListsImpl(argumentLists.toList)
+  }
+}
+class AstArgumentListBuilder() {
+  var argumentList: mutable.ArrayBuffer[AstArgument] = mutable.ArrayBuffer.empty
+  def argumentList(argumentList: List[AstArgument]): AstArgumentListBuilder = {
+    this.argumentList ++= argumentList
+    this
+  }
+  def argumentList(argumentList: AstArgument): AstArgumentListBuilder = {
+    this.argumentList += argumentList
+    this
+  }
+  def build(): AstArgumentListImpl = {
+    AstArgumentListImpl(argumentList.toList)
+  }
+}
+class AstApplyBuilder() {
+  var applicable: Option[AstNode] = None
+  var arguments: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
+  def applicable(applicable: AstNode): AstApplyBuilder = {
+    this.applicable = Some(applicable)
+    this
+  }
+  def arguments(arguments: List[AstNode]): AstApplyBuilder = {
+    this.arguments ++= arguments
+    this
+  }
+  def argument(argument: AstNode): AstApplyBuilder = {
+    this.arguments += argument
+    this
+  }
+  def build(): AstApplyImpl = {
+    AstApplyImpl(applicable.get, arguments.toList)
+  }
+}
+class AstDeclsBuilder() {
+  var decls: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
+  def decls(decls: List[AstNode]): AstDeclsBuilder = {
+    this.decls ++= decls
+    this
+  }
+  def decl(decl: AstNode): AstDeclsBuilder = {
+    this.decls += decl
+    this
+  }
+  def build(): AstDeclsImpl = {
+    AstDeclsImpl(decls.toList)
+  }
+}
+class AstLiteralStringBuilder() {
+  var literalString: Option[String] = None
+  def literalString(literalString: String): AstLiteralStringBuilder = {
+    this.literalString = Some(literalString)
+    this
+  }
+  def build(): AstLiteralStringImpl = {
+    AstLiteralStringImpl(literalString.get)
+  }
+}
+class AstArgumentBuilder() {
+  var name: Option[String] = None
+  var value: Option[AstNode] = None
+  def name(name: String): AstArgumentBuilder = {
+    this.name = Some(name)
+    this
+  }
+  def value(value: AstNode): AstArgumentBuilder = {
+    this.value = Some(value)
+    this
+  }
+  def value(value: Option[AstNode]): AstArgumentBuilder = {
+    this.value = value
+    this
+  }
+  def build(): AstArgumentImpl = {
+    AstArgumentImpl(name.get, value)
+  }
+}
+class AstDirectiveBuilder() {
+  var directive: Option[String] = None
+  def directive(directive: String): AstDirectiveBuilder = {
+    this.directive = Some(directive)
+    this
+  }
+  def build(): AstDirectiveImpl = {
+    AstDirectiveImpl(directive.get)
   }
 }
 class AstFunctionDeclBuilder() {
@@ -473,210 +641,9 @@ class AstFunctionDeclBuilder() {
     )
   }
 }
-class AstIfBuilder() {
-  var test: Option[AstNode] = None
-  var consequent: Option[AstNode] = None
-  var alternative: Option[AstNode] = None
-  def test(test: AstNode): AstIfBuilder = {
-    this.test = Some(test)
-    this
-  }
-  def consequent(consequent: AstNode): AstIfBuilder = {
-    this.consequent = Some(consequent)
-    this
-  }
-  def alternative(alternative: AstNode): AstIfBuilder = {
-    this.alternative = Some(alternative)
-    this
-  }
-  def consequent(consequent: Option[AstNode]): AstIfBuilder = {
-    this.consequent = consequent
-    this
-  }
-  def alternative(alternative: Option[AstNode]): AstIfBuilder = {
-    this.alternative = alternative
-    this
-  }
-  def build(): AstIfImpl = {
-    AstIfImpl(test.get, consequent, alternative)
-  }
-}
-class AstFlowControlBuilder() {
-  var flow: Option[FlowControl] = None
-  var value: Option[AstNode] = None
-  def flow(flow: FlowControl): AstFlowControlBuilder = {
-    this.flow = Some(flow)
-    this
-  }
-  def value(value: AstNode): AstFlowControlBuilder = {
-    this.value = Some(value)
-    this
-  }
-  def flow(flow: Option[FlowControl]): AstFlowControlBuilder = {
-    this.flow = flow
-    this
-  }
-  def value(value: Option[AstNode]): AstFlowControlBuilder = {
-    this.value = value
-    this
-  }
-  def build(): AstFlowControlImpl = {
-    AstFlowControlImpl(flow, value)
-  }
-}
-class AstLiteralUnitBuilder() {
-  def build(): AstLiteralUnitImpl = {
-    AstLiteralUnitImpl()
-  }
-}
-class AstClassIdentifierBuilder() {
-  var classId: Option[String] = None
-  def classId(classId: String): AstClassIdentifierBuilder = {
-    this.classId = Some(classId)
-    this
-  }
-  def build(): AstClassIdentifierImpl = {
-    AstClassIdentifierImpl(classId.get)
-  }
-}
-class AstStatementBuilder() {
-  var expr: Option[AstNode] = None
-  def expr(expr: AstNode): AstStatementBuilder = {
-    this.expr = Some(expr)
-    this
-  }
-  def build(): AstStatementImpl = {
-    AstStatementImpl(expr.get)
-  }
-}
-class AstArgumentListBuilder() {
-  var argumentList: mutable.ArrayBuffer[AstArgument] = mutable.ArrayBuffer.empty
-  def argumentList(argumentList: List[AstArgument]): AstArgumentListBuilder = {
-    this.argumentList ++= argumentList
-    this
-  }
-  def argumentList(argumentList: AstArgument): AstArgumentListBuilder = {
-    this.argumentList += argumentList
-    this
-  }
-  def build(): AstArgumentListImpl = {
-    AstArgumentListImpl(argumentList.toList)
-  }
-}
-class AstApplyBuilder() {
-  var applicable: Option[AstNode] = None
-  var arguments: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
-  def applicable(applicable: AstNode): AstApplyBuilder = {
-    this.applicable = Some(applicable)
-    this
-  }
-  def arguments(arguments: List[AstNode]): AstApplyBuilder = {
-    this.arguments ++= arguments
-    this
-  }
-  def argument(argument: AstNode): AstApplyBuilder = {
-    this.arguments += argument
-    this
-  }
-  def build(): AstApplyImpl = {
-    AstApplyImpl(applicable.get, arguments.toList)
-  }
-}
-class AstDeclsBuilder() {
-  var decls: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
-  def decls(decls: List[AstNode]): AstDeclsBuilder = {
-    this.decls ++= decls
-    this
-  }
-  def decl(decl: AstNode): AstDeclsBuilder = {
-    this.decls += decl
-    this
-  }
-  def build(): AstDeclsImpl = {
-    AstDeclsImpl(decls.toList)
-  }
-}
-class AstLiteralStringBuilder() {
-  var literalString: Option[String] = None
-  def literalString(literalString: String): AstLiteralStringBuilder = {
-    this.literalString = Some(literalString)
-    this
-  }
-  def build(): AstLiteralStringImpl = {
-    AstLiteralStringImpl(literalString.get)
-  }
-}
-class AstLiteralBuilder() {
-  var literalValue: Option[String] = None
-  var ty: Option[TyNode] = None
-  def literalValue(literalValue: String): AstLiteralBuilder = {
-    this.literalValue = Some(literalValue)
-    this
-  }
-  def ty(ty: TyNode): AstLiteralBuilder = {
-    this.ty = Some(ty)
-    this
-  }
-  def build(): AstLiteralImpl = {
-    AstLiteralImpl(literalValue.get, ty.get)
-  }
-}
-class AstUnitBuilder() {
-  def build(): AstUnitImpl = {
-    AstUnitImpl()
-  }
-}
-class AstArgumentBuilder() {
-  var name: Option[String] = None
-  var value: Option[AstNode] = None
-  def name(name: String): AstArgumentBuilder = {
-    this.name = Some(name)
-    this
-  }
-  def value(value: AstNode): AstArgumentBuilder = {
-    this.value = Some(value)
-    this
-  }
-  def value(value: Option[AstNode]): AstArgumentBuilder = {
-    this.value = value
-    this
-  }
-  def build(): AstArgumentImpl = {
-    AstArgumentImpl(name.get, value)
-  }
-}
-class AstDirectiveBuilder() {
-  var directive: Option[String] = None
-  def directive(directive: String): AstDirectiveBuilder = {
-    this.directive = Some(directive)
-    this
-  }
-  def build(): AstDirectiveImpl = {
-    AstDirectiveImpl(directive.get)
-  }
-}
-class AstUndefinedBuilder() {
-  def build(): AstUndefinedImpl = {
-    AstUndefinedImpl()
-  }
-}
-class AstNullBuilder() {
-  def build(): AstNullImpl = {
-    AstNullImpl()
-  }
-}
-class AstArgumentListsBuilder() {
-  var argumentLists: mutable.ArrayBuffer[AstArgumentList] = mutable.ArrayBuffer.empty
-  def argumentLists(argumentLists: List[AstArgumentList]): AstArgumentListsBuilder = {
-    this.argumentLists ++= argumentLists
-    this
-  }
-  def argumentList(argumentList: AstArgumentList): AstArgumentListsBuilder = {
-    this.argumentLists += argumentList
-    this
-  }
-  def build(): AstArgumentListsImpl = {
-    AstArgumentListsImpl(argumentLists.toList)
+class AstLiteralUndefinedBuilder() {
+  def build(): AstLiteralUndefinedImpl = {
+    AstLiteralUndefinedImpl()
   }
 }
 class AstSelectBuilder() {
@@ -727,7 +694,7 @@ class AstClassDeclBuilder() {
   var parameters: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
   var fields: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
   var methods: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
-  var derived: mutable.ArrayBuffer[AstClassIdent] = mutable.ArrayBuffer.empty
+  var derived: mutable.ArrayBuffer[AstIdent] = mutable.ArrayBuffer.empty
   var schema: Option[String] = None
   var dataframe: Option[Boolean] = None
   var classType: Option[String] = None
@@ -748,7 +715,7 @@ class AstClassDeclBuilder() {
     this.methods ++= methods
     this
   }
-  def derived(derived: List[AstClassIdent]): AstClassDeclBuilder = {
+  def derived(derived: List[AstIdent]): AstClassDeclBuilder = {
     this.derived ++= derived
     this
   }
@@ -796,7 +763,7 @@ class AstClassDeclBuilder() {
     this.methods += method
     this
   }
-  def derived(derived: AstClassIdent): AstClassDeclBuilder = {
+  def derived(derived: AstIdent): AstClassDeclBuilder = {
     this.derived += derived
     this
   }
@@ -812,6 +779,16 @@ class AstClassDeclBuilder() {
       classType,
       access
     )
+  }
+}
+class AstIdentBuilder() {
+  var name: Option[String] = None
+  def name(name: String): AstIdentBuilder = {
+    this.name = Some(name)
+    this
+  }
+  def build(): AstIdentImpl = {
+    AstIdentImpl(name.get)
   }
 }
 class AstVariableIdentifierBuilder() {

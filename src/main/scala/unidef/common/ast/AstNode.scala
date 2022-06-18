@@ -1,7 +1,5 @@
 package unidef.common.ast
 
-import io.circe.Decoder
-import io.circe.generic.semiauto.*
 import unidef.common.BaseNode
 import unidef.common.ty.*
 
@@ -20,24 +18,6 @@ object FlowControl {
   case object Throw extends FlowControl
 }
 
-//class AstLiteral(ty: TyNode) extends AstStaticType(ty)
-//
-//case class AstLiteralString(value: String) extends AstLiteral(Types.string())
-//
-//case class AstLiteralChar(value: Char) extends AstLiteral(TyCharImpl())
-//case class AstLiteralInteger(value: Int) extends AstLiteral(TyIntegerImpl(Some(BitSize.B32), None))
-//
-//case class AstLiteralFloat(value: Double) extends AstLiteral(TyFloatImpl(Some(BitSize.B64)))
-//
-//// TODO extends AstLiteral(TyFloat(BitSize.B32))
-//// difference is from https://github.com/ron-rs/ron
-//case class AstLiteralDict(values: List[(AstNode, AstNode)]) extends AstNode
-//
-//case class AstLiteralStruct(values: List[(AstNode, AstNode)]) extends AstNode
-//
-//case class AstLiteralArray(values: List[AstNode]) extends AstNode
-//case class AstLiteralOptional(value: Option[AstNode]) extends AstNode
-//case class AstLiteralBoolean(value: Boolean) extends AstLiteral(TyBooleanImpl())
 
 sealed trait AccessModifier
 
@@ -58,8 +38,6 @@ def extractArgumentStruct(func: AstFunctionDecl): TyStruct = {
 
 }
 
-case class AstClassIdent(name: String) extends AstNode
-
 def getField(x: AstValDef): TyField =
   TyFieldBuilder().name(x.name).value(x.ty).build()
 
@@ -69,4 +47,8 @@ object BinaryOperator {
   case object Minus extends BinaryOperator
   case object Multiply extends BinaryOperator
   case object Divide extends BinaryOperator
+}
+
+case object Asts {
+  
 }

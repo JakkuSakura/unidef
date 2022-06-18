@@ -15,7 +15,7 @@ class LifterImpl(using val quotes: Quotes) {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
       case Inlined(_, _, Literal(IntConstant(v))) =>
-        AstLiteralImpl(v.toString, Types.i32())
+        AstLiteralIntImpl(v)
 
     }
   }
@@ -23,8 +23,8 @@ class LifterImpl(using val quotes: Quotes) {
     tree match {
       case Block(Nil, x) => liftTerm(x)
       case Literal(IntConstant(v)) =>
-        AstLiteralImpl(v.toString, Types.i32())
-      case Literal(StringConstant(v)) => AstLiteralImpl(v, Types.string())
+        AstLiteralIntImpl(v)
+      case Literal(StringConstant(v)) => AstLiteralStringImpl(v)
       case Block(decls, Literal(UnitConstant())) => AstDeclsImpl(decls.flatMap(liftDecl))
     }
   }
@@ -124,7 +124,7 @@ class LifterImpl(using val quotes: Quotes) {
     // TODO
     Nil
   }
-  def liftClassDefParents(tree: List[Tree]): List[AstClassIdent] = {
+  def liftClassDefParents(tree: List[Tree]): List[AstIdent] = {
     // TODO
     Nil
   }

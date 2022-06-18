@@ -33,7 +33,7 @@ case class TyNodeCodeGen() {
       .name(name)
       .methods(methods.map(x => AstRawCodeImpl(x, None)))
       .derived(
-        List(AstClassIdent(derive))
+        List(AstIdentImpl(derive))
       )
       .classType(classType)
       .build()
@@ -68,20 +68,20 @@ case class TyNodeCodeGen() {
           .toList
       )
       .derived(
-        List(AstClassIdent("TyNode"))
+        List(AstIdentImpl("TyNode"))
           :::
             ty.equivalent
               .flatMap {
                 case x: TyNamed => Some("Ty" + TextTool.toPascalCase(x.ref))
                 case _ => None // TODO: support other IS
               }
-              .map(x => AstClassIdent(x))
+              .map(x => AstIdentImpl(x))
               .toList
             :::
             fields
               .map(x => x.name -> x.value)
               .map((k, v) => "Has" + TextTool.toPascalCase(k))
-              .map(x => AstClassIdent(x))
+              .map(x => AstIdentImpl(x))
               .toList
       )
       .classType("trait")
@@ -105,7 +105,7 @@ case class TyNodeCodeGen() {
       )
       .parameters(fields)
       .derived(
-        List(AstClassIdent("Ty" + TextTool.toPascalCase(ty.name)))
+        List(AstIdentImpl("Ty" + TextTool.toPascalCase(ty.name)))
       )
       .classType("case class")
       .build()

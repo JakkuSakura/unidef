@@ -1,6 +1,5 @@
 package unidef.languages.shll
 
-import unidef.common.ast.{AstNode, AstUnit}
 
 import scala.sys.process.Process
 import unidef.utils.FileUtils
@@ -25,7 +24,7 @@ class Compiler {
   }
   def compileAndLift(code: String): AstNode = {
     if (code.isEmpty) {
-      return AstUnitImpl()
+      return AstLiteralUnitImpl()
     }
     val path = compileOnly(code)
 
