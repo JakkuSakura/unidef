@@ -9,7 +9,6 @@ private object ScalaiTestHelper {
   def compileAndLift(code: String): AstNode = {
     val compiler = new Compiler()
     val lifted = compiler.compileAndLift(code)
-    println(lifted)
     lifted
   }
 
@@ -38,7 +37,7 @@ private object ScalaiTestHelper {
 
 }
 class ScalaiTest {
-  @Test def test_math(): Unit = {
+  @Test def test_simple_math(): Unit = {
     val x = ScalaiTestHelper.lift {
       2
     }
@@ -48,12 +47,17 @@ class ScalaiTest {
     assertEquals(x, y)
 
   }
-  @Test def test_hello_world(): Unit = {
+  @Test def test_function_decls(): Unit = {
     val x = ScalaiTestHelper.lift {
       def main(): Unit = {}
     }
-    println(x)
-    assertEquals(x, ???)
+    assertEquals(x.asInstanceOf[AstDecls].decls.length, 1)
+    val y = ScalaiTestHelper.lift {
+      def foo(a: Int): Unit = {}
+      def bar(a: Int, b: Int): Unit = {}
+    }
+    println(y)
+    assertEquals(y.asInstanceOf[AstDecls].decls.length, 2)
   }
 
   @Test def test_active_inlining(): Unit = {

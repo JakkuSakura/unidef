@@ -45,11 +45,6 @@ class Compiler {
 
     liftImpl(code)
   }
-  transparent inline def liftAndUnlift[T](inline code: T): T = {
-    ${
-      liftAndUnliftImpl('code)
-    }
-  }
 }
 
 object Compiler {

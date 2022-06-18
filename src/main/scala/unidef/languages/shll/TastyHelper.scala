@@ -35,17 +35,3 @@ def stageImpl[T](x: Expr[T])(using quotes: Quotes, t: quoted.Type[T]): Expr[Stri
   import quotes.reflect.*
   Expr(x.asTerm.show(using Printer.TreeShortCode))
 }
-
-def unliftImpl[T](x: AstNode)(using Quotes, quoted.Type[T]): Expr[T] = {
-  import quotes.reflect.*
-  val unlifter = UnlifterImpl()
-  val tree = unlifter.unlift(x)
-  val value = tree.asExprOf[T]
-  value
-}
-
-def liftAndUnliftImpl[T](x: Expr[T])(using Quotes, quoted.Type[T]): Expr[T] = {
-  val ast = liftImpl(x)
-  val unlifted = unliftImpl(ast)
-  unlifted
-}
