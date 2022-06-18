@@ -31,6 +31,7 @@ case class TyNodeCodeGen() {
   ): AstClassDecl = {
     AstClassDeclBuilder()
       .name(name)
+      .parameters(Asts.parameters(Nil))
       .methods(methods.map(x => AstRawCodeImpl(x, None)))
       .derived(
         List(AstIdentImpl(derive))
@@ -58,6 +59,7 @@ case class TyNodeCodeGen() {
 
     AstClassDeclBuilder()
       .name("Ty" + TextTool.toPascalCase(ty.name))
+      .parameters(Asts.parameters(Nil))
       .methods(
         fields
           .map(field =>

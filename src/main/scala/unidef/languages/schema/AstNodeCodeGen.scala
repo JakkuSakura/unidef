@@ -35,6 +35,7 @@ case class AstNodeCodeGen() {
   ): AstClassDecl = {
     AstClassDeclBuilder()
       .name(name)
+      .parameters(Asts.parameters(Nil))
       .methods(methods.map(x => AstRawCodeImpl(x, None)))
       .derived(List(AstIdentImpl(derive)))
       .classType(classType)
@@ -60,6 +61,7 @@ case class AstNodeCodeGen() {
 
     AstClassDeclBuilder()
       .name(toAstClassName(ty.name))
+      .parameters(Asts.parameters(Nil))
       .methods(
         fields
           .map(field =>
@@ -164,10 +166,7 @@ object AstNodeCodeGen {
         .field("argument_lists_content", Types.list(Types.named("AstArgumentList")), required = true),
       Ast("apply")
         .field("applicable", astNode, required = true)
-        .field("arguments", Types.list(astNode), required = true),
-      Ast("apply_lists")
-        .field("applicable", astNode, required = true)
-        .field("argument_lists", Types.named("AstArgumentLists"), required = true),
+        .field("arguments", Types.named("AstArgumentLists"), required = true),
       Ast("val_def")
         .field("name", Types.string(), required = true)
         .field("ty", TyNode, required = true)

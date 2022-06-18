@@ -131,6 +131,7 @@ class ScalaCodeGen(naming: NamingConvention) {
       })
     }
     val buildMethod = AstFunctionDeclBuilder()
+      .parameters(Asts.parameters(Nil))
       .name("build")
       .returnType(Types.named(target))
       .body(
@@ -241,6 +242,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     }
     AstClassDeclBuilder()
       .name(builderName)
+      .parameters(Asts.parameters(Nil))
       .fields(fields.map(x =>
         val fieldName = naming.toFieldName(x.name)
         AstValDefBuilder()
