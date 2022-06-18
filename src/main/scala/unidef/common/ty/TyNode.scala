@@ -24,6 +24,7 @@ object BitSize {
   case object B1 extends BitSize(1)
   case object Unknown extends BitSize(0)
   case object Unlimited extends BitSize(-1)
+  case object Native extends BitSize(-2)
 }
 
 case class TyConstTupleString(values: List[String]) extends TyNode

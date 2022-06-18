@@ -140,8 +140,9 @@ object TyNodeCodeGen {
       Type("numeric"),
       Type("integer")
         .field("bit_size", TyNamedImpl("BitSize"))
-        .field("sized", TyBooleanImpl())
+        .field("signed", TyBooleanImpl())
         .is(TyNamedImpl("numeric")),
+      Type("oid"), //        .is(TyNamedImpl("i32")),
       Type("real")
         .is(TyNamedImpl("numeric")),
       Type("decimal")

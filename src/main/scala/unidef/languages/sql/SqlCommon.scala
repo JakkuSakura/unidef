@@ -9,12 +9,6 @@ import unidef.utils.TypeEncodeException
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 
-class TyOid extends TyInteger {
-  def bitSize: Option[BitSize] = Some(BitSize.B32)
-
-  def sized: Option[Boolean] = Some(false)
-
-}
 class SqlCommon(naming: NamingConvention = SqlNamingConvention)
     extends TypeDecoder[String]
     with TypeEncoder[String] {
@@ -89,7 +83,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
       case "jsonb" => Some(TyJsonAnyBuilder().isBinary(true).build())
       case "json" => Some(TyJsonAnyBuilder().isBinary(false).build())
       case "void" => Some(TyUnitImpl())
-      case "oid" => Some(TyOid())
+      case "oid" => Some(TyOidImpl())
       case "bool" | "boolean" => Some(TyBooleanImpl())
       case "bytea" => Some(TyByteArrayImpl())
       case "inet" => Some(TyInetImpl())

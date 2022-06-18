@@ -18,14 +18,14 @@ trait HasSimpleEnum() extends TyNode {
 trait HasRef() extends TyNode {
   def ref: String
 }
-trait HasHasTimeZone() extends TyNode {
-  def hasTimeZone: Option[Boolean]
-}
 trait HasAttributes() extends TyNode {
   def attributes: Option[List[String]]
 }
 trait HasIsBinary() extends TyNode {
   def isBinary: Boolean
+}
+trait HasTimeUnit() extends TyNode {
+  def timeUnit: Option[java.util.concurrent.TimeUnit]
 }
 trait HasTimezone() extends TyNode {
   def timezone: Option[java.util.TimeZone]
@@ -54,6 +54,12 @@ trait HasErr() extends TyNode {
 trait HasCode() extends TyNode {
   def code: Option[Int]
 }
+trait HasSigned() extends TyNode {
+  def signed: Option[Boolean]
+}
+trait HasHasTimeZone() extends TyNode {
+  def hasTimeZone: Option[Boolean]
+}
 trait HasNames() extends TyNode {
   def names: List[String]
 }
@@ -75,15 +81,8 @@ trait HasBitSize() extends TyNode {
 trait HasSchema() extends TyNode {
   def schema: Option[String]
 }
-trait HasSized() extends TyNode {
-  def sized: Option[Boolean]
-}
-trait HasTimeUnit() extends TyNode {
-  def timeUnit: Option[java.util.concurrent.TimeUnit]
-}
 case class TyAnyImpl() extends TyAny 
 case class TyTimeStampImpl(hasTimeZone: Option[Boolean], timeUnit: Option[java.util.concurrent.TimeUnit]) extends TyTimeStamp 
-case class TySetImpl(value: TyNode) extends TySet 
 case class TyDecimalImpl(precision: Option[Int], scale: Option[Int]) extends TyDecimal 
 case class TyByteArrayImpl() extends TyByteArray 
 case class TyTupleImpl(values: List[TyNode]) extends TyTuple 
@@ -99,6 +98,8 @@ case class TyFloatImpl(bitSize: Option[BitSize]) extends TyFloat
 case class TyJsonImpl() extends TyJson 
 case class TyUuidImpl() extends TyUuid 
 case class TyResultImpl(ok: TyNode, err: TyNode) extends TyResult 
+case class TySetImpl(value: TyNode) extends TySet 
+case class TyOidImpl() extends TyOid 
 case class TyTypeVarImpl(name: Option[String]) extends TyTypeVar 
 case class TyOptionalImpl(value: TyNode) extends TyOptional 
 case class TyVariantImpl(names: List[String], code: Option[Int]) extends TyVariant 
@@ -114,7 +115,7 @@ case class TyInetImpl() extends TyInet
 case class TyDateTimeImpl(timezone: Option[java.util.TimeZone]) extends TyDateTime 
 case class TyKeyValueImpl(key: TyNode, value: TyNode) extends TyKeyValue 
 case class TyNumericImpl() extends TyNumeric 
-case class TyIntegerImpl(bitSize: Option[BitSize], sized: Option[Boolean]) extends TyInteger 
+case class TyIntegerImpl(bitSize: Option[BitSize], signed: Option[Boolean]) extends TyInteger 
 case class TyUnitImpl() extends TyUnit 
 case class TyListImpl(value: TyNode) extends TyList 
 case class TyUndefinedImpl() extends TyUndefined 
@@ -123,9 +124,6 @@ trait TyAny() extends TyNode
 trait TyTimeStamp() extends TyNode with HasHasTimeZone with HasTimeUnit {
   def hasTimeZone: Option[Boolean]
   def timeUnit: Option[java.util.concurrent.TimeUnit]
-}
-trait TySet() extends TyNode with HasValue {
-  def value: TyNode
 }
 trait TyDecimal() extends TyNode with TyReal with HasPrecision with HasScale {
   def precision: Option[Int]
@@ -171,6 +169,10 @@ trait TyResult() extends TyNode with HasOk with HasErr {
   def ok: TyNode
   def err: TyNode
 }
+trait TySet() extends TyNode with HasValue {
+  def value: TyNode
+}
+trait TyOid() extends TyNode 
 trait TyTypeVar() extends TyNode with HasName {
   def name: Option[String]
 }
@@ -206,9 +208,9 @@ trait TyKeyValue() extends TyNode with HasKey with HasValue {
   def value: TyNode
 }
 trait TyNumeric() extends TyNode 
-trait TyInteger() extends TyNode with TyNumeric with HasBitSize with HasSized {
+trait TyInteger() extends TyNode with TyNumeric with HasBitSize with HasSigned {
   def bitSize: Option[BitSize]
-  def sized: Option[Boolean]
+  def signed: Option[Boolean]
 }
 trait TyUnit() extends TyNode 
 trait TyList() extends TyNode with HasValue {
@@ -244,16 +246,6 @@ class TyTimeStampBuilder() {
   }
   def build(): TyTimeStampImpl = {
     TyTimeStampImpl(hasTimeZone, timeUnit)
-  }
-}
-class TySetBuilder() {
-  var value: Option[TyNode] = None
-  def value(value: TyNode): TySetBuilder = {
-    this.value = Some(value)
-    this
-  }
-  def build(): TySetImpl = {
-    TySetImpl(value.get)
   }
 }
 class TyDecimalBuilder() {
@@ -487,6 +479,21 @@ class TyResultBuilder() {
     TyResultImpl(ok.get, err.get)
   }
 }
+class TySetBuilder() {
+  var value: Option[TyNode] = None
+  def value(value: TyNode): TySetBuilder = {
+    this.value = Some(value)
+    this
+  }
+  def build(): TySetImpl = {
+    TySetImpl(value.get)
+  }
+}
+class TyOidBuilder() {
+  def build(): TyOidImpl = {
+    TyOidImpl()
+  }
+}
 class TyTypeVarBuilder() {
   var name: Option[String] = None
   def name(name: String): TyTypeVarBuilder = {
@@ -661,25 +668,25 @@ class TyNumericBuilder() {
 }
 class TyIntegerBuilder() {
   var bitSize: Option[BitSize] = None
-  var sized: Option[Boolean] = None
+  var signed: Option[Boolean] = None
   def bitSize(bitSize: BitSize): TyIntegerBuilder = {
     this.bitSize = Some(bitSize)
     this
   }
-  def sized(sized: Boolean): TyIntegerBuilder = {
-    this.sized = Some(sized)
+  def signed(signed: Boolean): TyIntegerBuilder = {
+    this.signed = Some(signed)
     this
   }
   def bitSize(bitSize: Option[BitSize]): TyIntegerBuilder = {
     this.bitSize = bitSize
     this
   }
-  def sized(sized: Option[Boolean]): TyIntegerBuilder = {
-    this.sized = sized
+  def signed(signed: Option[Boolean]): TyIntegerBuilder = {
+    this.signed = signed
     this
   }
   def build(): TyIntegerImpl = {
-    TyIntegerImpl(bitSize, sized)
+    TyIntegerImpl(bitSize, signed)
   }
 }
 class TyUnitBuilder() {
