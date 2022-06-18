@@ -67,7 +67,6 @@ class ScalaiTest {
         foo(2)
       }
     }
-    val specialized = Specializer().specialize(code)
 
     val expected = ScalaiTestHelper.lift {
       def foo(): Unit = {}
@@ -78,6 +77,7 @@ class ScalaiTest {
         foo_2()
       }
     }
+    val specialized = Specializer().specialize(code)
     assertEquals(expected, specialized)
   }
 
