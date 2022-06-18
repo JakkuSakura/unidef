@@ -4,6 +4,9 @@ import unidef.common.ty.*
 import scala.collection.mutable
 
 
+trait HasArguments() extends AstNode {
+  def arguments: AstArgumentLists
+}
 trait HasTest() extends AstNode {
   def test: AstNode
 }
@@ -13,8 +16,8 @@ trait HasApplicable() extends AstNode {
 trait HasRecords() extends AstNode {
   def records: Option[Boolean]
 }
-trait HasArgumentLists() extends AstNode {
-  def argumentLists: AstArgumentLists
+trait HasPrimaryKey() extends AstNode {
+  def primaryKey: Option[Boolean]
 }
 trait HasFields() extends AstNode {
   def fields: List[AstValDef]
@@ -51,12 +54,6 @@ trait HasQualifier() extends AstNode {
 }
 trait HasLanguage() extends AstNode {
   def language: Option[String]
-}
-trait HasArguments() extends AstNode {
-  def arguments: List[AstNode]
-}
-trait HasPrimaryKey() extends AstNode {
-  def primaryKey: Option[Boolean]
 }
 trait HasOverwrite() extends AstNode {
   def overwrite: Option[Boolean]
@@ -144,7 +141,7 @@ case class AstClassIdentifierImpl(classId: String) extends AstClassIdentifier
 case class AstStatementImpl(expr: AstNode) extends AstStatement 
 case class AstArgumentListsImpl(argumentListsContent: List[AstArgumentList]) extends AstArgumentLists 
 case class AstArgumentListImpl(argumentListContent: List[AstArgument]) extends AstArgumentList 
-case class AstApplyImpl(applicable: AstNode, arguments: List[AstNode]) extends AstApply 
+case class AstApplyImpl(applicable: AstNode, arguments: AstArgumentLists) extends AstApply 
 case class AstDeclsImpl(decls: List[AstNode]) extends AstDecls 
 case class AstLiteralStringImpl(literalString: String) extends AstLiteralString 
 case class AstArgumentImpl(name: String, value: Option[AstNode]) extends AstArgument 
@@ -157,7 +154,6 @@ case class AstBlockImpl(nodes: List[AstNode]) extends AstBlock
 case class AstClassDeclImpl(name: String, parameters: AstParameterLists, fields: List[AstValDef], methods: List[AstNode], derived: List[AstIdent], schema: Option[String], dataframe: Option[Boolean], classType: Option[String], access: Option[AccessModifier]) extends AstClassDecl 
 case class AstIdentImpl(name: String) extends AstIdent 
 case class AstVariableIdentifierImpl(variableIdentifier: String) extends AstVariableIdentifier 
-case class AstApplyListsImpl(applicable: AstNode, argumentLists: AstArgumentLists) extends AstApplyLists 
 case class AstValDefImpl(name: String, ty: TyNode, value: Option[AstNode], mutability: Option[Boolean], autoIncr: Option[Boolean], primaryKey: Option[Boolean]) extends AstValDef 
 case class AstTypeImpl(ty: TyNode) extends AstType 
 case class AstParameterListImpl(parameterListContent: List[AstValDef]) extends AstParameterList 
@@ -195,7 +191,7 @@ trait AstArgumentList() extends AstNode with HasArgumentListContent {
 }
 trait AstApply() extends AstNode with HasApplicable with HasArguments {
   def applicable: AstNode
-  def arguments: List[AstNode]
+  def arguments: AstArgumentLists
 }
 trait AstDecls() extends AstNode with HasDecls {
   def decls: List[AstNode]
@@ -249,10 +245,6 @@ trait AstIdent() extends AstNode with HasName {
 }
 trait AstVariableIdentifier() extends AstNode with HasVariableIdentifier {
   def variableIdentifier: String
-}
-trait AstApplyLists() extends AstNode with HasApplicable with HasArgumentLists {
-  def applicable: AstNode
-  def argumentLists: AstArgumentLists
 }
 trait AstValDef() extends AstNode with HasName with HasTy with HasValue with HasMutability with HasAutoIncr with HasPrimaryKey {
   def name: String
@@ -415,21 +407,17 @@ class AstArgumentListBuilder() {
 }
 class AstApplyBuilder() {
   var applicable: Option[AstNode] = None
-  var arguments: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
+  var arguments: Option[AstArgumentLists] = None
   def applicable(applicable: AstNode): AstApplyBuilder = {
     this.applicable = Some(applicable)
     this
   }
-  def arguments(arguments: List[AstNode]): AstApplyBuilder = {
-    this.arguments ++= arguments
-    this
-  }
-  def argument(argument: AstNode): AstApplyBuilder = {
-    this.arguments += argument
+  def arguments(arguments: AstArgumentLists): AstApplyBuilder = {
+    this.arguments = Some(arguments)
     this
   }
   def build(): AstApplyImpl = {
-    AstApplyImpl(applicable.get, arguments.toList)
+    AstApplyImpl(applicable.get, arguments.get)
   }
 }
 class AstDeclsBuilder() {
@@ -712,21 +700,6 @@ class AstVariableIdentifierBuilder() {
   }
   def build(): AstVariableIdentifierImpl = {
     AstVariableIdentifierImpl(variableIdentifier.get)
-  }
-}
-class AstApplyListsBuilder() {
-  var applicable: Option[AstNode] = None
-  var argumentLists: Option[AstArgumentLists] = None
-  def applicable(applicable: AstNode): AstApplyListsBuilder = {
-    this.applicable = Some(applicable)
-    this
-  }
-  def argumentLists(argumentLists: AstArgumentLists): AstApplyListsBuilder = {
-    this.argumentLists = Some(argumentLists)
-    this
-  }
-  def build(): AstApplyListsImpl = {
-    AstApplyListsImpl(applicable.get, argumentLists.get)
   }
 }
 class AstValDefBuilder() {

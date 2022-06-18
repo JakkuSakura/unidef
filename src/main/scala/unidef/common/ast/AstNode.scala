@@ -54,4 +54,9 @@ case object Asts {
     parameters.parameterListsContent.flatMap(_.parameterListContent)
   def parameters(parameters: Seq[AstValDef]): AstParameterLists =
     AstParameterListsImpl(List(AstParameterListImpl(parameters.toList)))
+    
+  def flattenArguments(arguments: AstArgumentLists): List[AstArgument] =
+    arguments.argumentListsContent.flatMap(_.argumentListContent)
+  def arguments(arguments: Seq[AstArgument]): AstArgumentLists =
+    AstArgumentListsImpl(List(AstArgumentListImpl(arguments.toList)))
 }

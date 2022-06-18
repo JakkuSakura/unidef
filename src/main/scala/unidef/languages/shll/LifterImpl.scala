@@ -68,9 +68,13 @@ class LifterImpl(using val quotes: Quotes) {
 
       case ClassDef(name, defDef, parents, sefl, body) =>
         liftClassDef(name, defDef, parents, sefl, body)
-      case Apply(fun, args) => AstApplyImpl(liftTree(fun), args.map(liftTree))
+      case Apply(fun, args) =>
+        AstApplyImpl(
+          liftTree(fun),
+          Asts.arguments(args.map(liftTree).zipWithIndex.map{case (v, i) => AstArgumentImpl(i.toString, Some(v)) })
+        )
       case Literal(UnitConstant()) => AstLiteralUnitImpl()
-      case Block(stmts, expr) => AstBlockImpl(stmts.map(liftStmt) :+  liftStmt(expr))
+      case Block(stmts, expr) => AstBlockImpl(stmts.map(liftStmt) :+ liftStmt(expr))
       case x =>
         logger.error(s"unsupported statement: ${x.show} \n${x}")
         AstRawCodeImpl(x.show, None)
