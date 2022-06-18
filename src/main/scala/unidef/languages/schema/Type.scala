@@ -25,7 +25,7 @@ class Type(val name: String) {
   }
   def setCommentable(commentable: Boolean): Type = {
     if (commentable) {
-      this.field("comment", TyStringImpl(), required = false)
+      this.field("comment", Types.string(), required = false)
     } else {
       this
     }

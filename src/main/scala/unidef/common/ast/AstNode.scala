@@ -22,7 +22,7 @@ object FlowControl {
 
 //class AstLiteral(ty: TyNode) extends AstStaticType(ty)
 //
-//case class AstLiteralString(value: String) extends AstLiteral(TyStringImpl())
+//case class AstLiteralString(value: String) extends AstLiteral(Types.string())
 //
 //case class AstLiteralChar(value: Char) extends AstLiteral(TyCharImpl())
 //case class AstLiteralInteger(value: Int) extends AstLiteral(TyIntegerImpl(Some(BitSize.B32), None))

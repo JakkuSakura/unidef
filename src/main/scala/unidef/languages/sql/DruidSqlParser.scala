@@ -64,14 +64,14 @@ class DruidSqlParser {
           TyEnumBuilder()
             .variants(List(TyVariantBuilder().names(v.toList).build()))
             .name(name)
-            .value(TyStringImpl())
+            .value(Types.string())
             .schema(schema)
             .build()
         case (enumName, v) =>
           TyEnumBuilder()
             .variants(List(TyVariantBuilder().names(v.toList).build()))
             .name(enumName)
-            .value(TyStringImpl())
+            .value(Types.string())
             .build()
       }
       .toList

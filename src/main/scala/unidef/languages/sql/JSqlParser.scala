@@ -80,14 +80,14 @@ class JSqlParser() {
           TyEnumBuilder()
             .variants(v.toList)
             .name(name)
-            .value(TyStringImpl())
+            .value(Types.string())
             .schema(schema)
             .build()
         case (enumName, v) =>
           TyEnumBuilder()
             .variants(v.toList)
             .name(enumName)
-            .value(TyStringImpl())
+            .value(Types.string())
             .build()
       }
       .toSeq

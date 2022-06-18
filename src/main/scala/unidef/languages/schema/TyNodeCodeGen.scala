@@ -116,22 +116,22 @@ object TyNodeCodeGen {
     Seq(
       Type("string"),
       Type("field")
-        .field("name", TyStringImpl())
+        .field("name", Types.string())
         .field("value", TyNode, required = true)
-        .field("mutability", TyBooleanImpl()),
+        .field("mutability", Types.bool()),
       Type("list")
         .field("value", TyNode, required = true),
       Type("variant")
-        .field("names", TyListImpl(TyStringImpl()), required = true)
+        .field("names", Types.list(Types.string()), required = true)
         .field("code", TyIntegerBuilder().build()),
       Type("enum")
-        .field("variants", TyListImpl(TyNamedImpl("TyVariant")), required = true)
-        .field("simple_enum", TyBooleanImpl())
-        .field("name", TyStringImpl())
+        .field("variants", Types.list(Types.named("TyVariant")), required = true)
+        .field("simple_enum", Types.bool())
+        .field("name", Types.string())
         .field("value", TyNode, required = true)
-        .field("schema", TyStringImpl()),
+        .field("schema", Types.string()),
       Type("tuple")
-        .field("values", TyListImpl(TyNode), required = true),
+        .field("values", Types.list(TyNode), required = true),
       Type("optional")
         .field("value", TyNode, required = true),
       Type("result")
@@ -139,28 +139,28 @@ object TyNodeCodeGen {
         .field("err", TyNode, required = true),
       Type("numeric"),
       Type("integer")
-        .field("bit_size", TyNamedImpl("BitSize"))
-        .field("signed", TyBooleanImpl())
-        .is(TyNamedImpl("numeric")),
-      Type("oid"), //        .is(TyNamedImpl("i32")),
+        .field("bit_size", Types.named("BitSize"))
+        .field("signed", Types.bool())
+        .is(Types.named("numeric")),
+      Type("oid"), //        .is(Types.named("i32")),
       Type("real")
-        .is(TyNamedImpl("numeric")),
+        .is(Types.named("numeric")),
       Type("decimal")
         .field("precision", TyIntegerImpl(None, None))
         .field("scale", TyIntegerImpl(None, None))
-        .is(TyNamedImpl("real")),
+        .is(Types.named("real")),
       Type("float")
-        .field("bit_size", TyNamedImpl("BitSize"))
-        .is(TyNamedImpl("real")),
+        .field("bit_size", Types.named("BitSize"))
+        .is(Types.named("real")),
       Type("class"),
       Type("struct")
-        .field("name", TyStringImpl())
-        .field("fields", TyListImpl(TyNamedImpl("TyField")))
-        .field("derives", TyListImpl(TyStringImpl()))
-        .field("attributes", TyListImpl(TyStringImpl()))
-        .field("dataframe", TyBooleanImpl())
-        .field("schema", TyStringImpl())
-        .is(TyNamedImpl("class"))
+        .field("name", Types.string())
+        .field("fields", Types.list(Types.named("TyField")))
+        .field("derives", Types.list(Types.string()))
+        .field("attributes", Types.list(Types.string()))
+        .field("dataframe", Types.bool())
+        .field("schema", Types.string())
+        .is(Types.named("class"))
         .setCommentable(true),
       Type("object"),
       Type("map")
@@ -168,11 +168,8 @@ object TyNodeCodeGen {
         .field("value", TyNode, required = true),
       Type("set")
         .field("value", TyNode, required = true),
-      Type("set")
-        .field("value", TyNode, required = true)
-        .is(TyIntegerImpl(Some(BitSize.B8), Some(false))),
       Type("byte_array")
-        .is(TyListImpl(TyIntegerImpl(Some(BitSize.B8), Some(false)))),
+        .is(Types.list(TyIntegerImpl(Some(BitSize.B8), Some(false)))),
       Type("boolean"),
       Type("record"),
       Type("null"),
@@ -184,24 +181,33 @@ object TyNodeCodeGen {
       Type("inet"),
       Type("uuid"),
       Type("union")
-        .field("values", TyListImpl(TyNode), required = true),
+        .field("values", Types.list(TyNode), required = true),
       Type("date_time")
-        .field("timezone", TyNamedImpl("java.util.TimeZone")),
+        .field("timezone", Types.named("java.util.TimeZone")),
       Type("time_stamp")
-        .field("has_time_zone", TyBooleanImpl())
-        .field("time_unit", TyNamedImpl("java.util.concurrent.TimeUnit")),
+        .field("has_time_zone", Types.bool())
+        .field("time_unit", Types.named("java.util.concurrent.TimeUnit")),
       Type("named")
-        .field("ref", TyStringImpl(), required = true),
+        .field("ref", Types.string(), required = true)
+        .field("preserve_case", Types.bool())
+      ,
       Type("type_var")
-        .field("name", TyStringImpl()),
+        .field("name", Types.string()),
       Type("key_value")
         .field("key", TyNode, required = true)
         .field("value", TyNode, required = true),
       Type("json"),
       Type("json_any")
-        .field("is_binary", TyBooleanImpl(), required = true),
+        .field("is_binary", Types.bool(), required = true),
       Type("json_object")
-        .field("is_binary", TyBooleanImpl(), required = true)
+        .field("is_binary", Types.bool(), required = true),
+      Type("unknown"),
+      Type("reference")
+        .field("referee", TyNode, required = true)
+        .field("lifetime", Types.named("LifeTime")),
+      Type("pointer")
+        .field("pointed", TyNode, required = true)
+        .field("mutable", Types.bool())
     )
       .map(x => x.name -> x)
       .toMap

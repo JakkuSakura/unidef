@@ -111,13 +111,13 @@ case class AstNodeCodeGen() {
 }
 object AstNodeCodeGen {
   def getAsts: Map[String, Ast] = {
-    val astNode = TyNamedImpl("AstNode")
+    val astNode = Types.named("AstNode")
     Seq(
       Ast("unit"),
       Ast("null"),
       Ast("undefined"),
       Ast("block")
-        .field("nodes", TyListImpl(astNode)),
+        .field("nodes", Types.list(astNode)),
       Ast("statement")
         .field("expr", astNode, required = true),
       Ast("if")
@@ -125,17 +125,17 @@ object AstNodeCodeGen {
         .field("consequent", astNode)
         .field("alternative", astNode),
       Ast("flow_control")
-        .field("flow", TyNamedImpl("FlowControl"))
+        .field("flow", Types.named("FlowControl"))
         .field("value", astNode),
       Ast("literal")
         .field(
           "literal_value",
-          TyStringImpl(),
+          Types.string(),
           required = true
         ) // TODO: make subtypes of literal values?
         .field("ty", TyNode, required = true),
       Ast("literal_string")
-        .field("literal_string", TyStringImpl(), required = true),
+        .field("literal_string", Types.string(), required = true),
       Ast("literal_int")
         .field("literal_int", TyIntegerBuilder().build(), required = true),
       Ast("literal_unit"),
@@ -143,79 +143,77 @@ object AstNodeCodeGen {
       Ast("literal_null"),
       Ast("select")
         .field("qualifier", astNode, required = true)
-        .field("symbol", TyStringImpl(), required = true),
+        .field("symbol", Types.string(), required = true),
       Ast("await").field("expr", astNode, required = true),
       Ast("raw_code")
-        .field("code", TyStringImpl(), required = true)
-        .field("language", TyStringImpl()),
+        .field("code", Types.string(), required = true)
+        .field("language", Types.string()),
       Ast("parameter_list")
         .field(
           "parameter_list",
-          TyListImpl(TyNamedImpl("AstValDef")),
+          Types.list(Types.named("AstValDef")),
           required = true
         ) // AstParameter later
       ,
       Ast("parameter_lists")
-        .field("parameter_lists", TyListImpl(TyNamedImpl("AstParameterList")), required = true),
+        .field("parameter_lists", Types.list(Types.named("AstParameterList")), required = true),
       Ast("argument")
-        .field("name", TyStringImpl(), required = true)
+        .field("name", Types.string(), required = true)
         .field("value", astNode),
       Ast("argument_list")
         .field(
           "argument_list",
-          TyListImpl(TyNamedImpl("AstArgument")),
+          Types.list(Types.named("AstArgument")),
           required = true
         ),
       Ast("argument_lists")
-        .field("argument_lists", TyListImpl(TyNamedImpl("AstArgumentList")), required = true),
+        .field("argument_lists", Types.list(Types.named("AstArgumentList")), required = true),
       Ast("apply")
         .field("applicable", astNode, required = true)
-        .field("arguments", TyListImpl(astNode), required = true),
+        .field("arguments", Types.list(astNode), required = true),
       Ast("apply_lists")
         .field("applicable", astNode, required = true)
-        .field("arguments_lists", TyNamedImpl("AstArgumentLists"), required = true),
+        .field("arguments_lists", Types.named("AstArgumentLists"), required = true),
       Ast("val_def")
-        .field("name", TyStringImpl(), required = true)
+        .field("name", Types.string(), required = true)
         .field("ty", TyNode, required = true)
         .field("value", astNode)
-        .field("mutability", TyBooleanImpl())
-        .field("auto_incr", TyBooleanImpl())
-//        .field("nullable", TyBooleanImpl())
-// use Option instead
-        .field("primary_key", TyBooleanImpl()),
+        .field("mutability", Types.bool())
+        .field("auto_incr", Types.bool())
+        .field("primary_key", Types.bool()),
       Ast("decls")
-        .field("decls", TyListImpl(astNode), required = true),
+        .field("decls", Types.list(astNode), required = true),
       Ast("type")
         .field("ty", TyNode, required = true),
       Ast("class_decl")
-        .field("name", TyStringImpl(), required = true)
-        .field("parameters", TyListImpl(TyNamedImpl("AstValDef")), required = true)
-        .field("fields", TyListImpl(TyNamedImpl("AstValDef")), required = true)
-        .field("methods", TyListImpl(TyNamedImpl("AstNode")), required = true)
-        .field("derived", TyListImpl(TyNamedImpl("AstClassIdent")), required = true)
-        .field("schema", TyStringImpl())
-        .field("dataframe", TyBooleanImpl())
-        .field("class_type", TyStringImpl())
-        .field("access", TyNamedImpl("AccessModifier")),
+        .field("name", Types.string(), required = true)
+        .field("parameters", Types.list(Types.named("AstValDef")), required = true)
+        .field("fields", Types.list(Types.named("AstValDef")), required = true)
+        .field("methods", Types.list(Types.named("AstNode")), required = true)
+        .field("derived", Types.list(Types.named("AstClassIdent")), required = true)
+        .field("schema", Types.string())
+        .field("dataframe", Types.bool())
+        .field("class_type", Types.string())
+        .field("access", Types.named("AccessModifier")),
       Ast("function_decl")
-        .field("name", TyStringImpl(), required = true)
-        .field("parameters", TyListImpl(TyNamedImpl("AstValDef")), required = true)
+        .field("name", Types.string(), required = true)
+        .field("parameters", Types.list(Types.named("AstValDef")), required = true)
         .field("return_type", TyNode, required = true)
-        .field("dataframe", TyBooleanImpl())
-        .field("records", TyBooleanImpl())
-        .field("comment", TyStringImpl())
+        .field("dataframe", Types.bool())
+        .field("records", Types.bool())
+        .field("comment", Types.string())
         .field("body", astNode)
-        .field("schema", TyStringImpl())
-        .field("language", TyStringImpl())
-        .field("overwrite", TyBooleanImpl()),
+        .field("schema", Types.string())
+        .field("language", Types.string())
+        .field("overwrite", Types.bool()),
       Ast("program")
-        .field("stmts", TyListImpl(astNode), required = true),
+        .field("stmts", Types.list(astNode), required = true),
       Ast("class_identifier")
-        .field("class_id", TyStringImpl(), required = true),
+        .field("class_id", Types.string(), required = true),
       Ast("variable_identifier")
-        .field("variable_identifier", TyStringImpl(), required = true),
+        .field("variable_identifier", Types.string(), required = true),
       Ast("directive")
-        .field("directive", TyStringImpl(), required = true)
+        .field("directive", Types.string(), required = true)
     ).map(x => x.name -> x).toMap
   }
 

@@ -1,17 +1,13 @@
 package unidef.common.ty
 
-import io.circe.{Encoder, Json}
 import unidef.common.BaseNode
 
 import java.util.TimeZone
-import scala.quoted.{Expr, Quotes}
 
 trait TyNode extends BaseNode
 
 case object TyNode extends TyNode
 
-trait TyUnknown extends TyNode
-case object TyUnknown extends TyUnknown
 sealed class BitSize(val bits: Int)
 
 object BitSize {
@@ -28,3 +24,24 @@ object BitSize {
 }
 
 case class TyConstTupleString(values: List[String]) extends TyNode
+
+sealed trait LifeTime
+
+case object LifeTime {
+
+  case object StaticLifeTime extends LifeTime
+
+  case class NamedLifeTime(name: String) extends LifeTime
+}
+
+object Types {
+  def named(name: String): TyNamed = TyNamedBuilder().ref(name).build()
+  def i32(): TyInteger = TyIntegerBuilder().bitSize(BitSize.B32).signed(true).build()
+
+  def string(): TyString = TyStringBuilder().build()
+  def unit(): TyUnit = TyUnitBuilder().build()
+  def bool(): TyBoolean = TyBooleanBuilder().build()
+
+  def list(ty: TyNode): TyList = TyListBuilder().value(ty).build()
+
+}

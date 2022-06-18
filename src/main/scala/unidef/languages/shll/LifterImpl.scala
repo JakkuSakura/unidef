@@ -25,7 +25,7 @@ class LifterImpl(using val quotes: Quotes) {
       case Block(Nil, x) => liftTerm(x)
       case Literal(IntConstant(v)) =>
         AstLiteralImpl(v.toString, tyInt)
-      case Literal(StringConstant(v)) => AstLiteralImpl(v, TyStringImpl())
+      case Literal(StringConstant(v)) => AstLiteralImpl(v, Types.string())
       case Block(decls, Literal(UnitConstant())) => AstDeclsImpl(decls.flatMap(liftDecl))
     }
   }
@@ -74,7 +74,7 @@ class LifterImpl(using val quotes: Quotes) {
     tree match {
       case ValDef(name, tpt, rhs) =>
         // TODO: process tpt and rhs
-        AstValDefBuilder().name(name).ty(TyNamedImpl(tpt.toString)).build()
+        AstValDefBuilder().name(name).ty(Types.named(tpt.toString)).build()
     }
   }
   // TODO support currying

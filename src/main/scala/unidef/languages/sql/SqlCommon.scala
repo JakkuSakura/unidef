@@ -79,7 +79,7 @@ class SqlCommon(naming: NamingConvention = SqlNamingConvention)
         Some(
           TyTimeStampBuilder().timeUnit(TimeUnit.MILLISECONDS).hasTimeZone(true).build()
         )
-      case "text" | "varchar" => Some(TyStringImpl())
+      case "text" | "varchar" => Some(Types.string())
       case "jsonb" => Some(TyJsonAnyBuilder().isBinary(true).build())
       case "json" => Some(TyJsonAnyBuilder().isBinary(false).build())
       case "void" => Some(TyUnitImpl())

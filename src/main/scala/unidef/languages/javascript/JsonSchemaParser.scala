@@ -35,7 +35,7 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
             }.toList)
             .build()
       )
-      .getOrElse(TyUnitImpl())
+      .getOrElse(Types.unit())
 
     val builder =
       AstFunctionDeclBuilder()
@@ -162,9 +162,9 @@ class JsonSchemaParser(options: JsonSchemaParserOption = JsonSchemaParserOption(
                 .map(x =>
                   if (options.extendedGrammar && x.asBoolean.get)
                     TyIntegerImpl(Some(BitSize.B8), Some(true))
-                  else TyStringImpl()
+                  else Types.string()
                 )
-                .getOrElse(TyStringImpl())
+                .getOrElse(Types.string())
             )
             .build()
         } else {

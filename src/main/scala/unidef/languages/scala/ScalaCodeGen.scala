@@ -130,7 +130,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     }
     val buildMethod = AstFunctionDeclBuilder()
       .name("build")
-      .returnType(TyNamedImpl(target))
+      .returnType(Types.named(target))
       .body(
         AstRawCodeImpl(s"$target(${fields.map(expandField).mkString(", ")})", None)
       )
@@ -146,7 +146,7 @@ class ScalaCodeGen(naming: NamingConvention) {
         case x: TyOptional => x
         case x: TyList =>
           val content = common.encodeOrThrow(x.value, "scala")
-          TyNamedImpl(s"mutable.ArrayBuffer[${content}]")
+          Types.named(s"mutable.ArrayBuffer[${content}]")
         case x => TyOptionalImpl(x)
       }
     }
@@ -160,7 +160,7 @@ class ScalaCodeGen(naming: NamingConvention) {
       val fieldName = naming.toFieldName(x.name)
       val builder = AstFunctionDeclBuilder()
         .name(fieldName)
-        .returnType(TyNamedImpl(builderName))
+        .returnType(Types.named(builderName))
         .parameters(
           List(
             AstValDefBuilder().name(fieldName).ty(unwrapOptional(x.ty)).build()
@@ -192,7 +192,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           Some(
             AstFunctionDeclBuilder()
               .name(fieldName)
-              .returnType(TyNamedImpl(builderName))
+              .returnType(Types.named(builderName))
               .parameters(
                 List(
                   AstValDefBuilder().name(fieldName).ty(o).build()
@@ -215,7 +215,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           List(
             AstFunctionDeclBuilder()
               .name(fieldNameWithoutS)
-              .returnType(TyNamedImpl(builderName))
+              .returnType(Types.named(builderName))
               .parameters(
                 List(
                   AstValDefBuilder().name(fieldNameWithoutS).ty(list.value).build()
