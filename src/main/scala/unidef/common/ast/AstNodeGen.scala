@@ -13,8 +13,8 @@ trait HasDerives() extends AstNode {
 trait HasTest() extends AstNode {
   def test: AstNode
 }
-trait HasApplicable() extends AstNode {
-  def applicable: AstNode
+trait HasApplicant() extends AstNode {
+  def applicant: AstNode
 }
 trait HasRecords() extends AstNode {
   def records: Option[Boolean]
@@ -141,7 +141,7 @@ case class AstClassIdentifierImpl(classId: String) extends AstClassIdentifier
 case class AstStatementImpl(expr: AstNode) extends AstStatement 
 case class AstArgumentListsImpl(argumentListsContent: List[AstArgumentList]) extends AstArgumentLists 
 case class AstArgumentListImpl(argumentListContent: List[AstArgument]) extends AstArgumentList 
-case class AstApplyImpl(applicable: AstNode, arguments: AstArgumentLists) extends AstApply 
+case class AstApplyImpl(applicant: AstNode, arguments: AstArgumentLists) extends AstApply 
 case class AstDeclsImpl(decls: List[AstNode]) extends AstDecls 
 case class AstLiteralStringImpl(literalString: String) extends AstLiteralString 
 case class AstArgumentImpl(name: String, value: Option[AstNode]) extends AstArgument 
@@ -189,8 +189,8 @@ trait AstArgumentLists() extends AstNode with HasArgumentListsContent {
 trait AstArgumentList() extends AstNode with HasArgumentListContent {
   def argumentListContent: List[AstArgument]
 }
-trait AstApply() extends AstNode with HasApplicable with HasArguments {
-  def applicable: AstNode
+trait AstApply() extends AstNode with HasApplicant with HasArguments {
+  def applicant: AstNode
   def arguments: AstArgumentLists
 }
 trait AstDecls() extends AstNode with HasDecls {
@@ -274,7 +274,7 @@ class AstLiteralNullBuilder() {
 }
 class AstProgramBuilder() {
   var stmts: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
-  def stmts(stmts: List[AstNode]): AstProgramBuilder = {
+  def stmts(stmts: Seq[AstNode]): AstProgramBuilder = {
     this.stmts ++= stmts
     this
   }
@@ -379,7 +379,7 @@ class AstStatementBuilder() {
 }
 class AstArgumentListsBuilder() {
   var argumentListsContent: mutable.ArrayBuffer[AstArgumentList] = mutable.ArrayBuffer.empty
-  def argumentListsContent(argumentListsContent: List[AstArgumentList]): AstArgumentListsBuilder = {
+  def argumentListsContent(argumentListsContent: Seq[AstArgumentList]): AstArgumentListsBuilder = {
     this.argumentListsContent ++= argumentListsContent
     this
   }
@@ -393,7 +393,7 @@ class AstArgumentListsBuilder() {
 }
 class AstArgumentListBuilder() {
   var argumentListContent: mutable.ArrayBuffer[AstArgument] = mutable.ArrayBuffer.empty
-  def argumentListContent(argumentListContent: List[AstArgument]): AstArgumentListBuilder = {
+  def argumentListContent(argumentListContent: Seq[AstArgument]): AstArgumentListBuilder = {
     this.argumentListContent ++= argumentListContent
     this
   }
@@ -406,10 +406,10 @@ class AstArgumentListBuilder() {
   }
 }
 class AstApplyBuilder() {
-  var applicable: Option[AstNode] = None
+  var applicant: Option[AstNode] = None
   var arguments: Option[AstArgumentLists] = None
-  def applicable(applicable: AstNode): AstApplyBuilder = {
-    this.applicable = Some(applicable)
+  def applicant(applicant: AstNode): AstApplyBuilder = {
+    this.applicant = Some(applicant)
     this
   }
   def arguments(arguments: AstArgumentLists): AstApplyBuilder = {
@@ -417,12 +417,12 @@ class AstApplyBuilder() {
     this
   }
   def build(): AstApplyImpl = {
-    AstApplyImpl(applicable.get, arguments.get)
+    AstApplyImpl(applicant.get, arguments.get)
   }
 }
 class AstDeclsBuilder() {
   var decls: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
-  def decls(decls: List[AstNode]): AstDeclsBuilder = {
+  def decls(decls: Seq[AstNode]): AstDeclsBuilder = {
     this.decls ++= decls
     this
   }
@@ -578,7 +578,7 @@ class AstSelectBuilder() {
 }
 class AstParameterListsBuilder() {
   var parameterListsContent: mutable.ArrayBuffer[AstParameterList] = mutable.ArrayBuffer.empty
-  def parameterListsContent(parameterListsContent: List[AstParameterList]): AstParameterListsBuilder = {
+  def parameterListsContent(parameterListsContent: Seq[AstParameterList]): AstParameterListsBuilder = {
     this.parameterListsContent ++= parameterListsContent
     this
   }
@@ -592,7 +592,7 @@ class AstParameterListsBuilder() {
 }
 class AstBlockBuilder() {
   var nodes: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
-  def nodes(nodes: List[AstNode]): AstBlockBuilder = {
+  def nodes(nodes: Seq[AstNode]): AstBlockBuilder = {
     this.nodes ++= nodes
     this
   }
@@ -622,15 +622,15 @@ class AstClassDeclBuilder() {
     this.parameters = Some(parameters)
     this
   }
-  def fields(fields: List[AstValDef]): AstClassDeclBuilder = {
+  def fields(fields: Seq[AstValDef]): AstClassDeclBuilder = {
     this.fields ++= fields
     this
   }
-  def methods(methods: List[AstNode]): AstClassDeclBuilder = {
+  def methods(methods: Seq[AstNode]): AstClassDeclBuilder = {
     this.methods ++= methods
     this
   }
-  def derives(derives: List[AstNode]): AstClassDeclBuilder = {
+  def derives(derives: Seq[AstNode]): AstClassDeclBuilder = {
     this.derives ++= derives
     this
   }
@@ -765,7 +765,7 @@ class AstTypeBuilder() {
 }
 class AstParameterListBuilder() {
   var parameterListContent: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
-  def parameterListContent(parameterListContent: List[AstValDef]): AstParameterListBuilder = {
+  def parameterListContent(parameterListContent: Seq[AstValDef]): AstParameterListBuilder = {
     this.parameterListContent ++= parameterListContent
     this
   }

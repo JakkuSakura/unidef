@@ -156,6 +156,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     def unwrapOptional(x: TyNode): TyNode = {
       x match {
         case x: TyOption => x.value
+        case x: TyList => TySeqBuilder().value(x.value).build()
         case x => x
       }
     }
@@ -172,7 +173,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           )
         )
 
-      (x.ty match {
+      x.ty match {
         case list: TyList =>
           List(
             builder
@@ -187,12 +188,12 @@ class ScalaCodeGen(naming: NamingConvention) {
               )
               .build()
           )
-      })
+      }
     }
     def setFieldWholeReplace(x: AstValDef): Option[AstFunctionDecl] = {
       val fieldName = naming.toFieldName(x.name)
 
-      (x.ty match {
+      x.ty match {
         case o: TyOption =>
           Some(
             AstFunctionDeclBuilder()
@@ -211,12 +212,12 @@ class ScalaCodeGen(naming: NamingConvention) {
               .build()
           )
         case _ => None
-      })
+      }
     }
     def setFieldAppend(x: AstValDef): List[AstFunctionDecl] = {
       val fieldName = naming.toFieldName(x.name)
 
-      (x.ty match {
+      x.ty match {
         case list: TyList =>
           val fieldNameWithoutS = fieldName.stripSuffix("s")
           List(
@@ -238,7 +239,7 @@ class ScalaCodeGen(naming: NamingConvention) {
 
         case _ => Nil
 
-      })
+      }
     }
     AstClassDeclBuilder()
       .name(builderName)

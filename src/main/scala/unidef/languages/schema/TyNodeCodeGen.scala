@@ -209,6 +209,22 @@ object TyNodeCodeGen {
       Type("pointer")
         .field("pointed", TyNode, required = true)
         .field("mutable", Types.bool())
+        .field("smart", Types.bool()),
+      Type("seq")
+        .field("value", TyNode, required = true),
+      Type("char")
+        .field("bit_size", Types.named("BitSize"))
+        .field("charset", Types.string()),
+      Type("byte")
+        .field("signed", Types.bool()),
+      Type("select")
+        .field("value", TyNode, required = true)
+        .field("symbol", Types.string(), required = true),
+      Type("ident")
+        .field("name", Types.string()),
+      Type("apply")
+        .field("applicant", Types.string(), required = true)
+        .field("arguments", Types.list(Types.bool()), required = true)
     )
       .map(x => x.name -> x)
       .toMap

@@ -171,7 +171,7 @@ object AstNodeCodeGen {
           required = true
         ),
       Ast("apply")
-        .field("applicable", astNode, required = true)
+        .field("applicant", astNode, required = true)
         .field("arguments", Types.named("AstArgumentLists"), required = true),
       Ast("val_def")
         .field("name", Types.string(), required = true)

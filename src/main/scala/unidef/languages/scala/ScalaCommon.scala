@@ -1,17 +1,6 @@
 package unidef.languages.scala
 
-import unidef.common.ty.{
-  TyAny,
-  TyBoolean,
-  TyInteger,
-  TyList,
-  TyNamed,
-  TyNode,
-  TyOption,
-  TyString,
-  TyUnit,
-  TypeEncoder
-}
+import unidef.common.ty.*
 import unidef.utils.TextTool
 
 class ScalaCommon() extends TypeEncoder[String] {
@@ -24,6 +13,7 @@ class ScalaCommon() extends TypeEncoder[String] {
       case t: TyOption => encode(t.value).map(x => s"Option[${x}]")
       case _: TyAny => Some("Any")
       case t: TyList => encode(t.value).map(x => s"List[${x}]")
+      case t: TySeq => encode(t.value).map(x => s"Seq[${x}]")
       case x: TyNamed => Some(x.ref)
       case TyNode => Some("TyNode")
       case _ => None
