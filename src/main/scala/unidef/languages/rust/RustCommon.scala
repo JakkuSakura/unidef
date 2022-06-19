@@ -1,24 +1,13 @@
 package unidef.languages.rust
 
-import unidef.common.ty.{
-  BitSize,
-  TyEnum,
-  TyFloat,
-  TyInteger,
-  TyJsonAny,
-  TyList,
-  TyMap,
-  TyNamed,
-  TyNode,
-  TyOption,
-  TyString,
-  TyTuple,
-  TyUnit,
-  TypeDecoder,
-  TypeEncoder
-}
+import unidef.common.ty.*
 
-case class RustCommon() extends TypeEncoder[String] with TypeDecoder[String] {
+case class RustCommon(
+    alternativeTypeEncoder: Option[TypeEncoder[String]] = None,
+    alternativeTypeDecoder: Option[TypeDecoder[String]] = None
+) extends TypeEncoder[String]
+    with TypeDecoder[String] {
+  // TODO: retain all rust type details
   val KEYWORD_MAPPING: Map[String, String] = Map(
     "as" -> "r#as",
     "break" -> "r#break",
@@ -115,10 +104,39 @@ case class RustCommon() extends TypeEncoder[String] with TypeDecoder[String] {
         Some(s"f$bitSize")
       case x: TyMap =>
         encode(x.key).flatMap(k => encode(x.value).map(v => s"HashMap<${k}, ${v}>"))
-//      case x: TyReference =>
-//        Some("String")
+
+      case x => alternativeTypeEncoder.flatMap(_.encode(x))
     }
   }
 
-  override def decode(name: String): Option[TyNode] = ???
+  override def decode(name: String): Option[TyNode] = name match {
+    case s"Option<$s>" =>
+      decode(s).map(Types.option)
+    case "String" =>
+      Some(Types.string())
+    case s"Vec<$s>" =>
+      decode(s).map(Types.list)
+    case s"&str" => Some(TyReferenceBuilder().referee(Types.string()).build())
+    case s"HashMap<$s1, $s2>" =>
+      decode(s1).flatMap(k => decode(s2).map(v => Types.map(k, v, "hash")))
+    case s"BTreeMap<$s1, $s2>" =>
+      decode(s1).flatMap(k => decode(s2).map(v => Types.map(k, v, "btree")))
+    case "i8" => Some(Types.i8())
+    case "i16" => Some(Types.i16())
+    case "i32" => Some(Types.i32())
+    case "i64" => Some(Types.i64())
+    case "i128" => Some(Types.i128())
+    case "isize" => Some(Types.isize())
+    case "u8" => Some(Types.u8())
+    case "u16" => Some(Types.u16())
+    case "u32" => Some(Types.u32())
+    case "u64" => Some(Types.u64())
+    case "u128" => Some(Types.u128())
+    case "usize" => Some(Types.usize())
+    case "f32" => Some(Types.f32())
+    case "f64" => Some(Types.f64())
+    case "serde_json::Value" =>
+      Some(TyJsonAnyBuilder().build())
+    case s => alternativeTypeDecoder.flatMap(_.decode(s))
+  }
 }

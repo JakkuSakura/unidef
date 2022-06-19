@@ -167,7 +167,8 @@ object TyNodeCodeGen {
       Type("object"),
       Type("map")
         .field("key", TyNode, required = true)
-        .field("value", TyNode, required = true),
+        .field("value", TyNode, required = true)
+        .field("map_type", Types.string()),
       Type("set")
         .field("value", TyNode, required = true),
       Type("byte_array")

@@ -4,10 +4,10 @@ import unidef.common.NamingConvention
 import unidef.common.ast.{AstImport, ImportManager}
 import unidef.common.ty.*
 
-class PythonCommon(
-    val naming: NamingConvention = PythonNamingConvention,
-    val alternativeTypeEncoder: Option[TypeEncoder[String]] = None,
-    val alternativeTypeDecoder: Option[TypeDecoder[String]] = None
+case class PythonCommon(
+    naming: NamingConvention = PythonNamingConvention,
+    alternativeTypeEncoder: Option[TypeEncoder[String]] = None,
+    alternativeTypeDecoder: Option[TypeDecoder[String]] = None
 ) extends TypeEncoder[String]
     with TypeDecoder[String] {
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =

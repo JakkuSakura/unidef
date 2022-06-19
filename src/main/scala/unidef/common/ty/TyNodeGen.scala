@@ -81,6 +81,9 @@ trait HasHasTimeZone() extends TyNode {
 trait HasNames() extends TyNode {
   def names: List[String]
 }
+trait HasMapType() extends TyNode {
+  def mapType: Option[String]
+}
 trait HasVariants() extends TyNode {
   def variants: List[TyVariant]
 }
@@ -126,7 +129,7 @@ case class TyRealImpl() extends TyReal
 case class TyUnionImpl(values: List[TyNode]) extends TyUnion 
 case class TyPointerImpl(pointed: TyNode, mutable: Option[Boolean], smart: Option[Boolean]) extends TyPointer 
 case class TyFieldImpl(name: Option[String], value: TyNode, mutability: Option[Boolean]) extends TyField 
-case class TyMapImpl(key: TyNode, value: TyNode) extends TyMap 
+case class TyMapImpl(key: TyNode, value: TyNode, mapType: Option[String]) extends TyMap 
 case class TyFloatImpl(bitSize: Option[BitSize]) extends TyFloat 
 case class TyJsonImpl() extends TyJson 
 case class TyUuidImpl() extends TyUuid 
@@ -211,9 +214,10 @@ trait TyField() extends TyNode with HasName with HasValue with HasMutability {
   def value: TyNode
   def mutability: Option[Boolean]
 }
-trait TyMap() extends TyNode with HasKey with HasValue {
+trait TyMap() extends TyNode with HasKey with HasValue with HasMapType {
   def key: TyNode
   def value: TyNode
+  def mapType: Option[String]
 }
 trait TyFloat() extends TyNode with TyReal with HasBitSize {
   def bitSize: Option[BitSize]
@@ -581,6 +585,7 @@ class TyFieldBuilder() {
 class TyMapBuilder() {
   var key: Option[TyNode] = None
   var value: Option[TyNode] = None
+  var mapType: Option[String] = None
   def key(key: TyNode): TyMapBuilder = {
     this.key = Some(key)
     this
@@ -589,8 +594,16 @@ class TyMapBuilder() {
     this.value = Some(value)
     this
   }
+  def mapType(mapType: String): TyMapBuilder = {
+    this.mapType = Some(mapType)
+    this
+  }
+  def mapType(mapType: Option[String]): TyMapBuilder = {
+    this.mapType = mapType
+    this
+  }
   def build(): TyMapImpl = {
-    TyMapImpl(key.get, value.get)
+    TyMapImpl(key.get, value.get, mapType)
   }
 }
 class TyFloatBuilder() {

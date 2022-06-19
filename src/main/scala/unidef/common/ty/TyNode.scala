@@ -39,10 +39,14 @@ object Types {
   private def integer(bitSize: BitSize, signed: Boolean) =
     TyIntegerBuilder().bitSize(bitSize).signed(signed).build()
 
+  def i8(): TyInteger = integer(BitSize.B8, true)
   def i16(): TyInteger = integer(BitSize.B16, true)
   def i32(): TyInteger = integer(BitSize.B32, true)
   def i64(): TyInteger = integer(BitSize.B64, true)
   def i128(): TyInteger = integer(BitSize.B128, true)
+
+  def u8(): TyInteger = integer(BitSize.B8, true)
+    def u16(): TyInteger = integer(BitSize.B16, true)
   def u32(): TyInteger = integer(BitSize.B32, false)
   def u64(): TyInteger = integer(BitSize.B64, false)
   def u128(): TyInteger = integer(BitSize.B128, false)
@@ -53,11 +57,12 @@ object Types {
 
   def string(): TyString = TyStringBuilder().build()
   def unit(): TyUnit = TyUnitBuilder().build()
-
   def any(): TyAny = TyAnyBuilder().build()
   def bool(): TyBoolean = TyBooleanBuilder().build()
 
   def list(ty: TyNode): TyList = TyListBuilder().value(ty).build()
+  def map(key: TyNode, value: TyNode, mapType: String = ""): TyMap =
+    TyMapBuilder().key(key).value(value).mapType(Option(mapType).filterNot(_.isEmpty)).build()
 
   def option(ty: TyNode): TyOption = TyOptionBuilder().value(ty).build()
 
