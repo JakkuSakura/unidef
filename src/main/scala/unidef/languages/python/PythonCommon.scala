@@ -17,6 +17,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
             s"Optional[$s]"
           )
       case _: TyInteger => Some("int")
+      case _: TyOid => Some("int")
       case _: TyReal => Some("float")
       case _: TyString => Some("str")
       // case TyChar => Some("str")
