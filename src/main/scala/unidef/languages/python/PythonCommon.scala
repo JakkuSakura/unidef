@@ -4,8 +4,11 @@ import unidef.common.NamingConvention
 import unidef.common.ast.{AstImport, ImportManager}
 import unidef.common.ty.*
 
-class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
-    extends TypeEncoder[String]
+class PythonCommon(
+    val naming: NamingConvention = PythonNamingConvention,
+    val alternativeTypeEncoder: Option[TypeEncoder[String]] = None,
+    val alternativeTypeDecoder: Option[TypeDecoder[String]] = None
+) extends TypeEncoder[String]
     with TypeDecoder[String] {
   def convertType(node: TyNode, importManager: Option[ImportManager] = None): Option[String] =
     node match {
@@ -20,7 +23,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case _: TyOid => Some("int")
       case _: TyReal => Some("float")
       case _: TyString => Some("str")
-      // case TyChar => Some("str")
+      case _: TyChar => Some("str")
       case t: TyStruct if t.name.isDefined =>
         Some(naming.toStructName(t.name.get))
       case _: TyStruct =>
@@ -73,7 +76,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case _: TyAny =>
         importManager.foreach(_ += AstImport("typing.Any"))
         Some("Any")
-      case _ => None
+      case _ => alternativeTypeEncoder.flatMap(_.encode(node))
     }
   def convertTypeFromPy(ty: String): Option[TyNode] =
     ty match {
@@ -87,7 +90,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
       case "List[Dict[str, Any]]" => Some(TyRecordImpl())
       case "bytes" => Some(TyByteArrayImpl())
       case "uuid.UUID" | "UUID" => Some(TyUuidImpl())
-      case _ => None
+      case _ => alternativeTypeDecoder.flatMap(_.decode(ty))
     }
 
   override def encode(ty: TyNode): Option[String] = convertType(ty)
