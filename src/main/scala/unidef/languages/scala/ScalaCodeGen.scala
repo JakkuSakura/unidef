@@ -259,6 +259,12 @@ case class ScalaCodeGen(naming: NamingConvention) {
       .build()
   }
 
+  def generateValDef(x: AstValDef): String = {
+    val fieldName = naming.toFieldName(x.name)
+    val ty = common.encodeOrThrow(x.ty, "scala")
+    val value = x.value.map(generate).map(v => " = " + v).getOrElse("")
+    s"val $fieldName: $ty$value"
+  }
   def generate(n: AstNode): String = {
     n match {
       case x: AstDecls =>
@@ -283,6 +289,8 @@ case class ScalaCodeGen(naming: NamingConvention) {
         "None"
       case n: AstLiteralNull =>
         "null"
+      case n: AstValDef =>
+        generateValDef(n)
       case a: AstArgument =>
         generate(a.value.get)
       case n: AstRawCode =>

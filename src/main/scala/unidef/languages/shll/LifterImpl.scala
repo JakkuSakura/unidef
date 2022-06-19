@@ -64,10 +64,11 @@ class LifterImpl(using val quotes: Quotes) {
         AstImport(expr.show + "." + name)
     }
   }
-  def liftValDef(tree: ValDef): AstRawCode = {
+
+  def liftValDef(tree: ValDef): AstValDef = {
     tree match {
       case ValDef(name, tpt, rhs) =>
-        AstRawCodeImpl(s"val $name: ${tpt.show} = ${rhs}", None)
+        AstValDefBuilder().name(name).ty(liftType(tpt)).value(rhs.map(liftTerm)).build()
     }
   }
   def liftStmt(tree: Statement): AstNode = {
@@ -86,14 +87,7 @@ class LifterImpl(using val quotes: Quotes) {
         AstRawCodeImpl(x.show, None)
     }
   }
-  def liftParameter(tree: ValDef): AstValDef = {
-    logger.debug(tree.toString)
 
-    tree match {
-      case ValDef(name, ty, value) =>
-        AstValDefBuilder().name(name).ty(liftType(ty)).value(value.map(liftTree)).build()
-    }
-  }
   // TODO support currying
   def extractParams(params: List[ParamClause]): (List[TypeDef], List[ValDef]) = {
     val (tyParams, dynParams) = params match {
@@ -125,7 +119,7 @@ class LifterImpl(using val quotes: Quotes) {
     val body = term.map(liftStmt)
     AstFunctionDeclBuilder()
       .name(name)
-      .parameters(Asts.parameters(paramss.map(liftParameter)))
+      .parameters(Asts.parameters(paramss.map(liftValDef)))
       .returnType(retType)
       .body(body)
       .build()

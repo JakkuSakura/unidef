@@ -39,12 +39,12 @@ case class TyNodeCodeGen() {
       .classType(classType)
       .build()
   }
-  def tryWrapValue(x: AstValDef): TyNode = x.ty
+
   def generateScalaHasTrait(field: AstValDef): AstClassDecl = {
     val traitName = "Has" + TextTool.toPascalCase(field.name)
     val scalaCommon = ScalaCommon()
     val valueType =
-      scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
+      scalaCommon.encodeOrThrow(field.ty, "Scala")
 
     scalaField(
       traitName,
@@ -64,7 +64,7 @@ case class TyNodeCodeGen() {
         fields
           .map(field =>
             val valueType =
-              scalaCommon.encodeOrThrow(tryWrapValue(field), "Scala")
+              scalaCommon.encodeOrThrow(field.ty, "Scala")
             AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name)}: ${valueType}", None)
           )
           .toList

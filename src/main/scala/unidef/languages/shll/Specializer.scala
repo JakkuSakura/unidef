@@ -2,7 +2,7 @@ package unidef.languages.shll
 
 import unidef.common.ast.*
 import com.typesafe.scalalogging.Logger
-import unidef.common.ty.TyNode
+import unidef.common.ty.{TyNode, TyUnknownImpl}
 
 import scala.collection.mutable
 case class SpecializeException(msg: String, node: AstNode) extends Exception(msg + ": " + node)
@@ -75,12 +75,16 @@ case class Specializer() {
       case ds: AstDecls => AstDeclsImpl(ds.decls.map(specializeDecl(_, ctx)))
       case n: AstApply => specializeApply(n, ctx)
       case n: AstIdent => specializeIdent(n, ctx)
+      case n: AstValDef => specializeValDef(n, ctx)
       case n: AstLiteral => n
       case x => throw SpecializeException("cannot specialize", x)
     }
 
   }
-
+  def specializeValDef(n: AstValDef, ctx: ValueContext): AstValDef = {
+    val value = n.value.map(specializeNode(_, ctx))
+    AstValDefBuilder().name(n.name).ty(n.ty).value(value).mutability(n.mutability).build()
+  }
   def specializeIdent(id: AstIdent, ctx: ValueContext): AstNode = {
     ctx.getValue(id.name).get // TODO specialize with function arguments
   }
@@ -123,6 +127,46 @@ case class Specializer() {
   def isSpecializedFunctionDecl(d: AstFunctionDecl): Boolean = {
     Asts.flattenParameters(d.parameters).isEmpty && d.body.isDefined
   }
+  def isConstant(n: AstNode): Boolean = {
+    n match {
+      case _: AstLiteral => true
+      case _ => false
+    }
+  }
+  def prepareCtx(
+      ctx: ValueContext,
+      d: Map[String, AstNode],
+      oldBody: AstNode
+  ): (AstNode, ValueContext) = {
+    val newCtx = ValueContext.from(
+      ctx,
+      d.map {
+        case k -> v if isConstant(v) => k -> v
+        case k -> v => k -> v
+      },
+      Map.empty
+    )
+    val prepareValues = d.flatMap {
+      case k -> v if !isConstant(v) =>
+        Some(AstValDefBuilder().name(k).ty(TyUnknownImpl()).value(v).build())
+      case _ => None
+    }.toList
+    val newBody = if (prepareValues.nonEmpty) {
+      oldBody match {
+        case b: AstBlock =>
+          AstBlockImpl(
+            prepareValues ::: b.stmts
+          )
+        case _ =>
+          AstBlockImpl(
+            prepareValues :+ oldBody
+          )
+      }
+    } else {
+      oldBody
+    }
+    (newBody, newCtx)
+  }
 
   def specializeFunctionApply(
       func: AstFunctionDecl,
@@ -142,11 +186,10 @@ case class Specializer() {
         val value = v.value.get // TODO
         key -> value
       }
+      .toMap
+    val (newBody, newCtx) = prepareCtx(ctx, mapping, func.body.get)
+    val body = specializeNode(newBody, newCtx)
 
-    val body = specializeFunctionBody(
-      func,
-      ValueContext.from(ctx, values = mapping.toMap)
-    )
     val newFunc = func
       .asInstanceOf[AstFunctionDeclImpl]
       .copy(
@@ -157,13 +200,6 @@ case class Specializer() {
     cache.specializedFunctions(newFunc.name) = newFunc
     AstApplyImpl(AstIdentImpl(newFunc.name), Asts.arguments(Nil))
   }
-  def specializeFunctionBody(
-      d: AstFunctionDecl,
-      ctx: ValueContext
-  ): AstNode = {
-    val body = specializeNode(d.body.get, ctx)
-    body
-  }
 
   def specializeFunctionDecl(
       d: AstFunctionDecl,
@@ -172,7 +208,7 @@ case class Specializer() {
     cache.funcDeclMap(d.name) = d
     if (isSpecializedFunctionDecl(d))
       // TODO evaluate contestant
-      val body = specializeFunctionBody(d, ctx)
+      val body = specializeNode(d.body.get, ctx)
       d.asInstanceOf[AstFunctionDeclImpl].copy(body = Some(body))
     else {
       d
