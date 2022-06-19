@@ -117,7 +117,7 @@ case class Specializer() {
       case s =>
         specializeNode(s, ctx1)
     }
-    AstBlockImpl(stmts)
+    Asts.block(stmts)
   }
 
   def specializeDecl(d: AstNode, ctx: ValueContext): AstNode = {
@@ -175,11 +175,11 @@ case class Specializer() {
     val newBody = if (prepareValues.nonEmpty) {
       oldBody match {
         case b: AstBlock =>
-          AstBlockImpl(
+          Asts.block(
             prepareValues ::: b.stmts
           )
         case _ =>
-          AstBlockImpl(
+          Asts.block(
             prepareValues :+ oldBody
           )
       }

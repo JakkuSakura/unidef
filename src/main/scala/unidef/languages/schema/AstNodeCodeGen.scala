@@ -131,6 +131,9 @@ object AstNodeCodeGen {
       Ast("literal_int")
         .field("literal_int", Types.i32(), required = true)
         .derive("AstLiteral"),
+      Ast("literal_bool")
+        .field("literal_bool", Types.bool(), required = true)
+        .derive("AstLiteral"),
       Ast("literal_unit").derive("AstLiteral"),
       Ast("literal_none").derive("AstLiteral"),
       Ast("literal_null").derive("AstLiteral"),

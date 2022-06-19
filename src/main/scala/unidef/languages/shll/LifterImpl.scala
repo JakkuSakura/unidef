@@ -82,8 +82,10 @@ class LifterImpl(using val quotes: Quotes) {
 
       case ClassDef(name, defDef, parents, sefl, body) =>
         liftClassDef(name, defDef, parents, sefl, body)
-      case Block(stmts, Literal(UnitConstant())) => AstBlockImpl(stmts.map(liftStmt))
-      case Block(stmts, expr) => AstBlockImpl(stmts.map(liftStmt) :+ liftStmt(expr))
+      case Block(stmts, Literal(UnitConstant())) =>
+        Asts.block(stmts.map(liftStmt), false)
+      case Block(stmts, expr) =>
+        Asts.block(stmts.map(liftStmt), liftStmt(expr))
       case x: Term => liftTerm(x)
       case x =>
         logger.error(s"unsupported statement: ${x.show} \n${x}")

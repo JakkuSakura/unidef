@@ -1,14 +1,10 @@
 package unidef.common.ast
 
-import unidef.common.HasComment
 import unidef.common.ty.*
-
 import scala.collection.mutable
+import unidef.common.HasComment
 
 
-trait HasName() extends AstNode {
-  def name: String
-}
 case class AstLiteralNullImpl() extends AstLiteralNull 
 case class AstProgramImpl(stmts: List[AstNode]) extends AstProgram 
 case class AstAwaitImpl(expr: AstNode) extends AstAwait 
@@ -29,8 +25,9 @@ case class AstDirectiveImpl(directive: String) extends AstDirective
 case class AstFunctionDeclImpl(name: String, parameters: AstParameterLists, returnType: TyNode, dataframe: Option[Boolean], records: Option[Boolean], comment: Option[String], body: Option[AstNode], schema: Option[String], language: Option[String], overwrite: Option[Boolean]) extends AstFunctionDecl 
 case class AstLiteralUndefinedImpl() extends AstLiteralUndefined 
 case class AstSelectImpl(qualifier: AstNode, symbol: String) extends AstSelect 
+case class AstLiteralBoolImpl(literalBool: Boolean) extends AstLiteralBool 
 case class AstParameterListsImpl(parameterListsContent: List[AstParameterList]) extends AstParameterLists 
-case class AstBlockImpl(stmts: List[AstNode]) extends AstBlock 
+case class AstBlockImpl(stmts: List[AstNode], lastValue: Option[Boolean]) extends AstBlock 
 case class AstClassDeclImpl(name: String, parameters: AstParameterLists, fields: List[AstValDef], methods: List[AstNode], derives: List[AstNode], schema: Option[String], dataframe: Option[Boolean], classType: Option[String], access: Option[AccessModifier], comment: Option[String]) extends AstClassDecl 
 case class AstIdentImpl(name: String) extends AstIdent 
 case class AstVariableIdentifierImpl(variableIdentifier: String) extends AstVariableIdentifier 
@@ -104,11 +101,15 @@ trait AstSelect() extends AstNode {
   def qualifier: AstNode
   def symbol: String
 }
+trait AstLiteralBool() extends AstNode with AstLiteral {
+  def literalBool: Boolean
+}
 trait AstParameterLists() extends AstNode {
   def parameterListsContent: List[AstParameterList]
 }
 trait AstBlock() extends AstNode {
   def stmts: List[AstNode]
+  def lastValue: Option[Boolean]
 }
 trait AstClassDecl() extends AstNode with HasComment {
   def name: String
@@ -463,6 +464,16 @@ class AstSelectBuilder() {
     AstSelectImpl(qualifier.get, symbol.get)
   }
 }
+class AstLiteralBoolBuilder() {
+  var literalBool: Option[Boolean] = None
+  def literalBool(literalBool: Boolean): AstLiteralBoolBuilder = {
+    this.literalBool = Some(literalBool)
+    this
+  }
+  def build(): AstLiteralBoolImpl = {
+    AstLiteralBoolImpl(literalBool.get)
+  }
+}
 class AstParameterListsBuilder() {
   var parameterListsContent: mutable.ArrayBuffer[AstParameterList] = mutable.ArrayBuffer.empty
   def parameterListsContent(parameterListsContent: Seq[AstParameterList]): AstParameterListsBuilder = {
@@ -479,8 +490,17 @@ class AstParameterListsBuilder() {
 }
 class AstBlockBuilder() {
   var stmts: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
+  var lastValue: Option[Boolean] = None
   def stmts(stmts: Seq[AstNode]): AstBlockBuilder = {
     this.stmts ++= stmts
+    this
+  }
+  def lastValue(lastValue: Boolean): AstBlockBuilder = {
+    this.lastValue = Some(lastValue)
+    this
+  }
+  def lastValue(lastValue: Option[Boolean]): AstBlockBuilder = {
+    this.lastValue = lastValue
     this
   }
   def stmt(stmt: AstNode): AstBlockBuilder = {
@@ -488,7 +508,7 @@ class AstBlockBuilder() {
     this
   }
   def build(): AstBlockImpl = {
-    AstBlockImpl(stmts.toList)
+    AstBlockImpl(stmts.toList, lastValue)
   }
 }
 class AstClassDeclBuilder() {

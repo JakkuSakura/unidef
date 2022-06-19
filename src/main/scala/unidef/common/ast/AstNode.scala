@@ -60,9 +60,15 @@ case object Asts {
     AstArgumentListsImpl(List(AstArgumentListImpl(arguments.toList)))
 
   def unit(): AstLiteralUnit = AstLiteralUnitImpl()
-//  def boolean(value: Boolean): AstLiteralBoolean() = AstBooleanImpl(value)
+  def bool(value: Boolean): AstLiteralBool = AstLiteralBoolImpl(value)
   def int(value: Int): AstLiteralInt = AstLiteralIntImpl(value)
   def string(value: String): AstLiteralString = AstLiteralStringImpl(value)
 
   def ident(name: String): AstIdent = AstIdentImpl(name)
+
+  def block(stmts: Seq[AstNode]): AstBlock = AstBlockBuilder().stmts(stmts.toList).build()
+  def block(stmts: Seq[AstNode], lastValue: Boolean): AstBlock =
+    AstBlockBuilder().stmts(stmts.toList).lastValue(lastValue).build()
+  def block(stmts: Seq[AstNode], expr: AstNode): AstBlock =
+    AstBlockBuilder().stmts(stmts.toList :+ expr).lastValue(true).build()
 }
