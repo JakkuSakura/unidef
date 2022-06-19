@@ -41,7 +41,7 @@ class PythonCommon(val naming: NamingConvention = PythonNamingConvention)
         }
 
       case l: TyList =>
-        importManager.foreach(_ += AstImport("typing.Dict"))
+        importManager.foreach(_ += AstImport("typing.List"))
         // handle unknown case
         convertType(l.value, importManager).map(x => s"List[${x}]")
       case s: TySet =>
