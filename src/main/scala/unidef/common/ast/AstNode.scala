@@ -18,7 +18,6 @@ object FlowControl {
   case object Throw extends FlowControl
 }
 
-
 sealed trait AccessModifier
 
 object AccessModifier {
@@ -54,9 +53,16 @@ case object Asts {
     parameters.parameterListsContent.flatMap(_.parameterListContent)
   def parameters(parameters: Seq[AstValDef]): AstParameterLists =
     AstParameterListsImpl(List(AstParameterListImpl(parameters.toList)))
-    
+
   def flattenArguments(arguments: AstArgumentLists): List[AstArgument] =
     arguments.argumentListsContent.flatMap(_.argumentListContent)
   def arguments(arguments: Seq[AstArgument]): AstArgumentLists =
     AstArgumentListsImpl(List(AstArgumentListImpl(arguments.toList)))
+
+  def unit(): AstLiteralUnit = AstLiteralUnitImpl()
+//  def boolean(value: Boolean): AstLiteralBoolean() = AstBooleanImpl(value)
+  def int(value: Int): AstLiteralInt = AstLiteralIntImpl(value)
+  def string(value: String): AstLiteralString = AstLiteralStringImpl(value)
+
+  def ident(name: String): AstIdent = AstIdentImpl(name)
 }

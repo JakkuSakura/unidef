@@ -34,13 +34,12 @@ class LifterImpl(using val quotes: Quotes) {
             AstArgumentImpl(i.toString, Some(v))
           })
         )
-      case Literal(UnitConstant()) => AstLiteralUnitImpl()
+      case Literal(UnitConstant()) => Asts.unit()
       case Literal(IntConstant(v)) =>
-        AstLiteralIntImpl(v)
-      case Literal(StringConstant(v)) => AstLiteralStringImpl(v)
-
+        Asts.int(v)
+      case Literal(StringConstant(v)) => Asts.string(v)
       case Ident(name) =>
-        AstIdentImpl(name)
+        Asts.ident(toPlainName(name))
       case Inlined(_, _, x) =>
         liftTree(x)
       case x => throw LiftException(s"Unsupported term: ${x.show}")
@@ -65,10 +64,14 @@ class LifterImpl(using val quotes: Quotes) {
     }
   }
 
+  def toPlainName(name: String): String = {
+    name.replaceAll("\\W", "")
+  }
   def liftValDef(tree: ValDef): AstValDef = {
     tree match {
       case ValDef(name, tpt, rhs) =>
-        AstValDefBuilder().name(name).ty(liftType(tpt)).value(rhs.map(liftTerm)).build()
+        val plainName = toPlainName(name)
+        AstValDefBuilder().name(plainName).ty(liftType(tpt)).value(rhs.map(liftTerm)).build()
     }
   }
   def liftStmt(tree: Statement): AstNode = {
@@ -79,7 +82,7 @@ class LifterImpl(using val quotes: Quotes) {
 
       case ClassDef(name, defDef, parents, sefl, body) =>
         liftClassDef(name, defDef, parents, sefl, body)
-
+      case Block(stmts, Literal(UnitConstant())) => AstBlockImpl(stmts.map(liftStmt))
       case Block(stmts, expr) => AstBlockImpl(stmts.map(liftStmt) :+ liftStmt(expr))
       case x: Term => liftTerm(x)
       case x =>
@@ -129,8 +132,8 @@ class LifterImpl(using val quotes: Quotes) {
     tree match {
       case DefDef(name, param, ty, term) =>
         Some(liftMethodDef(name, param, ty, term))
-      case ValDef(name, ty, value) =>
-        Some(AstValDefBuilder().name(name).ty(liftType(ty)).value(value.map(liftTerm)).build())
+      case tree @ ValDef(name, ty, value) =>
+        Some(liftValDef(tree))
       case t @ TypeDef(name, ty) =>
         None
     }
