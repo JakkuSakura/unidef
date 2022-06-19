@@ -25,6 +25,7 @@ case class ScalaCommon(
     }
 
   override def decode(ty: String): Option[TyNode] = ty match {
+    case s"scala.$s" => decode(s)
     case "Int" => Some(Types.i32())
     case "String" => Some(Types.string())
     case "Unit" => Some(Types.unit())

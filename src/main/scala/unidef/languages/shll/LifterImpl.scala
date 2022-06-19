@@ -3,6 +3,7 @@ package unidef.languages.shll
 import com.typesafe.scalalogging.Logger
 import unidef.common.ty.*
 import unidef.common.ast.*
+import unidef.languages.scala.ScalaCommon
 
 import scala.collection.mutable
 import scala.quoted.Quotes
@@ -13,6 +14,7 @@ class LifterImpl(using val quotes: Quotes) {
   import quotes.reflect.*
 
   val logger = Logger[this.type]
+  val common = ScalaCommon()
   def liftTree(tree: Tree): AstNode = {
     logger.debug(tree.show(using Printer.TreeStructure))
     tree match {
@@ -71,7 +73,9 @@ class LifterImpl(using val quotes: Quotes) {
       case Apply(fun, args) =>
         AstApplyImpl(
           liftTree(fun),
-          Asts.arguments(args.map(liftTree).zipWithIndex.map{case (v, i) => AstArgumentImpl(i.toString, Some(v)) })
+          Asts.arguments(args.map(liftTree).zipWithIndex.map { case (v, i) =>
+            AstArgumentImpl(i.toString, Some(v))
+          })
         )
       case Literal(UnitConstant()) => AstLiteralUnitImpl()
       case Block(stmts, expr) => AstBlockImpl(stmts.map(liftStmt) :+ liftStmt(expr))
@@ -84,9 +88,8 @@ class LifterImpl(using val quotes: Quotes) {
     logger.debug(tree.toString)
 
     tree match {
-      case ValDef(name, tpt, rhs) =>
-        // TODO: process tpt and rhs
-        AstValDefBuilder().name(name).ty(Types.named(tpt.toString)).build()
+      case ValDef(name, ty, value) =>
+        AstValDefBuilder().name(name).ty(liftType(ty)).value(value.map(liftTree)).build()
     }
   }
   // TODO support currying
@@ -101,10 +104,13 @@ class LifterImpl(using val quotes: Quotes) {
     (tyParams, dynParams)
   }
 
-  def liftType(tree: TypeTree): TyNode = {
-    // TODO
-    Types.any()
-  }
+  def liftType(tree: TypeTree): TyNode =
+    tree match {
+      case Ident(ty) =>
+        common.decodeOrThrow(ty, "scala")
+      case x =>
+        common.decodeOrThrow(x.show, "scala")
+    }
   def liftMethodDef(
       name: String,
       params: List[ParamClause],
@@ -172,7 +178,7 @@ class LifterImpl(using val quotes: Quotes) {
       .parameters(Asts.parameters(Nil))
       .fields(valDefs.toList)
       .methods(stmts.toList)
-      .derives(derived)
+      . derives(derived)
       .build()
 
   }

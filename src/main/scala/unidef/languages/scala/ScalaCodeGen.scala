@@ -7,7 +7,7 @@ import unidef.utils.{TextTool, TypeEncodeException}
 
 import scala.jdk.CollectionConverters.*
 
-class ScalaCodeGen(naming: NamingConvention) {
+case class ScalaCodeGen(naming: NamingConvention) {
   val common = ScalaCommon()
 
   def renderMethod(
@@ -34,7 +34,7 @@ class ScalaCodeGen(naming: NamingConvention) {
           .map(x => x.name + ": " + common.encodeOrThrow(x.ty, "param"))
           .mkString(", ") + ")"
 
-    val body = method.body.map(_.asInstanceOf[AstRawCode].code)
+    val body = method.body.map(generate)
     val override_a = if (method.overwrite.getOrElse(false)) {
       "override "
     } else {
@@ -261,4 +261,30 @@ class ScalaCodeGen(naming: NamingConvention) {
       .build()
   }
 
+  def generate(n: AstNode): String = {
+    n match {
+      case x: AstDecls =>
+        x.decls.map(generate).mkString("\n")
+      case x: AstBlock =>
+        x.stmts.map(generate).mkString("\n")
+      case x: AstApply =>
+        generate(x.applicant) + x.arguments.argumentListsContent.map(y => y.argumentListContent.map(generate).mkString("(", ", ", ")")).mkString("")
+      case x: AstFunctionDecl =>
+        generateMethod(x)
+      case n: AstIdent =>
+        n.name
+      case n: AstLiteralString =>
+        n.literalString
+      case n: AstLiteralInt =>
+        n.literalInt.toString
+      case n: AstLiteralUnit =>
+        "()"
+      case n: AstLiteralNone =>
+        "None"
+      case n: AstLiteralNull =>
+        "null"
+      case n: AstRawCode =>
+        n.code
+    }
+  }
 }

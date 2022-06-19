@@ -111,7 +111,8 @@ object AstNodeCodeGen {
     val astNode = Types.named("AstNode")
     Seq(
       Ast("block")
-        .field("stmts", Types.list(astNode), required = true),
+        .field("stmts", Types.list(astNode), required = true)
+        .field("last_value", Types.bool()),
       Ast("statement")
         .field("expr", astNode, required = true),
       Ast("if")
@@ -194,8 +195,7 @@ object AstNodeCodeGen {
         .field("class_type", Types.string())
         .field("access", Types.named("AccessModifier"))
         .field("comment", Types.string())
-        .derive("HasComment")
-      ,
+        .derive("HasComment"),
       Ast("function_decl")
         .field("name", Types.string(), required = true)
         .field("parameters", Types.named("AstParameterLists"), required = true)
@@ -207,7 +207,7 @@ object AstNodeCodeGen {
         .field("schema", Types.string())
         .field("language", Types.string())
         .field("overwrite", Types.bool())
-      .derive("HasComment"),
+        .derive("HasComment"),
       Ast("program")
         .field("stmts", Types.list(astNode), required = true),
       Ast("class_identifier")

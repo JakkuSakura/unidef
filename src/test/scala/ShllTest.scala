@@ -78,6 +78,7 @@ class ScalaiTest {
       }
     }
     val specialized = Specializer().specialize(code)
+    PrettyPrinter.print(specialized)
     assertEquals(expected, specialized)
   }
 

@@ -149,7 +149,7 @@ case class Specializer() {
       .asInstanceOf[AstFunctionDeclImpl]
       .copy(name = func.name + "_" + cache.getAndIncrSpecializeId(func.name), body = Some(body))
     cache.specializedFunctions(newFunc.name) = newFunc
-    AstApplyImpl(newFunc, Asts.arguments(Nil))
+    AstApplyImpl(AstIdentImpl(newFunc.name), Asts.arguments(Nil))
   }
   def specializeFunctionBody(
       d: AstFunctionDecl,
