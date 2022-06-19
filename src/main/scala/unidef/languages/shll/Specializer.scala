@@ -59,9 +59,12 @@ case class Specializer() {
     val specialized = cache.specializedFunctions.values.toList
     if (specialized.isEmpty) {
       v
-    } else {
-      AstDeclsImpl(specialized ::: v :: Nil)
-    }
+    } else
+      v match {
+        case decls: AstDecls =>
+          AstDeclsImpl(specialized ::: decls.decls)
+        case _ => throw SpecializeException("cannot specialize", v)
+      }
   }
 
   def specializeNode(n: AstNode, ctx: ValueContext): AstNode = {
@@ -147,7 +150,11 @@ case class Specializer() {
     )
     val newFunc = func
       .asInstanceOf[AstFunctionDeclImpl]
-      .copy(name = func.name + "_" + cache.getAndIncrSpecializeId(func.name), body = Some(body))
+      .copy(
+        name = func.name + "_" + cache.getAndIncrSpecializeId(func.name),
+        body = Some(body),
+        parameters = Asts.parameters(Nil)
+      )
     cache.specializedFunctions(newFunc.name) = newFunc
     AstApplyImpl(AstIdentImpl(newFunc.name), Asts.arguments(Nil))
   }

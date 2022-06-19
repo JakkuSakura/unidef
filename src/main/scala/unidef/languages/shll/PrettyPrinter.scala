@@ -7,4 +7,7 @@ object PrettyPrinter {
   def print(n: AstNode): Unit = {
     println(codegen.generate(n))
   }
+  def toString(n: AstNode): String = {
+    codegen.generate(n)
+  }
 }

@@ -5,7 +5,7 @@ import unidef.common.ty.*
 import unidef.languages.python.PythonCommon
 import unidef.languages.shll.{Compiler, PrettyPrinter, Specializer}
 
-private object ScalaiTestHelper {
+private object ShllTestHelper {
   def compileAndLift(code: String): AstNode = {
     val compiler = new Compiler()
     val lifted = compiler.compileAndLift(code)
@@ -35,24 +35,33 @@ private object ScalaiTestHelper {
     extracted
   }
 
+  def assertAstEqual(expected: AstNode, actual: AstNode): Unit = {
+    val expectedString = PrettyPrinter.toString(expected)
+    val actualString = PrettyPrinter.toString(actual)
+    if (expectedString != actualString)
+      assertEquals(expectedString, actualString)
+    else if (expected != actual)
+      assertEquals(expected, actual)
+  }
+
 }
-class ScalaiTest {
+class ShllTest {
   @Test def test_simple_math(): Unit = {
-    val x = ScalaiTestHelper.lift {
+    val x = ShllTestHelper.lift {
       2
     }
-    val y = ScalaiTestHelper.lift {
+    val y = ShllTestHelper.lift {
       1 + 1
     }
     assertEquals(x, y)
 
   }
   @Test def test_function_decls(): Unit = {
-    val x = ScalaiTestHelper.lift {
+    val x = ShllTestHelper.lift {
       def main(): Unit = {}
     }
     assertEquals(x.asInstanceOf[AstDecls].decls.length, 1)
-    val y = ScalaiTestHelper.lift {
+    val y = ShllTestHelper.lift {
       def foo(a: Int): Unit = {}
       def bar(a: Int, b: Int): Unit = {}
     }
@@ -60,7 +69,7 @@ class ScalaiTest {
     assertEquals(y.asInstanceOf[AstDecls].decls.length, 2)
   }
   @Test def test_simple_specialize(): Unit = {
-    val code = ScalaiTestHelper.lift {
+    val code = ShllTestHelper.lift {
       def foo(a: Int): Unit = {}
       def bar(): Unit = {
         foo(1)
@@ -68,22 +77,21 @@ class ScalaiTest {
       }
     }
 
-    val expected = ScalaiTestHelper.lift {
-      def foo(): Unit = {}
+    val expected = ShllTestHelper.lift {
+      def foo_0(): Unit = {}
       def foo_1(): Unit = {}
-      def foo_2(): Unit = {}
+      def foo(a: Int): Unit = {}
       def bar(): Unit = {
+        foo_0()
         foo_1()
-        foo_2()
       }
     }
     val specialized = Specializer().specialize(code)
-    PrettyPrinter.print(specialized)
-    assertEquals(expected, specialized)
+    ShllTestHelper.assertAstEqual(expected, specialized)
   }
 
   @Test def test_active_inlining(): Unit = {
-    ScalaiTestHelper.compileAndLift("""
+    ShllTestHelper.compileAndLift("""
         |import scala.io.StdIn.readInt
         |def foo(x: Int): Int = x * 2
         |def main(): Unit = {
@@ -92,7 +100,7 @@ class ScalaiTest {
         |""".stripMargin)
   }
   @Test def test_loop_unfolding(): Unit = {
-    ScalaiTestHelper.compileAndLift("""
+    ShllTestHelper.compileAndLift("""
         |def foo(xs: Seq[() => Int]): Unit = for(func <- xs) println(func)
         |def main(): Unit = {
         |  val x1 = () => 1
@@ -105,7 +113,7 @@ class ScalaiTest {
   }
 
   @Test def test_specialization(): Unit = {
-    ScalaiTestHelper.compileAndLift("""
+    ShllTestHelper.compileAndLift("""
         |import scala.io.StdIn.readInt
         |@noinline
         |def foo(a: Int)(b: Int): Int = a + b
@@ -120,7 +128,7 @@ class ScalaiTest {
   }
 
   def test_type_specialization1(): Unit = {
-    ScalaiTestHelper.compileAndLift("""
+    ShllTestHelper.compileAndLift("""
         |@noinline
         |def foo[T]() = {
         |  if (T ==  Boolean) {
@@ -138,7 +146,7 @@ class ScalaiTest {
   }
 
   @Test def test_type_specialization2(): Unit = {
-    ScalaiTestHelper.compileAndLift("""
+    ShllTestHelper.compileAndLift("""
         |type Type = Any
         |// This syntax is better
         |@noinline
