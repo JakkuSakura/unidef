@@ -56,11 +56,11 @@ case class AstNodeCodeGen() {
       Some("trait")
     )
   }
-  def generateScalaCompoundTrait(ty: Ast): AstClassDecl = {
-    val fields = ty.fields.map(_.build()).toList
+  def generateScalaCompoundTrait(node: Ast): AstClassDecl = {
+    val fields = node.fields.map(_.build()).toList
 
     AstClassDeclBuilder()
-      .name(toAstClassName(ty.name))
+      .name(toAstClassName(node.name))
       .parameters(Asts.parameters(Nil))
       .methods(
         fields
@@ -76,8 +76,8 @@ case class AstNodeCodeGen() {
         fields
           .map(x => "Has" + TextTool.toPascalCase(x.name))
           .map(x => AstIdentImpl(x))
-          .toList
       )
+      .derives(node. derives.toSeq.map(x => AstIdentImpl(x)))
       .classType("trait")
       .build()
   }
@@ -94,8 +94,8 @@ case class AstNodeCodeGen() {
       .classType("case class")
       .build()
   }
-  def generateScalaBuilder(ty: Ast): AstClassDecl = {
-    val fields = ty.fields
+  def generateScalaBuilder(node: Ast): AstClassDecl = {
+    val fields = node.fields
       .map(x =>
         x.name(TextTool.toCamelCase(x.name.get))
           .value(x.value)
@@ -104,8 +104,8 @@ case class AstNodeCodeGen() {
       .toList
     val codegen = ScalaCodeGen(NoopNamingConvention)
     codegen.generateBuilder(
-      "Ast" + TextTool.toPascalCase(ty.name) + "Builder",
-      "Ast" + TextTool.toPascalCase(ty.name) + "Impl",
+      "Ast" + TextTool.toPascalCase(node.name) + "Builder",
+      "Ast" + TextTool.toPascalCase(node.name) + "Impl",
       fields
     )
   }
@@ -127,14 +127,17 @@ object AstNodeCodeGen {
         .field("value", astNode),
       Ast("ident")
         .field("name", Types.string(), required = true),
+      Ast("literal"),
       Ast("literal_string")
-        .field("literal_string", Types.string(), required = true),
+        .field("literal_string", Types.string(), required = true)
+        .derive("AstLiteral"),
       Ast("literal_int")
-        .field("literal_int", Types.i32(), required = true),
-      Ast("literal_unit"),
-      Ast("literal_none"),
-      Ast("literal_null"),
-      Ast("literal_undefined"),
+        .field("literal_int", Types.i32(), required = true)
+        .derive("AstLiteral"),
+      Ast("literal_unit").derive("AstLiteral"),
+      Ast("literal_none").derive("AstLiteral"),
+      Ast("literal_null").derive("AstLiteral"),
+      Ast("literal_undefined").derive("AstLiteral"),
       Ast("select")
         .field("qualifier", astNode, required = true)
         .field("symbol", Types.string(), required = true),

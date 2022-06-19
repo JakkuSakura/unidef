@@ -25,6 +25,9 @@ trait HasPrimaryKey() extends AstNode {
 trait HasFields() extends AstNode {
   def fields: List[AstValDef]
 }
+trait HasDataframe() extends AstNode {
+  def dataframe: Option[Boolean]
+}
 trait HasClassType() extends AstNode {
   def classType: Option[String]
 }
@@ -75,9 +78,6 @@ trait HasArgumentListContent() extends AstNode {
 }
 trait HasReturnType() extends AstNode {
   def returnType: TyNode
-}
-trait HasDataframe() extends AstNode {
-  def dataframe: Option[Boolean]
 }
 trait HasClassId() extends AstNode {
   def classId: String
@@ -141,6 +141,7 @@ case class AstArgumentListImpl(argumentListContent: List[AstArgument]) extends A
 case class AstApplyImpl(applicant: AstNode, arguments: AstArgumentLists) extends AstApply 
 case class AstDeclsImpl(decls: List[AstNode]) extends AstDecls 
 case class AstLiteralStringImpl(literalString: String) extends AstLiteralString 
+case class AstLiteralImpl() extends AstLiteral 
 case class AstArgumentImpl(name: String, value: Option[AstNode]) extends AstArgument 
 case class AstDirectiveImpl(directive: String) extends AstDirective 
 case class AstFunctionDeclImpl(name: String, parameters: AstParameterLists, returnType: TyNode, dataframe: Option[Boolean], records: Option[Boolean], comment: Option[String], body: Option[AstNode], schema: Option[String], language: Option[String], overwrite: Option[Boolean]) extends AstFunctionDecl 
@@ -156,14 +157,14 @@ case class AstTypeImpl(ty: TyNode) extends AstType
 case class AstParameterListImpl(parameterListContent: List[AstValDef]) extends AstParameterList 
 case class AstLiteralIntImpl(literalInt: Int) extends AstLiteralInt 
 case class AstRawCodeImpl(code: String, language: Option[String]) extends AstRawCode 
-trait AstLiteralNull() extends AstNode 
+trait AstLiteralNull() extends AstNode with AstLiteral 
 trait AstProgram() extends AstNode with HasStmts {
   def stmts: List[AstNode]
 }
 trait AstAwait() extends AstNode with HasExpr {
   def expr: AstNode
 }
-trait AstLiteralNone() extends AstNode 
+trait AstLiteralNone() extends AstNode with AstLiteral 
 trait AstIf() extends AstNode with HasTest with HasConsequent with HasAlternative {
   def test: AstNode
   def consequent: Option[AstNode]
@@ -173,7 +174,7 @@ trait AstFlowControl() extends AstNode with HasFlow with HasValue {
   def flow: Option[FlowControl]
   def value: Option[AstNode]
 }
-trait AstLiteralUnit() extends AstNode 
+trait AstLiteralUnit() extends AstNode with AstLiteral 
 trait AstClassIdentifier() extends AstNode with HasClassId {
   def classId: String
 }
@@ -193,9 +194,10 @@ trait AstApply() extends AstNode with HasApplicant with HasArguments {
 trait AstDecls() extends AstNode with HasDecls {
   def decls: List[AstNode]
 }
-trait AstLiteralString() extends AstNode with HasLiteralString {
+trait AstLiteralString() extends AstNode with HasLiteralString with AstLiteral {
   def literalString: String
 }
+trait AstLiteral() extends AstNode 
 trait AstArgument() extends AstNode with HasName with HasValue {
   def name: String
   def value: Option[AstNode]
@@ -215,7 +217,7 @@ trait AstFunctionDecl() extends AstNode with HasName with HasParameters with Has
   def language: Option[String]
   def overwrite: Option[Boolean]
 }
-trait AstLiteralUndefined() extends AstNode 
+trait AstLiteralUndefined() extends AstNode with AstLiteral 
 trait AstSelect() extends AstNode with HasQualifier with HasSymbol {
   def qualifier: AstNode
   def symbol: String
@@ -257,7 +259,7 @@ trait AstType() extends AstNode with HasTy {
 trait AstParameterList() extends AstNode with HasParameterListContent {
   def parameterListContent: List[AstValDef]
 }
-trait AstLiteralInt() extends AstNode with HasLiteralInt {
+trait AstLiteralInt() extends AstNode with HasLiteralInt with AstLiteral {
   def literalInt: Int
 }
 trait AstRawCode() extends AstNode with HasCode with HasLanguage {
@@ -441,6 +443,11 @@ class AstLiteralStringBuilder() {
     AstLiteralStringImpl(literalString.get)
   }
 }
+class AstLiteralBuilder() {
+  def build(): AstLiteralImpl = {
+    AstLiteralImpl()
+  }
+}
 class AstArgumentBuilder() {
   var name: Option[String] = None
   var value: Option[AstNode] = None
@@ -588,17 +595,17 @@ class AstParameterListsBuilder() {
   }
 }
 class AstBlockBuilder() {
-  var nodes: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
-  def nodes(nodes: Seq[AstNode]): AstBlockBuilder = {
-    this.nodes ++= nodes
+  var stmts: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
+  def stmts(stmts: Seq[AstNode]): AstBlockBuilder = {
+    this.stmts ++= stmts
     this
   }
-  def node(node: AstNode): AstBlockBuilder = {
-    this.nodes += node
+  def stmt(stmt: AstNode): AstBlockBuilder = {
+    this.stmts += stmt
     this
   }
   def build(): AstBlockImpl = {
-    AstBlockImpl(nodes.toList)
+    AstBlockImpl(stmts.toList)
   }
 }
 class AstClassDeclBuilder() {

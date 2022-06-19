@@ -8,6 +8,7 @@ import scala.collection.mutable
 
 class Ast(val name: String) {
   val fields: mutable.ArrayBuffer[AstValDefBuilder] = mutable.ArrayBuffer.empty
+  val derives: mutable.ArrayBuffer[String] = mutable.ArrayBuffer.empty
   def field(name: String, ty: TyNode, required: Boolean = false): Ast = {
     val builder = AstValDefBuilder().name(TextTool.toCamelCase(name))
     if (!required) {
@@ -16,6 +17,10 @@ class Ast(val name: String) {
       builder.ty(ty)
     }
     fields += builder
+    this
+  }
+  def derive(name: String): Ast = {
+    derives += name
     this
   }
 

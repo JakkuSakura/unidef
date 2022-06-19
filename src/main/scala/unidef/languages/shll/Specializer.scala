@@ -72,8 +72,7 @@ case class Specializer() {
       case ds: AstDecls => AstDeclsImpl(ds.decls.map(specializeDecl(_, ctx)))
       case n: AstApply => specializeApply(n, ctx)
       case n: AstIdent => specializeIdent(n, ctx)
-      case n: AstLiteralInt => n
-      case n: AstLiteralUnit => n
+      case n: AstLiteral => n
       case x => throw SpecializeException("cannot specialize", x)
     }
 
