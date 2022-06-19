@@ -79,9 +79,6 @@ trait HasReturnType() extends AstNode {
 trait HasDataframe() extends AstNode {
   def dataframe: Option[Boolean]
 }
-trait HasNodes() extends AstNode {
-  def nodes: List[AstNode]
-}
 trait HasClassId() extends AstNode {
   def classId: String
 }
@@ -150,7 +147,7 @@ case class AstFunctionDeclImpl(name: String, parameters: AstParameterLists, retu
 case class AstLiteralUndefinedImpl() extends AstLiteralUndefined 
 case class AstSelectImpl(qualifier: AstNode, symbol: String) extends AstSelect 
 case class AstParameterListsImpl(parameterListsContent: List[AstParameterList]) extends AstParameterLists 
-case class AstBlockImpl(nodes: List[AstNode]) extends AstBlock 
+case class AstBlockImpl(stmts: List[AstNode]) extends AstBlock 
 case class AstClassDeclImpl(name: String, parameters: AstParameterLists, fields: List[AstValDef], methods: List[AstNode], derives: List[AstNode], schema: Option[String], dataframe: Option[Boolean], classType: Option[String], access: Option[AccessModifier]) extends AstClassDecl 
 case class AstIdentImpl(name: String) extends AstIdent 
 case class AstVariableIdentifierImpl(variableIdentifier: String) extends AstVariableIdentifier 
@@ -226,8 +223,8 @@ trait AstSelect() extends AstNode with HasQualifier with HasSymbol {
 trait AstParameterLists() extends AstNode with HasParameterListsContent {
   def parameterListsContent: List[AstParameterList]
 }
-trait AstBlock() extends AstNode with HasNodes {
-  def nodes: List[AstNode]
+trait AstBlock() extends AstNode with HasStmts {
+  def stmts: List[AstNode]
 }
 trait AstClassDecl() extends AstNode with HasName with HasParameters with HasFields with HasMethods with HasDerives with HasSchema with HasDataframe with HasClassType with HasAccess {
   def name: String

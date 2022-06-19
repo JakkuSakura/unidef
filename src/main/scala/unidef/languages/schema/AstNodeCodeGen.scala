@@ -115,7 +115,7 @@ object AstNodeCodeGen {
     val astNode = Types.named("AstNode")
     Seq(
       Ast("block")
-        .field("nodes", Types.list(astNode), required = true),
+        .field("stmts", Types.list(astNode), required = true),
       Ast("statement")
         .field("expr", astNode, required = true),
       Ast("if")

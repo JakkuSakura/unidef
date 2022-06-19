@@ -169,6 +169,7 @@ class LifterImpl(using val quotes: Quotes) {
     val derived = liftClassDefParents(parents)
     AstClassDeclBuilder()
       .name(name)
+      .parameters(Asts.parameters(Nil))
       .fields(valDefs.toList)
       .methods(stmts.toList)
       .derives(derived)
