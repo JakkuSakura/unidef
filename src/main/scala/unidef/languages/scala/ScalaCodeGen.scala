@@ -93,7 +93,7 @@ class ScalaCodeGen(naming: NamingConvention) {
     val name = naming.toClassName(c.name)
     val params = Asts.flattenParameters(c.parameters).map(mapParam)
     val fields = c.fields.map(mapParam)
-    val derive = c.derived.map(_.name).map(naming.toClassName)
+    val derive = c.derives.map(_.asInstanceOf[AstIdent]).map(_.name).map(naming.toClassName)
     val methods = c.methods.map {
       case x: AstFunctionDecl => generateMethod(x)
       case x: AstRawCode => x.code

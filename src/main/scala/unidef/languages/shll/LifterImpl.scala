@@ -171,7 +171,7 @@ class LifterImpl(using val quotes: Quotes) {
       .name(name)
       .fields(valDefs.toList)
       .methods(stmts.toList)
-      .derived(derived)
+      .derives(derived)
       .build()
 
   }

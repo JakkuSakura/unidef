@@ -7,6 +7,9 @@ import scala.collection.mutable
 trait HasArguments() extends AstNode {
   def arguments: AstArgumentLists
 }
+trait HasDerives() extends AstNode {
+  def derives: List[AstNode]
+}
 trait HasTest() extends AstNode {
   def test: AstNode
 }
@@ -24,6 +27,9 @@ trait HasFields() extends AstNode {
 }
 trait HasClassType() extends AstNode {
   def classType: Option[String]
+}
+trait HasFlow() extends AstNode {
+  def flow: Option[FlowControl]
 }
 trait HasStmts() extends AstNode {
   def stmts: List[AstNode]
@@ -94,12 +100,6 @@ trait HasMethods() extends AstNode {
 trait HasParameterListContent() extends AstNode {
   def parameterListContent: List[AstValDef]
 }
-trait HasDerived() extends AstNode {
-  def derived: List[AstIdent]
-}
-trait HasFlow() extends AstNode {
-  def flow: Option[FlowControl]
-}
 trait HasBody() extends AstNode {
   def body: Option[AstNode]
 }
@@ -151,7 +151,7 @@ case class AstLiteralUndefinedImpl() extends AstLiteralUndefined
 case class AstSelectImpl(qualifier: AstNode, symbol: String) extends AstSelect 
 case class AstParameterListsImpl(parameterListsContent: List[AstParameterList]) extends AstParameterLists 
 case class AstBlockImpl(nodes: List[AstNode]) extends AstBlock 
-case class AstClassDeclImpl(name: String, parameters: AstParameterLists, fields: List[AstValDef], methods: List[AstNode], derived: List[AstIdent], schema: Option[String], dataframe: Option[Boolean], classType: Option[String], access: Option[AccessModifier]) extends AstClassDecl 
+case class AstClassDeclImpl(name: String, parameters: AstParameterLists, fields: List[AstValDef], methods: List[AstNode], derives: List[AstNode], schema: Option[String], dataframe: Option[Boolean], classType: Option[String], access: Option[AccessModifier]) extends AstClassDecl 
 case class AstIdentImpl(name: String) extends AstIdent 
 case class AstVariableIdentifierImpl(variableIdentifier: String) extends AstVariableIdentifier 
 case class AstValDefImpl(name: String, ty: TyNode, value: Option[AstNode], mutability: Option[Boolean], autoIncr: Option[Boolean], primaryKey: Option[Boolean]) extends AstValDef 
@@ -229,12 +229,12 @@ trait AstParameterLists() extends AstNode with HasParameterListsContent {
 trait AstBlock() extends AstNode with HasNodes {
   def nodes: List[AstNode]
 }
-trait AstClassDecl() extends AstNode with HasName with HasParameters with HasFields with HasMethods with HasDerived with HasSchema with HasDataframe with HasClassType with HasAccess {
+trait AstClassDecl() extends AstNode with HasName with HasParameters with HasFields with HasMethods with HasDerives with HasSchema with HasDataframe with HasClassType with HasAccess {
   def name: String
   def parameters: AstParameterLists
   def fields: List[AstValDef]
   def methods: List[AstNode]
-  def derived: List[AstIdent]
+  def derives: List[AstNode]
   def schema: Option[String]
   def dataframe: Option[Boolean]
   def classType: Option[String]
@@ -609,7 +609,7 @@ class AstClassDeclBuilder() {
   var parameters: Option[AstParameterLists] = None
   var fields: mutable.ArrayBuffer[AstValDef] = mutable.ArrayBuffer.empty
   var methods: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
-  var derived: mutable.ArrayBuffer[AstIdent] = mutable.ArrayBuffer.empty
+  var derives: mutable.ArrayBuffer[AstNode] = mutable.ArrayBuffer.empty
   var schema: Option[String] = None
   var dataframe: Option[Boolean] = None
   var classType: Option[String] = None
@@ -630,8 +630,8 @@ class AstClassDeclBuilder() {
     this.methods ++= methods
     this
   }
-  def derived(derived: List[AstIdent]): AstClassDeclBuilder = {
-    this.derived ++= derived
+  def derives(derives: List[AstNode]): AstClassDeclBuilder = {
+    this.derives ++= derives
     this
   }
   def schema(schema: String): AstClassDeclBuilder = {
@@ -674,12 +674,12 @@ class AstClassDeclBuilder() {
     this.methods += method
     this
   }
-  def derived(derived: AstIdent): AstClassDeclBuilder = {
-    this.derived += derived
+  def derive(derive: AstNode): AstClassDeclBuilder = {
+    this.derives += derive
     this
   }
   def build(): AstClassDeclImpl = {
-    AstClassDeclImpl(name.get, parameters.get, fields.toList, methods.toList, derived.toList, schema, dataframe, classType, access)
+    AstClassDeclImpl(name.get, parameters.get, fields.toList, methods.toList, derives.toList, schema, dataframe, classType, access)
   }
 }
 class AstIdentBuilder() {

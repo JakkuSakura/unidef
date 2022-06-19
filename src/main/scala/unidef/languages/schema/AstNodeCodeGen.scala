@@ -37,7 +37,7 @@ case class AstNodeCodeGen() {
       .name(name)
       .parameters(Asts.parameters(Nil))
       .methods(methods.map(x => AstRawCodeImpl(x, None)))
-      .derived(List(AstIdentImpl(derive)))
+      .derive(AstIdentImpl(derive))
       .classType(classType)
       .build()
 
@@ -71,13 +71,12 @@ case class AstNodeCodeGen() {
             AstRawCodeImpl(s"def ${TextTool.toCamelCase(field.name)}: ${valueType}", None)
           )
       )
-      .derived(
-        List(AstIdentImpl("AstNode"))
-          :::
-            fields
-              .map(x => "Has" + TextTool.toPascalCase(x.name))
-              .map(x => AstIdentImpl(x))
-              .toList
+      .derive(AstIdentImpl("AstNode"))
+      .derives(
+        fields
+          .map(x => "Has" + TextTool.toPascalCase(x.name))
+          .map(x => AstIdentImpl(x))
+          .toList
       )
       .classType("trait")
       .build()
@@ -89,8 +88,8 @@ case class AstNodeCodeGen() {
     AstClassDeclBuilder()
       .name(toAstClassName(ty.name) + "Impl")
       .parameters(Asts.parameters(fields))
-      .derived(
-        List(AstIdentImpl(toAstClassName(ty.name)))
+      .derive(
+        AstIdentImpl(toAstClassName(ty.name))
       )
       .classType("case class")
       .build()
@@ -127,7 +126,7 @@ object AstNodeCodeGen {
         .field("flow", Types.named("FlowControl"))
         .field("value", astNode),
       Ast("ident")
-      .field("name", Types.string(), required = true),
+        .field("name", Types.string(), required = true),
       Ast("literal_string")
         .field("literal_string", Types.string(), required = true),
       Ast("literal_int")
@@ -136,7 +135,6 @@ object AstNodeCodeGen {
       Ast("literal_none"),
       Ast("literal_null"),
       Ast("literal_undefined"),
-
       Ast("select")
         .field("qualifier", astNode, required = true)
         .field("symbol", Types.string(), required = true),
@@ -152,7 +150,11 @@ object AstNodeCodeGen {
         ) // AstParameter later
       ,
       Ast("parameter_lists")
-        .field("parameter_lists_content", Types.list(Types.named("AstParameterList")), required = true),
+        .field(
+          "parameter_lists_content",
+          Types.list(Types.named("AstParameterList")),
+          required = true
+        ),
       Ast("argument")
         .field("name", Types.string(), required = true)
         .field("value", astNode),
@@ -163,7 +165,11 @@ object AstNodeCodeGen {
           required = true
         ),
       Ast("argument_lists")
-        .field("argument_lists_content", Types.list(Types.named("AstArgumentList")), required = true),
+        .field(
+          "argument_lists_content",
+          Types.list(Types.named("AstArgumentList")),
+          required = true
+        ),
       Ast("apply")
         .field("applicable", astNode, required = true)
         .field("arguments", Types.named("AstArgumentLists"), required = true),
@@ -182,8 +188,8 @@ object AstNodeCodeGen {
         .field("name", Types.string(), required = true)
         .field("parameters", Types.named("AstParameterLists"), required = true)
         .field("fields", Types.list(Types.named("AstValDef")), required = true)
-        .field("methods", Types.list(Types.named("AstNode")), required = true)
-        .field("derived", Types.list(Types.named("AstIdent")), required = true)
+        .field("methods", Types.list(astNode), required = true)
+        .field("derives", Types.list(astNode), required = true)
         .field("schema", Types.string())
         .field("dataframe", Types.bool())
         .field("class_type", Types.string())

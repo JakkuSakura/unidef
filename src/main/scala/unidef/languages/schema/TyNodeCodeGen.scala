@@ -33,8 +33,8 @@ case class TyNodeCodeGen() {
       .name(name)
       .parameters(Asts.parameters(Nil))
       .methods(methods.map(x => AstRawCodeImpl(x, None)))
-      .derived(
-        List(AstIdentImpl(derive))
+      .derive(
+        AstIdentImpl(derive)
       )
       .classType(classType)
       .build()
@@ -69,22 +69,22 @@ case class TyNodeCodeGen() {
           )
           .toList
       )
-      .derived(
-        List(AstIdentImpl("TyNode"))
-          :::
-            ty.equivalent
-              .flatMap {
-                case x: TyNamed => Some("Ty" + TextTool.toPascalCase(x.ref))
-                case _ => None // TODO: support other IS
-              }
-              .map(x => AstIdentImpl(x))
-              .toList
-            :::
-            fields
-              .map(x => x.name -> x.value)
-              .map((k, v) => "Has" + TextTool.toPascalCase(k))
-              .map(x => AstIdentImpl(x))
-              .toList
+      .derive(AstIdentImpl("TyNode"))
+      . derives(
+        ty.equivalent
+          .flatMap {
+            case x: TyNamed => Some("Ty" + TextTool.toPascalCase(x.ref))
+            case _ => None // TODO: support other IS
+          }
+          .map(x => AstIdentImpl(x))
+          .toList
+      )
+      . derives(
+        fields
+          .map(x => x.name -> x.value)
+          .map((k, v) => "Has" + TextTool.toPascalCase(k))
+          .map(x => AstIdentImpl(x))
+          .toList
       )
       .classType("trait")
       .build()
@@ -106,8 +106,8 @@ case class TyNodeCodeGen() {
         "Ty" + TextTool.toPascalCase(ty.name) + "Impl"
       )
       .parameters(Asts.parameters(fields))
-      .derived(
-        List(AstIdentImpl("Ty" + TextTool.toPascalCase(ty.name)))
+      .derive(
+        AstIdentImpl("Ty" + TextTool.toPascalCase(ty.name))
       )
       .classType("case class")
       .build()
@@ -191,8 +191,7 @@ object TyNodeCodeGen {
         .field("time_unit", Types.named("java.util.concurrent.TimeUnit")),
       Type("named")
         .field("ref", Types.string(), required = true)
-        .field("preserve_case", Types.bool())
-      ,
+        .field("preserve_case", Types.bool()),
       Type("type_var")
         .field("name", Types.string()),
       Type("key_value")
