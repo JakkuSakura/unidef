@@ -46,7 +46,7 @@ object Types {
   def i128(): TyInteger = integer(BitSize.B128, true)
 
   def u8(): TyInteger = integer(BitSize.B8, true)
-    def u16(): TyInteger = integer(BitSize.B16, true)
+  def u16(): TyInteger = integer(BitSize.B16, true)
   def u32(): TyInteger = integer(BitSize.B32, false)
   def u64(): TyInteger = integer(BitSize.B64, false)
   def u128(): TyInteger = integer(BitSize.B128, false)
@@ -58,6 +58,7 @@ object Types {
   def string(): TyString = TyStringBuilder().build()
   def unit(): TyUnit = TyUnitBuilder().build()
   def any(): TyAny = TyAnyBuilder().build()
+  def unknown(): TyUnknown = TyUnknownBuilder().build()
   def bool(): TyBoolean = TyBooleanBuilder().build()
 
   def list(ty: TyNode): TyList = TyListBuilder().value(ty).build()

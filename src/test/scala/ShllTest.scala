@@ -102,6 +102,19 @@ class ShllTest {
     PrettyPrinter.print(specialized)
 //    ShllTestHelper.assertAstEqual(expected, specialized)
   }
+  @Test def test_specialize_let_var(): Unit = {
+    val code = ShllTestHelper.lift {
+      def foo(a: Int) = a
+      def bar(): Unit = {
+        val a = 1
+        foo(a)
+      }
+    }
+
+    val specialized = Specializer().specialize(code)
+    PrettyPrinter.print(specialized)
+    //    ShllTestHelper.assertAstEqual(expected, specialized)
+  }
   @Test def test_active_inlining(): Unit = {
     ShllTestHelper.compileAndLift("""
         |import scala.io.StdIn.readInt

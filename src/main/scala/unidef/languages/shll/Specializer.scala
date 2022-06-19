@@ -2,7 +2,7 @@ package unidef.languages.shll
 
 import unidef.common.ast.*
 import com.typesafe.scalalogging.Logger
-import unidef.common.ty.{TyNode, TyUnknownImpl}
+import unidef.common.ty.*
 
 import scala.collection.mutable
 case class SpecializeException(msg: String, node: AstNode) extends Exception(msg + ": " + node)
@@ -75,7 +75,6 @@ case class Specializer() {
       case ds: AstDecls => AstDeclsImpl(ds.decls.map(specializeDecl(_, ctx)))
       case n: AstApply => specializeApply(n, ctx)
       case n: AstIdent => specializeIdent(n, ctx)
-      case n: AstValDef => specializeValDef(n, ctx)
       case n: AstLiteral => n
       case x => throw SpecializeException("cannot specialize", x)
     }
@@ -109,7 +108,16 @@ case class Specializer() {
 
   }
   def specializeBlock(d: AstBlock, ctx: ValueContext): AstBlock = {
-    AstBlockImpl(d.stmts.map(specializeNode(_, ctx)))
+    var ctx1 = ctx
+    val stmts = d.stmts.map {
+      case s: AstValDef =>
+        val x = specializeValDef(s, ctx1)
+        ctx1 = ValueContext.from(ctx1, Map(s.name -> s.value.get))
+        x
+      case s =>
+        specializeNode(s, ctx1)
+    }
+    AstBlockImpl(stmts)
   }
 
   def specializeDecl(d: AstNode, ctx: ValueContext): AstNode = {
@@ -133,6 +141,13 @@ case class Specializer() {
       case _ => false
     }
   }
+  def inferenceType(n: AstNode): Option[TyNode] = {
+    n match {
+      case n: AstLiteralInt => Some(Types.i32())
+      case n: AstLiteralString => Some(Types.string())
+      case _ => None
+    }
+  }
   def prepareCtx(
       ctx: ValueContext,
       d: Map[String, AstNode],
@@ -148,7 +163,13 @@ case class Specializer() {
     )
     val prepareValues = d.flatMap {
       case k -> v if !isConstant(v) =>
-        Some(AstValDefBuilder().name(k).ty(TyUnknownImpl()).value(v).build())
+        Some(
+          AstValDefBuilder()
+            .name(k)
+            .ty(inferenceType(v).getOrElse(Types.unknown()))
+            .value(v)
+            .build()
+        )
       case _ => None
     }.toList
     val newBody = if (prepareValues.nonEmpty) {
