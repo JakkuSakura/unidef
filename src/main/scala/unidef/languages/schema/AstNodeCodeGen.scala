@@ -44,6 +44,7 @@ case class AstNodeCodeGen() {
   }
 
   def generateScalaHasTrait(field: TyField): AstClassDecl = {
+
     val traitName = "Has" + TextTool.toPascalCase(field.name.get)
     val scalaCommon = ScalaCommon()
     val valueType =
@@ -72,12 +73,7 @@ case class AstNodeCodeGen() {
           )
       )
       .derive(AstIdentImpl("AstNode"))
-      .derives(
-        fields
-          .map(x => "Has" + TextTool.toPascalCase(x.name))
-          .map(x => AstIdentImpl(x))
-      )
-      .derives(node. derives.toSeq.map(x => AstIdentImpl(x)))
+      . derives(node. derives.toSeq.map(x => AstIdentImpl(x)))
       .classType("trait")
       .build()
   }
@@ -196,7 +192,10 @@ object AstNodeCodeGen {
         .field("schema", Types.string())
         .field("dataframe", Types.bool())
         .field("class_type", Types.string())
-        .field("access", Types.named("AccessModifier")),
+        .field("access", Types.named("AccessModifier"))
+        .field("comment", Types.string())
+        .derive("HasComment")
+      ,
       Ast("function_decl")
         .field("name", Types.string(), required = true)
         .field("parameters", Types.named("AstParameterLists"), required = true)
@@ -207,7 +206,8 @@ object AstNodeCodeGen {
         .field("body", astNode)
         .field("schema", Types.string())
         .field("language", Types.string())
-        .field("overwrite", Types.bool()),
+        .field("overwrite", Types.bool())
+      .derive("HasComment"),
       Ast("program")
         .field("stmts", Types.list(astNode), required = true),
       Ast("class_identifier")
@@ -230,7 +230,7 @@ object AstNodeCodeGen {
     val fields = parser.collectFields(types)
     println("Parsed fields")
     println(fields.mkString("\n"))
-    val hasTraits = fields.map(getField).map(parser.generateScalaHasTrait)
+    val hasTraits = Nil
     println("Generated has traits")
     println(hasTraits.mkString("\n"))
     val caseClasses = types.map(parser.generateScalaCaseClass)
@@ -255,6 +255,7 @@ object AstNodeCodeGen {
                      |package unidef.common.ast
                      |import unidef.common.ty.*
                      |import scala.collection.mutable
+                     |import unidef.common.HasComment
                      |
                      |""".trim.stripMargin)
     writer.write(scalaCode)

@@ -79,13 +79,7 @@ case class TyNodeCodeGen() {
           .map(x => AstIdentImpl(x))
           .toList
       )
-      . derives(
-        fields
-          .map(x => x.name -> x.value)
-          .map((k, v) => "Has" + TextTool.toPascalCase(k))
-          .map(x => AstIdentImpl(x))
-          .toList
-      )
+      . derives(ty. derives.toSeq.map(AstIdentImpl.apply))
       .classType("trait")
       .build()
   }
@@ -242,7 +236,7 @@ object TyNodeCodeGen {
     println("Parsed fields")
     println(fields.mkString("\n"))
 
-    val hasTraits = fields.map(parser.generateScalaHasTrait)
+    val hasTraits = Nil
     println("Generated has traits")
     println(hasTraits.mkString("\n"))
     val caseClasses = types.map(parser.generateScalaCaseClass)
@@ -255,7 +249,7 @@ object TyNodeCodeGen {
     val scalaCodegen = ScalaCodeGen(NoopNamingConvention)
     val scalaCode =
       (
-        hasTraits.map(scalaCodegen.generateClass).toList
+        hasTraits.map(scalaCodegen.generateClass)
           ::: caseClasses.map(scalaCodegen.generateClass)
           ::: compoundTraits.map(scalaCodegen.generateClass)
           ::: builders.map(scalaCodegen.generateClass)
@@ -266,7 +260,7 @@ object TyNodeCodeGen {
     writer.println("""
                      |package unidef.common.ty
                      |import scala.collection.mutable
-                     |
+                     |import unidef.common.HasComment
                      |""".trim.stripMargin)
     writer.write(scalaCode)
     writer.close()

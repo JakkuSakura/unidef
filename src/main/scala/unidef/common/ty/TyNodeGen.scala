@@ -1,119 +1,8 @@
 package unidef.common.ty
 
 import scala.collection.mutable
+import unidef.common.HasComment
 
-
-trait HasDerives() extends TyNode {
-  def derives: Option[List[String]]
-}
-trait HasRef() extends TyNode {
-  def ref: String
-}
-trait HasPreserveCase() extends TyNode {
-  def preserveCase: Option[Boolean]
-}
-trait HasIsBinary() extends TyNode {
-  def isBinary: Boolean
-}
-trait HasLifetime() extends TyNode {
-  def lifetime: Option[LifeTime]
-}
-trait HasTimeUnit() extends TyNode {
-  def timeUnit: Option[java.util.concurrent.TimeUnit]
-}
-trait HasTimezone() extends TyNode {
-  def timezone: Option[java.util.TimeZone]
-}
-trait HasValues() extends TyNode {
-  def values: List[TyNode]
-}
-trait HasApplicant() extends TyNode {
-  def applicant: String
-}
-trait HasScale() extends TyNode {
-  def scale: Option[Int]
-}
-trait HasSmart() extends TyNode {
-  def smart: Option[Boolean]
-}
-trait HasName() extends TyNode {
-  def name: Option[String]
-}
-trait HasMutable() extends TyNode {
-  def mutable: Option[Boolean]
-}
-trait HasOk() extends TyNode {
-  def ok: TyNode
-}
-trait HasSimpleEnum() extends TyNode {
-  def simpleEnum: Option[Boolean]
-}
-trait HasArguments() extends TyNode {
-  def arguments: List[Boolean]
-}
-trait HasMutability() extends TyNode {
-  def mutability: Option[Boolean]
-}
-trait HasFields() extends TyNode {
-  def fields: Option[List[TyField]]
-}
-trait HasDataframe() extends TyNode {
-  def dataframe: Option[Boolean]
-}
-trait HasComment() extends TyNode {
-  def comment: Option[String]
-}
-trait HasReferee() extends TyNode {
-  def referee: TyNode
-}
-trait HasErr() extends TyNode {
-  def err: TyNode
-}
-trait HasCode() extends TyNode {
-  def code: Option[Int]
-}
-trait HasSigned() extends TyNode {
-  def signed: Option[Boolean]
-}
-trait HasHasTimeZone() extends TyNode {
-  def hasTimeZone: Option[Boolean]
-}
-trait HasNames() extends TyNode {
-  def names: List[String]
-}
-trait HasMapType() extends TyNode {
-  def mapType: Option[String]
-}
-trait HasVariants() extends TyNode {
-  def variants: List[TyVariant]
-}
-trait HasCharset() extends TyNode {
-  def charset: Option[String]
-}
-trait HasAttributes() extends TyNode {
-  def attributes: Option[List[String]]
-}
-trait HasKey() extends TyNode {
-  def key: TyNode
-}
-trait HasPrecision() extends TyNode {
-  def precision: Option[Int]
-}
-trait HasSymbol() extends TyNode {
-  def symbol: String
-}
-trait HasValue() extends TyNode {
-  def value: TyNode
-}
-trait HasPointed() extends TyNode {
-  def pointed: TyNode
-}
-trait HasBitSize() extends TyNode {
-  def bitSize: Option[BitSize]
-}
-trait HasSchema() extends TyNode {
-  def schema: Option[String]
-}
 case class TyReferenceImpl(referee: TyNode, lifetime: Option[LifeTime]) extends TyReference 
 case class TyAnyImpl() extends TyAny 
 case class TyTimeStampImpl(hasTimeZone: Option[Boolean], timeUnit: Option[java.util.concurrent.TimeUnit]) extends TyTimeStamp 
@@ -161,30 +50,30 @@ case class TyUnitImpl() extends TyUnit
 case class TyListImpl(value: TyNode) extends TyList 
 case class TyUndefinedImpl() extends TyUndefined 
 case class TyJsonObjectImpl(isBinary: Boolean) extends TyJsonObject 
-trait TyReference() extends TyNode with HasReferee with HasLifetime {
+trait TyReference() extends TyNode {
   def referee: TyNode
   def lifetime: Option[LifeTime]
 }
 trait TyAny() extends TyNode 
-trait TyTimeStamp() extends TyNode with HasHasTimeZone with HasTimeUnit {
+trait TyTimeStamp() extends TyNode {
   def hasTimeZone: Option[Boolean]
   def timeUnit: Option[java.util.concurrent.TimeUnit]
 }
-trait TyTypeVar() extends TyNode with HasName {
+trait TyTypeVar() extends TyNode {
   def name: Option[String]
 }
-trait TyDecimal() extends TyNode with TyReal with HasPrecision with HasScale {
+trait TyDecimal() extends TyNode with TyReal {
   def precision: Option[Int]
   def scale: Option[Int]
 }
-trait TyApply() extends TyNode with HasApplicant with HasArguments {
+trait TyApply() extends TyNode {
   def applicant: String
   def arguments: List[Boolean]
 }
-trait TyTuple() extends TyNode with HasValues {
+trait TyTuple() extends TyNode {
   def values: List[TyNode]
 }
-trait TyStruct() extends TyNode with TyClass with HasName with HasFields with HasDerives with HasAttributes with HasDataframe with HasSchema with HasComment {
+trait TyStruct() extends TyNode with TyClass with HasComment {
   def name: Option[String]
   def fields: Option[List[TyField]]
   def derives: Option[List[String]]
@@ -193,75 +82,75 @@ trait TyStruct() extends TyNode with TyClass with HasName with HasFields with Ha
   def schema: Option[String]
   def comment: Option[String]
 }
-trait TyJsonAny() extends TyNode with HasIsBinary {
+trait TyJsonAny() extends TyNode {
   def isBinary: Boolean
 }
-trait TyByte() extends TyNode with HasSigned {
+trait TyByte() extends TyNode {
   def signed: Option[Boolean]
 }
 trait TyRecord() extends TyNode 
 trait TyReal() extends TyNode with TyNumeric 
-trait TyUnion() extends TyNode with HasValues {
+trait TyUnion() extends TyNode {
   def values: List[TyNode]
 }
-trait TyPointer() extends TyNode with HasPointed with HasMutable with HasSmart {
+trait TyPointer() extends TyNode {
   def pointed: TyNode
   def mutable: Option[Boolean]
   def smart: Option[Boolean]
 }
-trait TyField() extends TyNode with HasName with HasValue with HasMutability {
+trait TyField() extends TyNode {
   def name: Option[String]
   def value: TyNode
   def mutability: Option[Boolean]
 }
-trait TyMap() extends TyNode with HasKey with HasValue with HasMapType {
+trait TyMap() extends TyNode {
   def key: TyNode
   def value: TyNode
   def mapType: Option[String]
 }
-trait TyFloat() extends TyNode with TyReal with HasBitSize {
+trait TyFloat() extends TyNode with TyReal {
   def bitSize: Option[BitSize]
 }
 trait TyJson() extends TyNode 
 trait TyUuid() extends TyNode 
-trait TyResult() extends TyNode with HasOk with HasErr {
+trait TyResult() extends TyNode {
   def ok: TyNode
   def err: TyNode
 }
-trait TySet() extends TyNode with HasValue {
+trait TySet() extends TyNode {
   def value: TyNode
 }
 trait TyOid() extends TyNode 
-trait TyOption() extends TyNode with HasValue {
+trait TyOption() extends TyNode {
   def value: TyNode
 }
-trait TyVariant() extends TyNode with HasNames with HasCode {
+trait TyVariant() extends TyNode {
   def names: List[String]
   def code: Option[Int]
 }
 trait TyUnknown() extends TyNode 
 trait TyString() extends TyNode 
-trait TyChar() extends TyNode with HasBitSize with HasCharset {
+trait TyChar() extends TyNode {
   def bitSize: Option[BitSize]
   def charset: Option[String]
 }
 trait TyNull() extends TyNode 
-trait TyNamed() extends TyNode with HasRef with HasPreserveCase {
+trait TyNamed() extends TyNode {
   def ref: String
   def preserveCase: Option[Boolean]
 }
 trait TyObject() extends TyNode 
-trait TySelect() extends TyNode with HasValue with HasSymbol {
+trait TySelect() extends TyNode {
   def value: TyNode
   def symbol: String
 }
 trait TyByteArray() extends TyNode 
 trait TyNothing() extends TyNode 
-trait TyIdent() extends TyNode with HasName {
+trait TyIdent() extends TyNode {
   def name: Option[String]
 }
 trait TyBoolean() extends TyNode 
-trait TyEnum() extends TyNode with HasVariants with HasSimpleEnum with HasName with HasValue with HasSchema {
+trait TyEnum() extends TyNode {
   def variants: List[TyVariant]
   def simpleEnum: Option[Boolean]
   def name: Option[String]
@@ -269,28 +158,28 @@ trait TyEnum() extends TyNode with HasVariants with HasSimpleEnum with HasName w
   def schema: Option[String]
 }
 trait TyInet() extends TyNode 
-trait TyDateTime() extends TyNode with HasTimezone {
+trait TyDateTime() extends TyNode {
   def timezone: Option[java.util.TimeZone]
 }
-trait TyKeyValue() extends TyNode with HasKey with HasValue {
+trait TyKeyValue() extends TyNode {
   def key: TyNode
   def value: TyNode
 }
 trait TyClass() extends TyNode 
-trait TySeq() extends TyNode with HasValue {
+trait TySeq() extends TyNode {
   def value: TyNode
 }
 trait TyNumeric() extends TyNode 
-trait TyInteger() extends TyNode with TyNumeric with HasBitSize with HasSigned {
+trait TyInteger() extends TyNode with TyNumeric {
   def bitSize: Option[BitSize]
   def signed: Option[Boolean]
 }
 trait TyUnit() extends TyNode 
-trait TyList() extends TyNode with HasValue {
+trait TyList() extends TyNode {
   def value: TyNode
 }
 trait TyUndefined() extends TyNode 
-trait TyJsonObject() extends TyNode with HasIsBinary {
+trait TyJsonObject() extends TyNode {
   def isBinary: Boolean
 }
 class TyReferenceBuilder() {
