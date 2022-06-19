@@ -5,8 +5,6 @@ import unidef.common.ty.*
 import unidef.common.ast.*
 import unidef.utils.{TextTool, TypeEncodeException}
 
-import scala.jdk.CollectionConverters.*
-
 case class ScalaCodeGen(naming: NamingConvention) {
   val common = ScalaCommon()
 
@@ -93,7 +91,7 @@ case class ScalaCodeGen(naming: NamingConvention) {
     val name = naming.toClassName(c.name)
     val params = Asts.flattenParameters(c.parameters).map(mapParam)
     val fields = c.fields.map(mapParam)
-    val derive = c.derives.map(_.asInstanceOf[AstIdent]).map(_.name).map(naming.toClassName)
+    val derive = c. derives.map(_.asInstanceOf[AstIdent]).map(_.name).map(naming.toClassName)
     val methods = c.methods.map {
       case x: AstFunctionDecl => generateMethod(x)
       case x: AstRawCode => x.code
@@ -201,9 +199,9 @@ case class ScalaCodeGen(naming: NamingConvention) {
               .returnType(Types.named(builderName))
               .parameters(
                 Asts.parameters(
-                List(
-                  AstValDefBuilder().name(fieldName).ty(o).build()
-                )
+                  List(
+                    AstValDefBuilder().name(fieldName).ty(o).build()
+                  )
                 )
               )
               .body(
@@ -268,7 +266,9 @@ case class ScalaCodeGen(naming: NamingConvention) {
       case x: AstBlock =>
         x.stmts.map(generate).mkString("\n")
       case x: AstApply =>
-        generate(x.applicant) + x.arguments.argumentListsContent.map(y => y.argumentListContent.map(generate).mkString("(", ", ", ")")).mkString("")
+        generate(x.applicant) + x.arguments.argumentListsContent
+          .map(y => y.argumentListContent.map(generate).mkString("(", ", ", ")"))
+          .mkString("")
       case x: AstFunctionDecl =>
         generateMethod(x)
       case n: AstIdent =>
@@ -283,6 +283,8 @@ case class ScalaCodeGen(naming: NamingConvention) {
         "None"
       case n: AstLiteralNull =>
         "null"
+      case a: AstArgument =>
+        generate(a.value.get)
       case n: AstRawCode =>
         n.code
     }

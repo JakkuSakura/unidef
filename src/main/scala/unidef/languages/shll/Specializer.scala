@@ -138,10 +138,9 @@ case class Specializer() {
         a.name -> a
       }
       .map { case (k, v) =>
-        k.toIntOption match {
-          case Some(x) => parameters(x).name -> v
-          case None => k -> v
-        }
+        val key = k.toIntOption.map(parameters(_).name).getOrElse(k)
+        val value = v.value.get // TODO
+        key -> value
       }
 
     val body = specializeFunctionBody(

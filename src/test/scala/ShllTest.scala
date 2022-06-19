@@ -70,7 +70,7 @@ class ShllTest {
   }
   @Test def test_simple_specialize(): Unit = {
     val code = ShllTestHelper.lift {
-      def foo(a: Int): Unit = {}
+      def foo(a: Int): Int = a
       def bar(): Unit = {
         foo(1)
         foo(2)
@@ -78,15 +78,17 @@ class ShllTest {
     }
 
     val expected = ShllTestHelper.lift {
-      def foo_0(): Unit = {}
-      def foo_1(): Unit = {}
-      def foo(a: Int): Unit = {}
+      def foo_0(): Int = 1
+      def foo_1(): Int = 2
+      def foo(a: Int): Int = a
       def bar(): Unit = {
         foo_0()
         foo_1()
       }
     }
     val specialized = Specializer().specialize(code)
+    PrettyPrinter.printRust(specialized)
+    PrettyPrinter.print(specialized)
     ShllTestHelper.assertAstEqual(expected, specialized)
   }
 
