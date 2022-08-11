@@ -82,11 +82,8 @@ I try to implement the tasty version to
 - [ ] Support anonymous struct with fields in yaml
 - [ ] Support anonymous enum in yaml
 - [ ] Use automatically generated TyNode and AstNode(self bootstrap)
-- [ ] Use circe.json.HCursor to spot the problem
+- [ ] Use circe.json.HCursor to spot json parsing problem
 - [ ] Support save actions: formatter, etc
 - [ ] Simple SVN for code generated files
 - [ ] Support most of what python version can do: Rust structs, FIX, sql ddl, python peewee/pydantic model, etc
-- [ ] Workflow: Generic AST + Extendable <=> Specific AST with static type <=> Source code
-- [x] Deprecate Velocity with simple Scala interpolation
-- [x] Replace SQLParser with Druid SQL parser, since the latter is most performant and ~feature complete~(procedure function not supported)
-- [x] Builder pattern codegen for TyNode and AstNode
+- [ ] Replace Type and Ast with TyStruct

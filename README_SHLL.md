@@ -11,7 +11,6 @@ For example, you may want to write declarative business logic, and along with an
 - generics doesn't provide much runtime performance benefit
 - polymorphism involves calling dynamic dispatched methods, which involves a runtime cost
 - codegen requires an external tool, and writing such tool involves much work
-
 The ideal solution is this language, which specialize the interpreter against the declarative business logic during comptime, to achieve the best performance just like template
 
 Our goal is a simple high-level language that gives you confident of high-level real zero cost abstraction
@@ -22,6 +21,13 @@ The frontend is implemented with scala 3 compiler, including lexing, parsing, ty
 The language is then optimized and transpiled into a target language(scala/rust), very like Haxe, but with experimental support for optimization.
 
 The language aims to provide multiple language frontend and multiple language backend.
+
+Concepts: make the language syntactically simple yet expressive, and produces fast low-level code
+
+
+## Type system
+
+- Allows high level types specialize to low level types
 
 ## Effects and Contexts
 https://boats.gitlab.io/blog/post/the-problem-of-effects/
@@ -39,6 +45,7 @@ https://internals.rust-lang.org/t/can-we-make-a-rusty-effect-system/11697
 - Deprecation
 
 - Some Rust ideas: Ref, MutRef
+
 
 ## Constant evaluation
 ```scala
@@ -168,6 +175,7 @@ foo(1)(2)
 ## Optimization
 
 - [ ] Perform Data flow analysis with runtime{} and comptime{} concept
+- [ ] Pluggable optimizations
 - [ ] Dead Code Elimination
 - [ ] Interpreter
 
@@ -175,12 +183,12 @@ foo(1)(2)
 
 ## Notes
 
-TyField(name: String, type: TyNode, default: Optional AstNode)
-AstParameter(name: String, type: TyNode, default: Optional AstNode)
-AstParameterList(params: List\[AstParameter])
-AstParameterLists(params: List\[AstParameterList])
-AstArgument(name: Option\[String], value: AstNode)
-AstArgumentList(args: List\[AstArgument])
-AstArgumentLists(args: List\[AstArgumentList])
-
-AstFunction(name: String, params: AstParamLists, body: AstNode)
+Can everything be expressed as functions? Pure functions, async functions, directive functions?
+Should it follow mature languages or its own language?
+```scala
+def foo(a: Int, b: Int) = ???
+```
+vs
+```text
+DefFun(name="foo", params=List(Param("a", "Int"), Param("b", "Int")), ret="refer", body=Add("a", "b")
+```

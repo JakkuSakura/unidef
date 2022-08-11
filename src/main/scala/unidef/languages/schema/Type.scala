@@ -20,7 +20,7 @@ class Type(val name: String) {
     } else {
       builder.ty(ty)
     }
-    
+
     fields += builder
     this
   }
