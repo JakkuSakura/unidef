@@ -184,11 +184,28 @@ foo(1)(2)
 ## Notes
 
 Can everything be expressed as functions? Pure functions, async functions, directive functions?
-Should it follow mature languages or its own language?
+Should it follow mature languages or its own language? Core concepts: function and variables
 ```scala
 def foo(a: Int, b: Int) = ???
 ```
 vs
 ```text
-DefFun(name="foo", params=List(Param("a", "Int"), Param("b", "Int")), ret="refer", body=Add("a", "b")
+Program(program=List(
+    DefType(
+        name="Int", type=Int()
+    ),
+    DefFun(
+        name="Foo", params=List(Param("a", Int())), Param("b", Int()), ret=Refer(), 
+        body=Add(a, b)
+    ),
+    DefStruct(
+        name="Point",
+        fields=List(
+            Field("a", Int()),
+            Field("b", Int()
+        )
+    ),
+    Let(name="p", val=Point(a=1, b=2))),
+    Print(p.a, p.b)
+))
 ```
