@@ -188,7 +188,7 @@ Should it follow mature languages or its own language? Core concepts: function a
 
 Unquoted names are Ident(), when Ident() meets a value type, it coerces to Val()
 ```text
-Program(List(
+Program(Block(
     DefType(Int, Int()),
     DefFun(
         Foo, params=List(Param(a, Int())), Param(b, Int()), ret=Refer(), 
