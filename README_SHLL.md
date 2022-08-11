@@ -202,7 +202,7 @@ Program(program=List(
         name="Point",
         fields=List(
             Field("a", Int()),
-            Field("b", Int()
+            Field("b", Int())
         )
     ),
     Let(name="p", val=Point(a=1, b=2))),
