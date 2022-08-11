@@ -185,27 +185,23 @@ foo(1)(2)
 
 Can everything be expressed as functions? Pure functions, async functions, directive functions?
 Should it follow mature languages or its own language? Core concepts: function and variables
-```scala
-def foo(a: Int, b: Int) = ???
-```
-vs
+
+Unquoted names are Ident(), when Ident() meets a value type, it coerces to Val()
 ```text
-Program(program=List(
-    DefType(
-        name="Int", type=Int()
-    ),
+Program(List(
+    DefType(Int, Int()),
     DefFun(
-        name="Foo", params=List(Param("a", Int())), Param("b", Int()), ret=Refer(), 
+        Foo, params=List(Param(a, Int())), Param(b, Int()), ret=Refer(), 
         body=Add(a, b)
     ),
     DefStruct(
-        name="Point",
-        fields=List(
-            Field("a", Int()),
-            Field("b", Int())
+        Point,
+        List(
+            Field(a, Int()),
+            Field(b, Int())
         )
     ),
-    Let(name="p", val=Point(a=1, b=2))),
+    Let(p, Point(a=1, b=Foo(2, 3))),
     Print(p.a, p.b)
 ))
 ```
