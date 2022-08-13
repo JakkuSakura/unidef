@@ -16,5 +16,5 @@ term: apply | IDENT | INTEGER | DECIMAL | STRING | CHAR ;
 kw_arg: IDENT '=' term;
 kw_args: ( | kw_arg (',' kw_arg) * ','?);
 pos_args: ( | term (',' term) * ','?);
-apply: IDENT '(' (pos_args | kw_args | pos_args ',' kw_args) ')';
+apply: IDENT '(' (| pos_args | kw_args | pos_args ',' kw_args) ')';
 
