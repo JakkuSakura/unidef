@@ -191,17 +191,18 @@ Unquoted names are Ident(), when Ident() meets a value type, it coerces to Val()
 Program(Block(
     DefType(Int, Int()),
     DefFun(
-        Foo, params=List(Param(a, Int())), Param(b, Int()), ret=Refer(), 
+        Foo, params=List(Param(a, Int(), Param(b, Int()))), ret=Refer(),
         body=Add(a, b)
     ),
     DefStruct(
         Point,
         List(
             Field(a, Int()),
-            Field(b, Int())
+            Field(b, Int()),
         )
     ),
     Let(p, Point(a=1, b=Foo(2, 3))),
-    Print(p.a, p.b)
+    Print(Select(p, a), Select(p, b))
 ))
+
 ```
