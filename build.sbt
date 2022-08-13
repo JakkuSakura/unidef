@@ -22,6 +22,8 @@ lazy val root = (project in file("."))
   .enablePlugins(NativeImagePlugin)
   .settings(name := "unidef")
 
+enablePlugins(Antlr4Plugin)
+
 nativeImageOptions ++= List(
   s"-H:ConfigurationFileDirectories=${target.value / "native-image-configs"}",
   s"-H:ReflectionConfigurationFiles=${target.value / "native-image-configs" / "reflect-config.json"}",
@@ -63,3 +65,6 @@ libraryDependencies += "org.apache.commons" % "commons-io" % "1.3.2"
 
 // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
 libraryDependencies += "org.junit.jupiter" % "junit-jupiter-api" % "5.8.2" % Test
+
+// https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
+libraryDependencies += "org.antlr" % "antlr4-runtime" % "4.10.1"

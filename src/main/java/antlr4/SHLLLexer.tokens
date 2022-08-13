@@ -1,0 +1,14 @@
+T__0=1
+T__1=2
+T__2=3
+T__3=4
+IDENT=5
+INTEGER=6
+DECIMAL=7
+STRING=8
+CHAR=9
+WS=10
+'='=1
+','=2
+'('=3
+')'=4
