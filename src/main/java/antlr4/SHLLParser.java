@@ -1,26 +1,24 @@
-package antlr4;// Generated from /home/jack/Dev/unidef/src/main/antlr4/SHLL.g4 by ANTLR 4.8
-
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.atn.ATN;
-import org.antlr.v4.runtime.atn.ATNDeserializer;
-import org.antlr.v4.runtime.atn.ParserATNSimulator;
-import org.antlr.v4.runtime.atn.PredictionContextCache;
+// Generated from src/main/antlr4/SHLL.g4 by ANTLR 4.10.1
+package antlr4;
+import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
-import org.antlr.v4.runtime.tree.ParseTreeListener;
-import org.antlr.v4.runtime.tree.TerminalNode;
-
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.misc.*;
+import org.antlr.v4.runtime.tree.*;
 import java.util.List;
+import java.util.Iterator;
+import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class SHLLParser extends Parser {
-	static { RuntimeMetaData.checkVersion("4.8", RuntimeMetaData.VERSION); }
+	static { RuntimeMetaData.checkVersion("4.10.1", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		T__0=1, T__1=2, T__2=3, T__3=4, IDENT=5, INTEGER=6, DECIMAL=7, STRING=8, 
-		CHAR=9, WS=10;
+		T__0=1, T__1=2, T__2=3, IDENT=4, INTEGER=5, DECIMAL=6, STRING=7, CHAR=8, 
+		WS=9;
 	public static final int
 		RULE_term = 0, RULE_kw_arg = 1, RULE_kw_args = 2, RULE_pos_args = 3, RULE_apply = 4;
 	private static String[] makeRuleNames() {
@@ -32,14 +30,14 @@ public class SHLLParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "'='", "','", "'('", "')'"
+			null, "'='", "'('", "')'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
-			null, null, null, null, null, "IDENT", "INTEGER", "DECIMAL", "STRING", 
-			"CHAR", "WS"
+			null, null, null, null, "IDENT", "INTEGER", "DECIMAL", "STRING", "CHAR", 
+			"WS"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -106,14 +104,6 @@ public class SHLLParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_term; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).enterTerm(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).exitTerm(this);
-		}
 	}
 
 	public final TermContext term() throws RecognitionException {
@@ -122,49 +112,51 @@ public class SHLLParser extends Parser {
 		try {
 			setState(16);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,0,_ctx) ) {
-			case 1:
+			switch (_input.LA(1)) {
+			case T__1:
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(10);
 				apply();
 				}
 				break;
-			case 2:
+			case IDENT:
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(11);
 				match(IDENT);
 				}
 				break;
-			case 3:
+			case INTEGER:
 				enterOuterAlt(_localctx, 3);
 				{
 				setState(12);
 				match(INTEGER);
 				}
 				break;
-			case 4:
+			case DECIMAL:
 				enterOuterAlt(_localctx, 4);
 				{
 				setState(13);
 				match(DECIMAL);
 				}
 				break;
-			case 5:
+			case STRING:
 				enterOuterAlt(_localctx, 5);
 				{
 				setState(14);
 				match(STRING);
 				}
 				break;
-			case 6:
+			case CHAR:
 				enterOuterAlt(_localctx, 6);
 				{
 				setState(15);
 				match(CHAR);
 				}
 				break;
+			default:
+				throw new NoViableAltException(this);
 			}
 		}
 		catch (RecognitionException re) {
@@ -187,14 +179,6 @@ public class SHLLParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_kw_arg; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).enterKw_arg(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).exitKw_arg(this);
-		}
 	}
 
 	public final Kw_argContext kw_arg() throws RecognitionException {
@@ -233,14 +217,6 @@ public class SHLLParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_kw_args; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).enterKw_args(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).exitKw_args(this);
-		}
 	}
 
 	public final Kw_argsContext kw_args() throws RecognitionException {
@@ -248,52 +224,21 @@ public class SHLLParser extends Parser {
 		enterRule(_localctx, 4, RULE_kw_args);
 		int _la;
 		try {
-			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(34);
+			setState(25);
 			_errHandler.sync(this);
-			switch (_input.LA(1)) {
-			case T__3:
+			_la = _input.LA(1);
+			while (_la==IDENT) {
 				{
-				}
-				break;
-			case IDENT:
 				{
-				setState(23);
+				setState(22);
 				kw_arg();
-				setState(28);
-				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,1,_ctx);
-				while ( _alt!=2 && _alt!= ATN.INVALID_ALT_NUMBER ) {
-					if ( _alt==1 ) {
-						{
-						{
-						setState(24);
-						match(T__1);
-						setState(25);
-						kw_arg();
-						}
-						} 
-					}
-					setState(30);
-					_errHandler.sync(this);
-					_alt = getInterpreter().adaptivePredict(_input,1,_ctx);
 				}
-				setState(32);
+				}
+				setState(27);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if (_la==T__1) {
-					{
-					setState(31);
-					match(T__1);
-					}
-				}
-
-				}
-				break;
-			default:
-				throw new NoViableAltException(this);
 			}
 			}
 		}
@@ -319,14 +264,6 @@ public class SHLLParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_pos_args; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).enterPos_args(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).exitPos_args(this);
-		}
 	}
 
 	public final Pos_argsContext pos_args() throws RecognitionException {
@@ -336,54 +273,21 @@ public class SHLLParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(48);
+			setState(31);
 			_errHandler.sync(this);
-			switch (_input.LA(1)) {
-			case T__1:
-			case T__3:
-				{
-				}
-				break;
-			case IDENT:
-			case INTEGER:
-			case DECIMAL:
-			case STRING:
-			case CHAR:
-				{
-				setState(37);
-				term();
-				setState(42);
-				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,4,_ctx);
-				while ( _alt!=2 && _alt!= ATN.INVALID_ALT_NUMBER ) {
-					if ( _alt==1 ) {
-						{
-						{
-						setState(38);
-						match(T__1);
-						setState(39);
-						term();
-						}
-						} 
-					}
-					setState(44);
-					_errHandler.sync(this);
-					_alt = getInterpreter().adaptivePredict(_input,4,_ctx);
-				}
-				setState(46);
-				_errHandler.sync(this);
-				switch ( getInterpreter().adaptivePredict(_input,5,_ctx) ) {
-				case 1:
+			_alt = getInterpreter().adaptivePredict(_input,2,_ctx);
+			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
+				if ( _alt==1 ) {
 					{
-					setState(45);
-					match(T__1);
+					{
+					setState(28);
+					term();
 					}
-					break;
+					} 
 				}
-				}
-				break;
-			default:
-				throw new NoViableAltException(this);
+				setState(33);
+				_errHandler.sync(this);
+				_alt = getInterpreter().adaptivePredict(_input,2,_ctx);
 			}
 			}
 		}
@@ -399,7 +303,9 @@ public class SHLLParser extends Parser {
 	}
 
 	public static class ApplyContext extends ParserRuleContext {
-		public TerminalNode IDENT() { return getToken(SHLLParser.IDENT, 0); }
+		public TermContext term() {
+			return getRuleContext(TermContext.class,0);
+		}
 		public Pos_argsContext pos_args() {
 			return getRuleContext(Pos_argsContext.class,0);
 		}
@@ -410,14 +316,6 @@ public class SHLLParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_apply; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).enterApply(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SHLLListener) ((SHLLListener)listener).exitApply(this);
-		}
 	}
 
 	public final ApplyContext apply() throws RecognitionException {
@@ -426,42 +324,16 @@ public class SHLLParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(50);
-			match(IDENT);
-			setState(51);
+			setState(34);
+			match(T__1);
+			setState(35);
+			term();
+			setState(36);
+			pos_args();
+			setState(37);
+			kw_args();
+			setState(38);
 			match(T__2);
-			setState(59);
-			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,7,_ctx) ) {
-			case 1:
-				{
-				}
-				break;
-			case 2:
-				{
-				setState(53);
-				pos_args();
-				}
-				break;
-			case 3:
-				{
-				setState(54);
-				kw_args();
-				}
-				break;
-			case 4:
-				{
-				setState(55);
-				pos_args();
-				setState(56);
-				match(T__1);
-				setState(57);
-				kw_args();
-				}
-				break;
-			}
-			setState(61);
-			match(T__3);
 			}
 		}
 		catch (RecognitionException re) {
@@ -476,25 +348,34 @@ public class SHLLParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\fB\4\2\t\2\4\3\t"+
-		"\3\4\4\t\4\4\5\t\5\4\6\t\6\3\2\3\2\3\2\3\2\3\2\3\2\5\2\23\n\2\3\3\3\3"+
-		"\3\3\3\3\3\4\3\4\3\4\3\4\7\4\35\n\4\f\4\16\4 \13\4\3\4\5\4#\n\4\5\4%\n"+
-		"\4\3\5\3\5\3\5\3\5\7\5+\n\5\f\5\16\5.\13\5\3\5\5\5\61\n\5\5\5\63\n\5\3"+
-		"\6\3\6\3\6\3\6\3\6\3\6\3\6\3\6\3\6\5\6>\n\6\3\6\3\6\3\6\2\2\7\2\4\6\b"+
-		"\n\2\2\2J\2\22\3\2\2\2\4\24\3\2\2\2\6$\3\2\2\2\b\62\3\2\2\2\n\64\3\2\2"+
-		"\2\f\23\5\n\6\2\r\23\7\7\2\2\16\23\7\b\2\2\17\23\7\t\2\2\20\23\7\n\2\2"+
-		"\21\23\7\13\2\2\22\f\3\2\2\2\22\r\3\2\2\2\22\16\3\2\2\2\22\17\3\2\2\2"+
-		"\22\20\3\2\2\2\22\21\3\2\2\2\23\3\3\2\2\2\24\25\7\7\2\2\25\26\7\3\2\2"+
-		"\26\27\5\2\2\2\27\5\3\2\2\2\30%\3\2\2\2\31\36\5\4\3\2\32\33\7\4\2\2\33"+
-		"\35\5\4\3\2\34\32\3\2\2\2\35 \3\2\2\2\36\34\3\2\2\2\36\37\3\2\2\2\37\""+
-		"\3\2\2\2 \36\3\2\2\2!#\7\4\2\2\"!\3\2\2\2\"#\3\2\2\2#%\3\2\2\2$\30\3\2"+
-		"\2\2$\31\3\2\2\2%\7\3\2\2\2&\63\3\2\2\2\',\5\2\2\2()\7\4\2\2)+\5\2\2\2"+
-		"*(\3\2\2\2+.\3\2\2\2,*\3\2\2\2,-\3\2\2\2-\60\3\2\2\2.,\3\2\2\2/\61\7\4"+
-		"\2\2\60/\3\2\2\2\60\61\3\2\2\2\61\63\3\2\2\2\62&\3\2\2\2\62\'\3\2\2\2"+
-		"\63\t\3\2\2\2\64\65\7\7\2\2\65=\7\5\2\2\66>\3\2\2\2\67>\5\b\5\28>\5\6"+
-		"\4\29:\5\b\5\2:;\7\4\2\2;<\5\6\4\2<>\3\2\2\2=\66\3\2\2\2=\67\3\2\2\2="+
-		"8\3\2\2\2=9\3\2\2\2>?\3\2\2\2?@\7\6\2\2@\13\3\2\2\2\n\22\36\"$,\60\62"+
-		"=";
+		"\u0004\u0001\t)\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004\u0001"+
+		"\u0000\u0001\u0000\u0001\u0000\u0001\u0000\u0001\u0000\u0001\u0000\u0003"+
+		"\u0000\u0011\b\u0000\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001"+
+		"\u0002\u0005\u0002\u0018\b\u0002\n\u0002\f\u0002\u001b\t\u0002\u0001\u0003"+
+		"\u0005\u0003\u001e\b\u0003\n\u0003\f\u0003!\t\u0003\u0001\u0004\u0001"+
+		"\u0004\u0001\u0004\u0001\u0004\u0001\u0004\u0001\u0004\u0001\u0004\u0000"+
+		"\u0000\u0005\u0000\u0002\u0004\u0006\b\u0000\u0000*\u0000\u0010\u0001"+
+		"\u0000\u0000\u0000\u0002\u0012\u0001\u0000\u0000\u0000\u0004\u0019\u0001"+
+		"\u0000\u0000\u0000\u0006\u001f\u0001\u0000\u0000\u0000\b\"\u0001\u0000"+
+		"\u0000\u0000\n\u0011\u0003\b\u0004\u0000\u000b\u0011\u0005\u0004\u0000"+
+		"\u0000\f\u0011\u0005\u0005\u0000\u0000\r\u0011\u0005\u0006\u0000\u0000"+
+		"\u000e\u0011\u0005\u0007\u0000\u0000\u000f\u0011\u0005\b\u0000\u0000\u0010"+
+		"\n\u0001\u0000\u0000\u0000\u0010\u000b\u0001\u0000\u0000\u0000\u0010\f"+
+		"\u0001\u0000\u0000\u0000\u0010\r\u0001\u0000\u0000\u0000\u0010\u000e\u0001"+
+		"\u0000\u0000\u0000\u0010\u000f\u0001\u0000\u0000\u0000\u0011\u0001\u0001"+
+		"\u0000\u0000\u0000\u0012\u0013\u0005\u0004\u0000\u0000\u0013\u0014\u0005"+
+		"\u0001\u0000\u0000\u0014\u0015\u0003\u0000\u0000\u0000\u0015\u0003\u0001"+
+		"\u0000\u0000\u0000\u0016\u0018\u0003\u0002\u0001\u0000\u0017\u0016\u0001"+
+		"\u0000\u0000\u0000\u0018\u001b\u0001\u0000\u0000\u0000\u0019\u0017\u0001"+
+		"\u0000\u0000\u0000\u0019\u001a\u0001\u0000\u0000\u0000\u001a\u0005\u0001"+
+		"\u0000\u0000\u0000\u001b\u0019\u0001\u0000\u0000\u0000\u001c\u001e\u0003"+
+		"\u0000\u0000\u0000\u001d\u001c\u0001\u0000\u0000\u0000\u001e!\u0001\u0000"+
+		"\u0000\u0000\u001f\u001d\u0001\u0000\u0000\u0000\u001f \u0001\u0000\u0000"+
+		"\u0000 \u0007\u0001\u0000\u0000\u0000!\u001f\u0001\u0000\u0000\u0000\""+
+		"#\u0005\u0002\u0000\u0000#$\u0003\u0000\u0000\u0000$%\u0003\u0006\u0003"+
+		"\u0000%&\u0003\u0004\u0002\u0000&\'\u0005\u0003\u0000\u0000\'\t\u0001"+
+		"\u0000\u0000\u0000\u0003\u0010\u0019\u001f";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

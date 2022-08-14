@@ -1,6 +1,6 @@
 import ReleaseTransformations._
 
-ThisBuild / scalaVersion := "3.1.2"
+scalaVersion := "3.1.2"
 ThisBuild / organization := "com.jeekrs"
 
 releaseUseGlobalVersion := false
@@ -22,7 +22,6 @@ lazy val root = (project in file("."))
   .enablePlugins(NativeImagePlugin)
   .settings(name := "unidef")
 
-enablePlugins(Antlr4Plugin)
 
 nativeImageOptions ++= List(
   s"-H:ConfigurationFileDirectories=${target.value / "native-image-configs"}",
@@ -40,12 +39,12 @@ libraryDependencies += "io.circe" %% "circe-yaml" % circeVersion
 libraryDependencies += "io.circe" %% "circe-parser" % circeVersion
 libraryDependencies += "io.circe" %% "circe-generic" % circeVersion
 
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"
+libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.11"
 
-libraryDependencies += "com.github.jsqlparser" % "jsqlparser" % "4.3"
+libraryDependencies += "com.github.jsqlparser" % "jsqlparser" % "4.5"
 // https://mvnrepository.com/artifact/com.alibaba/druid
-libraryDependencies += "com.alibaba" % "druid" % "1.2.10"
+libraryDependencies += "com.alibaba" % "druid" % "1.2.11"
 
 // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.12.0"
@@ -64,7 +63,7 @@ libraryDependencies += "org.apache.commons" % "commons-text" % "1.9"
 libraryDependencies += "org.apache.commons" % "commons-io" % "1.3.2"
 
 // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-libraryDependencies += "org.junit.jupiter" % "junit-jupiter-api" % "5.8.2" % Test
+libraryDependencies += "org.junit.jupiter" % "junit-jupiter-api" % "5.9.0" % Test
 
 // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
 libraryDependencies += "org.antlr" % "antlr4-runtime" % "4.10.1"

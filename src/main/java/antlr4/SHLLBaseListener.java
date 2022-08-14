@@ -1,4 +1,5 @@
-package antlr4;// Generated from /home/jack/Dev/unidef/src/main/antlr4/SHLL.g4 by ANTLR 4.8
+// Generated from src/main/antlr4/SHLL.g4 by ANTLR 4.10.1
+package antlr4;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
